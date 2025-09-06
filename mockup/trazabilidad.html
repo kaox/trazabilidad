@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Historia de tu Chocolate - Trazabilidad</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Leaflet CSS & JS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #fdfaf6; /* Un color crema muy suave */
+        }
+        h1, h2, h3, .font-display {
+            font-family: 'Playfair Display', serif;
+        }
+        #map-cosecha {
+            height: 250px;
+            width: 100%;
+            border-radius: 1rem;
+            border: 1px solid #d1c4b3;
+            z-index: 10;
+        }
+        /* Estilos para la línea de tiempo */
+        .timeline-item {
+            position: relative;
+            padding-bottom: 2.5rem;
+            padding-left: 2.5rem; 
+        }
+        .timeline-item:last-child {
+            padding-bottom: 0;
+        }
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: 0.4rem;
+            top: 0.5rem;
+            bottom: -0.5rem;
+            width: 2px;
+            background-color: #d1c4b3; 
+        }
+         .timeline-item:last-child::before {
+            height: 0;
+        }
+        .timeline-icon {
+            position: absolute;
+            left: -0.25rem;
+            top: 0.25rem;
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 2rem;
+            height: 2rem;
+            border-radius: 50%;
+            background-color: #854d0e; /* Marrón oscuro */
+            border: 3px solid #fdfaf6;
+        }
+    </style>
+</head>
+<body class="text-stone-800 antialiased">
+
+    <nav class="bg-amber-900 text-white shadow-lg">
+        <div class="container mx-auto px-4">
+            <div class="flex justify-center items-center h-16">
+                <a href="fincas.html" class="px-4 py-2 rounded-md text-sm font-medium hover:bg-amber-800 transition">Fincas</a>
+                <a href="bean-to-bar-tracker.html" class="px-4 py-2 rounded-md text-sm font-medium hover:bg-amber-800 transition">Trazabilidad</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mx-auto p-4 md:p-8 max-w-4xl">
+
+        <header class="text-center mb-10 mt-4">
+            <h1 class="text-4xl md:text-5xl font-bold text-amber-900 mb-2">La Historia de tu Chocolate</h1>
+            <p class="text-stone-600">Ingresa el código del lote para descubrir su viaje, desde el grano hasta la barra.</p>
+        </header>
+
+        <div class="bg-white p-6 rounded-2xl shadow-lg mb-8">
+            <div class="flex flex-col sm:flex-row gap-4">
+                <input type="text" id="loteIdInput" placeholder="Ej: MOL-20230905-abcd" class="w-full p-3 border border-stone-300 rounded-xl shadow-sm focus:ring-2 focus:ring-amber-800 transition text-center sm:text-left">
+                <button id="buscarBtn" class="bg-amber-800 hover:bg-amber-900 text-white font-bold py-3 px-8 rounded-xl shadow-md hover:shadow-lg transition transform hover:-translate-y-0.5 flex-shrink-0">
+                    Buscar
+                </button>
+            </div>
+        </div>
+        
+        <!-- Contenedor de Resultados -->
+        <main id="resultado-container">
+            <!-- La historia/línea de tiempo se renderizará aquí -->
+            <div id="welcome-message" class="text-center text-stone-500 py-10">
+                <p>Esperando un código de lote para comenzar el viaje...</p>
+            </div>
+        </main>
+        
+    </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const buscarBtn = document.getElementById('buscarBtn');
+        const loteIdInput = document.getElementById('loteIdInput');
+        const resultadoContainer = document.getElementById('resultado-container');
+        const welcomeMessage = document.getElementById('welcome-message');
+
+        const processIcons = {
+             cosecha: `<svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-white" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM6.5 8.5a.5.5 0 01.5-.5h2a.5.5 0 01.5.5v2a.5.5 0 01-1 0V9h-1.5a.5.5 0 01-.5-.5zM10 5a.5.5 0 01.5.5v2a.5.5 0 01-1 0V5.5A.5.5 0 0110 5zm3.5 3.5a.5.5 0 01.5-.5h2a.5.5 0 01.5.5v2a.5.5 0 01-1 0V9h-1.5a.5.5 0 01-.5-.5z" clip-rule="evenodd" /></svg>`,
+            fermentacion: `<svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-white" viewBox="0 0 20 20" fill="currentColor"><path d="M5 3a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2V5a2 2 0 00-2-2H5zm0 2h10v10H5V5z" /><path d="M7 7h2v2H7V7zm4 0h2v2h-2V7z" /></svg>`,
+            secado: `<svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-white" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-1.636 4.95l.707-.707a1 1 0 10-1.414-1.414l-.707.707a1 1 0 101.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 100 2h1zM6.343 7.657a1 1 0 010-1.414l.707-.707a1 1 0 011.414 1.414l-.707.707a1 1 0 01-1.414 0zm-.707 7.071a1 1 0 011.414 0l.707.707a1 1 0 01-1.414 1.414l-.707-.707a1 1 0 010-1.414zM10 17a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1z" clip-rule="evenodd" /></svg>`,
+            tostado: `<svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-white" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M12.316 3.051a1 1 0 01.633 1.265l-4 12a1 1 0 01-1.898-.632l4-12a1 1 0 011.265-.633zM5.707 6.293a1 1 0 010 1.414L3.414 10l2.293 2.293a1 1 0 11-1.414 1.414l-3-3a1 1 0 010-1.414l3-3a1 1 0 011.414 0zm8.586 0a1 1 0 011.414 0l3 3a1 1 0 010 1.414l-3 3a1 1 0 11-1.414-1.414L16.586 10l-2.293-2.293a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>`,
+            molienda: `<svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-white" viewBox="0 0 20 20" fill="currentColor"><path d="M5 4a1 1 0 00-2 0v7.268a2 2 0 000 3.464V16a1 1 0 102 0v-1.268a2 2 0 000-3.464V4zM11 4a1 1 0 10-2 0v7.268a2 2 0 000 3.464V16a1 1 0 102 0v-1.268a2 2 0 000-3.464V4zM16 3a1 1 0 011 1v7.268a2 2 0 010 3.464V16a1 1 0 11-2 0v-1.268a2 2 0 010-3.464V4a1 1 0 011-1z" /></svg>`
+        };
+
+        function findBatchHistory(moliendaId) {
+            try {
+                const allData = JSON.parse(localStorage.getItem('chocolateTrackerBatches'));
+                if (!allData) return null;
+
+                for (const cosechaId in allData) {
+                    const cosecha = allData[cosechaId];
+                    for (const fermentacion of cosecha.fermentaciones || []) {
+                        for (const secado of fermentacion.secados || []) {
+                            for (const tostado of secado.tostados || []) {
+                                for (const molienda of tostado.moliendas || []) {
+                                    if (molienda.id === moliendaId) {
+                                        return { cosecha, fermentacion, secado, tostado, molienda };
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            } catch (e) {
+                console.error("Error al leer localStorage:", e);
+                return null;
+            }
+            return null; // Not found
+        }
+
+        function renderHistory(history) {
+            resultadoContainer.innerHTML = ''; // Limpiar resultados anteriores
+            if (!history) {
+                resultadoContainer.innerHTML = `<div class="text-center bg-red-100 text-red-800 p-6 rounded-2xl shadow-md">
+                    <h3 class="font-bold text-xl mb-2">Lote no encontrado</h3>
+                    <p>No pudimos encontrar la historia para el código ingresado. Por favor, verifica el código e inténtalo de nuevo.</p>
+                </div>`;
+                return;
+            }
+
+            const { cosecha, fermentacion, secado, tostado, molienda } = history;
+            const timelineContainer = document.createElement('div');
+            
+            const cosechaStory = `El viaje de tu chocolate comenzó en la <strong>${cosecha.finca || 'una de nuestras fincas asociadas'}</strong>. En esta etapa, se transformaron <strong>${cosecha.pesoMazorcas || 'muchos'} kg</strong> de mazorcas en <strong>${cosecha.pesoBaba} kg</strong> de granos de cacao frescos, listos para el siguiente paso.`;
+
+            let tostadoStory = `Un tostado artesanal a temperaturas entre <strong>${tostado.tempMinima}°C y ${tostado.tempMaxima}°C</strong> fue el encargado de despertar las notas aromáticas y el perfil de sabor característico de este lote.`;
+            if (tostado.perfilAroma) {
+                tostadoStory += ` Se reveló un perfil de aroma a <strong>${tostado.perfilAroma}</strong>.`;
+            }
+
+            timelineContainer.innerHTML = `
+                ${createTimelineItem('cosecha', 'Cosecha', cosecha, cosechaStory)}
+                ${createTimelineItem('fermentacion', 'Fermentación', fermentacion, `Durante <strong>${fermentacion.duracion} días</strong>, los granos frescos fueron fermentados usando el método de <strong>${fermentacion.metodo}</strong>. Este proceso crucial es donde se desarrollan los precursores del sabor único del chocolate.`)}
+                ${createTimelineItem('secado', 'Secado', secado, `Luego, los granos se secaron cuidadosamente por <strong>${secado.duracion} días</strong>. Este paso reduce la humedad y concentra los complejos sabores que se formaron durante la fermentación.`)}
+                ${createTimelineItem('tostado', 'Tostado', tostado, tostadoStory)}
+                ${createTimelineItem('molienda', 'Molienda y Acabado Final', molienda, `Finalmente, los granos tostados se transformaron en un delicioso <strong>${molienda.productoFinal}</strong>. De <strong>${molienda.pesoNibs} kg</strong> de nibs, obtuvimos el producto final que ahora tienes en tus manos. ¡Disfrútalo!`)}
+            `;
+
+            resultadoContainer.appendChild(timelineContainer);
+            initializeCosechaMap(cosecha.finca);
+        }
+
+        function createTimelineItem(type, title, data, story) {
+             const date = data.fechaCosecha || data.fechaInicio || data.fechaTostado || data.fecha;
+             const formattedDate = date ? new Date(date + 'T00:00:00').toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' }) : 'Fecha no registrada';
+            
+            let contentHtml = `<p class="mb-4 text-base font-normal text-stone-600">${story}</p>`;
+            
+            if(data.imageUrl) {
+                 contentHtml += `<img src="${data.imageUrl}" alt="Foto del proceso de ${title}" class="mt-4 rounded-xl shadow-md w-full max-w-sm mx-auto">`;
+            }
+
+            if (type === 'cosecha') {
+                contentHtml = `
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+                        <div>
+                            <p class="mb-4 text-base font-normal text-stone-600">${story}</p>
+                             ${data.imageUrl ? `<img src="${data.imageUrl}" alt="Foto del proceso de ${title}" class="mt-4 rounded-xl shadow-md w-full">` : ''}
+                        </div>
+                        <div>
+                             <h4 class="text-md font-semibold text-stone-700 mb-2">Ubicación de la Finca</h4>
+                             <div id="map-cosecha"></div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            return `
+                <div class="timeline-item">
+                    <div class="timeline-icon">${processIcons[type]}</div>
+                    <div class="bg-white p-6 rounded-2xl shadow-lg border border-stone-200">
+                        <time class="mb-1 text-sm font-normal leading-none text-stone-500">${formattedDate}</time>
+                        <h3 class="text-2xl font-semibold font-display text-amber-900 mt-1 mb-2">${title}</h3>
+                        ${contentHtml}
+                    </div>
+                </div>
+            `;
+        }
+
+        function initializeCosechaMap(fincaName) {
+            const mapContainer = document.getElementById('map-cosecha');
+            if (!mapContainer) return;
+
+            let fincas = [];
+            try {
+                const storedFincas = localStorage.getItem('chocolateTrackerFincas');
+                fincas = storedFincas ? JSON.parse(storedFincas) : [];
+            } catch (e) {
+                console.error("Error loading fincas for map:", e);
+                mapContainer.innerHTML = '<p class="text-center text-sm text-red-600">No se pudieron cargar los datos de la finca.</p>';
+                return;
+            }
+
+            const fincaData = fincas.find(f => f.nombreFinca === fincaName);
+
+            if (!fincaData || !fincaData.coordenadas) {
+                mapContainer.innerHTML = '<p class="text-center text-sm text-stone-500">No hay datos de ubicación para esta finca.</p>';
+                return;
+            }
+            
+            try {
+                const coords = JSON.parse(fincaData.coordenadas);
+                if (!Array.isArray(coords) || coords.length === 0) throw new Error("Invalid coordinates format");
+
+                const map = L.map('map-cosecha').setView(coords[0], 15);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                }).addTo(map);
+
+                const polygon = L.polygon(coords, { color: '#854d0e' }).addTo(map);
+                map.fitBounds(polygon.getBounds());
+
+            } catch(e) {
+                console.error("Error rendering map:", e);
+                mapContainer.innerHTML = '<p class="text-center text-sm text-red-600">Error al mostrar el mapa.</p>';
+            }
+        }
+
+        function handleSearch() {
+            const loteId = loteIdInput.value.trim();
+            if (!loteId) {
+                alert("Por favor, ingresa un ID de lote.");
+                return;
+            }
+            const history = findBatchHistory(loteId);
+            renderHistory(history);
+        }
+        
+        buscarBtn.addEventListener('click', handleSearch);
+        loteIdInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                handleSearch();
+            }
+        });
+
+    });
+    </script>
+
+</body>
+</html>
+

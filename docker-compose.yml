@@ -1,0 +1,47 @@
+# Versión de la sintaxis de Docker Compose
+version: '3.8'
+
+# Definición de los servicios (contenedores) que componen la aplicación
+services:
+  
+  # Servicio para el backend de Node.js (la aplicación web)
+  app:
+    # Construye la imagen usando el Dockerfile en el directorio actual
+    build: .
+    # Reinicia el contenedor automáticamente si falla
+    restart: always
+    # Mapea el puerto 3000 del contenedor al puerto 3000 de la máquina local
+    ports:
+      - "3000:3000"
+    # Define las variables de entorno que usará la aplicación para conectarse a la base de datos.
+    # Estas deben coincidir con las del servicio 'db'.
+    environment:
+      - PGUSER=postgres
+      - PGHOST=db # 'db' es el nombre del servicio de la base de datos
+      - PGDATABASE=chocolate_db
+      - PGPASSWORD=password
+      - PGPORT=5432
+    # Establece una dependencia: 'app' no se iniciará hasta que 'db' esté listo.
+    depends_on:
+      - db
+
+  # Servicio para la base de datos PostgreSQL
+  db:
+    # Usa la imagen oficial de PostgreSQL versión 15 (Alpine es más ligera)
+    image: postgres:15-alpine
+    # Reinicia el contenedor automáticamente si falla
+    restart: always
+    # Define las variables de entorno para la configuración de la base de datos.
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=chocolate_db
+    # Crea un volumen para persistir los datos de la base de datos.
+    # Esto es CRUCIAL para que no pierdas tus datos si el contenedor se reinicia.
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+# Define los volúmenes que Docker gestionará
+volumes:
+  postgres_data:
+

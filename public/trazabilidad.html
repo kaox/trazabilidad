@@ -1,0 +1,52 @@
+<!-- El archivo es idéntico, pero el script ahora carga los datos con fetch desde el backend en lugar de localStorage -->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Historia de tu Chocolate</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #fdfaf6; }
+        h1, h2, h3, .font-display { font-family: 'Playfair Display', serif; }
+        #map-cosecha { height: 250px; width: 100%; border-radius: 1rem; z-index: 10; }
+        /* ... (otros estilos) ... */
+    </style>
+</head>
+<body class="text-stone-800 antialiased">
+    <nav class="bg-amber-900 text-white shadow-lg">
+        <div class="container mx-auto px-4">
+            <div class="flex justify-center items-center h-16">
+                <a href="/fincas.html" class="px-4 py-2 rounded-md text-sm font-medium hover:bg-amber-800 transition">Fincas</a>
+                <a href="/index.html" class="px-4 py-2 rounded-md text-sm font-medium hover:bg-amber-800 transition">Trazabilidad</a>
+                <a href="/dashboard.html" class="px-4 py-2 rounded-md text-sm font-medium hover:bg-amber-800 transition">Dashboard</a>
+            </div>
+        </div>
+    </nav>
+    <div class="container mx-auto p-4 md:p-8 max-w-4xl">
+        <!-- ... (resto del HTML de la UI) ... -->
+    </div>
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // ...
+        async function handleSearch() {
+            const loteId = loteIdInput.value.trim();
+            if (!loteId) return;
+            const response = await fetch(`/api/trazabilidad/${loteId}`);
+            if (response.ok) {
+                const history = await response.json();
+                renderHistory(history);
+            } else {
+                renderHistory(null); // Lote no encontrado
+            }
+        }
+        // ...
+    });
+    </script>
+</body>
+</html>
