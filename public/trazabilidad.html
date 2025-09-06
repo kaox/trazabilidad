@@ -1,4 +1,3 @@
-<!-- El archivo es idéntico, pero el script ahora carga los datos con fetch desde el backend en lugar de localStorage -->
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -14,39 +13,163 @@
     <style>
         body { font-family: 'Inter', sans-serif; background-color: #fdfaf6; }
         h1, h2, h3, .font-display { font-family: 'Playfair Display', serif; }
-        #map-cosecha { height: 250px; width: 100%; border-radius: 1rem; z-index: 10; }
-        /* ... (otros estilos) ... */
+        #map-cosecha { height: 250px; width: 100%; border-radius: 1rem; border: 1px solid #d1c4b3; z-index: 10; }
+        .timeline-item { position: relative; padding-bottom: 2.5rem; padding-left: 2.5rem; }
+        .timeline-item:last-child { padding-bottom: 0; }
+        .timeline-item::before { content: ''; position: absolute; left: 0.4rem; top: 0.5rem; bottom: -0.5rem; width: 2px; background-color: #d1c4b3; }
+        .timeline-item:last-child::before { height: 0; }
+        .timeline-icon { position: absolute; left: -0.25rem; top: 0.25rem; z-index: 10; display: flex; align-items: center; justify-content: center; width: 2rem; height: 2rem; border-radius: 50%; background-color: #854d0e; border: 3px solid #fdfaf6; }
+        dialog::backdrop { background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(3px); }
     </style>
 </head>
 <body class="text-stone-800 antialiased">
-    <nav class="bg-amber-900 text-white shadow-lg">
-        <div class="container mx-auto px-4">
-            <div class="flex justify-center items-center h-16">
-                <a href="/fincas.html" class="px-4 py-2 rounded-md text-sm font-medium hover:bg-amber-800 transition">Fincas</a>
-                <a href="/index.html" class="px-4 py-2 rounded-md text-sm font-medium hover:bg-amber-800 transition">Trazabilidad</a>
-                <a href="/dashboard.html" class="px-4 py-2 rounded-md text-sm font-medium hover:bg-amber-800 transition">Dashboard</a>
+    <div class="container mx-auto p-4 md:p-8 max-w-4xl">
+        <header class="text-center mb-10 mt-4">
+            <h1 class="text-4xl md:text-5xl font-bold text-amber-900 mb-2">La Historia de tu Chocolate</h1>
+            <p class="text-stone-600">Ingresa el código del lote para descubrir su viaje.</p>
+        </header>
+        <div class="bg-white p-6 rounded-2xl shadow-lg mb-8">
+            <div class="flex flex-col sm:flex-row gap-4">
+                <input type="text" id="loteIdInput" placeholder="Ej: MOL-20230905-abcd" class="w-full p-3 border border-stone-300 rounded-xl shadow-sm focus:ring-2 focus:ring-amber-800 transition">
+                <button id="buscarBtn" class="bg-amber-800 hover:bg-amber-900 text-white font-bold py-3 px-8 rounded-xl shadow-md flex-shrink-0">Buscar</button>
             </div>
         </div>
-    </nav>
-    <div class="container mx-auto p-4 md:p-8 max-w-4xl">
-        <!-- ... (resto del HTML de la UI) ... -->
+        <main id="resultado-container">
+            <div id="welcome-message" class="text-center text-stone-500 py-10"><p>Esperando un código de lote...</p></div>
+        </main>
     </div>
+
+    <!-- Modal para visualización de imágenes -->
+    <dialog id="image-modal" class="p-2 sm:p-4 bg-transparent border-0 rounded-2xl max-w-4xl w-full">
+        <div class="bg-white p-4 rounded-xl relative">
+            <h3 id="modal-title" class="text-lg font-bold font-display text-amber-900 mb-2"></h3>
+            <button id="close-modal-btn" class="absolute top-2 right-2 bg-white rounded-full p-1 text-stone-600 hover:text-stone-900 focus:outline-none focus:ring-2 focus:ring-amber-800 z-10">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+            </button>
+            <img id="modal-image" src="" alt="Foto del proceso" class="w-full h-auto object-contain max-h-[80vh] rounded-lg">
+        </div>
+    </dialog>
+
     <script>
     document.addEventListener('DOMContentLoaded', () => {
-        // ...
+        const buscarBtn = document.getElementById('buscarBtn');
+        const loteIdInput = document.getElementById('loteIdInput');
+        const resultadoContainer = document.getElementById('resultado-container');
+        const imageModal = document.getElementById('image-modal');
+        const modalImage = document.getElementById('modal-image');
+        const modalTitle = document.getElementById('modal-title');
+        const closeModalBtn = document.getElementById('close-modal-btn');
+        
+        const processIcons = {
+             cosecha: `<svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-white" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM6.5 8.5a.5.5 0 01.5-.5h2a.5.5 0 01.5.5v2a.5.5 0 01-1 0V9h-1.5a.5.5 0 01-.5-.5zM10 5a.5.5 0 01.5.5v2a.5.5 0 01-1 0V5.5A.5.5 0 0110 5zm3.5 3.5a.5.5 0 01.5-.5h2a.5.5 0 01.5.5v2a.5.5 0 01-1 0V9h-1.5a.5.5 0 01-.5-.5z" clip-rule="evenodd" /></svg>`,
+            fermentacion: `<svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-white" viewBox="0 0 20 20" fill="currentColor"><path d="M5 3a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2V5a2 2 0 00-2-2H5zm0 2h10v10H5V5z" /><path d="M7 7h2v2H7V7zm4 0h2v2h-2V7z" /></svg>`,
+            secado: `<svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-white" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-1.636 4.95l.707-.707a1 1 0 10-1.414-1.414l-.707.707a1 1 0 101.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 100 2h1zM6.343 7.657a1 1 0 010-1.414l.707-.707a1 1 0 011.414 1.414l-.707.707a1 1 0 01-1.414 0zm-.707 7.071a1 1 0 011.414 0l.707.707a1 1 0 01-1.414 1.414l-.707-.707a1 1 0 010-1.414zM10 17a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1z" clip-rule="evenodd" /></svg>`,
+            tostado: `<svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-white" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M12.316 3.051a1 1 0 01.633 1.265l-4 12a1 1 0 01-1.898-.632l4-12a1 1 0 011.265-.633zM5.707 6.293a1 1 0 010 1.414L3.414 10l2.293 2.293a1 1 0 11-1.414 1.414l-3-3a1 1 0 010-1.414l3-3a1 1 0 011.414 0zm8.586 0a1 1 0 011.414 0l3 3a1 1 0 010 1.414l-3 3a1 1 0 11-1.414-1.414L16.586 10l-2.293-2.293a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>`,
+            molienda: `<svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-white" viewBox="0 0 20 20" fill="currentColor"><path d="M5 4a1 1 0 00-2 0v7.268a2 2 0 000 3.464V16a1 1 0 102 0v-1.268a2 2 0 000-3.464V4zM11 4a1 1 0 10-2 0v7.268a2 2 0 000 3.464V16a1 1 0 102 0v-1.268a2 2 0 000-3.464V4zM16 3a1 1 0 011 1v7.268a2 2 0 010 3.464V16a1 1 0 11-2 0v-1.268a2 2 0 010-3.464V4a1 1 0 011-1z" /></svg>`
+        };
+
         async function handleSearch() {
             const loteId = loteIdInput.value.trim();
-            if (!loteId) return;
-            const response = await fetch(`/api/trazabilidad/${loteId}`);
-            if (response.ok) {
-                const history = await response.json();
+            if (!loteId) { alert("Ingresa un ID de lote."); return; }
+            try {
+                const history = await fetch(`/api/trazabilidad/${loteId}`).then(res => res.ok ? res.json() : Promise.reject(res));
                 renderHistory(history);
-            } else {
-                renderHistory(null); // Lote no encontrado
+            } catch (error) {
+                resultadoContainer.innerHTML = `<div class="text-center bg-red-100 text-red-800 p-6 rounded-2xl shadow-md"><h3 class="font-bold text-xl mb-2">Lote no encontrado</h3><p>Verifica el código e inténtalo de nuevo.</p></div>`;
             }
         }
-        // ...
+
+        function renderHistory(h) {
+            const { cosecha, fermentacion, secado, tostado, molienda, fincaData } = h;
+            let tostadoStory = `Un tostado artesanal entre <strong>${tostado.tempMinima}°C y ${tostado.tempMaxima}°C</strong> despertó las notas aromáticas del lote.`;
+            if (tostado.perfilAroma) tostadoStory += ` Se reveló un perfil de aroma a <strong>${tostado.perfilAroma}</strong>.`;
+            resultadoContainer.innerHTML = [
+                {type:'cosecha', title:'Cosecha', data:cosecha, story:`El viaje comenzó en la <strong>${cosecha.finca}</strong>. Se transformaron <strong>${cosecha.pesoMazorcas}kg</strong> de mazorcas en <strong>${cosecha.pesoBaba}kg</strong> de cacao fresco.`},
+                {type:'fermentacion', title:'Fermentación', data:fermentacion, story:`Durante <strong>${fermentacion.duracion} días</strong>, los granos fermentaron para desarrollar los precursores del sabor.`},
+                {type:'secado', title:'Secado', data:secado, story:`Por <strong>${secado.duracion} días</strong>, los granos se secaron para concentrar sus sabores.`},
+                {type:'tostado', title:'Tostado', data:tostado, story:tostadoStory},
+                {type:'molienda', title:'Molienda Final', data:molienda, story:`Finalmente, <strong>${molienda.pesoNibs}kg</strong> de nibs se transformaron en este delicioso <strong>${molienda.productoFinal}</strong>.`}
+            ].map(item => createTimelineItem(item.type, item.title, item.data, item.story)).join('');
+            if (fincaData && fincaData.coordenadas) initializeCosechaMap(fincaData.coordenadas);
+        }
+
+        function createTimelineItem(type, title, data, story) {
+            const date = data.fechaCosecha || data.fechaInicio || data.fechaTostado || data.fecha;
+            const formattedDate = date ? new Date(date+'T00:00:00').toLocaleDateString('es-ES',{year:'numeric',month:'long',day:'numeric'}) : 'N/A';
+            
+            let storyContent = `<p class="text-base font-normal text-stone-600">${story}</p>`;
+            let imageThumbnailHTML = '';
+
+            if (data.imageUrl) {
+                imageThumbnailHTML = `
+                    <div class="ml-4 flex-shrink-0">
+                        <button data-img-src="${data.imageUrl}" data-img-title="Foto de ${title}" class="view-photo-btn group block">
+                            <img src="${data.imageUrl}" alt="Miniatura del proceso de ${title}" class="w-20 h-20 sm:w-24 sm:h-24 rounded-lg object-cover shadow-md transition-transform duration-200 ease-in-out group-hover:scale-105">
+                        </button>
+                    </div>`;
+            }
+            
+            let extraContentHTML = '';
+            if (type === 'cosecha') {
+                extraContentHTML = `
+                    <div class="mt-6 pt-4 border-t border-stone-200">
+                        <h4 class="text-md font-semibold text-stone-700 mb-2">Ubicación de la Finca</h4>
+                        <div id="map-cosecha"></div>
+                    </div>`;
+            }
+
+            return `<div class="timeline-item">
+                        <div class="timeline-icon">${processIcons[type]||''}</div>
+                        <div class="bg-white p-6 rounded-2xl shadow-lg border">
+                            <time class="mb-1 text-sm text-stone-500">${formattedDate}</time>
+                            <h3 class="text-2xl font-semibold font-display text-amber-900 mt-1 mb-2">${title}</h3>
+                            <div class="flex justify-between items-start">
+                                <div class="flex-grow">
+                                    ${storyContent}
+                                </div>
+                                ${imageThumbnailHTML}
+                            </div>
+                            ${extraContentHTML}
+                        </div>
+                    </div>`;
+        }
+
+
+        function initializeCosechaMap(coords) {
+            try {
+                if (!Array.isArray(coords) || coords.length === 0) throw new Error("Coordenadas inválidas");
+                const map = L.map('map-cosecha').setView(coords[0], 15);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+                const polygon = L.polygon(coords, { color: '#854d0e' }).addTo(map);
+                map.fitBounds(polygon.getBounds());
+            } catch(e) { document.getElementById('map-cosecha').innerHTML = '<p class="text-red-600">Error al mostrar el mapa.</p>'; }
+        }
+
+        // --- Event Listeners ---
+        buscarBtn.addEventListener('click', handleSearch);
+        loteIdInput.addEventListener('keypress', e => { if (e.key === 'Enter') handleSearch(); });
+
+        resultadoContainer.addEventListener('click', e => {
+            const button = e.target.closest('.view-photo-btn');
+            if (button) {
+                const imgSrc = button.dataset.imgSrc;
+                const imgTitle = button.dataset.imgTitle;
+                if (imgSrc) {
+                    modalImage.src = imgSrc;
+                    modalTitle.textContent = imgTitle;
+                    imageModal.showModal();
+                }
+            }
+        });
+        
+        closeModalBtn.addEventListener('click', () => imageModal.close());
+        imageModal.addEventListener('click', (e) => {
+            if (e.target.id === 'image-modal') {
+                imageModal.close();
+            }
+        });
     });
     </script>
 </body>
 </html>
+

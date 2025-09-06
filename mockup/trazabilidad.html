@@ -160,7 +160,7 @@
             const { cosecha, fermentacion, secado, tostado, molienda } = history;
             const timelineContainer = document.createElement('div');
             
-            const cosechaStory = `El viaje de tu chocolate comenzó en la <strong>${cosecha.finca || 'una de nuestras fincas asociadas'}</strong>. En esta etapa, se transformaron <strong>${cosecha.pesoMazorcas || 'muchos'} kg</strong> de mazorcas en <strong>${cosecha.pesoBaba} kg</strong> de granos de cacao frescos, listos para el siguiente paso.`;
+            const cosechaStory = `El viaje de tu chocolate comenzó en la <strong>${cosecha.finca || 'una de nuestras fincas asociadas'}</strong>. En esta etapa, se transformaron <strong>${cosecha.pesoMazorcas || 'muchos'} kg</strong> de mazorcas en <strong>${cosecha.pesoBaba} kg</strong> de baba de cacao frescos, listos para el siguiente paso.`;
 
             let tostadoStory = `Un tostado artesanal a temperaturas entre <strong>${tostado.tempMinima}°C y ${tostado.tempMaxima}°C</strong> fue el encargado de despertar las notas aromáticas y el perfil de sabor característico de este lote.`;
             if (tostado.perfilAroma) {

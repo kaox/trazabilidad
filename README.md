@@ -1,48 +1,37 @@
-Aplicación de Trazabilidad de Chocolate - Arquitectura de 3 Capas
-Esta es la versión refactorizada de la aplicación de trazabilidad, ahora utilizando una arquitectura de 3 capas:
+Aplicación de Trazabilidad de Chocolate - Arquitectura SQLite
+Esta aplicación está configurada para funcionar exclusivamente con SQLite, una base de datos ligera y basada en archivos que no requiere un servidor separado.
 
-Frontend: HTML, CSS y JavaScript puro. Se encuentra en la carpeta /public.
+Cómo Poner en Marcha la Aplicación
+Sigue estos sencillos pasos para tener la aplicación funcionando en tu máquina local.
 
-Backend: Servidor de API con Node.js y Express.
+1. Requisitos Previos
+Node.js: Asegúrate de tener Node.js instalado (versión 16 o superior). Puedes descargarlo desde nodejs.org.
 
-Base de Datos: PostgreSQL para la persistencia de datos.
+2. Instalación
+Clona el repositorio (si aplica) y navega a la carpeta del proyecto. Luego, instala todas las dependencias necesarias:
 
-1. Configuración de la Base de Datos (PostgreSQL)
-Instalar PostgreSQL: Asegúrate de tener PostgreSQL instalado en tu sistema.
-
-Crear Base de Datos: Crea una nueva base de datos. Por ejemplo, chocolate_db.
-
-CREATE DATABASE chocolate_db;
-
-Ejecutar Script: Conéctate a tu nueva base de datos y ejecuta el script que se encuentra en database.sql para crear las tablas fincas y lotes.
-
-psql -U tu_usuario -d chocolate_db -f database.sql
-
-2. Configuración del Backend (Node.js)
-Instalar Dependencias: En la raíz del proyecto, ejecuta el siguiente comando para instalar las librerías necesarias (Express, pg, cors).
-
+```
 npm install
+```
 
-Configurar Conexión: Abre el archivo db.js. Modifica los datos de conexión a tu base de datos PostgreSQL si no estás usando los valores por defecto o variables de entorno.
+3. Inicializar la Base de Datos
+Antes de arrancar el servidor por primera vez, necesitas crear el archivo de la base de datos y sus tablas. Ejecuta el siguiente comando:
 
-const pool = new Pool({
-    user: 'postgres',       // Tu usuario de PostgreSQL
-    host: 'localhost',
-    database: 'chocolate_db',
-    password: 'password',   // Tu contraseña
-    port: 5432,
-});
+```
+npm run db:init
+```
 
-Iniciar el Servidor: Una vez configurado, inicia el servidor backend.
+Este comando creará un archivo llamado database.db en la raíz de tu proyecto. Solo necesitas ejecutarlo una vez.
 
-node server.js
+4. Iniciar el Servidor
+Ahora, puedes iniciar el servidor. Te recomendamos usar el modo de desarrollo (dev), que se reiniciará automáticamente cada vez que guardes un cambio en el código.
 
-El servidor estará corriendo en http://localhost:3000.
+```
+npm run dev
+```
 
-3. Ejecutar la Aplicación Frontend
-El servidor de Node.js ya está configurado para servir los archivos estáticos de la carpeta /public.
+Si quieres iniciar el servidor en modo normal, usa:
 
-Abrir en el Navegador: Simplemente abre tu navegador y ve a la siguiente dirección:
-http://localhost:3000
-
-Esto te llevará a la página principal de Trazabilidad (index.html). Desde allí, podrás navegar a las secciones de Fincas y al Dashboard. La aplicación ahora leerá y guardará todos los datos a través de la API, comunicándose con tu base de datos PostgreSQL.
+```
+npm start
+```

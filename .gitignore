@@ -1,0 +1,10 @@
+# Ignorar las dependencias de Node, ya que se instalarán dentro del contenedor
+node_modules
+
+# Ignorar logs y archivos de entorno local
+npm-debug.log
+.env
+.DS_Store
+database.db
+
+package-lock.json
