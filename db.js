@@ -62,11 +62,11 @@ const getFincas = async (req, res) => {
 
 const createFinca = async (req, res) => {
     const userId = req.user.id;
-    const { propietario, dni_ruc, nombre_finca, superficie, coordenadas } = req.body;
+    const { propietario, dni_ruc, nombre_finca, pais, ciudad, altura, superficie, coordenadas } = req.body;
     const id = require('crypto').randomUUID();
-    const sql = 'INSERT INTO fincas (id, user_id, propietario, dni_ruc, nombre_finca, superficie, coordenadas) VALUES (?, ?, ?, ?, ?, ?, ?)';
+    const sql = 'INSERT INTO fincas (id, user_id, propietario, dni_ruc, nombre_finca, pais, ciudad, altura, superficie, coordenadas) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
     try {
-        await dbRun(sql, [id, userId, propietario, dni_ruc, nombre_finca, superficie, JSON.stringify(coordenadas)]);
+        await dbRun(sql, [id, userId, propietario, dni_ruc, nombre_finca, pais, ciudad, altura, superficie, JSON.stringify(coordenadas)]);
         const newFinca = await dbGet('SELECT * FROM fincas WHERE id = ?', [id]);
         res.status(201).json({ ...newFinca, coordenadas: JSON.parse(newFinca.coordenadas) });
     } catch (err) { res.status(500).json({ error: err.message }); }
@@ -75,10 +75,10 @@ const createFinca = async (req, res) => {
 const updateFinca = async (req, res) => {
     const userId = req.user.id;
     const { id } = req.params;
-    const { propietario, dni_ruc, nombre_finca, superficie, coordenadas } = req.body;
-    const sql = 'UPDATE fincas SET propietario = ?, dni_ruc = ?, nombre_finca = ?, superficie = ?, coordenadas = ? WHERE id = ? AND user_id = ?';
+    const { propietario, dni_ruc, nombre_finca, pais, ciudad, altura, superficie, coordenadas } = req.body;
+    const sql = 'UPDATE fincas SET propietario = ?, dni_ruc = ?, nombre_finca = ?, pais = ?, ciudad = ?, altura = ?, superficie = ?, coordenadas = ? WHERE id = ? AND user_id = ?';
     try {
-        const result = await dbRun(sql, [propietario, dni_ruc, nombre_finca, superficie, JSON.stringify(coordenadas), id, userId]);
+        const result = await dbRun(sql, [propietario, dni_ruc, nombre_finca, pais, ciudad, altura, superficie, JSON.stringify(coordenadas), id, userId]);
         if (result.changes === 0) return res.status(404).json({ error: "Finca no encontrada o no tienes permiso." });
         const updatedFinca = await dbGet('SELECT * FROM fincas WHERE id = ?', [id]);
         res.status(200).json({ ...updatedFinca, coordenadas: JSON.parse(updatedFinca.coordenadas) });
@@ -291,11 +291,63 @@ const createPerfil = async (req, res) => {
     }
 };
 
+// --- Gestión de Cuenta de Usuario ---
+const getUserProfile = async (req, res) => {
+    const userId = req.user.id;
+    try {
+        // Seleccionamos todos los campos excepto la contraseña por seguridad
+        const user = await dbGet('SELECT id, usuario, nombre, apellido, dni, ruc, empresa, celular, correo FROM users WHERE id = ?', [userId]);
+        if (!user) return res.status(404).json({ error: "Usuario no encontrado." });
+        res.status(200).json(user);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};
+
+const updateUserProfile = async (req, res) => {
+    const userId = req.user.id;
+    const { nombre, apellido, dni, ruc, empresa, celular, correo } = req.body;
+    const sql = 'UPDATE users SET nombre = ?, apellido = ?, dni = ?, ruc = ?, empresa = ?, celular = ?, correo = ? WHERE id = ?';
+    try {
+        await dbRun(sql, [nombre, apellido, dni, ruc, empresa, celular, correo, userId]);
+        res.status(200).json({ message: "Perfil actualizado exitosamente." });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};
+
+const updateUserPassword = async (req, res) => {
+    const userId = req.user.id;
+    const { oldPassword, newPassword } = req.body;
+
+    if (!oldPassword || !newPassword) {
+        return res.status(400).json({ error: "Todos los campos son requeridos." });
+    }
+
+    try {
+        const user = await dbGet('SELECT password FROM users WHERE id = ?', [userId]);
+        if (!user) return res.status(404).json({ error: "Usuario no encontrado." });
+
+        const match = await bcrypt.compare(oldPassword, user.password);
+        if (!match) {
+            return res.status(401).json({ error: "La contraseña actual es incorrecta." });
+        }
+
+        const hashedNewPassword = await bcrypt.hash(newPassword, 10);
+        await dbRun('UPDATE users SET password = ? WHERE id = ?', [hashedNewPassword, userId]);
+        
+        res.status(200).json({ message: "Contraseña actualizada exitosamente." });
+
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};
+
 module.exports = {
     registerUser, loginUser, logoutUser,
     getFincas, createFinca, updateFinca, deleteFinca,
     getBatchesTree, createBatch, updateBatch, deleteBatch,
     getTrazabilidad,
-    getPerfiles, createPerfil
+    getPerfiles, createPerfil,
+    getUserProfile, updateUserProfile, updateUserPassword
 };
-

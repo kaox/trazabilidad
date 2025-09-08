@@ -7,7 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const modalContent = document.getElementById('modal-content');
 
     const processConfig = {
-        cosecha: { plural: 'fermentaciones', singular: 'fermentacion', outputWeightField: 'pesoBaba', icon: `<svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM6.5 8.5a.5.5 0 01.5-.5h2a.5.5 0 01.5.5v2a.5.5 0 01-1 0V9h-1.5a.5.5 0 01-.5-.5zM10 5a.5.5 0 01.5.5v2a.5.5 0 01-1 0V5.5A.5.5 0 0110 5zm3.5 3.5a.5.5 0 01.5-.5h2a.5.5 0 01.5.5v2a.5.5 0 01-1 0V9h-1.5a.5.5 0 01-.5-.5z" clip-rule="evenodd" /></svg>`},
+        cosecha: { plural: 'fermentaciones', singular: 'fermentacion', outputWeightField: 'pesoGranosFrescos', icon: `<svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM6.5 8.5a.5.5 0 01.5-.5h2a.5.5 0 01.5.5v2a.5.5 0 01-1 0V9h-1.5a.5.5 0 01-.5-.5zM10 5a.5.5 0 01.5.5v2a.5.5 0 01-1 0V5.5A.5.5 0 0110 5zm3.5 3.5a.5.5 0 01.5-.5h2a.5.5 0 01.5.5v2a.5.5 0 01-1 0V9h-1.5a.5.5 0 01-.5-.5z" clip-rule="evenodd" /></svg>`},
         fermentacion: { plural: 'secados', singular: 'secado', outputWeightField: 'pesoFermentadoHumedo', icon: `<svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" viewBox="0 0 20 20" fill="currentColor"><path d="M5 3a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2V5a2 2 0 00-2-2H5zm0 2h10v10H5V5z" /><path d="M7 7h2v2H7V7zm4 0h2v2h-2V7z" /></svg>`},
         secado: { plural: 'tostados', singular: 'tostado', outputWeightField: 'pesoSeco', icon: `<svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-1.636 4.95l.707-.707a1 1 0 10-1.414-1.414l-.707.707a1 1 0 101.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 100 2h1zM6.343 7.657a1 1 0 010-1.414l.707-.707a1 1 0 011.414 1.414l-.707.707a1 1 0 01-1.414 0zm-.707 7.071a1 1 0 011.414 0l.707.707a1 1 0 01-1.414 1.414l-.707-.707a1 1 0 010-1.414zM10 17a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1z" clip-rule="evenodd" /></svg>`},
         tostado: { plural: 'moliendas', singular: 'molienda', outputWeightField: 'pesoTostado', icon: `<svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M12.316 3.051a1 1 0 01.633 1.265l-4 12a1 1 0 01-1.898-.632l4-12a1 1 0 011.265-.633zM5.707 6.293a1 1 0 010 1.414L3.414 10l2.293 2.293a1 1 0 11-1.414 1.414l-3-3a1 1 0 010-1.414l3-3a1 1 0 011.414 0zm8.586 0a1 1 0 011.414 0l3 3a1 1 0 010 1.414l-3 3a1 1 0 11-1.414-1.414L16.586 10l-2.293-2.293a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>`},
@@ -191,7 +191,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 formFields += createInput('id', 'ID Cosecha', 'text', 'Auto-generado', data.id, true);
                 formFields += createInput('fechaCosecha', 'Fecha Cosecha', 'date', '', data.fechaCosecha);
                 formFields += createInput('pesoMazorcas', 'Peso Mazorcas (kg)', 'number', '', data.pesoMazorcas);
-                formFields += createInput('pesoBaba', 'Peso Baba (kg)', 'number', '', data.pesoBaba);
+                formFields += createInput('pesoGranosFrescos', 'Peso de granos frescos (kg)', 'number', 'Peso de salida', data.pesoGranosFrescos);
                 break;
             case 'fermentacion':
                 formFields += createInput('fechaInicio', 'Fecha Inicio', 'date', '', data.fechaInicio);
@@ -213,7 +213,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 formFields += createInput('tempMaxima', 'Temp. Máxima (°C)', 'number', '', data.tempMaxima);
                 formFields += createInput('duracion', 'Tiempo de Tueste (min)', 'number', '', data.duracion);
                 formFields += createTextArea('perfilAroma', 'Perfil de Aroma', 'Ej: notas a caramelo...', data.perfilAroma);
-                formFields += createInput('pesoTostado', 'Peso Cacao Tostado (kg)', 'number', '', data.pesoTostado);
+                formFields += createInput('pesoTostado', 'Peso Cacao Tostado (kg)', 'number', 'Peso de salida', data.pesoTostado);
                 break;
             case 'molienda':
                 formFields += createInput('fecha', 'Fecha Procesamiento', 'date', '', data.fecha);
@@ -234,6 +234,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 </form>`;
     }
 
+    // --- Helpers de HTML y Datos ---
     function createInput(id, l, t, p, v, r) { return `<div><label for="${id}" class="block text-sm font-medium text-stone-700 mb-1">${l}</label><input type="${t}" id="${id}" name="${id}" value="${v||''}" placeholder="${p}" class="w-full p-3 border border-stone-300 rounded-xl" ${r?'readonly':''} ${t==='number'?'step="0.01"':''} required></div>`; }
     function createSelect(id, l, o, s) { const opts = o.map(opt => `<option value="${opt}" ${opt===s?'selected':''}>${opt}</option>`).join(''); return `<div><label for="${id}" class="block text-sm font-medium text-stone-700 mb-1">${l}</label><select id="${id}" name="${id}" class="w-full p-3 border border-stone-300 rounded-xl" required><option value="">Seleccionar...</option>${opts}</select></div>`; }
     function createTextArea(id, l, p, v) { return `<div><label for="${id}" class="block text-sm font-medium text-stone-700 mb-1">${l}</label><textarea id="${id}" name="${id}" placeholder="${p}" rows="3" class="w-full p-3 border border-stone-300 rounded-xl">${v||''}</textarea></div>`; }

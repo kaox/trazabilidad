@@ -38,12 +38,28 @@
         <div class="container mx-auto px-4">
             <div class="flex justify-between items-center h-16">
                 <div class="flex justify-center items-center flex-grow">
-                    <a href="/app/fincas" class="px-4 py-2 rounded-md text-sm font-medium hover:bg-amber-800 transition">Fincas</a>
-                    <a href="/app/trazabilidad" class="px-4 py-2 rounded-md text-sm font-medium hover:bg-amber-800 transition">Trazabilidad</a>
+                    <!-- Menú Desplegable de Gestión -->
+                    <div class="relative">
+                        <button onclick="document.getElementById('gestion-dropdown').classList.toggle('hidden')" class="px-4 py-2 rounded-md text-sm font-medium hover:bg-amber-800 transition flex items-center gap-1">
+                            <span>Gestión</span>
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                        </button>
+                        <div id="gestion-dropdown" class="absolute left-0 mt-2 w-48 bg-white rounded-md shadow-lg z-50 hidden" onmouseleave="this.classList.add('hidden')">
+                            <a href="/app/fincas" class="block px-4 py-2 text-sm text-stone-700 hover:bg-amber-100">Fincas</a>
+                            <a href="/app/perfiles" class="block px-4 py-2 text-sm text-stone-700 hover:bg-amber-100">Perfiles</a>
+                        </div>
+                    </div>
+                    <a href="/app/trazabilidad" class="px-4 py-2 rounded-md text-sm font-medium bg-amber-800 transition">Trazabilidad</a>
                     <a href="/app/dashboard" class="px-4 py-2 rounded-md text-sm font-medium hover:bg-amber-800 transition">Dashboard</a>
-                    <a href="/app/perfiles" class="px-4 py-2 rounded-md text-sm font-medium bg-amber-800 transition">Perfiles</a>
                 </div>
-                <button onclick="logout()" class="px-4 py-2 rounded-md text-sm font-medium hover:bg-red-700 bg-red-600 transition">Cerrar Sesión</button>
+                <div class="flex items-center gap-4">
+                    <a href="/app/cuenta" class="p-2 rounded-full hover:bg-amber-800 transition" title="Mi Cuenta">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                        </svg>
+                    </a>
+                    <button onclick="logout()" class="px-4 py-2 rounded-md text-sm font-medium hover:bg-red-700 bg-red-600 transition">Cerrar Sesión</button>
+                </div>
             </div>
         </div>
     </nav>

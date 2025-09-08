@@ -13,15 +13,9 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentPolygon = null;
     const drawControl = new L.Control.Draw({ draw: { polygon: { allowIntersection: false }, polyline: false, rectangle: false, circle: false, marker: false, circlemarker: false }, edit: { featureGroup: drawnItems } });
     map.addControl(drawControl);
+
     map.on(L.Draw.Event.CREATED, e => { if (currentPolygon) drawnItems.removeLayer(currentPolygon); drawnItems.addLayer(e.layer); currentPolygon = e.layer; form.coordenadas.value = JSON.stringify(e.layer.getLatLngs()[0]); });
     map.on(L.Draw.Event.EDITED, e => { e.layers.eachLayer(layer => { currentPolygon = layer; form.coordenadas.value = JSON.stringify(layer.getLatLngs()[0]); }); });
-
-    async function api(url, options = {}) {
-        options.headers = { 'Content-Type': 'application/json', ...options.headers };
-        const response = await fetch(url, options);
-        if (!response.ok) throw new Error(`Error HTTP: ${response.status}`);
-        return response.status === 204 ? null : response.json();
-    }
 
     async function loadFincas() {
         try {
@@ -37,6 +31,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div>
                         <h3 class="font-bold text-lg text-amber-900">${finca.nombre_finca}</h3>
                         <p class="text-sm text-stone-600">${finca.propietario} - ${finca.dni_ruc}</p>
+                        <p class="text-sm text-stone-500">${finca.ciudad || 'N/A'}, ${finca.pais || 'N/A'} - ${finca.altura || 'S/A'} msnm</p>
                         <p class="text-sm text-stone-500">${finca.superficie} Hectáreas</p>
                     </div>
                     <div class="flex gap-2 flex-shrink-0">
@@ -66,6 +61,9 @@ document.addEventListener('DOMContentLoaded', () => {
             form.propietario.value = finca.propietario;
             form.dni_ruc.value = finca.dni_ruc;
             form.nombre_finca.value = finca.nombre_finca;
+            form.pais.value = finca.pais;
+            form.ciudad.value = finca.ciudad;
+            form.altura.value = finca.altura;
             form.superficie.value = finca.superficie;
             form.coordenadas.value = JSON.stringify(finca.coordenadas);
             editIdInput.value = finca.id;
@@ -119,3 +117,4 @@ document.addEventListener('DOMContentLoaded', () => {
 
     loadFincas();
 });
+

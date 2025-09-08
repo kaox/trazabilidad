@@ -122,6 +122,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const polygon = L.polygon(coords, { color: '#854d0e' }).addTo(cosechaMapInstance);
                 cosechaMapInstance.fitBounds(polygon.getBounds());
                 setTimeout(() => cosechaMapInstance.invalidateSize(), 100);
+                var centerLatLng = polygon.getBounds().getCenter();
             });
         } catch(e) { console.error("Error al renderizar mapa:", e); mapContainer.innerHTML = '<p class="text-red-600">Error al mostrar mapa.</p>'; }
     }
