@@ -8,3 +8,4 @@ npm-debug.log
 database.db
 
 package-lock.json
+.env.local

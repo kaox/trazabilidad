@@ -50,6 +50,46 @@ const logoutUser = (req, res) => {
     res.status(200).json({ message: 'Cierre de sesión exitoso.' });
 };
 
+const getUserProfile = async (req, res) => {
+    const userId = req.user.id;
+    try {
+        const user = await dbGet('SELECT id, usuario, nombre, apellido, dni, ruc, empresa, celular, correo FROM users WHERE id = ?', [userId]);
+        if (!user) return res.status(404).json({ error: "Usuario no encontrado." });
+        res.status(200).json(user);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};
+
+const updateUserProfile = async (req, res) => {
+    const userId = req.user.id;
+    const { nombre, apellido, dni, ruc, empresa, celular, correo } = req.body;
+    const sql = 'UPDATE users SET nombre = ?, apellido = ?, dni = ?, ruc = ?, empresa = ?, celular = ?, correo = ? WHERE id = ?';
+    try {
+        await dbRun(sql, [nombre, apellido, dni, ruc, empresa, celular, correo, userId]);
+        res.status(200).json({ message: "Perfil actualizado exitosamente." });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};
+
+const updateUserPassword = async (req, res) => {
+    const userId = req.user.id;
+    const { oldPassword, newPassword } = req.body;
+    if (!oldPassword || !newPassword) return res.status(400).json({ error: "Todos los campos son requeridos." });
+    try {
+        const user = await dbGet('SELECT password FROM users WHERE id = ?', [userId]);
+        if (!user) return res.status(404).json({ error: "Usuario no encontrado." });
+        const match = await bcrypt.compare(oldPassword, user.password);
+        if (!match) return res.status(401).json({ error: "La contraseña actual es incorrecta." });
+        const hashedNewPassword = await bcrypt.hash(newPassword, 10);
+        await dbRun('UPDATE users SET password = ? WHERE id = ?', [hashedNewPassword, userId]);
+        res.status(200).json({ message: "Contraseña actualizada exitosamente." });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};
+
 // --- Fincas ---
 const getFincas = async (req, res) => {
     const userId = req.user.id;
@@ -196,7 +236,6 @@ const deleteBatch = async (req, res) => {
 const getTrazabilidad = async (req, res) => {
     const { id } = req.params;
     try {
-        // Step 1: Get the full ancestry of the given lot ID
         const rows = await dbAll(`
             WITH RECURSIVE trazabilidad_completa AS (
                 SELECT id, tipo, parent_id, data, user_id FROM lotes WHERE id = ?
@@ -211,45 +250,32 @@ const getTrazabilidad = async (req, res) => {
             return res.status(404).json({ error: 'Lote no encontrado' });
         }
 
-        // Step 2: Build the history object and find the root cosecha lot
         const history = {};
         const cosechaLot = rows.find(row => row.tipo === 'cosecha');
-
         if (!cosechaLot) {
-            console.error(`Trazabilidad incompleta para el lote ${id}. No se encontró la cosecha raíz.`);
             return res.status(404).json({ error: 'Trazabilidad incompleta para este lote.' });
         }
-
         const ownerId = cosechaLot.user_id;
-        
-        if (!ownerId) {
-             console.error(`La cosecha ${cosechaLot.id} no tiene un user_id asociado.`);
-             return res.status(500).json({ error: 'Error de datos: la cosecha no tiene propietario.' });
-        }
 
-        // Parse all data into the history object
         rows.forEach(row => {
             history[row.tipo] = JSON.parse(row.data);
         });
 
-        // Step 3: Fetch associated Finca and Perfil data using the ownerId
-        if (history.cosecha && history.cosecha.finca) {
+        if (history.cosecha && history.cosecha.finca && ownerId) {
             const finca = await dbGet('SELECT * FROM fincas WHERE nombre_finca = ? AND user_id = ?', [history.cosecha.finca, ownerId]);
             if (finca) {
                 history.fincaData = { ...finca, coordenadas: JSON.parse(finca.coordenadas || 'null') };
             }
         }
         
-        if (history.tostado && history.tostado.tipoPerfil) {
+        if (history.tostado && history.tostado.tipoPerfil && ownerId) {
             const perfil = await dbGet('SELECT perfil_data FROM perfiles_cacao WHERE nombre = ? AND user_id = ?', [history.tostado.tipoPerfil, ownerId]);
             if (perfil) {
                 history.tostado.perfilSensorialData = JSON.parse(perfil.perfil_data);
             }
         }
 
-        // Step 4: Send the complete history
         res.status(200).json(history);
-
     } catch (error) { 
         console.error(`Error grave en getTrazabilidad para el lote ${id}:`, error.message);
         res.status(500).json({ error: "Error interno del servidor al procesar la trazabilidad." }); 
@@ -291,63 +317,12 @@ const createPerfil = async (req, res) => {
     }
 };
 
-// --- Gestión de Cuenta de Usuario ---
-const getUserProfile = async (req, res) => {
-    const userId = req.user.id;
-    try {
-        // Seleccionamos todos los campos excepto la contraseña por seguridad
-        const user = await dbGet('SELECT id, usuario, nombre, apellido, dni, ruc, empresa, celular, correo FROM users WHERE id = ?', [userId]);
-        if (!user) return res.status(404).json({ error: "Usuario no encontrado." });
-        res.status(200).json(user);
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-};
-
-const updateUserProfile = async (req, res) => {
-    const userId = req.user.id;
-    const { nombre, apellido, dni, ruc, empresa, celular, correo } = req.body;
-    const sql = 'UPDATE users SET nombre = ?, apellido = ?, dni = ?, ruc = ?, empresa = ?, celular = ?, correo = ? WHERE id = ?';
-    try {
-        await dbRun(sql, [nombre, apellido, dni, ruc, empresa, celular, correo, userId]);
-        res.status(200).json({ message: "Perfil actualizado exitosamente." });
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-};
-
-const updateUserPassword = async (req, res) => {
-    const userId = req.user.id;
-    const { oldPassword, newPassword } = req.body;
-
-    if (!oldPassword || !newPassword) {
-        return res.status(400).json({ error: "Todos los campos son requeridos." });
-    }
-
-    try {
-        const user = await dbGet('SELECT password FROM users WHERE id = ?', [userId]);
-        if (!user) return res.status(404).json({ error: "Usuario no encontrado." });
-
-        const match = await bcrypt.compare(oldPassword, user.password);
-        if (!match) {
-            return res.status(401).json({ error: "La contraseña actual es incorrecta." });
-        }
-
-        const hashedNewPassword = await bcrypt.hash(newPassword, 10);
-        await dbRun('UPDATE users SET password = ? WHERE id = ?', [hashedNewPassword, userId]);
-        
-        res.status(200).json({ message: "Contraseña actualizada exitosamente." });
-
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-};
-
 module.exports = {
     registerUser, loginUser, logoutUser,
+    getUserProfile, updateUserProfile, updateUserPassword,
     getFincas, createFinca, updateFinca, deleteFinca,
     getBatchesTree, createBatch, updateBatch, deleteBatch,
     getTrazabilidad,
-    getPerfiles, createPerfil,
-    getUserProfile, updateUserProfile, updateUserPassword
+    getPerfiles, createPerfil
 };
+

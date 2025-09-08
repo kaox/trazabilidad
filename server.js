@@ -69,23 +69,25 @@ app.get('/app/trazabilidad', authenticatePage, (req, res) => res.sendFile(path.j
 app.get('/app/fincas', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'fincas.html')));
 app.get('/app/dashboard', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'dashboard.html')));
 app.get('/app/perfiles', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'perfiles.html')));
-app.get('/app/cuenta', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'cuenta.html'))); // <-- Nueva ruta
+app.get('/app/cuenta', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'cuenta.html')));
 
 // --- Rutas Protegidas de la API ---
 app.get('/api/fincas', authenticateApi, db.getFincas);
 app.post('/api/fincas', authenticateApi, db.createFinca);
 app.put('/api/fincas/:id', authenticateApi, db.updateFinca);
 app.delete('/api/fincas/:id', authenticateApi, db.deleteFinca);
+
 app.get('/api/batches/tree', authenticateApi, db.getBatchesTree);
 app.post('/api/batches', authenticateApi, db.createBatch);
 app.put('/api/batches/:id', authenticateApi, db.updateBatch);
 app.delete('/api/batches/:id', authenticateApi, db.deleteBatch);
+
 app.get('/api/perfiles', authenticateApi, db.getPerfiles);
 app.post('/api/perfiles', authenticateApi, db.createPerfil);
+
 app.get('/api/user/profile', authenticateApi, db.getUserProfile);
 app.put('/api/user/profile', authenticateApi, db.updateUserProfile);
 app.put('/api/user/password', authenticateApi, db.updateUserPassword);
-
 
 // Iniciar Servidor
 app.listen(PORT, () => {
