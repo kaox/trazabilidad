@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Historia de tu Chocolate</title>
+    <title>El ADN de tu Chocolate - Trazabilidad</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
@@ -13,18 +13,29 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Inter', sans-serif; background-color: #fdfaf6; }
-        h1, h2, h3, .font-display { font-family: 'Playfair Display', serif; }
-        #map-cosecha { height: 250px; width: 100%; border-radius: 1rem; border: 1px solid #d1c4b3; z-index: 10; }
-        .timeline-item { position: relative; padding-bottom: 2.5rem; padding-left: 2.5rem; }
-        .timeline-item:last-child { padding-bottom: 0; }
-        .timeline-item::before { content: ''; position: absolute; left: 0.4rem; top: 0.5rem; bottom: -0.5rem; width: 2px; background-color: #d1c4b3; }
-        .timeline-item:last-child::before { height: 0; }
-        .timeline-icon { position: absolute; left: -0.25rem; top: 0.25rem; z-index: 10; display: flex; align-items: center; justify-content: center; width: 2rem; height: 2rem; border-radius: 50%; background-color: #854d0e; border: 3px solid #fdfaf6; }
+        h1, h2, h3, h4, .font-display { font-family: 'Playfair Display', serif; }
+        .chapter-icon {
+            position: absolute;
+            left: 50%;
+            top: -2rem;
+            transform: translateX(-50%);
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 4rem;
+            height: 4rem;
+            border-radius: 50%;
+            background-color: #854d0e;
+            border: 4px solid #fdfaf6;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
         dialog::backdrop { background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(3px); }
     </style>
 </head>
 <body class="text-stone-800 antialiased">
-    <nav class="bg-amber-900 text-white shadow-lg">
+
+    <nav class="bg-amber-900 text-white shadow-lg sticky top-0 z-50">
         <div class="container mx-auto px-4">
              <div class="flex justify-between items-center h-16">
                 <a href="/" class="text-xl font-bold">CHOCOLATE CO.</a>
@@ -35,188 +46,39 @@
             </div>
         </div>
     </nav>
+
     <div class="container mx-auto p-4 md:p-8 max-w-4xl">
-        <header class="text-center mb-10 mt-4">
-            <h1 class="text-4xl md:text-5xl font-bold text-amber-900 mb-2">La Historia de tu Chocolate</h1>
-            <p class="text-stone-600">No tienes en tus manos una simple tableta de chocolate, tienes el resultado de un viaje único, con una historia irrepetible. Introduce el código de lote que ves en tu empaque para descubrir su alma.</p>
+        <header class="text-center mb-16 mt-8">
+            <div class="flex justify-center items-center mb-6">
+                <svg class="w-24 h-24 text-amber-900" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 11c0 3.517-1.009 6.789-2.756 9.352M12 11c0-1.24.093-2.454.272-3.638m9.456 5.09c-1.318 2.401-3.41 4.298-5.898 5.424M12 11c-1.24 0-2.454-.093-3.638-.272m5.09 9.456c2.401-1.318 4.298-3.41 5.424-5.898M12 3.862c1.185.179 2.399.272 3.638.272a9.711 9.711 0 016.084 2.383 1.5 1.5 0 01.34 1.948l-1.4 2.801M12 3.862c-1.185.179-2.399.272-3.638-.272a9.711 9.711 0 00-6.084 2.383 1.5 1.5 0 00-.34 1.948l1.4 2.801"></path></svg>
+            </div>
+            <h1 class="text-4xl md:text-5xl font-bold font-display text-amber-900 mb-4">El ADN de tu Chocolate</h1>
+            <p class="text-stone-600 max-w-2xl mx-auto">Cada chocolate tiene una historia. La tuya tiene una identidad. Estás a punto de descubrir el viaje único que dio vida a la tableta que tienes en tus manos. Esta es su historia.</p>
         </header>
-        <div class="bg-white p-6 rounded-2xl shadow-lg mb-8">
+
+        <div class="bg-white p-6 rounded-2xl shadow-lg mb-16">
             <div class="flex flex-col sm:flex-row gap-4">
-                <input type="text" id="loteIdInput" placeholder="Ej: MOL- ó SEC-..." class="w-full p-3 border border-stone-300 rounded-xl shadow-sm focus:ring-2 focus:ring-amber-800 transition">
-                <button id="buscarBtn" class="bg-amber-800 hover:bg-amber-900 text-white font-bold py-3 px-8 rounded-xl shadow-md flex-shrink-0">Buscar</button>
+                <input type="text" id="loteIdInput" placeholder="Ingresa el código del lote aquí..." class="w-full p-3 border border-stone-300 rounded-xl shadow-sm focus:ring-2 focus:ring-amber-800 transition">
+                <button id="buscarBtn" class="bg-amber-800 hover:bg-amber-900 text-white font-bold py-3 px-8 rounded-xl shadow-md flex-shrink-0">Decodificar</button>
             </div>
         </div>
+
         <main id="resultado-container">
-            <div id="welcome-message" class="text-center text-stone-500 py-10"><p>Esperando un código de lote...</p></div>
+            <div id="welcome-message" class="text-center text-stone-500 py-10"><p>Esperando un código de lote para comenzar el viaje...</p></div>
         </main>
     </div>
+
     <dialog id="image-modal" class="p-2 sm:p-4 bg-transparent border-0 rounded-2xl max-w-4xl w-full">
         <div class="bg-white p-4 rounded-xl relative">
             <h3 id="modal-title" class="text-lg font-bold font-display text-amber-900 mb-2"></h3>
-            <button id="close-modal-btn" class="absolute top-2 right-2 bg-white rounded-full p-1"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg></button>
+            <button id="close-modal-btn" class="absolute top-2 right-2 bg-white rounded-full p-1 text-stone-600 hover:text-stone-900 focus:outline-none focus:ring-2 focus:ring-amber-800 z-10">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+            </button>
             <img id="modal-image" src="" alt="Foto del proceso" class="w-full h-auto object-contain max-h-[80vh] rounded-lg">
         </div>
     </dialog>
-    <script>
-    document.addEventListener('DOMContentLoaded', () => {
-        const buscarBtn = document.getElementById('buscarBtn');
-        const loteIdInput = document.getElementById('loteIdInput');
-        const resultadoContainer = document.getElementById('resultado-container');
-        const imageModal = document.getElementById('image-modal');
-        const modalImage = document.getElementById('modal-image');
-        const modalTitle = document.getElementById('modal-title');
-        const closeModalBtn = document.getElementById('close-modal-btn');
-        const processIcons = {
-             cosecha: `<svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-white" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM6.5 8.5a.5.5 0 01.5-.5h2a.5.5 0 01.5.5v2a.5.5 0 01-1 0V9h-1.5a.5.5 0 01-.5-.5zM10 5a.5.5 0 01.5.5v2a.5.5 0 01-1 0V5.5A.5.5 0 0110 5zm3.5 3.5a.5.5 0 01.5-.5h2a.5.5 0 01.5.5v2a.5.5 0 01-1 0V9h-1.5a.5.5 0 01-.5-.5z" clip-rule="evenodd" /></svg>`,
-            fermentacion: `<svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-white" viewBox="0 0 20 20" fill="currentColor"><path d="M5 3a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2V5a2 2 0 00-2-2H5zm0 2h10v10H5V5z" /><path d="M7 7h2v2H7V7zm4 0h2v2h-2V7z" /></svg>`,
-            secado: `<svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-white" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-1.636 4.95l.707-.707a1 1 0 10-1.414-1.414l-.707.707a1 1 0 101.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 100 2h1zM6.343 7.657a1 1 0 010-1.414l.707-.707a1 1 0 011.414 1.414l-.707.707a1 1 0 01-1.414 0zm-.707 7.071a1 1 0 011.414 0l.707.707a1 1 0 01-1.414 1.414l-.707-.707a1 1 0 010-1.414zM10 17a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1z" clip-rule="evenodd" /></svg>`,
-            tostado: `<svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-white" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M12.316 3.051a1 1 0 01.633 1.265l-4 12a1 1 0 01-1.898-.632l4-12a1 1 0 011.265-.633zM5.707 6.293a1 1 0 010 1.414L3.414 10l2.293 2.293a1 1 0 11-1.414 1.414l-3-3a1 1 0 010-1.414l3-3a1 1 0 011.414 0zm8.586 0a1 1 0 011.414 0l3 3a1 1 0 010 1.414l-3 3a1 1 0 11-1.414-1.414L16.586 10l-2.293-2.293a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>`,
-            molienda: `<svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-white" viewBox="0 0 20 20" fill="currentColor"><path d="M5 4a1 1 0 00-2 0v7.268a2 2 0 000 3.464V16a1 1 0 102 0v-1.268a2 2 0 000-3.464V4zM11 4a1 1 0 10-2 0v7.268a2 2 0 000 3.464V16a1 1 0 102 0v-1.268a2 2 0 000-3.464V4zM16 3a1 1 0 011 1v7.268a2 2 0 010 3.464V16a1 1 0 11-2 0v-1.268a2 2 0 010-3.464V4a1 1 0 011-1z" /></svg>`
-        };
 
-        async function handleSearch() {
-            const loteId = loteIdInput.value.trim();
-            if (!loteId) { alert("Ingresa un ID de lote."); return; }
-            try {
-                const history = await fetch(`/api/trazabilidad/${loteId}`).then(res => {
-                    if (!res.ok) return Promise.reject(res);
-                    return res.json();
-                });
-                renderHistory(history);
-            } catch (error) {
-                resultadoContainer.innerHTML = `<div class="text-center bg-red-100 text-red-800 p-6 rounded-2xl shadow-md"><h3 class="font-bold text-xl mb-2">Lote no encontrado</h3><p>Verifica el código e inténtalo de nuevo.</p></div>`;
-            }
-        }
-
-        function renderHistory(h) {
-            resultadoContainer.innerHTML = ''; // Clear previous results
-            const { fincaData } = h;
-            
-            const timelineItems = [];
-
-            if (h.cosecha) {
-                timelineItems.push({type:'cosecha', title:'Cosecha', data:h.cosecha, story:`El viaje comenzó en la <strong>${h.cosecha.finca}</strong>. Se transformaron <strong>${h.cosecha.pesoMazorcas}kg</strong> de mazorcas en <strong>${h.cosecha.pesoBaba}kg</strong> de cacao fresco.`});
-            }
-            if (h.fermentacion) {
-                timelineItems.push({type:'fermentacion', title:'Fermentación', data:h.fermentacion, story:`Durante <strong>${h.fermentacion.duracion} días</strong>, los granos fermentaron para desarrollar los precursores del sabor.`});
-            }
-            if (h.secado) {
-                 timelineItems.push({type:'secado', title:'Secado', data:h.secado, story:`Por <strong>${h.secado.duracion} días</strong>, los granos se secaron para concentrar sus sabores.`});
-            }
-            if (h.tostado) {
-                let tostadoStory = `Un tostado artesanal entre <strong>${h.tostado.tempMinima}°C y ${h.tostado.tempMaxima}°C</strong> despertó las notas aromáticas del lote.`;
-                if (h.tostado.perfilAroma) tostadoStory += ` Se reveló un perfil de aroma a <strong>${h.tostado.perfilAroma}</strong>.`;
-                timelineItems.push({type:'tostado', title:'Tostado', data:h.tostado, story:tostadoStory});
-            }
-            if (h.molienda) {
-                timelineItems.push({type:'molienda', title:'Molienda Final', data:h.molienda, story:`Finalmente, <strong>${h.molienda.pesoNibs}kg</strong> de nibs se transformaron en este delicioso <strong>${h.molienda.productoFinal}</strong>.`});
-            }
-            
-            resultadoContainer.innerHTML = timelineItems.map(item => createTimelineItem(item.type, item.title, item.data, item.story)).join('');
-            
-            if (fincaData && fincaData.coordenadas) initializeCosechaMap(fincaData.coordenadas);
-            if (h.tostado && h.tostado.perfilSensorialData) {
-                initializePerfilChart(h.tostado.perfilSensorialData, h.tostado.tipoPerfil);
-            }
-        }
-
-        function createTimelineItem(type, title, data, story) {
-            const date = data.fechaCosecha || data.fechaInicio || data.fechaTostado || data.fecha;
-            const formattedDate = date ? new Date(date+'T00:00:00').toLocaleDateString('es-ES',{year:'numeric',month:'long',day:'numeric'}) : 'N/A';
-            let storyContent = `<p class="text-base font-normal text-stone-600">${story}</p>`;
-            let imageThumbnailHTML = '';
-
-            if (data.imageUrl) {
-                imageThumbnailHTML = `<div class="ml-4 flex-shrink-0"><button data-img-src="${data.imageUrl}" data-img-title="Foto de ${title}" class="view-photo-btn group block"><img src="${data.imageUrl}" alt="Miniatura" class="w-20 h-20 sm:w-24 sm:h-24 rounded-lg object-cover shadow-md transition-transform group-hover:scale-105"></button></div>`;
-            }
-            
-            let extraContentHTML = '';
-            if (type === 'cosecha') {
-                extraContentHTML = `<div class="mt-6 pt-4 border-t"><h4 class="text-md font-semibold mb-2">Ubicación</h4><div id="map-cosecha"></div></div>`;
-            }
-            if (type === 'tostado' && data.perfilSensorialData) {
-                 extraContentHTML = `<div class="mt-6 pt-4 border-t"><h4 class="text-md font-semibold mb-2">Perfil Sensorial: ${data.tipoPerfil}</h4><div class="w-full max-w-xs mx-auto"><canvas id="perfil-radar-chart"></canvas></div></div>`;
-            }
-            return `<div class="timeline-item"><div class="timeline-icon">${processIcons[type]||''}</div><div class="bg-white p-6 rounded-2xl shadow-lg border"><time class="mb-1 text-sm text-stone-500">${formattedDate}</time><h3 class="text-2xl font-semibold font-display text-amber-900 mt-1 mb-2">${title}</h3><div class="flex justify-between items-start"><div class="flex-grow">${storyContent}</div>${imageThumbnailHTML}</div>${extraContentHTML}</div></div>`;
-        }
-        
-        function initializeCosechaMap(coords) {
-            const mapContainer = document.getElementById('map-cosecha');
-            if (!mapContainer) return;
-            try {
-                if (!Array.isArray(coords) || coords.length === 0) throw new Error("Coordenadas inválidas");
-                const map = L.map('map-cosecha').setView(coords[0], 15);
-                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                }).addTo(map);
-                const polygon = L.polygon(coords, { color: '#854d0e' }).addTo(map);
-                map.fitBounds(polygon.getBounds());
-            } catch(e) { 
-                console.error("Error al renderizar el mapa:", e);
-                mapContainer.innerHTML = '<p class="text-red-600">Error al mostrar el mapa.</p>'; 
-            }
-        }
-        
-        function initializePerfilChart(perfilData, perfilNombre) {
-            const chartCanvas = document.getElementById('perfil-radar-chart');
-            if (!chartCanvas || !perfilData) return;
-            const atributos = ['Cacao', 'Acidez', 'Amargor', 'Astringencia', 'Fruta Fresca', 'Fruta Marrón', 'Vegetal', 'Floral', 'Madera', 'Especia', 'Nuez', 'Caramelo'];
-            const data = [
-                perfilData.cacao, perfilData.acidez, perfilData.amargor, perfilData.astringencia, 
-                perfilData.frutaFresca, perfilData.frutaMarron, perfilData.vegetal, perfilData.floral, 
-                perfilData.madera, perfilData.especia, perfilData.nuez, perfilData.caramelo
-            ];
-            new Chart(chartCanvas, {
-                type: 'radar',
-                data: { 
-                    labels: atributos, 
-                    datasets: [{ 
-                        label: 'Intensidad', 
-                        data: data, 
-                        fill: true, 
-                        backgroundColor: 'rgba(120,53,15,0.2)', 
-                        borderColor: 'rgb(120,53,15)', 
-                        pointBackgroundColor: 'rgb(120,53,15)' 
-                    }] 
-                },
-                options: { 
-                    scales: { 
-                        r: { 
-                            suggestedMin: 0, 
-                            suggestedMax: 10, 
-                            ticks: { display: false },
-                            pointLabels: { font: { size: 10 } }
-                        } 
-                    }, 
-                    plugins: { 
-                        legend: { display: false } 
-                    } 
-                }
-            });
-        }
-        
-        // --- Event Listeners y Carga Automática ---
-        buscarBtn.addEventListener('click', handleSearch);
-        loteIdInput.addEventListener('keypress', e => { if (e.key === 'Enter') handleSearch(); });
-        resultadoContainer.addEventListener('click', e => {
-            const button = e.target.closest('.view-photo-btn');
-            if (button) {
-                const imgSrc = button.dataset.imgSrc;
-                const imgTitle = button.dataset.imgTitle;
-                if (imgSrc) {
-                    modalImage.src = imgSrc;
-                    modalTitle.textContent = imgTitle;
-                    imageModal.showModal();
-                }
-            }
-        });
-        closeModalBtn.addEventListener('click', () => imageModal.close());
-        imageModal.addEventListener('click', (e) => { if (e.target.id === 'image-modal') imageModal.close(); });
-        const params = new URLSearchParams(window.location.search);
-        const loteIdFromUrl = params.get('lote');
-        if (loteIdFromUrl) { loteIdInput.value = loteIdFromUrl; handleSearch(); }
-    });
-    </script>
+    <script src="/trazabilidad-publica.js"></script>
 </body>
 </html>
 
