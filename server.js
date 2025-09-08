@@ -68,6 +68,7 @@ app.get('/', (req, res) => {
 app.get('/app/trazabilidad', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'index.html')));
 app.get('/app/fincas', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'fincas.html')));
 app.get('/app/dashboard', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'dashboard.html')));
+app.get('/app/perfiles', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'perfiles.html'))); // Nueva ruta
 
 // --- Rutas Protegidas de la API ---
 app.get('/api/fincas', authenticateApi, db.getFincas);
@@ -78,6 +79,8 @@ app.get('/api/batches/tree', authenticateApi, db.getBatchesTree);
 app.post('/api/batches', authenticateApi, db.createBatch);
 app.put('/api/batches/:id', authenticateApi, db.updateBatch);
 app.delete('/api/batches/:id', authenticateApi, db.deleteBatch);
+app.get('/api/perfiles', authenticateApi, db.getPerfiles);
+app.post('/api/perfiles', authenticateApi, db.createPerfil);
 
 // Iniciar Servidor
 app.listen(PORT, () => {

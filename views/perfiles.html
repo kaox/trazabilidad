@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Perfiles Sensoriales de Cacao</title>
+    <script src="/auth.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #fdfaf6; }
+        h1, h2, h3, .font-display { font-family: 'Playfair Display', serif; }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            background: #854d0e;
+            cursor: pointer;
+            border-radius: 50%;
+        }
+        input[type="range"]::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            background: #854d0e;
+            cursor: pointer;
+            border-radius: 50%;
+            border: none;
+        }
+    </style>
+</head>
+<body class="text-stone-800 antialiased">
+
+    <nav class="bg-amber-900 text-white shadow-lg">
+        <div class="container mx-auto px-4">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex justify-center items-center flex-grow">
+                    <a href="/app/fincas" class="px-4 py-2 rounded-md text-sm font-medium hover:bg-amber-800 transition">Fincas</a>
+                    <a href="/app/trazabilidad" class="px-4 py-2 rounded-md text-sm font-medium hover:bg-amber-800 transition">Trazabilidad</a>
+                    <a href="/app/dashboard" class="px-4 py-2 rounded-md text-sm font-medium hover:bg-amber-800 transition">Dashboard</a>
+                    <a href="/app/perfiles" class="px-4 py-2 rounded-md text-sm font-medium bg-amber-800 transition">Perfiles</a>
+                </div>
+                <button onclick="logout()" class="px-4 py-2 rounded-md text-sm font-medium hover:bg-red-700 bg-red-600 transition">Cerrar Sesión</button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mx-auto p-4 md:p-8">
+        <header class="text-center mb-10 mt-4">
+            <h1 class="text-4xl md:text-5xl font-bold text-amber-900 mb-2">Perfiles Sensoriales del Cacao</h1>
+            <p class="text-stone-600">Analiza y gestiona los perfiles de sabor de tus granos.</p>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <!-- Columna de Visualización y Selección -->
+            <div class="bg-white p-6 rounded-2xl shadow-lg">
+                <h2 class="text-2xl font-display text-amber-900 border-b pb-2 mb-6">Análisis Visual</h2>
+                <div class="mb-4">
+                    <label for="perfil-selector" class="block text-sm font-medium text-stone-700 mb-1">Seleccionar Perfil Existente</label>
+                    <select id="perfil-selector" class="w-full p-3 border border-stone-300 rounded-xl"></select>
+                </div>
+                <div>
+                    <canvas id="radar-chart"></canvas>
+                </div>
+            </div>
+            
+            <!-- Columna de Creación de Perfil -->
+            <div class="bg-white p-6 rounded-2xl shadow-lg">
+                <h2 class="text-2xl font-display text-amber-900 border-b pb-2 mb-6">Crear Nuevo Perfil Sensorial</h2>
+                <form id="perfil-form" class="space-y-3">
+                    <div>
+                        <label for="nombre-cacao" class="block text-sm font-medium text-stone-700 mb-1">Nombre del Cacao</label>
+                        <input type="text" id="nombre-cacao" class="w-full p-3 border border-stone-300 rounded-xl" required>
+                    </div>
+                    <div id="sliders-container" class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 pt-4 border-t">
+                        <!-- Los sliders se generarán aquí -->
+                    </div>
+                    <div class="pt-4 text-right">
+                        <button type="submit" class="bg-amber-800 hover:bg-amber-900 text-white font-bold py-3 px-8 rounded-xl shadow-md">
+                            Guardar Perfil
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <script src="/perfiles-app.js"></script>
+</body>
+</html>
