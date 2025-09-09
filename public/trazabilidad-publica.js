@@ -61,29 +61,34 @@ document.addEventListener('DOMContentLoaded', () => {
         const visualContent = `<div class="mt-6 pt-4 border-t"><h4 class="font-semibold text-stone-700 mb-2">Ubicación de la Finca</h4><div id="map-cosecha" class="w-full h-[250px] rounded-xl border border-stone-300"></div></div>`;
         return createChapterHTML('cosecha', 1, "La Cuna - El Origen de Todo", narrative, visualContent);
     }
+
     function createChapterFermentacion(h) {
         const { fermentacion } = h;
         const narrative = `<div class="flex justify-between items-start gap-6"><div class="prose max-w-none text-stone-600 leading-relaxed flex-grow"><p>Mi alma se forjó en un sueño profundo y cálido. Durante <strong>${fermentacion.duracion} días</strong>, descansé, siguiendo el tradicional método de <strong>${fermentacion.metodo}</strong>. Fue un proceso de paciencia y magia, donde los azúcares de mi pulpa se transformaron, despertando las notas complejas y afrutadas que definen mi carácter. Fue mi verdadero nacimiento.</p></div>${fermentacion.imageUrl ? `<div class="ml-4 flex-shrink-0"><button data-img-src="${fermentacion.imageUrl}" data-img-title="Foto de Fermentación" class="view-photo-btn group block"><img src="${fermentacion.imageUrl}" alt="Miniatura de la fermentación" class="w-24 h-24 rounded-lg object-cover shadow-md transition-transform group-hover:scale-105"></button></div>` : ''}</div>`;
         return createChapterHTML('fermentacion', 2, "La Metamorfosis - El Despertar del Sabor", narrative);
     }
+
     function createChapterSecado(h) {
         const { secado } = h;
         const narrative = `<div class="flex justify-between items-start gap-6"><div class="prose max-w-none text-stone-600 leading-relaxed flex-grow"><p>Después de mi despertar, me entregaron al sol. Mi reposo duró <strong>${secado.duracion} días</strong>, utilizando un método de <strong>${secado.metodo}</strong> que garantiza el equilibrio perfecto. Cada grano fue removido con cuidado para que el calor y el aire nos abrazaran por igual, sellando los sabores que nacieron en la fermentación y preparándome para la prueba de fuego.</p></div>${secado.imageUrl ? `<div class="ml-4 flex-shrink-0"><button data-img-src="${secado.imageUrl}" data-img-title="Foto de Secado" class="view-photo-btn group block"><img src="${secado.imageUrl}" alt="Miniatura del secado" class="w-24 h-24 rounded-lg object-cover shadow-md transition-transform group-hover:scale-105"></button></div>` : ''}</div>`;
         return createChapterHTML('secado', 3, "El Reposo - El Abrazo del Sol y el Aire", narrative);
     }
+    
     function createChapterTostado(h) {
         const { tostado } = h;
         const narrative = `<div class="flex justify-between items-start gap-6"><div class="prose max-w-none text-stone-600 leading-relaxed flex-grow"><p>Llegó el momento de la verdad. Dancé con el fuego durante <strong>${tostado.duracion} minutos</strong>, alcanzando un clímax de <strong>${tostado.tempMaxima}°C</strong>. Este ritual reveló mi perfil de aroma a <strong>${tostado.perfilAroma || 'notas únicas'}</strong>, liberando fragancias que cuentan la historia de mi origen. El resultado es un perfil sensorial de tipo <strong>${tostado.tipoPerfil}</strong>, una personalidad forjada en el calor para tu deleite.</p></div>${tostado.imageUrl ? `<div class="ml-4 flex-shrink-0"><button data-img-src="${tostado.imageUrl}" data-img-title="Foto de Tostado" class="view-photo-btn group block"><img src="${tostado.imageUrl}" alt="Miniatura del tostado" class="w-24 h-24 rounded-lg object-cover shadow-md transition-transform group-hover:scale-105"></button></div>` : ''}</div>`;
         const visualContent = tostado.perfilSensorialData ? `<div class="mt-6 pt-4 border-t"><h4 class="font-semibold text-stone-700 text-center mb-2">Perfil Sensorial: ${tostado.tipoPerfil}</h4><div class="w-full max-w-xs mx-auto"><canvas id="perfil-radar-chart"></canvas></div></div>` : '';
         return createChapterHTML('tostado', 4, "La Danza de Fuego - La Revelación del Aroma", narrative, visualContent);
     }
+
     function createChapterMolienda(h) {
         const { molienda } = h;
         const narrative = `<p>Finalmente, fui liberado de mi cáscara. En el proceso, se desprendieron <strong>${molienda.pesoCascarilla} kg</strong> de mi cubierta protectora, dejando solo mi corazón puro. Este núcleo se transformó en <strong>${molienda.pesoProductoFinal} kg</strong> de <strong>${molienda.productoFinal}</strong>, la esencia misma de mi viaje, lista para convertirse en la obra de arte que ahora sostienes.</p>`;
         return createChapterHTML('molienda', 5, "La Liberación - La Esencia Pura", narrative, '');
     }
+
     function createFinalReport(h) {
-        const { molienda, cosecha, fincaData, tostado } = h;
+        const { molienda, cosecha, fincaData, tostado, secado } = h;
         const loteId = molienda ? molienda.id : tostado ? tostado.id : secado.id;
         return `
             <div class="mt-16 text-center">
@@ -122,7 +127,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 const polygon = L.polygon(coords, { color: '#854d0e' }).addTo(cosechaMapInstance);
                 cosechaMapInstance.fitBounds(polygon.getBounds());
                 setTimeout(() => cosechaMapInstance.invalidateSize(), 100);
-                var centerLatLng = polygon.getBounds().getCenter();
             });
         } catch(e) { console.error("Error al renderizar mapa:", e); mapContainer.innerHTML = '<p class="text-red-600">Error al mostrar mapa.</p>'; }
     }
@@ -130,19 +134,53 @@ document.addEventListener('DOMContentLoaded', () => {
     function initializePerfilChart(canvasId, perfilData) {
         const chartCanvas = document.getElementById(canvasId);
         if (!chartCanvas || !perfilData) return;
+        
         let chartInstanceToDestroy = null;
-        if (canvasId === 'perfil-radar-chart' && perfilRadarChartInstance) chartInstanceToDestroy = perfilRadarChartInstance;
-        else if (canvasId === 'final-radar-chart' && finalRadarChartInstance) chartInstanceToDestroy = finalRadarChartInstance;
-        if (chartInstanceToDestroy) chartInstanceToDestroy.destroy();
+        if (canvasId === 'perfil-radar-chart' && perfilRadarChartInstance) {
+            chartInstanceToDestroy = perfilRadarChartInstance;
+        } else if (canvasId === 'final-radar-chart' && finalRadarChartInstance) {
+            chartInstanceToDestroy = finalRadarChartInstance;
+        }
+        if (chartInstanceToDestroy) {
+            chartInstanceToDestroy.destroy();
+        }
+
         const atributos = ['Cacao', 'Acidez', 'Amargor', 'Astringencia', 'Fruta Fresca', 'Fruta Marrón', 'Vegetal', 'Floral', 'Madera', 'Especia', 'Nuez', 'Caramelo'];
         const data = atributos.map(attr => perfilData[attr.toLowerCase().replace(/ /g, '')] || 0);
+        
         const newChart = new Chart(chartCanvas, {
             type: 'radar',
-            data: { labels: atributos, datasets: [{ label: 'Intensidad', data: data, fill: true, backgroundColor: 'rgba(120,53,15,0.2)', borderColor: 'rgb(120,53,15)', pointBackgroundColor: 'rgb(120,53,15)' }] },
-            options: { scales: { r: { suggestedMin: 0, suggestedMax: 10, ticks: { display: false }, pointLabels: { font: { size: 10 } } } }, plugins: { legend: { display: false } } }
+            data: { 
+                labels: atributos, 
+                datasets: [{ 
+                    label: 'Intensidad', 
+                    data: data, 
+                    fill: true, 
+                    backgroundColor: 'rgba(120,53,15,0.2)', 
+                    borderColor: 'rgb(120,53,15)', 
+                    pointBackgroundColor: 'rgb(120,53,15)' 
+                }] 
+            },
+            options: { 
+                scales: { 
+                    r: { 
+                        suggestedMin: 0, 
+                        suggestedMax: 10, 
+                        ticks: { display: false },
+                        pointLabels: { font: { size: 10 } }
+                    } 
+                }, 
+                plugins: { 
+                    legend: { display: false } 
+                } 
+            }
         });
-        if (canvasId === 'perfil-radar-chart') perfilRadarChartInstance = newChart;
-        else if (canvasId === 'final-radar-chart') finalRadarChartInstance = newChart;
+
+        if (canvasId === 'perfil-radar-chart') {
+            perfilRadarChartInstance = newChart;
+        } else if (canvasId === 'final-radar-chart') {
+            finalRadarChartInstance = newChart;
+        }
     }
 
     buscarBtn.addEventListener('click', handleSearch);
