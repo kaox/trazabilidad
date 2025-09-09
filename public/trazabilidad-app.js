@@ -83,12 +83,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const displayName = config.displayName || type.charAt(0).toUpperCase() + type.slice(1);
 
         const cardHeader = document.createElement('div');
-        cardHeader.className = `p-4 border-l-4 border-amber-800 flex justify-between items-start ${hasChildren ? 'cursor-pointer hover:bg-stone-50' : ''}`;
+        cardHeader.className = `p-4 border-l-4 border-amber-800 flex flex-col sm:flex-row justify-between items-start gap-4 ${hasChildren ? 'cursor-pointer hover:bg-stone-50' : ''}`;
         cardHeader.innerHTML = `
-            <div class="flex items-center gap-3">
+            <div class="flex items-center gap-3 w-full">
                  ${batch.imageUrl ? `<img src="${batch.imageUrl}" class="w-16 h-16 rounded-md object-cover flex-shrink-0" alt="Foto">` : `<div class="w-16 h-16 flex items-center justify-center text-amber-800 flex-shrink-0">${config.icon}</div>`}
                  ${hasChildren ? `<svg class="w-5 h-5 text-stone-400 transition-transform duration-300 expand-icon flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>` : '<div class="w-5"></div>' }
-                <div>
+                <div class="flex-grow">
                     <h3 class="font-bold text-lg text-amber-900">${displayName}: ${batch.id}</h3>
                     ${infoHtml}
                     <div class="mt-2 text-sm">
@@ -97,11 +97,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>
                 </div>
             </div>
-            <div class="flex gap-2 flex-shrink-0 ml-4 items-start">
-                ${type === 'molienda' || type === 'secado' ? `<button class="qr-btn text-sm bg-sky-600 hover:bg-sky-700 text-white font-bold px-3 py-1 rounded-lg" data-id="${batch.id}">QR</button>` : ''}
-                <button class="edit-btn text-sm bg-stone-200 hover:bg-stone-300 px-3 py-1 rounded-lg" data-path="${path}" data-type="${type}">Editar</button>
-                <button class="delete-btn text-sm bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-lg" data-path="${path}">X</button>
-                ${config.plural ? `<button ${availableWeight <= 0 ? 'disabled' : ''} class="add-sub-btn text-sm bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded-lg disabled:bg-gray-400" data-path="${path}" data-type="${type}">+ Añadir</button>` : ''}
+            <div class="flex flex-wrap gap-2 items-center justify-start sm:justify-end w-full sm:w-auto flex-shrink-0 pt-4 sm:pt-0 border-t sm:border-t-0 border-stone-100">
+                ${type === 'molienda' || type === 'secado' ? `<button class="qr-btn text-sm bg-sky-600 hover:bg-sky-700 text-white font-bold px-3 py-1.5 rounded-lg" data-id="${batch.id}">QR</button>` : ''}
+                <button class="edit-btn text-sm bg-stone-200 hover:bg-stone-300 px-3 py-1.5 rounded-lg" data-path="${path}" data-type="${type}">Editar</button>
+                <button class="delete-btn text-sm bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded-lg" data-path="${path}">X</button>
+                ${config.plural ? `<button ${availableWeight <= 0 ? 'disabled' : ''} class="add-sub-btn text-sm bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded-lg disabled:bg-gray-400" data-path="${path}" data-type="${type}">+ Añadir</button>` : ''}
             </div>`;
         
         const childrenContainer = document.createElement('div');
@@ -234,7 +234,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 </form>`;
     }
 
-    // --- Helpers de HTML y Datos ---
     function createInput(id, l, t, p, v, r) { return `<div><label for="${id}" class="block text-sm font-medium text-stone-700 mb-1">${l}</label><input type="${t}" id="${id}" name="${id}" value="${v||''}" placeholder="${p}" class="w-full p-3 border border-stone-300 rounded-xl" ${r?'readonly':''} ${t==='number'?'step="0.01"':''} required></div>`; }
     function createSelect(id, l, o, s) { const opts = o.map(opt => `<option value="${opt}" ${opt===s?'selected':''}>${opt}</option>`).join(''); return `<div><label for="${id}" class="block text-sm font-medium text-stone-700 mb-1">${l}</label><select id="${id}" name="${id}" class="w-full p-3 border border-stone-300 rounded-xl" required><option value="">Seleccionar...</option>${opts}</select></div>`; }
     function createTextArea(id, l, p, v) { return `<div><label for="${id}" class="block text-sm font-medium text-stone-700 mb-1">${l}</label><textarea id="${id}" name="${id}" placeholder="${p}" rows="3" class="w-full p-3 border border-stone-300 rounded-xl">${v||''}</textarea></div>`; }
