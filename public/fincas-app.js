@@ -5,6 +5,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const submitButton = form.querySelector('button[type="submit"]');
     const cancelEditBtn = document.getElementById('cancel-edit-btn');
     const formTitle = document.getElementById('form-title');
+    const countrySelect = document.getElementById('pais');
+    const searchInput = document.getElementById('ciudad-search');
+    const searchBtn = document.getElementById('search-btn');
+    const locateBtn = document.getElementById('locate-btn');
     
     const map = L.map('map').setView([4.60971, -74.08175], 6);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; <a href="https://www.openstreetmap.org">OpenStreetMap</a>' }).addTo(map);
@@ -16,6 +20,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
     map.on(L.Draw.Event.CREATED, e => { if (currentPolygon) drawnItems.removeLayer(currentPolygon); drawnItems.addLayer(e.layer); currentPolygon = e.layer; form.coordenadas.value = JSON.stringify(e.layer.getLatLngs()[0]); });
     map.on(L.Draw.Event.EDITED, e => { e.layers.eachLayer(layer => { currentPolygon = layer; form.coordenadas.value = JSON.stringify(layer.getLatLngs()[0]); }); });
+
+    async function loadCountries() {
+        try {
+            const response = await fetch('/countries.json');
+            const countries = await response.json();
+            countrySelect.innerHTML = '<option value="">Seleccionar país...</option>';
+            countries.forEach(country => {
+                const option = document.createElement('option');
+                option.value = country.name;
+                option.textContent = country.name;
+                countrySelect.appendChild(option);
+            });
+        } catch (error) {
+            console.error("Error al cargar países:", error);
+            countrySelect.innerHTML = '<option value="">Error al cargar</option>';
+        }
+    }
 
     async function loadFincas() {
         try {
@@ -81,15 +102,32 @@ document.addEventListener('DOMContentLoaded', () => {
         e.preventDefault();
         const formData = new FormData(form);
         const fincaData = Object.fromEntries(formData.entries());
-        if (!fincaData.coordenadas) { alert('Dibuja el polígono de la finca en el mapa.'); return; }
-        fincaData.coordenadas = JSON.parse(fincaData.coordenadas);
+        
+        if (fincaData.coordenadas && typeof fincaData.coordenadas === 'string' && fincaData.coordenadas.trim() !== '') {
+            try {
+                fincaData.coordenadas = JSON.parse(fincaData.coordenadas);
+            } catch (err) {
+                console.error("Error al parsear coordenadas:", err);
+                alert("Las coordenadas del mapa no son válidas.");
+                return;
+            }
+        } else {
+            fincaData.coordenadas = null;
+        }
+
         const editId = editIdInput.value;
         try {
-            if (editId) await api(`/api/fincas/${editId}`, { method: 'PUT', body: JSON.stringify(fincaData) });
-            else await api('/api/fincas', { method: 'POST', body: JSON.stringify(fincaData) });
+            if (editId) {
+                await api(`/api/fincas/${editId}`, { method: 'PUT', body: JSON.stringify(fincaData) });
+            } else {
+                await api('/api/fincas', { method: 'POST', body: JSON.stringify(fincaData) });
+            }
             resetForm();
             await loadFincas();
-        } catch (error) { alert('Error al guardar la finca.'); }
+        } catch (error) { 
+            console.error("Error al guardar:", error);
+            alert('Error al guardar la finca.'); 
+        }
     });
 
     fincasList.addEventListener('click', async e => {
@@ -98,23 +136,58 @@ document.addEventListener('DOMContentLoaded', () => {
         const id = button.dataset.id;
         if (button.classList.contains('delete-btn')) {
             if (confirm('¿Seguro que quieres eliminar esta finca?')) {
-                try { await api(`/api/fincas/${id}`, { method: 'DELETE' }); await loadFincas(); }
-                catch (error) { alert('Error al eliminar la finca.'); }
+                try { 
+                    await api(`/api/fincas/${id}`, { method: 'DELETE' }); 
+                    await loadFincas(); 
+                }
+                catch (error) { 
+                    alert('Error al eliminar la finca.'); 
+                }
             }
-        } else if (button.classList.contains('edit-btn')) { populateFormForEdit(id); }
+        } else if (button.classList.contains('edit-btn')) { 
+            populateFormForEdit(id); 
+        }
     });
     
     cancelEditBtn.addEventListener('click', resetForm);
     
-    document.getElementById('search-btn').addEventListener('click', async () => {
-        const query = document.getElementById('ciudad-search').value.trim();
+    async function searchLocation() {
+        const query = searchInput.value.trim();
         if (!query) return;
         const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`);
         const data = await response.json();
-        if (data && data.length > 0) map.setView([data[0].lat, data[0].lon], 13);
-        else alert('Ubicación no encontrada.');
+        if (data && data.length > 0) {
+            map.setView([data[0].lat, data[0].lon], 13);
+        } else {
+            alert('Ubicación no encontrada.');
+        }
+    }
+
+    searchBtn.addEventListener('click', searchLocation);
+    searchInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            searchLocation();
+        }
     });
 
+    locateBtn.addEventListener('click', () => {
+        if ('geolocation' in navigator) {
+            navigator.geolocation.getCurrentPosition(position => {
+                const { latitude, longitude } = position.coords;
+                map.setView([latitude, longitude], 15);
+                L.marker([latitude, longitude]).addTo(map)
+                    .bindPopup('Tu ubicación actual.').openPopup();
+            }, error => {
+                alert('No se pudo obtener tu ubicación. Error: ' + error.message);
+            });
+        } else {
+            alert('La geolocalización no está disponible en tu navegador.');
+        }
+    });
+
+    // Inicializar la carga de datos
+    loadCountries();
     loadFincas();
 });
 

@@ -1,5 +1,8 @@
 -- Script para crear las tablas en una base de datos PostgreSQL
 
+-- Habilitar la extensión para UUIDs si no está habilitada
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
 -- Tabla de Usuarios
 CREATE TABLE IF NOT EXISTS users (
     id SERIAL PRIMARY KEY,

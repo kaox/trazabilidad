@@ -4,7 +4,7 @@
   "description": "Backend con soporte para SQLite (desarrollo) y PostgreSQL (producción).",
   "main": "server.js",
   "scripts": {
-    "db:migrate": "knex migrate:latest --knexfile knexfile.js",
+    "db:init": "node db-init.js",
     "start": "NODE_ENV=production node server.js",
     "dev": "NODE_ENV=development nodemon server.js"
   },
@@ -16,8 +16,6 @@
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
     "jsonwebtoken": "^9.0.2",
-    "knex": "^3.1.0",
-    "pg": "^8.11.3",
     "sqlite3": "^5.1.7"
   },
   "devDependencies": {
