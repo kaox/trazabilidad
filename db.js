@@ -243,7 +243,48 @@ const deleteBatch = async (req, res) => {
     } catch (err) { res.status(500).json({ error: err.message }); }
 };
 
-const getTrazabilidad = async (req, res) => { /* ...código sin cambios... */ };
+const getTrazabilidad = async (req, res) => {
+    const { id } = req.params;
+    try {
+        const result = await pool.query(`
+            WITH RECURSIVE trazabilidad_completa AS (
+                SELECT id, tipo, parent_id, data, user_id FROM lotes WHERE id = $1
+                UNION ALL
+                SELECT l.id, l.tipo, l.parent_id, l.data, l.user_id FROM lotes l
+                INNER JOIN trazabilidad_completa tc ON l.id = tc.parent_id
+            )
+            SELECT * FROM trazabilidad_completa;
+        `, [id]);
+        
+        const rows = result.rows;
+        if (rows.length === 0) return res.status(404).json({ error: 'Lote no encontrado' });
+        
+        const history = {};
+        const cosechaLot = rows.find(row => row.tipo === 'cosecha');
+
+        if (!cosechaLot || !cosechaLot.user_id) {
+            return res.status(404).json({ error: 'Trazabilidad incompleta: no se encontró propietario.' });
+        }
+        const ownerId = cosechaLot.user_id;
+        
+        rows.forEach(row => { history[row.tipo] = row.data; });
+
+        if (history.cosecha && history.cosecha.finca) {
+            const fincaResult = await pool.query('SELECT * FROM fincas WHERE nombre_finca = $1 AND user_id = $2', [history.cosecha.finca, ownerId]);
+            if (fincaResult.rows[0]) history.fincaData = fincaResult.rows[0];
+        }
+        
+        if (history.tostado && history.tostado.tipoPerfil) {
+            const perfilResult = await pool.query('SELECT perfil_data FROM perfiles_cacao WHERE nombre = $1 AND user_id = $2', [history.tostado.tipoPerfil, ownerId]);
+            if (perfilResult.rows[0]) history.tostado.perfilSensorialData = perfilResult.rows[0].perfil_data;
+        }
+
+        res.status(200).json(history);
+    } catch (error) { 
+        console.error(`Error en getTrazabilidad para el lote ${id}:`, error.message);
+        res.status(500).json({ error: "Error interno del servidor." }); 
+    }
+};
 
 // --- Perfiles Sensoriales ---
 const getPerfiles = async (req, res) => {
