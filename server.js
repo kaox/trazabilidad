@@ -69,6 +69,7 @@ app.get('/app/trazabilidad', authenticatePage, (req, res) => res.sendFile(path.j
 app.get('/app/fincas', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'fincas.html')));
 app.get('/app/dashboard', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'dashboard.html')));
 app.get('/app/perfiles', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'perfiles.html')));
+app.get('/app/procesadoras', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'procesadoras.html')));
 app.get('/app/cuenta', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'cuenta.html')));
 
 // --- Rutas Protegidas de la API ---
@@ -84,6 +85,11 @@ app.delete('/api/batches/:id', authenticateApi, db.deleteBatch);
 
 app.get('/api/perfiles', authenticateApi, db.getPerfiles);
 app.post('/api/perfiles', authenticateApi, db.createPerfil);
+
+app.get('/api/procesadoras', authenticateApi, db.getProcesadoras);
+app.post('/api/procesadoras', authenticateApi, db.createProcesadora);
+app.put('/api/procesadoras/:id', authenticateApi, db.updateProcesadora);
+app.delete('/api/procesadoras/:id', authenticateApi, db.deleteProcesadora);
 
 app.get('/api/user/profile', authenticateApi, db.getUserProfile);
 app.put('/api/user/profile', authenticateApi, db.updateUserProfile);

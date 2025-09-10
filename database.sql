@@ -20,7 +20,7 @@ CREATE TABLE IF NOT EXISTS users (
 
 -- Tabla de Fincas
 CREATE TABLE IF NOT EXISTS fincas (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     propietario TEXT,
     dni_ruc TEXT,
@@ -29,16 +29,33 @@ CREATE TABLE IF NOT EXISTS fincas (
     ciudad TEXT,
     altura INTEGER,
     superficie NUMERIC,
-    coordenadas JSONB, -- Usar JSONB es más eficiente en PostgreSQL
+    coordenadas JSONB,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(user_id, nombre_finca)
 );
 
+-- Tabla de Procesadoras
+CREATE TABLE IF NOT EXISTS procesadoras (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    ruc TEXT NOT NULL,
+    razon_social TEXT NOT NULL,
+    nombre_comercial TEXT,
+    tipo_empresa TEXT,
+    pais TEXT,
+    ciudad TEXT,
+    direccion TEXT,
+    telefono TEXT,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(user_id, ruc)
+);
+
 -- Tabla de Lotes
 CREATE TABLE IF NOT EXISTS lotes (
     id TEXT PRIMARY KEY,
-    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE, -- Solo para cosechas
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
     tipo TEXT NOT NULL,
     parent_id TEXT REFERENCES lotes(id) ON DELETE CASCADE,
     data JSONB NOT NULL,

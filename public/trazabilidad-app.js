@@ -96,13 +96,18 @@ document.addEventListener('DOMContentLoaded', () => {
             variablesHtml += `<div><dt class="text-stone-500">Finca:</dt><dd class="font-medium text-stone-800">${batch.finca}</dd></div>`;
         }
         if (type === 'fermentacion' || type === 'secado') {
+            variablesHtml += `<div><dt class="text-stone-500">Lugar:</dt><dd class="font-medium text-stone-800">${batch.lugarProceso || 'N/A'}</dd></div>`;
             variablesHtml += `<div><dt class="text-stone-500">Método:</dt><dd class="font-medium text-stone-800">${batch.metodo}</dd></div>`;
             variablesHtml += `<div><dt class="text-stone-500">Duración:</dt><dd class="font-medium text-stone-800">${batch.duracion} días</dd></div>`;
         }
         if (type === 'tostado') {
+            variablesHtml += `<div><dt class="text-stone-500">Procesadora:</dt><dd class="font-medium text-stone-800">${batch.procesadora || 'N/A'}</dd></div>`;
             variablesHtml += `<div><dt class="text-stone-500">Perfil:</dt><dd class="font-medium text-stone-800">${batch.tipoPerfil || 'N/A'}</dd></div>`;
             variablesHtml += `<div><dt class="text-stone-500">Temp. Máx:</dt><dd class="font-medium text-stone-800">${batch.tempMaxima}°C</dd></div>`;
             variablesHtml += `<div><dt class="text-stone-500">Tueste:</dt><dd class="font-medium text-stone-800">${batch.duracion} min</dd></div>`;
+        }
+        if (type === 'molienda') {
+             variablesHtml += `<div><dt class="text-stone-500">Procesadora:</dt><dd class="font-medium text-stone-800">${batch.procesadora || 'N/A'}</dd></div>`;
         }
         variablesHtml += `</dl>`;
 
@@ -164,8 +169,16 @@ document.addEventListener('DOMContentLoaded', () => {
         const isCreating = mode === 'create';
         const parentBatch = isCreating ? getBatchByPath(path) : getParentBatchByPath(path);
         const batchData = isCreating ? {} : getBatchByPath(path);
+        
+        if (!isCreating && !batchData) {
+            console.error("Error: No se pudo encontrar el lote para editar en la ruta:", path);
+            alert("Error: no se pudo encontrar el lote.");
+            return;
+        }
+
         const parentType = parentBatch ? path.split('>').pop().split(':')[0] : null;
         const availableWeight = parentBatch ? calculateAvailableWeight(parentBatch, parentType) : 0;
+        
         modalContent.innerHTML = await generateFormHTML(mode, type, batchData || {}, availableWeight);
         formModal.showModal();
         
@@ -194,6 +207,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     const parentId = parentBatch ? parentBatch.id : null;
                     await api('/api/batches', { method: 'POST', body: JSON.stringify({ tipo: type, parent_id: parentId, data: newData }) });
                 } else {
+                    // FIX: Re-add the ID to the data object before sending the update.
+                    newData.id = batchData.id; 
                     await api(`/api/batches/${batchData.id}`, { method: 'PUT', body: JSON.stringify({ data: newData }) });
                 }
                 formModal.close();
@@ -215,7 +230,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const parentType = Object.keys(processConfig).find(k => processConfig[k].singular === type);
             const inputWeightField = processConfig[parentType].outputWeightField;
             let limit = availableWeight + (mode === 'edit' ? parseFloat(data[inputWeightField]) || 0 : 0);
-            formFields += createInput(inputWeightField, `Peso Entrada (kg)`, 'number', `Disponible: ${limit.toFixed(2)} kg`, data[inputWeightField] || '');
+            formFields += createInput(inputWeightField, `Peso Entrada (kg)`, 'number', `Disponible: ${limit.toFixed(2)} kg`, data[inputWeightField] || '', false, true);
         }
         const displayName = processConfig[type].displayName || type.charAt(0).toUpperCase() + type.slice(1);
         const hasImageUpload = ['cosecha', 'fermentacion', 'secado', 'tostado'].includes(type);
@@ -228,18 +243,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 formFields += createInput('pesoGranosFrescos', 'Peso de granos frescos (kg)', 'number', '', data.pesoGranosFrescos, false, true);
                 break;
             case 'fermentacion':
-                formFields += createInput('fechaInicio', 'Fecha Inicio', 'date', '', data.fechaInicio, false, true);
-                formFields += createSelect('metodo', 'Método', ['bandejas Rohan', 'cajones de madera', 'otro'], data.metodo);
-                formFields += createInput('duracion', 'Duración (días)', 'number', '', data.duracion, false, true);
-                formFields += createInput('pesoFermentadoHumedo', 'Peso Fermentado Húmedo (kg)', 'number', '', data.pesoFermentadoHumedo, false, true);
-                break;
             case 'secado':
+                formFields += await createLugarProcesoSelectHTML(data.lugarProceso);
                 formFields += createInput('fechaInicio', 'Fecha Inicio', 'date', '', data.fechaInicio, false, true);
-                formFields += createSelect('metodo', 'Método', ['túneles de secado', 'marquesinas', 'hornos', 'otro'], data.metodo);
+                formFields += createSelect('metodo', 'Método', type === 'fermentacion' ? ['Bandejas Rohan', 'Cajones de madera', 'Otro'] : ['Natural al sol','Metodo Rohan','Marquesinas o Túneles de secado', 'Hornos', 'Otro'], data.metodo);
                 formFields += createInput('duracion', 'Duración (días)', 'number', '', data.duracion, false, true);
-                formFields += createInput('pesoSeco', 'Peso Cacao Seco (kg)', 'number', '', data.pesoSeco, false, true);
+                const outputField = processConfig[type].outputWeightField;
+                const outputLabel = type === 'fermentacion' ? 'Peso Fermentado Húmedo (kg)' : 'Peso Cacao Seco (kg)';
+                formFields += createInput(outputField, outputLabel, 'number', '', data[outputField], false, true);
                 break;
             case 'tostado':
+                formFields += await createProcesadoraSelectHTML(data.procesadora);
                 formFields += await createPerfilSelectHTML(data.tipoPerfil);
                 formFields += createInput('fechaTostado', 'Fecha Tostado', 'date', '', data.fechaTostado, false, true);
                 formFields += createSelect('clasificacion', 'Tamaño Grano', ['Grandes', 'Medianos', 'Pequeños'], data.clasificacion);
@@ -250,6 +264,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 formFields += createInput('pesoTostado', 'Peso Cacao Tostado (kg)', 'number', '', data.pesoTostado, false, true);
                 break;
             case 'molienda':
+                formFields += await createProcesadoraSelectHTML(data.procesadora);
                 formFields += createInput('fecha', 'Fecha Procesamiento', 'date', '', data.fecha, false, true);
                 formFields += createInput('pesoCascarilla', 'Peso Cascarilla (kg)', 'number', '', data.pesoCascarilla, false, true);
                 formFields += createSelect('productoFinal', 'Producto Final', ['Pasta de Cacao', 'Nibs de Cacao', 'Otros'], data.productoFinal);
@@ -261,7 +276,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return `<form id="batch-form"><h2 class="text-2xl font-display text-amber-900 border-b pb-2 mb-4">${mode === 'create' ? 'Crear' : 'Editar'} Lote de ${displayName}</h2><div class="space-y-4 max-h-[60vh] overflow-y-auto p-1">${formFields}</div><div class="flex justify-end gap-4 mt-6"><button type="button" id="cancel-btn" class="bg-stone-300 hover:bg-stone-400 font-bold py-2 px-6 rounded-xl">Cancelar</button><button type="submit" class="bg-amber-800 hover:bg-amber-900 text-white font-bold py-2 px-6 rounded-xl">${mode === 'create' ? 'Guardar' : 'Actualizar'}</button></div></form>`;
     }
 
-    function createInput(id, l, t, p, v, r, req=false) { return `<div><label for="${id}" class="block text-sm font-medium text-stone-700 mb-1">${l}</label><input type="${t}" id="${id}" name="${id}" value="${v||''}" placeholder="${p}" class="w-full p-3 border border-stone-300 rounded-xl" ${r?'readonly':''} ${t==='number'?'step="0.01"':''} ${req?'required':''}></div>`; }
+    function createInput(id, l, t, p, v, r, req=false) { return `<div><label for="${id}" class="block text-sm font-medium text-stone-700 mb-1">${l}</label><input type="${t}" id="${id}" name="${id}" value="${v||''}" placeholder="${p}" class="w-full p-3 border border-stone-300 rounded-xl" ${r?'readonly':''} step="0.01" ${req?'required':''}></div>`; }
     function createReadOnlyField(label, value) { return `<div><label class="block text-sm font-medium text-stone-700 mb-1">${label}</label><p class="w-full p-3 bg-stone-100 text-stone-600 rounded-xl font-mono text-sm">${value}</p></div>`; }
     function createSelect(id, l, o, s) { const opts = o.map(opt => `<option value="${opt}" ${opt===s?'selected':''}>${opt}</option>`).join(''); return `<div><label for="${id}" class="block text-sm font-medium text-stone-700 mb-1">${l}</label><select id="${id}" name="${id}" class="w-full p-3 border border-stone-300 rounded-xl" required><option value="">Seleccionar...</option>${opts}</select></div>`; }
     function createTextArea(id, l, p, v) { return `<div><label for="${id}" class="block text-sm font-medium text-stone-700 mb-1">${l}</label><textarea id="${id}" name="${id}" placeholder="${p}" rows="3" class="w-full p-3 border border-stone-300 rounded-xl">${v||''}</textarea></div>`; }
@@ -279,6 +294,32 @@ document.addEventListener('DOMContentLoaded', () => {
             let optionsHTML = perfiles.map(p => `<option value="${p.nombre}" ${p.nombre === selectedValue ? 'selected' : ''}>${p.nombre}</option>`).join('');
             return `<div><label for="tipoPerfil" class="block text-sm font-medium text-stone-700 mb-1">Tipo de Perfil Sensorial</label><div class="flex items-center gap-2"><select id="tipoPerfil" name="tipoPerfil" class="w-full p-3 border border-stone-300 rounded-xl"><option value="">Seleccionar perfil...</option>${optionsHTML}</select><a href="/app/perfiles" target="_blank" class="flex-shrink-0 bg-sky-600 hover:bg-sky-700 text-white font-bold p-3 rounded-xl" title="Añadir Nuevo Perfil">+</a></div></div>`;
         } catch (error) { return `<div class="text-red-500">Error al cargar perfiles. <a href="/app/perfiles" class="text-sky-600 hover:underline">Ir a Perfiles</a>.</div>`; }
+    }
+    async function createProcesadoraSelectHTML(selectedValue = '') {
+        try {
+            const procesadoras = await api('/api/procesadoras');
+            if (procesadoras.length === 0) return `<div><label class="block text-sm font-medium text-stone-700 mb-1">Procesadora</label><div class="p-3 border rounded-xl bg-stone-50 text-stone-500">No hay procesadoras. <a href="/app/procesadoras" class="text-sky-600 hover:underline">Registra una</a>.</div><input type="hidden" name="procesadora" value=""></div>`;
+            return createSelect('procesadora', 'Asociar Procesadora', procesadoras.map(p => p.nombre_comercial || p.razon_social), selectedValue);
+        } catch (error) { return `<div class="text-red-500">Error al cargar procesadoras.</div>`; }
+    }
+    async function createLugarProcesoSelectHTML(selectedValue = '') {
+        try {
+            const [fincas, procesadoras] = await Promise.all([api('/api/fincas'), api('/api/procesadoras')]);
+            let optionsHTML = '<option value="">Seleccionar lugar...</option>';
+            if(fincas.length > 0) {
+                optionsHTML += `<optgroup label="Fincas">`;
+                optionsHTML += fincas.map(f => `<option value="Finca: ${f.nombre_finca}" ${`Finca: ${f.nombre_finca}` === selectedValue ? 'selected' : ''}>${f.nombre_finca}</option>`).join('');
+                optionsHTML += `</optgroup>`;
+            }
+            if(procesadoras.length > 0) {
+                optionsHTML += `<optgroup label="Procesadoras">`;
+                optionsHTML += procesadoras.map(p => `<option value="Procesadora: ${p.nombre_comercial || p.razon_social}" ${`Procesadora: ${p.nombre_comercial || p.razon_social}` === selectedValue ? 'selected' : ''}>${p.nombre_comercial || p.razon_social}</option>`).join('');
+                optionsHTML += `</optgroup>`;
+            }
+            return `<div><label for="lugarProceso" class="block text-sm font-medium text-stone-700 mb-1">Lugar del Proceso</label><select id="lugarProceso" name="lugarProceso" class="w-full p-3 border border-stone-300 rounded-xl" required>${optionsHTML}</select></div>`;
+        } catch (error) {
+            return `<div class="text-red-500">Error al cargar lugares.</div>`;
+        }
     }
 
     function getBatchByPath(path) { if (!path) return null; const ids = path.split('>'); let currentBatch = null; let currentList = state.batches; for (let i = 0; i < ids.length; i++) { const [type, key] = ids[i].split(':'); currentBatch = currentList.find(b => b.id === key); if (!currentBatch) return null; const nextKey = processConfig[type]?.plural; if (i < ids.length - 1) currentList = currentBatch[nextKey] || []; } return currentBatch; }

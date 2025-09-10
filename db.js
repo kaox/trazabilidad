@@ -306,12 +306,62 @@ const createPerfil = async (req, res) => {
     }
 };
 
+const getProcesadoras = async (req, res) => {
+    const userId = req.user.id;
+    try {
+        const rows = await all('SELECT * FROM procesadoras WHERE user_id = ? ORDER BY nombre_comercial', [userId]);
+        res.status(200).json(rows);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};
+
+const createProcesadora = async (req, res) => {
+    const userId = req.user.id;
+    const { ruc, razon_social, nombre_comercial, tipo_empresa, pais, ciudad, direccion, telefono } = req.body;
+    const id = require('crypto').randomUUID();
+    const sql = 'INSERT INTO procesadoras (id, user_id, ruc, razon_social, nombre_comercial, tipo_empresa, pais, ciudad, direccion, telefono) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
+    try {
+        await run(sql, [id, userId, ruc, razon_social, nombre_comercial, tipo_empresa, pais, ciudad, direccion, telefono]);
+        res.status(201).json({ message: "Procesadora creada" });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};
+
+const updateProcesadora = async (req, res) => {
+    const userId = req.user.id;
+    const { id } = req.params;
+    const { ruc, razon_social, nombre_comercial, tipo_empresa, pais, ciudad, direccion, telefono } = req.body;
+    const sql = 'UPDATE procesadoras SET ruc = ?, razon_social = ?, nombre_comercial = ?, tipo_empresa = ?, pais = ?, ciudad = ?, direccion = ?, telefono = ? WHERE id = ? AND user_id = ?';
+    try {
+        const result = await run(sql, [ruc, razon_social, nombre_comercial, tipo_empresa, pais, ciudad, direccion, telefono, id, userId]);
+        if (result.changes === 0) return res.status(404).json({ error: "Procesadora no encontrada o no tienes permiso." });
+        res.status(200).json({ message: "Procesadora actualizada" });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};
+
+const deleteProcesadora = async (req, res) => {
+    const userId = req.user.id;
+    const { id } = req.params;
+    try {
+        const result = await run('DELETE FROM procesadoras WHERE id = ? AND user_id = ?', [id, userId]);
+        if (result.changes === 0) return res.status(404).json({ error: "Procesadora no encontrada o no tienes permiso." });
+        res.status(204).send();
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};
+
 module.exports = {
     registerUser, loginUser, logoutUser,
     getFincas, createFinca, updateFinca, deleteFinca,
     getBatchesTree, createBatch, updateBatch, deleteBatch,
     getTrazabilidad,
     getPerfiles, createPerfil,
+    getProcesadoras, createProcesadora, updateProcesadora, deleteProcesadora,
     getUserProfile, updateUserProfile, updateUserPassword
 };
 
