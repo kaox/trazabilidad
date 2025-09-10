@@ -9,10 +9,11 @@ if (environment === 'production') {
     const { Pool } = require('@neondatabase/serverless');
     const pool = new Pool({ connectionString: process.env.POSTGRES_URL });
 
-    const queryAdapter = async (sql, params = []) => {
+    const queryAdapter = (sql, params = []) => {
         let paramIndex = 1;
+        // Convierte los placeholders '?' de SQLite a '$1', '$2', etc. de PostgreSQL
         const pgSql = sql.replace(/\?/g, () => `$${paramIndex++}`);
-        return await pool.query(pgSql, params);
+        return pool.query(pgSql, params);
     };
     
     get = async (sql, params = []) => {
@@ -25,15 +26,13 @@ if (environment === 'production') {
     };
     run = async (sql, params = []) => {
         const result = await queryAdapter(sql, params);
-        // En PostgreSQL, para obtener el ID, se suele usar RETURNING id, pero para ser compatible
-        // con SQLite, asumimos que no se devuelve y simplemente retornamos los cambios.
         return { changes: result.rowCount };
     };
 
 } else {
     // --- Configuración para Desarrollo (SQLite) ---
     const sqlite3 = require('sqlite3').verbose();
-    const db = new sqlite3.Database("./database.db", (err) => {
+    const db = new sqlite3.Database("./database.db", err => {
         if (err) console.error("SQLite connection error:", err.message);
         else console.log("Conectado a la base de datos SQLite para desarrollo.");
         db.run('PRAGMA foreign_keys = ON;');
@@ -54,7 +53,7 @@ const registerUser = async (req, res) => {
         await run('INSERT INTO users (usuario, password, nombre, apellido, dni, ruc, empresa, celular, correo) VALUES (?,?,?,?,?,?,?,?,?)', [usuario, hashedPassword, nombre, apellido, dni, ruc, empresa, celular, correo]);
         res.status(201).json({ message: "Usuario registrado exitosamente." });
     } catch (err) {
-        if (err.message.includes('UNIQUE constraint failed')) {
+        if (err.message.includes('UNIQUE') || (err.code && err.code === '23505')) {
             res.status(409).json({ error: "El nombre de usuario ya existe." });
         } else {
             console.error(err);
@@ -98,9 +97,8 @@ const getUserProfile = async (req, res) => {
 const updateUserProfile = async (req, res) => {
     const userId = req.user.id;
     const { nombre, apellido, dni, ruc, empresa, celular, correo } = req.body;
-    const sql = 'UPDATE users SET nombre = ?, apellido = ?, dni = ?, ruc = ?, empresa = ?, celular = ?, correo = ? WHERE id = ?';
     try {
-        await run(sql, [nombre, apellido, dni, ruc, empresa, celular, correo, userId]);
+        await run('UPDATE users SET nombre = ?, apellido = ?, dni = ?, ruc = ?, empresa = ?, celular = ?, correo = ? WHERE id = ?', [nombre, apellido, dni, ruc, empresa, celular, correo, userId]);
         res.status(200).json({ message: "Perfil actualizado exitosamente." });
     } catch (err) { res.status(500).json({ error: err.message }); }
 };
@@ -124,19 +122,21 @@ const getFincas = async (req, res) => {
     const userId = req.user.id;
     try {
         const rows = await all('SELECT * FROM fincas WHERE user_id = ? ORDER BY nombre_finca', [userId]);
-        const fincas = rows.map(f => ({ ...f, coordenadas: JSON.parse(f.coordenadas || 'null') }));
+        const fincas = rows.map(f => ({ ...f, coordenadas: typeof f.coordenadas === 'string' ? JSON.parse(f.coordenadas || 'null') : f.coordenadas }));
         res.status(200).json(fincas);
     } catch (err) { res.status(500).json({ error: err.message }); }
 };
+
 const createFinca = async (req, res) => {
     const userId = req.user.id;
     const { propietario, dni_ruc, nombre_finca, pais, ciudad, altura, superficie, coordenadas } = req.body;
-    const sql = 'INSERT INTO fincas (user_id, propietario, dni_ruc, nombre_finca, pais, ciudad, altura, superficie, coordenadas) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)';
+    const id = require('crypto').randomUUID();
     try {
-        await run(sql, [userId, propietario, dni_ruc, nombre_finca, pais, ciudad, altura, superficie, JSON.stringify(coordenadas)]);
+        await run('INSERT INTO fincas (id, user_id, propietario, dni_ruc, nombre_finca, pais, ciudad, altura, superficie, coordenadas) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [id, userId, propietario, dni_ruc, nombre_finca, pais, ciudad, altura, superficie, JSON.stringify(coordenadas)]);
         res.status(201).json({ message: "Finca creada" });
     } catch (err) { res.status(500).json({ error: err.message }); }
 };
+
 const updateFinca = async (req, res) => {
     const userId = req.user.id;
     const { id } = req.params;
@@ -157,6 +157,7 @@ const deleteFinca = async (req, res) => {
         res.status(204).send();
     } catch (err) { res.status(500).json({ error: err.message }); }
 };
+
 const getBatchesTree = async (req, res) => {
     const userId = req.user.id;
     try {
@@ -168,7 +169,7 @@ const getBatchesTree = async (req, res) => {
             )
             SELECT * FROM lotes_arbol;
         `, [userId]);
-        const lotes = rows.map(lote => ({ ...lote, data: JSON.parse(lote.data) }));
+        const lotes = rows.map(lote => ({ ...lote, data: typeof lote.data === 'string' ? JSON.parse(lote.data) : lote.data }));
         const map = {};
         const roots = [];
         lotes.forEach(lote => {
@@ -182,10 +183,10 @@ const getBatchesTree = async (req, res) => {
         lotes.forEach(lote => {
             if (lote.parent_id && map[lote.parent_id]) {
                 const parent = map[lote.parent_id];
-                if (parent.tipo === 'cosecha') parent.data.fermentaciones.push(lote.data);
-                else if (parent.tipo === 'fermentacion') parent.data.secados.push(lote.data);
-                else if (parent.tipo === 'secado') parent.data.tostados.push(lote.data);
-                else if (parent.tipo === 'tostado') parent.data.moliendas.push(lote.data);
+                if(parent.tipo === 'cosecha') parent.data.fermentaciones.push(lote.data);
+                else if(parent.tipo === 'fermentacion') parent.data.secados.push(lote.data);
+                else if(parent.tipo === 'secado') parent.data.tostados.push(lote.data);
+                else if(parent.tipo === 'tostado') parent.data.moliendas.push(lote.data);
             } else if (!lote.parent_id) {
                 roots.push(lote.data);
             }
@@ -194,6 +195,7 @@ const getBatchesTree = async (req, res) => {
         res.status(200).json(roots);
     } catch (error) { res.status(500).json({ error: error.message }); }
 };
+
 const checkBatchOwnership = async (batchId, userId) => {
     const owner = await get(`
         WITH RECURSIVE ancestry AS (
@@ -204,11 +206,11 @@ const checkBatchOwnership = async (batchId, userId) => {
         SELECT user_id FROM ancestry WHERE user_id IS NOT NULL`, [batchId]);
     return owner && owner.user_id === userId;
 };
+
 const createBatch = async (req, res) => {
     const userId = req.user.id;
     const { tipo, parent_id, data } = req.body;
-    let sql;
-    let params;
+    let sql, params;
     if (tipo === 'cosecha') {
         sql = 'INSERT INTO lotes (id, user_id, tipo, parent_id, data) VALUES (?, ?, ?, ?, ?)';
         params = [data.id, userId, tipo, null, JSON.stringify(data)];
@@ -223,6 +225,7 @@ const createBatch = async (req, res) => {
         res.status(201).json({ message: "Lote creado" });
     } catch (err) { res.status(500).json({ error: err.message }); }
 };
+
 const updateBatch = async (req, res) => {
     const { id } = req.params;
     const { data } = req.body;
@@ -233,6 +236,7 @@ const updateBatch = async (req, res) => {
         res.status(200).json({ message: "Lote actualizado" });
     } catch (err) { res.status(500).json({ error: err.message }); }
 };
+
 const deleteBatch = async (req, res) => {
     const { id } = req.params;
     const isOwner = await checkBatchOwnership(id, req.user.id);
@@ -242,6 +246,7 @@ const deleteBatch = async (req, res) => {
         res.status(204).send();
     } catch (err) { res.status(500).json({ error: err.message }); }
 };
+
 const getTrazabilidad = async (req, res) => {
     const { id } = req.params;
     try {
@@ -259,14 +264,14 @@ const getTrazabilidad = async (req, res) => {
         const cosechaLot = rows.find(row => row.tipo === 'cosecha');
         if (!cosechaLot || !cosechaLot.user_id) return res.status(404).json({ error: 'Trazabilidad incompleta: no se encontró propietario.' });
         const ownerId = cosechaLot.user_id;
-        rows.forEach(row => { history[row.tipo] = JSON.parse(row.data); });
+        rows.forEach(row => { history[row.tipo] = typeof row.data === 'string' ? JSON.parse(row.data) : row.data; });
         if (history.cosecha && history.cosecha.finca) {
             const finca = await get('SELECT * FROM fincas WHERE nombre_finca = ? AND user_id = ?', [history.cosecha.finca, ownerId]);
-            if (finca) history.fincaData = { ...finca, coordenadas: JSON.parse(finca.coordenadas || 'null') };
+            if (finca) history.fincaData = { ...finca, coordenadas: typeof finca.coordenadas === 'string' ? JSON.parse(finca.coordenadas || 'null') : finca.coordenadas };
         }
         if (history.tostado && history.tostado.tipoPerfil) {
             const perfil = await get('SELECT perfil_data FROM perfiles_cacao WHERE nombre = ? AND user_id = ?', [history.tostado.tipoPerfil, ownerId]);
-            if (perfil) history.tostado.perfilSensorialData = JSON.parse(perfil.perfil_data);
+            if (perfil) history.tostado.perfilSensorialData = typeof perfil.perfil_data === 'string' ? JSON.parse(perfil.perfil_data) : perfil.perfil_data;
         }
         res.status(200).json(history);
     } catch (error) { 
@@ -274,6 +279,7 @@ const getTrazabilidad = async (req, res) => {
         res.status(500).json({ error: "Error interno del servidor." }); 
     }
 };
+
 const getPerfiles = async (req, res) => {
     const userId = req.user.id;
     try {
@@ -289,16 +295,15 @@ const getPerfiles = async (req, res) => {
             }
             perfiles = await all('SELECT * FROM perfiles_cacao WHERE user_id = ? ORDER BY nombre', [userId]);
         }
-        const parsedPerfiles = perfiles.map(p => ({ ...p, perfil_data: JSON.parse(p.perfil_data) }));
+        const parsedPerfiles = perfiles.map(p => ({ ...p, perfil_data: typeof p.perfil_data === 'string' ? JSON.parse(p.perfil_data) : p.perfil_data }));
         res.status(200).json(parsedPerfiles);
     } catch (err) { res.status(500).json({ error: err.message }); }
 };
 const createPerfil = async (req, res) => {
     const userId = req.user.id;
     const { nombre, perfil_data } = req.body;
-    const sql = 'INSERT INTO perfiles_cacao (user_id, nombre, perfil_data) VALUES (?, ?, ?)';
     try {
-        const result = await run(sql, [userId, nombre, JSON.stringify(perfil_data)]);
+        const result = await run('INSERT INTO perfiles_cacao (user_id, nombre, perfil_data) VALUES (?, ?, ?)', [userId, nombre, JSON.stringify(perfil_data)]);
         res.status(201).json({ id: result.lastID, user_id: userId, nombre, perfil_data });
     } catch (err) {
         if (err.message.includes('UNIQUE constraint failed')) res.status(409).json({ error: "Ya existe un perfil con ese nombre." });
@@ -311,11 +316,8 @@ const getProcesadoras = async (req, res) => {
     try {
         const rows = await all('SELECT * FROM procesadoras WHERE user_id = ? ORDER BY nombre_comercial', [userId]);
         res.status(200).json(rows);
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
+    } catch (err) { res.status(500).json({ error: err.message }); }
 };
-
 const createProcesadora = async (req, res) => {
     const userId = req.user.id;
     const { ruc, razon_social, nombre_comercial, tipo_empresa, pais, ciudad, direccion, telefono } = req.body;
@@ -324,11 +326,8 @@ const createProcesadora = async (req, res) => {
     try {
         await run(sql, [id, userId, ruc, razon_social, nombre_comercial, tipo_empresa, pais, ciudad, direccion, telefono]);
         res.status(201).json({ message: "Procesadora creada" });
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
+    } catch (err) { res.status(500).json({ error: err.message }); }
 };
-
 const updateProcesadora = async (req, res) => {
     const userId = req.user.id;
     const { id } = req.params;
@@ -338,11 +337,8 @@ const updateProcesadora = async (req, res) => {
         const result = await run(sql, [ruc, razon_social, nombre_comercial, tipo_empresa, pais, ciudad, direccion, telefono, id, userId]);
         if (result.changes === 0) return res.status(404).json({ error: "Procesadora no encontrada o no tienes permiso." });
         res.status(200).json({ message: "Procesadora actualizada" });
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
+    } catch (err) { res.status(500).json({ error: err.message }); }
 };
-
 const deleteProcesadora = async (req, res) => {
     const userId = req.user.id;
     const { id } = req.params;
@@ -350,9 +346,7 @@ const deleteProcesadora = async (req, res) => {
         const result = await run('DELETE FROM procesadoras WHERE id = ? AND user_id = ?', [id, userId]);
         if (result.changes === 0) return res.status(404).json({ error: "Procesadora no encontrada o no tienes permiso." });
         res.status(204).send();
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
+    } catch (err) { res.status(500).json({ error: err.message }); }
 };
 
 module.exports = {
@@ -361,7 +355,7 @@ module.exports = {
     getBatchesTree, createBatch, updateBatch, deleteBatch,
     getTrazabilidad,
     getPerfiles, createPerfil,
-    getProcesadoras, createProcesadora, updateProcesadora, deleteProcesadora,
-    getUserProfile, updateUserProfile, updateUserPassword
+    getUserProfile, updateUserProfile, updateUserPassword,
+    getProcesadoras, createProcesadora, updateProcesadora, deleteProcesadora
 };
 
