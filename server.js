@@ -70,6 +70,7 @@ app.get('/app/fincas', authenticatePage, (req, res) => res.sendFile(path.join(__
 app.get('/app/dashboard', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'dashboard.html')));
 app.get('/app/perfiles', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'perfiles.html')));
 app.get('/app/procesadoras', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'procesadoras.html')));
+app.get('/app/plantillas', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'plantillas.html')));
 app.get('/app/cuenta', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'cuenta.html')));
 
 // --- Rutas Protegidas de la API ---
@@ -94,6 +95,16 @@ app.delete('/api/procesadoras/:id', authenticateApi, db.deleteProcesadora);
 app.get('/api/user/profile', authenticateApi, db.getUserProfile);
 app.put('/api/user/profile', authenticateApi, db.updateUserProfile);
 app.put('/api/user/password', authenticateApi, db.updateUserPassword);
+
+// Nuevas rutas para plantillas
+app.get('/api/templates', authenticateApi, db.getTemplates);
+app.post('/api/templates', authenticateApi, db.createTemplate);
+app.put('/api/templates/:templateId', authenticateApi, db.updateTemplate);
+app.delete('/api/templates/:templateId', authenticateApi, db.deleteTemplate);
+app.get('/api/templates/:templateId/stages', authenticateApi, db.getStagesForTemplate);
+app.post('/api/templates/:templateId/stages', authenticateApi, db.createStage);
+app.put('/api/templates/stages/:stageId', authenticateApi, db.updateStage);
+app.delete('/api/templates/stages/:stageId', authenticateApi, db.deleteStage);
 
 // Iniciar Servidor
 app.listen(PORT, () => {

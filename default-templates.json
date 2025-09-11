@@ -1,0 +1,86 @@
+{
+  "templates": [
+    {
+      "nombre_producto": "Cacao Fino de Aroma",
+      "descripcion": "Plantilla estándar para el proceso de cacao.",
+      "etapas": [
+        {
+          "nombre_etapa": "Cosecha",
+          "orden": 1,
+          "campos_json": {
+            "entradas": [{"label": "Peso Mazorcas (kg)", "name": "pesoMazorcas", "type": "number"}],
+            "salidas": [{"label": "Peso Granos Frescos (kg)", "name": "pesoGranosFrescos", "type": "number"}],
+            "variables": [{"label": "Finca", "name": "finca", "type": "selectFinca"}, {"label": "Fecha Cosecha", "name": "fechaCosecha", "type": "date"}, {"label": "Foto", "name": "imageUrl", "type": "image"}]
+          }
+        },
+        {
+          "nombre_etapa": "Fermentación",
+          "orden": 2,
+          "campos_json": {
+            "entradas": [{"label": "Peso Entrada (kg)", "name": "pesoEntrada", "type": "number"}],
+            "salidas": [{"label": "Peso Fermentado Húmedo (kg)", "name": "pesoFermentadoHumedo", "type": "number"}],
+            "variables": [{"label": "Lugar del Proceso", "name": "lugarProceso", "type": "selectLugar"}, {"label": "Fecha Inicio", "name": "fechaInicio", "type": "date"}, {"label": "Método", "name": "metodo", "type": "text"}, {"label": "Duración (días)", "name": "duracion", "type": "number"}, {"label": "Foto", "name": "imageUrl", "type": "image"}]
+          }
+        },
+        {
+          "nombre_etapa": "Secado",
+          "orden": 3,
+          "campos_json": {
+            "entradas": [{"label": "Peso Entrada (kg)", "name": "pesoEntrada", "type": "number"}],
+            "salidas": [{"label": "Peso Cacao Seco (kg)", "name": "pesoSeco", "type": "number"}],
+            "variables": [{"label": "Lugar del Proceso", "name": "lugarProceso", "type": "selectLugar"}, {"label": "Fecha Inicio", "name": "fechaInicio", "type": "date"}, {"label": "Método", "name": "metodo", "type": "text"}, {"label": "Duración (días)", "name": "duracion", "type": "number"}, {"label": "Foto", "name": "imageUrl", "type": "image"}]
+          }
+        },
+        {
+          "nombre_etapa": "Tostado",
+          "orden": 4,
+          "campos_json": {
+            "entradas": [{"label": "Peso Entrada (kg)", "name": "pesoEntrada", "type": "number"}],
+            "salidas": [{"label": "Peso Cacao Tostado (kg)", "name": "pesoTostado", "type": "number"}],
+            "variables": [{"label": "Procesadora", "name": "procesadora", "type": "selectProcesadora"}, {"label": "Perfil Sensorial", "name": "tipoPerfil", "type": "selectPerfil"}, {"label": "Fecha Tostado", "name": "fechaTostado", "type": "date"}, {"label": "Clasificación", "name": "clasificacion", "type": "text"}, {"label": "Temp. Mínima (°C)", "name": "tempMinima", "type": "number"}, {"label": "Temp. Máxima (°C)", "name": "tempMaxima", "type": "number"}, {"label": "Tiempo Tueste (min)", "name": "duracion", "type": "number"}, {"label": "Perfil de Aroma", "name": "perfilAroma", "type": "textarea"}, {"label": "Foto", "name": "imageUrl", "type": "image"}]
+          }
+        },
+        {
+          "nombre_etapa": "Descascarillado & Molienda",
+          "orden": 5,
+          "campos_json": {
+            "entradas": [{"label": "Peso Entrada (kg)", "name": "pesoEntrada", "type": "number"}],
+            "salidas": [{"label": "Peso Producto Final (kg)", "name": "pesoProductoFinal", "type": "number"}, {"label": "Peso Cascarilla (kg)", "name": "pesoCascarilla", "type": "number"}],
+            "variables": [{"label": "Procesadora", "name": "procesadora", "type": "selectProcesadora"}, {"label": "Producto Final", "name": "productoFinal", "type": "text"}, {"label": "Fecha", "name": "fecha", "type": "date"}]
+          }
+        }
+      ]
+    },
+    {
+      "nombre_producto": "Café de Altura",
+      "descripcion": "Plantilla estándar para el proceso de café lavado.",
+      "etapas": [
+        {
+          "nombre_etapa": "Cosecha",
+          "orden": 1,
+          "campos_json": { "entradas": [{"label": "Peso Cereza (kg)", "name": "pesoCereza", "type": "number"}], "salidas": [], "variables": [{"label": "Finca", "name": "finca", "type": "selectFinca"}, {"label": "Variedad", "name": "variedad", "type": "text"}, {"label": "Fecha", "name": "fecha", "type": "date"}] }
+        },
+        {
+          "nombre_etapa": "Despulpado",
+          "orden": 2,
+          "campos_json": { "entradas": [{"label": "Peso Entrada (kg)", "name": "pesoEntrada", "type": "number"}], "salidas": [{"label": "Peso Pergamino Húmedo (kg)", "name": "pesoPergaminoHumedo", "type": "number"}], "variables": [{"label": "Método", "name": "metodo", "type": "text"}, {"label": "Fecha", "name": "fecha", "type": "date"}] }
+        },
+        {
+          "nombre_etapa": "Fermentación",
+          "orden": 3,
+          "campos_json": { "entradas": [{"label": "Peso Entrada (kg)", "name": "pesoEntrada", "type": "number"}], "salidas": [{"label": "Peso Fermentado (kg)", "name": "pesoFermentado", "type": "number"}], "variables": [{"label": "Tipo Tanque", "name": "tipoTanque", "type": "text"}, {"label": "Horas", "name": "horas", "type": "number"}, {"label": "Fecha", "name": "fecha", "type": "date"}] }
+        },
+        {
+          "nombre_etapa": "Lavado",
+          "orden": 4,
+          "campos_json": { "entradas": [{"label": "Peso Entrada (kg)", "name": "pesoEntrada", "type": "number"}], "salidas": [{"label": "Peso Lavado (kg)", "name": "pesoLavado", "type": "number"}], "variables": [{"label": "Método", "name": "metodo", "type": "text"}, {"label": "Fecha", "name": "fecha", "type": "date"}] }
+        },
+        {
+          "nombre_etapa": "Secado",
+          "orden": 5,
+          "campos_json": { "entradas": [{"label": "Peso Entrada (kg)", "name": "pesoEntrada", "type": "number"}], "salidas": [{"label": "Peso Pergamino Seco (kg)", "name": "pesoPergaminoSeco", "type": "number"}], "variables": [{"label": "Tipo Secado", "name": "tipoSecado", "type": "text"}, {"label": "Días", "name": "dias", "type": "number"}, {"label": "Fecha", "name": "fecha", "type": "date"}] }
+        }
+      ]
+    }
+  ]
+}
