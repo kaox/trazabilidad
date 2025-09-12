@@ -58,7 +58,7 @@
         {
           "nombre_etapa": "Cosecha",
           "orden": 1,
-          "campos_json": { "entradas": [{"label": "Peso Cereza (kg)", "name": "pesoCereza", "type": "number"}], "salidas": [], "variables": [{"label": "Finca", "name": "finca", "type": "selectFinca"}, {"label": "Variedad", "name": "variedad", "type": "text"}, {"label": "Fecha", "name": "fecha", "type": "date"}] }
+          "campos_json": { "entradas": [{"label": "Peso Cereza (kg)", "name": "pesoCereza", "type": "number"}], "salidas": [{"label": "Peso Cereza Seleccionada (kg)", "name": "pesoCerezaSeleccionada", "type": "number"}], "variables": [{"label": "Finca", "name": "finca", "type": "selectFinca"}, {"label": "Variedad", "name": "variedad", "type": "text"}, {"label": "Fecha", "name": "fecha", "type": "date"}] }
         },
         {
           "nombre_etapa": "Despulpado",
@@ -79,6 +79,12 @@
           "nombre_etapa": "Secado",
           "orden": 5,
           "campos_json": { "entradas": [{"label": "Peso Entrada (kg)", "name": "pesoEntrada", "type": "number"}], "salidas": [{"label": "Peso Pergamino Seco (kg)", "name": "pesoPergaminoSeco", "type": "number"}], "variables": [{"label": "Tipo Secado", "name": "tipoSecado", "type": "text"}, {"label": "Días", "name": "dias", "type": "number"}, {"label": "Fecha", "name": "fecha", "type": "date"}] }
+        }
+        ,
+        {
+          "nombre_etapa": "Trillado",
+          "orden": 6,
+          "campos_json": { "entradas": [{"label": "Peso Entrada (kg)", "name": "pesoEntrada", "type": "number"}], "salidas": [{"label": "Peso oro verde (kg)", "name": "pesoOroVerde", "type": "number"}], "variables": [{"label": "Fecha", "name": "fecha", "type": "date"}] }
         }
       ]
     }
