@@ -92,60 +92,47 @@ document.addEventListener('DOMContentLoaded', () => {
         const fechaKey = variables.find(v => v.type === 'date')?.name;
         const fecha = fechaKey ? batchData[fechaKey] : 'Sin fecha';
 
-        const cardContent = document.createElement('div');
-        cardContent.className = 'p-4 border-l-4';
-        cardContent.style.borderColor = getTemplateColor(template.id);
-        
-        cardContent.innerHTML = `
-            <div class="flex flex-col sm:flex-row justify-between sm:items-start gap-2">
-                <div class="flex items-center gap-2 flex-grow ${hasChildren ? 'cursor-pointer' : ''}">
-                    ${hasChildren ? `<svg class="w-5 h-5 text-stone-400 transition-transform duration-300 flex-shrink-0 expand-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7-7"></path></svg>` : '<div class="w-5 flex-shrink-0"></div>' }
-                    <div>
-                        <h3 class="font-bold text-lg text-amber-900">${stage.nombre_etapa} <span class="text-base font-normal text-stone-500">[${fecha}]</span></h3>
-                        ${!parentBatch ? `<span class="inline-block text-xs font-semibold mr-2 px-2.5 py-0.5 rounded-full" style="background-color: ${getTemplateColor(template.id, true)}; color: ${getTemplateColor(template.id)}">${template.nombre_producto}</span>`: ''}
+        card.innerHTML = `
+            <div class="p-4 border-l-4" style="border-color: ${getTemplateColor(template.id)}">
+                <div class="flex flex-col sm:flex-row justify-between sm:items-start gap-2">
+                    <div class="flex items-center gap-2 flex-grow ${hasChildren ? 'cursor-pointer' : ''}" ${hasChildren ? `onclick="this.closest('.p-4').nextElementSibling.classList.toggle('hidden'); this.querySelector('.expand-icon').classList.toggle('rotate-90')"` : ''}>
+                        ${hasChildren ? `<svg class="w-5 h-5 text-stone-400 transition-transform duration-300 flex-shrink-0 expand-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7-7"></path></svg>` : '<div class="w-5 flex-shrink-0"></div>' }
+                        <div>
+                            <h3 class="font-bold text-lg text-amber-900">${stage.nombre_etapa} <span class="text-base font-normal text-stone-500">[${fecha}]</span></h3>
+                            ${!parentBatch ? `<span class="inline-block text-xs font-semibold mr-2 px-2.5 py-0.5 rounded-full" style="background-color: ${getTemplateColor(template.id, true)}; color: ${getTemplateColor(template.id)}">${template.nombre_producto}</span>`: ''}
+                        </div>
+                    </div>
+                    <div class="flex flex-wrap gap-2 items-center justify-start sm:justify-end flex-shrink-0">
+                        <button class="edit-btn text-xs bg-stone-200 hover:bg-stone-300 px-3 py-1.5 rounded-lg" data-batch-id="${batchData.id}" data-template-id="${template.id}" data-stage-id="${stage.id}">Editar</button>
+                        <button class="delete-btn text-xs bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded-lg" data-batch-id="${batchData.id}">X</button>
+                        ${nextStage ? `<button ${outputWeight <= 0 ? 'disabled' : ''} class="add-sub-btn text-xs bg-green-600 hover:bg-green-700 text-white font-bold px-3 py-1.5 rounded-lg disabled:bg-gray-400" data-parent-id="${batchData.id}" data-template-id="${template.id}" data-next-stage-id="${nextStage.id}">+ Añadir ${nextStage.nombre_etapa}</button>` : ''}
                     </div>
                 </div>
-                <div class="flex flex-wrap gap-2 items-center justify-start sm:justify-end flex-shrink-0">
-                    <button class="edit-btn text-xs bg-stone-200 hover:bg-stone-300 px-3 py-1.5 rounded-lg" data-batch-id="${batchData.id}" data-template-id="${template.id}" data-stage-id="${stage.id}">Editar</button>
-                    ${nextStage ? `<button ${outputWeight <= 0 ? 'disabled' : ''} class="add-sub-btn text-xs bg-green-600 hover:bg-green-700 text-white font-bold px-3 py-1.5 rounded-lg disabled:bg-gray-400" data-parent-id="${batchData.id}" data-template-id="${template.id}" data-next-stage-id="${nextStage.id}">+ Añadir ${nextStage.nombre_etapa}</button>` : ''}
-                </div>
-            </div>
-            <div class="pl-7 mt-4 flex flex-col sm:flex-row gap-4">
-                ${imageUrlField && batchData[imageUrlField.name] ? `<img src="${batchData[imageUrlField.name]}" class="w-24 h-24 rounded-lg object-cover flex-shrink-0">` : ''}
-                <div class="flex-grow space-y-4">
-                    <div class="pt-4 border-t sm:border-t-0"><dl class="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1 text-sm">${variablesHtml}</dl></div>
-                    <div class="pt-4 border-t">${ioHtml}</div>
-                    <div>
-                        <div class="flex justify-between items-center mb-1"><span class="text-sm font-medium text-amber-800">Rendimiento</span><span class="text-sm font-bold text-amber-800">${yieldPercent.toFixed(1)}%</span></div>
-                        <div class="w-full bg-stone-200 rounded-full h-2.5"><div class="bg-amber-700 h-2.5 rounded-full" style="width: ${yieldPercent}%"></div></div>
+                <div class="pl-7 mt-4 flex flex-col sm:flex-row gap-4">
+                    ${imageUrlField && batchData[imageUrlField.name] ? `<img src="${batchData[imageUrlField.name]}" class="w-24 h-24 rounded-lg object-cover flex-shrink-0">` : ''}
+                    <div class="flex-grow space-y-4">
+                        <div class="pt-4 border-t sm:border-t-0"><dl class="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1 text-sm">${variablesHtml}</dl></div>
+                        <div class="pt-4 border-t">${ioHtml}</div>
+                        <div>
+                            <div class="flex justify-between items-center mb-1"><span class="text-sm font-medium text-amber-800">Rendimiento</span><span class="text-sm font-bold text-amber-800">${yieldPercent.toFixed(1)}%</span></div>
+                            <div class="w-full bg-stone-200 rounded-full h-2.5"><div class="bg-amber-700 h-2.5 rounded-full" style="width: ${yieldPercent}%"></div></div>
+                        </div>
                     </div>
                 </div>
             </div>
+            <div class="ml-4 sm:ml-6 mt-0 pl-4 border-l-2 border-stone-200 hidden children-container"></div>
         `;
-        
-        const childrenContainer = document.createElement('div');
-        childrenContainer.className = 'ml-4 sm:ml-6 mt-0 pl-4 border-l-2 border-stone-200 hidden children-container';
 
         if (hasChildren) {
+            const childrenContainer = card.querySelector('.children-container');
             batchData[childrenKey].forEach(childBatch => {
                 childrenContainer.appendChild(createBatchCard(childBatch, template, nextStage, batchData));
-            });
-        }
-        
-        card.appendChild(cardContent);
-        card.appendChild(childrenContainer);
-
-        if (hasChildren) {
-            const clickableArea = cardContent.querySelector('.flex-grow');
-            clickableArea.addEventListener('click', (e) => {
-                if (e.target.closest('button')) return;
-                childrenContainer.classList.toggle('hidden');
-                clickableArea.querySelector('.expand-icon')?.classList.toggle('rotate-90');
             });
         }
         return card;
     }
 
+    // --- Lógica de Modales ---
     function openTemplateSelectorModal() {
         if (state.templates.length === 0) {
             alert("No hay plantillas de proceso. Crea una en Gestión -> Plantillas.");
@@ -382,6 +369,18 @@ document.addEventListener('DOMContentLoaded', () => {
             const stage = state.stagesByTemplate[template.id].find(s => s.id == button.dataset.stageId);
             const parent = findParentBatch(state.batches, batch.id);
             openFormModal('edit', template, stage, parent, batch);
+        }
+        
+        if (button.classList.contains('delete-btn')) {
+            const batchId = button.dataset.batchId;
+            if (confirm('¿Seguro que quieres eliminar este lote y todos sus sub-procesos?')) {
+                try {
+                    await api(`/api/batches/${batchId}`, { method: 'DELETE' });
+                    await loadBatches();
+                } catch (error) {
+                    alert('Error al eliminar el lote: ' + error.message);
+                }
+            }
         }
     }
 

@@ -6,7 +6,8 @@
   "scripts": {
     "db:init": "node db-init.js",
     "start": "NODE_ENV=production node server.js",
-    "dev": "NODE_ENV=development nodemon server.js"
+    "dev": "NODE_ENV=development nodemon server.js",
+    "test": "jest"
   },
   "dependencies": {
     "@neondatabase/serverless": "^0.9.1",
@@ -19,7 +20,18 @@
     "sqlite3": "^5.1.7"
   },
   "devDependencies": {
+    "jest": "^29.7.0",
+    "jsdom": "^24.1.0",
     "nodemon": "^3.1.0"
+  },
+  "jest": {
+    "testEnvironment": "jsdom",
+    "setupFiles": [
+      "./setupTests.js"
+    ],
+    "roots": [
+      "<rootDir>/__tests__"
+    ]
   }
 }
 

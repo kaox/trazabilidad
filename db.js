@@ -197,7 +197,8 @@ const getPerfiles = async (req, res) => {
     try {
         let perfiles = await all('SELECT * FROM perfiles_cacao WHERE user_id = ? ORDER BY nombre', [userId]);
         if (perfiles.length === 0) {
-            const defaultPerfiles = require('./default-templates.json').defaultPerfiles;
+            const defaultTemplates = require('./default-templates.json');
+            const defaultPerfiles = defaultTemplates.defaultPerfiles;
             const insertSql = 'INSERT INTO perfiles_cacao (user_id, nombre, perfil_data) VALUES (?, ?, ?)';
             for (const perfil of defaultPerfiles) {
                 await run(insertSql, [userId, perfil.nombre, JSON.stringify(perfil.perfil_data)]);
@@ -332,7 +333,8 @@ const getBatchesTree = async (req, res) => {
             return acc;
         }, {});
         
-        const lotes = allLotes.map(lote => ({ ...lote, data: JSON.parse(lote.data) }));
+        const lotes = allLotes.map(lote => ({...lote, data: JSON.parse(lote.data), children: []}));
+        
         const lotesById = lotes.reduce((acc, lote) => {
             acc[lote.id] = lote;
             return acc;
@@ -343,27 +345,32 @@ const getBatchesTree = async (req, res) => {
             if (lote.parent_id) {
                 const parent = lotesById[lote.parent_id];
                 if (parent) {
-                    const parentTemplateId = parent.plantilla_id;
-                    const stagesForTemplate = stagesByTemplate[parentTemplateId];
-                    if (stagesForTemplate) {
-                        const parentStage = stagesForTemplate.find(s => s.id === parent.etapa_id);
-                        if (parentStage) {
-                            const nextStage = stagesForTemplate.find(s => s.orden === parentStage.orden + 1);
-                            if (nextStage) {
-                                const childKey = nextStage.nombre_etapa.toLowerCase().replace(/ & /g, '_and_');
-                                if (!parent.data[childKey]) parent.data[childKey] = [];
-                                parent.data[childKey].push(lote.data);
-                            }
-                        }
-                    }
+                    parent.children.push(lote);
                 }
             } else {
-                const rootData = { ...lote.data, plantilla_id: lote.plantilla_id, etapa_id: lote.etapa_id };
-                roots.push(rootData);
+                roots.push(lote);
             }
         });
         
-        res.status(200).json(roots);
+        const buildClientTree = (loteNode) => {
+            const template = templates.find(t => t.id === loteNode.plantilla_id);
+            const stage = stagesByTemplate[template.id].find(s => s.id === loteNode.etapa_id);
+            const loteData = { ...loteNode.data, plantilla_id: loteNode.plantilla_id, etapa_id: loteNode.etapa_id };
+
+            if (loteNode.children && loteNode.children.length > 0) {
+                const nextStageOrder = stage.orden + 1;
+                const nextStage = stagesByTemplate[template.id].find(s => s.orden === nextStageOrder);
+                if (nextStage) {
+                    const childKey = nextStage.nombre_etapa.toLowerCase().replace(/ & /g, '_and_');
+                    loteData[childKey] = loteNode.children.map(childNode => buildClientTree(childNode));
+                }
+            }
+            return loteData;
+        };
+        
+        const finalTree = roots.map(rootNode => buildClientTree(rootNode));
+        
+        res.status(200).json(finalTree);
     } catch (error) {
         console.error("Error en getBatchesTree:", error);
         res.status(500).json({ error: "Error interno del servidor al construir el árbol de lotes." });
@@ -393,8 +400,8 @@ const createBatch = async (req, res) => {
         const parentLote = await get('SELECT plantilla_id FROM lotes WHERE id = ?', [parent_id]);
         if (!parentLote) return res.status(404).json({ error: "Lote padre no encontrado." });
 
-        sql = 'INSERT INTO lotes (id, plantilla_id, etapa_id, parent_id, data) VALUES (?, ?, ?, ?, ?)';
-        params = [data.id, parentLote.plantilla_id, etapa_id, parent_id, JSON.stringify(data)];
+        sql = 'INSERT INTO lotes (id, user_id, plantilla_id, etapa_id, parent_id, data) VALUES (?, ?, ?, ?, ?, ?)';
+        params = [data.id, userId, parentLote.plantilla_id, etapa_id, parent_id, JSON.stringify(data)];
     }
     try {
         await run(sql, params);
