@@ -476,6 +476,106 @@ const getTrazabilidad = async (req, res) => {
     }
 };
 
+// --- Ruedas de Sabores ---
+const getRuedasSabores = async (req, res) => {
+    const userId = req.user.id;
+    try {
+        const ruedas = await all('SELECT * FROM ruedas_sabores WHERE user_id = ? ORDER BY nombre_rueda', [userId]);
+        const parsedRuedas = ruedas.map(r => ({ ...r, notas_json: JSON.parse(r.notas_json) }));
+        res.status(200).json(parsedRuedas);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};
+
+const createRuedaSabores = async (req, res) => {
+    const userId = req.user.id;
+    const { nombre_rueda, notas_json } = req.body;
+    try {
+        const result = await run('INSERT INTO ruedas_sabores (user_id, nombre_rueda, notas_json) VALUES (?, ?, ?)', [userId, nombre_rueda, JSON.stringify(notas_json)]);
+        res.status(201).json({ id: result.lastID, user_id: userId, nombre_rueda, notas_json });
+    } catch (err) {
+        if (err.message.includes('UNIQUE')) return res.status(409).json({ error: 'Ya existe una rueda con ese nombre.' });
+        res.status(500).json({ error: err.message });
+    }
+};
+
+const updateRuedaSabores = async (req, res) => {
+    const userId = req.user.id;
+    const { id } = req.params;
+    const { nombre_rueda, notas_json } = req.body;
+    try {
+        const result = await run('UPDATE ruedas_sabores SET nombre_rueda = ?, notas_json = ? WHERE id = ? AND user_id = ?', [nombre_rueda, JSON.stringify(notas_json), id, userId]);
+        if (result.changes === 0) return res.status(404).json({ error: 'Rueda no encontrada o sin permiso.' });
+        res.status(200).json({ message: 'Rueda actualizada.' });
+    } catch (err) {
+        if (err.message.includes('UNIQUE')) return res.status(409).json({ error: 'Ya existe una rueda con ese nombre.' });
+        res.status(500).json({ error: err.message });
+    }
+};
+
+const deleteRuedaSabores = async (req, res) => {
+    const userId = req.user.id;
+    const { id } = req.params;
+    try {
+        const result = await run('DELETE FROM ruedas_sabores WHERE id = ? AND user_id = ?', [id, userId]);
+        if (result.changes === 0) return res.status(404).json({ error: 'Rueda no encontrada o sin permiso.' });
+        res.status(204).send();
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};
+
+// --- Perfiles de Café ---
+const getPerfilesCafe = async (req, res) => {
+    const userId = req.user.id;
+    try {
+        const perfiles = await all('SELECT * FROM perfiles_cafe WHERE user_id = ? ORDER BY nombre_perfil', [userId]);
+        const parsedPerfiles = perfiles.map(p => ({ ...p, perfil_data: JSON.parse(p.perfil_data) }));
+        res.status(200).json(parsedPerfiles);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};
+
+const createPerfilCafe = async (req, res) => {
+    const userId = req.user.id;
+    const { nombre_perfil, perfil_data } = req.body;
+    try {
+        const result = await run('INSERT INTO perfiles_cafe (user_id, nombre_perfil, perfil_data) VALUES (?, ?, ?)', [userId, nombre_perfil, JSON.stringify(perfil_data)]);
+        res.status(201).json({ id: result.lastID, user_id: userId, nombre_perfil, perfil_data });
+    } catch (err) {
+        if (err.message.includes('UNIQUE')) return res.status(409).json({ error: 'Ya existe un perfil de café con ese nombre.' });
+        res.status(500).json({ error: err.message });
+    }
+};
+
+const updatePerfilCafe = async (req, res) => {
+    const userId = req.user.id;
+    const { id } = req.params;
+    const { nombre_perfil, perfil_data } = req.body;
+    try {
+        const result = await run('UPDATE perfiles_cafe SET nombre_perfil = ?, perfil_data = ? WHERE id = ? AND user_id = ?', [nombre_perfil, JSON.stringify(perfil_data), id, userId]);
+        if (result.changes === 0) return res.status(404).json({ error: 'Perfil no encontrado o sin permiso.' });
+        res.status(200).json({ message: 'Perfil de café actualizado.' });
+    } catch (err) {
+        if (err.message.includes('UNIQUE')) return res.status(409).json({ error: 'Ya existe un perfil de café con ese nombre.' });
+        res.status(500).json({ error: err.message });
+    }
+};
+
+const deletePerfilCafe = async (req, res) => {
+    const userId = req.user.id;
+    const { id } = req.params;
+    try {
+        const result = await run('DELETE FROM perfiles_cafe WHERE id = ? AND user_id = ?', [id, userId]);
+        if (result.changes === 0) return res.status(404).json({ error: 'Perfil no encontrado o sin permiso.' });
+        res.status(204).send();
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};
+
 module.exports = {
     registerUser, loginUser, logoutUser,
     getFincas, createFinca, updateFinca, deleteFinca,
@@ -486,5 +586,7 @@ module.exports = {
     getBatchesTree, createBatch, updateBatch, deleteBatch,
     getTrazabilidad,
     getUserProfile, updateUserProfile, updateUserPassword,
+    getRuedasSabores, createRuedaSabores, updateRuedaSabores, deleteRuedaSabores,
+    getPerfilesCafe, createPerfilCafe, updatePerfilCafe, deletePerfilCafe
 };
 

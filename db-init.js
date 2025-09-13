@@ -110,6 +110,30 @@ async function initializeDatabase() {
                 )`);
             console.log("Tabla 'perfiles_cacao' lista.");
 
+            await runQuery(db, `
+                CREATE TABLE IF NOT EXISTS ruedas_sabores (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                nombre_rueda TEXT NOT NULL,
+                notas_json TEXT NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+                UNIQUE(user_id, nombre_rueda)
+                )`);
+            console.log("Tabla 'ruedas_sabores' lista.");
+
+            await runQuery(db, `
+                CREATE TABLE IF NOT EXISTS perfiles_cafe (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                nombre_perfil TEXT NOT NULL,
+                perfil_data TEXT NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+                UNIQUE(user_id, nombre_perfil)
+                )`);
+            console.log("Tabla 'perfiles_cafe' lista.");
+
             console.log('Esquema de base de datos listo.');
 
         } catch (error) {

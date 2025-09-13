@@ -1,43 +1,69 @@
 {
   "templates": [
     {
-      "nombre_producto": "Cacao Fino de Aroma",
-      "descripcion": "Plantilla estándar para el proceso de cacao.",
+      "nombre_producto": "Cacao",
+      "descripcion": "Plantilla estándar para el proceso de postcosecha del cacao.",
       "etapas": [
         {
           "nombre_etapa": "Cosecha",
           "orden": 1,
           "campos_json": {
             "entradas": [{"label": "Peso Mazorcas (kg)", "name": "pesoMazorcas", "type": "number"}],
-            "salidas": [{"label": "Peso Granos Frescos (kg)", "name": "pesoGranosFrescos", "type": "number"}],
-            "variables": [{"label": "Finca", "name": "finca", "type": "selectFinca"}, {"label": "Fecha Cosecha", "name": "fechaCosecha", "type": "date"}, {"label": "Foto", "name": "imageUrl", "type": "image"}]
+            "salidas": [{"label": "Peso Granos en Baba (kg)", "name": "pesoGranosBaba", "type": "number"}],
+            "variables": [
+                {"label": "Finca", "name": "finca", "type": "selectFinca"},
+                {"label": "Variedad de Cacao", "name": "variedadCacao", "type": "text"},
+                {"label": "Fecha Cosecha", "name": "fechaCosecha", "type": "date"}, 
+                {"label": "Foto", "name": "imageUrl", "type": "image"}]
           }
         },
         {
           "nombre_etapa": "Fermentación",
           "orden": 2,
           "campos_json": {
-            "entradas": [{"label": "Peso Entrada (kg)", "name": "pesoEntrada", "type": "number"}],
-            "salidas": [{"label": "Peso Fermentado Húmedo (kg)", "name": "pesoFermentadoHumedo", "type": "number"}],
-            "variables": [{"label": "Lugar del Proceso", "name": "lugarProceso", "type": "selectLugar"}, {"label": "Fecha Inicio", "name": "fechaInicio", "type": "date"}, {"label": "Método", "name": "metodo", "type": "text"}, {"label": "Duración (días)", "name": "duracion", "type": "number"}, {"label": "Foto", "name": "imageUrl", "type": "image"}]
+            "entradas": [{"label": "Peso Granos en Baba (kg)", "name": "pesoEntrada", "type": "number"}],
+            "salidas": [{"label": "Peso Granos Fermentado (kg)", "name": "pesoFermentado", "type": "number"}],
+            "variables": [
+                {"label": "Lugar del Proceso", "name": "lugarProceso", "type": "selectLugar"},
+                {"label": "Fecha Inicio", "name": "fechaInicio", "type": "date"},
+                {"label": "Método de Fermentación", "name": "metodoFermentacion", "type": "select", "options": ["Cajón de madera", "Sacos de yute", "Montones"]},
+                {"label": "Duración (días)", "name": "duracion", "type": "number"},
+                {"label": "Frecuencia de Volteo", "name": "frecuenciaVolteo", "type": "text"},
+                {"label": "Temperatura Máxima (°C)", "name": "temperaturaMaxima", "type": "number"},
+                {"label": "pH Final", "name": "phFinal", "type": "number"},
+                {"label": "Foto", "name": "imageUrl", "type": "image"}]
           }
         },
         {
           "nombre_etapa": "Secado",
           "orden": 3,
           "campos_json": {
-            "entradas": [{"label": "Peso Entrada (kg)", "name": "pesoEntrada", "type": "number"}],
+            "entradas": [{"label": "Peso Granos Fermentados (kg)", "name": "pesoEntrada", "type": "number"}],
             "salidas": [{"label": "Peso Cacao Seco (kg)", "name": "pesoSeco", "type": "number"}],
-            "variables": [{"label": "Lugar del Proceso", "name": "lugarProceso", "type": "selectLugar"}, {"label": "Fecha Inicio", "name": "fechaInicio", "type": "date"}, {"label": "Método", "name": "metodo", "type": "text"}, {"label": "Duración (días)", "name": "duracion", "type": "number"}, {"label": "Foto", "name": "imageUrl", "type": "image"}]
+            "variables": [
+                {"label": "Lugar del Proceso", "name": "lugarProceso", "type": "selectLugar"},
+                {"label": "Fecha Inicio", "name": "fechaInicio", "type": "date"},
+                {"label": "Método", "name": "metodo", "type": "text"},
+                {"label": "Duración (días)", "name": "duracion", "type": "number"},
+                {"label": "Humedad Final (%)", "name": "humedadFinal", "type": "number"},
+                {"label": "Foto", "name": "imageUrl", "type": "image"}]
           }
         },
         {
           "nombre_etapa": "Tostado",
           "orden": 4,
           "campos_json": {
-            "entradas": [{"label": "Peso Entrada (kg)", "name": "pesoEntrada", "type": "number"}],
+            "entradas": [{"label": "Peso Cacao Seco (kg)", "name": "pesoEntrada", "type": "number"}],
             "salidas": [{"label": "Peso Cacao Tostado (kg)", "name": "pesoTostado", "type": "number"}],
-            "variables": [{"label": "Procesadora", "name": "procesadora", "type": "selectProcesadora"}, {"label": "Perfil Sensorial", "name": "tipoPerfil", "type": "selectPerfil"}, {"label": "Fecha Tostado", "name": "fechaTostado", "type": "date"}, {"label": "Clasificación", "name": "clasificacion", "type": "text"}, {"label": "Temp. Mínima (°C)", "name": "tempMinima", "type": "number"}, {"label": "Temp. Máxima (°C)", "name": "tempMaxima", "type": "number"}, {"label": "Tiempo Tueste (min)", "name": "duracion", "type": "number"}, {"label": "Perfil de Aroma", "name": "perfilAroma", "type": "textarea"}, {"label": "Foto", "name": "imageUrl", "type": "image"}]
+            "variables": [
+                {"label": "Procesadora", "name": "procesadora", "type": "selectProcesadora"},
+                {"label": "Fecha Tostado", "name": "fechaTostado", "type": "date"},
+                {"label": "Perfil Sensorial", "name": "tipoPerfil", "type": "selectPerfil"},
+                {"label": "Temperatura de Carga (°C)", "name": "temperaturaCarga", "type": "number"},
+                {"label": "Temperatura Final (°C)", "name": "temperaturaFinal", "type": "number"},
+                {"label": "Tiempo Tueste (min)", "name": "duracion", "type": "number"},
+                {"label": "Notas de Aroma y Sabor", "name": "perfilAroma", "type": "textarea"},
+                {"label": "Foto", "name": "imageUrl", "type": "image"}]
           }
         },
         {
@@ -46,45 +72,226 @@
           "campos_json": {
             "entradas": [{"label": "Peso Entrada (kg)", "name": "pesoEntrada", "type": "number"}],
             "salidas": [{"label": "Peso Producto Final (kg)", "name": "pesoProductoFinal", "type": "number"}, {"label": "Peso Cascarilla (kg)", "name": "pesoCascarilla", "type": "number"}],
-            "variables": [{"label": "Procesadora", "name": "procesadora", "type": "selectProcesadora"}, {"label": "Producto Final", "name": "productoFinal", "type": "text"}, {"label": "Fecha", "name": "fecha", "type": "date"}]
+            "variables": [
+                {"label": "Procesadora", "name": "procesadora", "type": "selectProcesadora"},
+                {"label": "Fecha", "name": "fecha", "type": "date"},
+                {"label": "Producto Final", "name": "productoFinal", "type": "text", "description":"Ej: Nibs, Licor/Pasta de Cacao"}]
           }
         }
       ]
     },
     {
-      "nombre_producto": "Café de Altura",
-      "descripcion": "Plantilla estándar para el proceso de café lavado.",
+      "nombre_producto": "Café Lavado",
+      "descripcion": "Plantilla para el proceso de café lavado.",
       "etapas": [
         {
           "nombre_etapa": "Cosecha",
           "orden": 1,
-          "campos_json": { "entradas": [{"label": "Peso Cereza (kg)", "name": "pesoCereza", "type": "number"}], "salidas": [{"label": "Peso Cereza Seleccionada (kg)", "name": "pesoCerezaSeleccionada", "type": "number"}], "variables": [{"label": "Finca", "name": "finca", "type": "selectFinca"}, {"label": "Variedad", "name": "variedad", "type": "text"}, {"label": "Fecha", "name": "fecha", "type": "date"}] }
+          "campos_json": {
+            "entradas": [{"label": "Peso Cereza (kg)", "name": "pesoCereza", "type": "number"}],
+            "salidas": [{"label": "Peso Cereza Seleccionada (kg)", "name": "pesoCerezaSeleccionada", "type": "number"}],
+            "variables": [{"label": "Finca", "name": "finca", "type": "selectFinca"}, {"label": "Variedad", "name": "variedad", "type": "text"}, {"label": "Altura (msnm)", "name": "altura", "type": "number"}, {"label": "Fecha Cosecha", "name": "fechaCosecha", "type": "date"}, {"label": "Foto", "name": "imageUrl", "type": "image"}]
+          }
         },
         {
           "nombre_etapa": "Despulpado",
           "orden": 2,
-          "campos_json": { "entradas": [{"label": "Peso Entrada (kg)", "name": "pesoEntrada", "type": "number"}], "salidas": [{"label": "Peso Pergamino Húmedo (kg)", "name": "pesoPergaminoHumedo", "type": "number"}], "variables": [{"label": "Método", "name": "metodo", "type": "text"}, {"label": "Fecha", "name": "fecha", "type": "date"}] }
+          "campos_json": {
+            "entradas": [{"label": "Peso Cereza Seleccionada (kg)", "name": "pesoCerezaSeleccionada", "type": "number"}],
+            "salidas": [{"label": "Peso en Pergamino Húmedo (kg)", "name": "pesoPergaminoHumedo", "type": "number"}],
+            "variables": [{"label": "Fecha Despulpado", "name": "fechaDespulpado", "type": "date"}, {"label": "Tipo de Despulpadora", "name": "tipoDespulpadora", "type": "text"}, {"label": "Foto", "name": "imageUrl", "type": "image"}]
+          }
         },
         {
           "nombre_etapa": "Fermentación",
           "orden": 3,
-          "campos_json": { "entradas": [{"label": "Peso Entrada (kg)", "name": "pesoEntrada", "type": "number"}], "salidas": [{"label": "Peso Fermentado (kg)", "name": "pesoFermentado", "type": "number"}], "variables": [{"label": "Tipo Tanque", "name": "tipoTanque", "type": "text"}, {"label": "Horas", "name": "horas", "type": "number"}, {"label": "Fecha", "name": "fecha", "type": "date"}] }
+          "campos_json": {
+            "entradas": [{"label": "Peso en Pergamino Húmedo (kg)", "name": "pesoPergaminoHumedo", "type": "number"}],
+            "salidas": [{"label": "Peso Post-Fermentación (kg)", "name": "pesoPostFermentacion", "type": "number"}],
+            "variables": [{"label": "Lugar del Proceso", "name": "lugarProceso", "type": "selectLugar"}, {"label": "Fecha Inicio", "name": "fechaInicio", "type": "date"}, {"label": "Tipo Fermentación", "name": "tipoFermentacion", "type": "select", "options": ["Aeróbica", "Anaeróbica"]}, {"label": "Duración (horas)", "name": "duracion", "type": "number"}, {"label": "Temperatura Ambiente (°C)", "name": "temperaturaAmbiente", "type": "number"}, {"label": "pH inicial", "name": "phInicial", "type": "number"}, {"label": "pH final", "name": "phFinal", "type": "number"}, {"label": "Foto", "name": "imageUrl", "type": "image"}]
+          }
         },
         {
           "nombre_etapa": "Lavado",
           "orden": 4,
-          "campos_json": { "entradas": [{"label": "Peso Entrada (kg)", "name": "pesoEntrada", "type": "number"}], "salidas": [{"label": "Peso Lavado (kg)", "name": "pesoLavado", "type": "number"}], "variables": [{"label": "Método", "name": "metodo", "type": "text"}, {"label": "Fecha", "name": "fecha", "type": "date"}] }
+          "campos_json": {
+            "entradas": [{"label": "Peso Post-Fermentación (kg)", "name": "pesoPostFermentacion", "type": "number"}],
+            "salidas": [{"label": "Peso Lavado (kg)", "name": "pesoLavado", "type": "number"}],
+            "variables": [{"label": "Fecha Lavado", "name": "fechaLavado", "type": "date"}, {"label": "Método de Lavado", "name": "metodoLavado", "type": "text"}, {"label": "Agua Utilizada (litros)", "name": "aguaUtilizada", "type": "number"}, {"label": "Foto", "name": "imageUrl", "type": "image"}]
+          }
         },
         {
           "nombre_etapa": "Secado",
           "orden": 5,
-          "campos_json": { "entradas": [{"label": "Peso Entrada (kg)", "name": "pesoEntrada", "type": "number"}], "salidas": [{"label": "Peso Pergamino Seco (kg)", "name": "pesoPergaminoSeco", "type": "number"}], "variables": [{"label": "Tipo Secado", "name": "tipoSecado", "type": "text"}, {"label": "Días", "name": "dias", "type": "number"}, {"label": "Fecha", "name": "fecha", "type": "date"}] }
-        }
-        ,
+          "campos_json": {
+            "entradas": [{"label": "Peso Lavado (kg)", "name": "pesoLavado", "type": "number"}],
+            "salidas": [{"label": "Peso Pergamino Seco (kg)", "name": "pesoPergaminoSeco", "type": "number"}],
+            "variables": [{"label": "Lugar del Proceso", "name": "lugarProceso", "type": "selectLugar"}, {"label": "Fecha Inicio", "name": "fechaInicio", "type": "date"}, {"label": "Tipo de Secado", "name": "tipoSecado", "type": "select", "options": ["Camas africanas", "Patio de cemento", "Secadora mecánica"]}, {"label": "Duración (días)", "name": "duracion", "type": "number"}, {"label": "Humedad Final (%)", "name": "humedadFinal", "type": "number"}, {"label": "Temperatura de Secado (°C)", "name": "temperaturaSecado", "type": "number"}, {"label": "Foto", "name": "imageUrl", "type": "image"}]
+          }
+        },
         {
-          "nombre_etapa": "Trillado",
+          "nombre_etapa": "Trilla y Selección",
           "orden": 6,
-          "campos_json": { "entradas": [{"label": "Peso Entrada (kg)", "name": "pesoEntrada", "type": "number"}], "salidas": [{"label": "Peso oro verde (kg)", "name": "pesoOroVerde", "type": "number"}], "variables": [{"label": "Fecha", "name": "fecha", "type": "date"}] }
+          "campos_json": {
+            "entradas": [{"label": "Peso Pergamino Seco (kg)", "name": "pesoPergaminoSeco", "type": "number"}],
+            "salidas": [{"label": "Peso Café Verde (kg)", "name": "pesoCafeVerde", "type": "number"}],
+            "variables": [{"label": "Procesadora", "name": "procesadora", "type": "selectProcesadora"}, {"label": "Fecha Trilla", "name": "fechaTrilla", "type": "date"}, {"label": "Método de Selección", "name": "metodoSeleccion", "type": "text"}, {"label": "Densidad del grano (g/L)", "name": "densidadGrano", "type": "number"}, {"label": "Foto", "name": "imageUrl", "type": "image"}]
+          }
+        },
+        {
+          "nombre_etapa": "Tostado",
+          "orden": 7,
+          "campos_json": {
+            "entradas": [{"label": "Peso Café Verde (kg)", "name": "pesoCafeVerde", "type": "number"}],
+            "salidas": [{"label": "Peso Café Tostado (kg)", "name": "pesoCafeTostado", "type": "number"}],
+            "variables": [
+                {"label": "Procesadora", "name": "procesadora", "type": "selectProcesadora"},
+                {"label": "Fecha Tostado", "name": "fechaTostado", "type": "date"},
+                {"label": "Perfil de Tueste", "name": "perfilTueste", "type": "text"},
+                {"label": "Tiempo de Tueste (min)", "name": "tiempoTueste", "type": "number"},
+                {"label": "Temperatura de Carga (°C)", "name": "temperaturaCarga", "type": "number"},
+                {"label": "Temperatura Final (°C)", "name": "temperaturaFinal", "type": "number"},
+                {"label": "Notas de Cata", "name": "notasCata", "type": "textarea"},
+                {"label": "Foto", "name": "imageUrl", "type": "image"}]
+          }
+        },
+        {
+          "nombre_etapa": "Evaluación en Taza",
+          "orden": 8,
+          "campos_json": {
+            "entradas": [{"label": "Peso Muestra Tostada (g)", "name": "pesoMuestraTostada", "type": "number"}],
+            "salidas": [],
+            "variables": [
+                {"label": "Fecha de Catación", "name": "fechaCatacion", "type": "date"},
+                {"label": "Catador (Q Grader)", "name": "nombreCatador", "type": "text"},
+                {"label": "Puntuación Final (SCA)", "name": "puntuacionSCA", "type": "number", "step": "0.25"},
+                {"label": "Perfil de Sabor", "name": "perfilSabor", "type": "textarea", "placeholder": "Ej: Notas a panela, cítricos como mandarina, cuerpo medio, acidez brillante..."},
+                {"label": "Nivel de Tueste (Agtron)", "name": "nivelTueste", "type": "number"}
+                ]
+          }
+        }
+      ]
+    },
+    {
+      "nombre_producto": "Café Honey",
+      "descripcion": "Plantilla para el proceso de café honey.",
+      "etapas": [
+        {
+          "nombre_etapa": "Cosecha",
+          "orden": 1,
+          "campos_json": {
+            "entradas": [{"label": "Peso Cereza (kg)", "name": "pesoCereza", "type": "number"}],
+            "salidas": [{"label": "Peso Cereza Seleccionada (kg)", "name": "pesoCerezaSeleccionada", "type": "number"}],
+            "variables": [{"label": "Finca", "name": "finca", "type": "selectFinca"}, {"label": "Variedad", "name": "variedad", "type": "text"}, {"label": "Altura (msnm)", "name": "altura", "type": "number"}, {"label": "Fecha Cosecha", "name": "fechaCosecha", "type": "date"}, {"label": "Foto", "name": "imageUrl", "type": "image"}]
+          }
+        },
+        {
+          "nombre_etapa": "Despulpado",
+          "orden": 2,
+          "campos_json": {
+            "entradas": [{"label": "Peso Cereza Seleccionada (kg)", "name": "pesoCerezaSeleccionada", "type": "number"}],
+            "salidas": [{"label": "Peso Café con Mucílago (kg)", "name": "pesoCafeMucilago", "type": "number"}],
+            "variables": [{"label": "Fecha Despulpado", "name": "fechaDespulpado", "type": "date"}, {"label": "Tipo de Honey", "name": "tipoHoney", "type": "select", "options": ["Yellow", "Red", "Black"]}, {"label": "Porcentaje de Mucílago (%)", "name": "porcentajeMucilago", "type": "number"}, {"label": "Foto", "name": "imageUrl", "type": "image"}]
+          }
+        },
+        {
+          "nombre_etapa": "Secado",
+          "orden": 3,
+          "campos_json": {
+            "entradas": [{"label": "Peso Café con Mucílago (kg)", "name": "pesoCafeMucilago", "type": "number"}],
+            "salidas": [{"label": "Peso Pergamino Seco (kg)", "name": "pesoPergaminoSeco", "type": "number"}],
+            "variables": [{"label": "Lugar del Proceso", "name": "lugarProceso", "type": "selectLugar"}, {"label": "Fecha Inicio", "name": "fechaInicio", "type": "date"}, {"label": "Tipo de Secado", "name": "tipoSecado", "type": "select", "options": ["Camas africanas", "Patio de cemento"]}, {"label": "Duración (días)", "name": "duracion", "type": "number"}, {"label": "Frecuencia de Removido", "name": "frecuenciaRemovido", "type": "text"}, {"label": "Humedad Final (%)", "name": "humedadFinal", "type": "number"}, {"label": "Foto", "name": "imageUrl", "type": "image"}]
+          }
+        },
+        {
+          "nombre_etapa": "Trilla y Selección",
+          "orden": 4,
+          "campos_json": {
+            "entradas": [{"label": "Peso Pergamino Seco (kg)", "name": "pesoPergaminoSeco", "type": "number"}],
+            "salidas": [{"label": "Peso Café Verde (kg)", "name": "pesoCafeVerde", "type": "number"}],
+            "variables": [{"label": "Procesadora", "name": "procesadora", "type": "selectProcesadora"}, {"label": "Fecha Trilla", "name": "fechaTrilla", "type": "date"}, {"label": "Método de Selección", "name": "metodoSeleccion", "type": "text"}, {"label": "Densidad del grano (g/L)", "name": "densidadGrano", "type": "number"}, {"label": "Foto", "name": "imageUrl", "type": "image"}]
+          }
+        },
+        {
+          "nombre_etapa": "Tostado",
+          "orden": 5,
+          "campos_json": {
+            "entradas": [{"label": "Peso Café Verde (kg)", "name": "pesoCafeVerde", "type": "number"}],
+            "salidas": [{"label": "Peso Café Tostado (kg)", "name": "pesoCafeTostado", "type": "number"}],
+            "variables": [{"label": "Procesadora", "name": "procesadora", "type": "selectProcesadora"}, {"label": "Fecha Tostado", "name": "fechaTostado", "type": "date"}, {"label": "Perfil de Tueste", "name": "perfilTueste", "type": "text"}, {"label": "Tiempo de Tueste (min)", "name": "tiempoTueste", "type": "number"}, {"label": "Temperatura de Carga (°C)", "name": "temperaturaCarga", "type": "number"}, {"label": "Temperatura Final (°C)", "name": "temperaturaFinal", "type": "number"}, {"label": "Notas de Cata", "name": "notasCata", "type": "textarea"}, {"label": "Foto", "name": "imageUrl", "type": "image"}]
+          }
+        },
+        {
+          "nombre_etapa": "Evaluación en Taza",
+          "orden": 6,
+          "campos_json": {
+            "entradas": [{"label": "Peso Muestra Tostada (g)", "name": "pesoMuestraTostada", "type": "number"}],
+            "salidas": [],
+            "variables": [
+                {"label": "Fecha de Catación", "name": "fechaCatacion", "type": "date"},
+                {"label": "Catador (Q Grader)", "name": "nombreCatador", "type": "text"},
+                {"label": "Puntuación Final (SCA)", "name": "puntuacionSCA", "type": "number", "step": "0.25"},
+                {"label": "Perfil de Sabor", "name": "perfilSabor", "type": "textarea", "placeholder": "Ej: Notas a panela, cítricos como mandarina, cuerpo medio, acidez brillante..."},
+                {"label": "Nivel de Tueste (Agtron)", "name": "nivelTueste", "type": "number"}
+                ]
+          }
+        }
+      ]
+    },
+    {
+      "nombre_producto": "Café Natural",
+      "descripcion": "Plantilla para el proceso de café natural.",
+      "etapas": [
+        {
+          "nombre_etapa": "Cosecha y Selección",
+          "orden": 1,
+          "campos_json": {
+            "entradas": [{"label": "Peso Cereza (kg)", "name": "pesoCereza", "type": "number"}],
+            "salidas": [{"label": "Peso Cereza Seleccionada (kg)", "name": "pesoCerezaSeleccionada", "type": "number"}],
+            "variables": [{"label": "Finca", "name": "finca", "type": "selectFinca"}, {"label": "Variedad", "name": "variedad", "type": "text"}, {"label": "Altura (msnm)", "name": "altura", "type": "number"}, {"label": "Fecha Cosecha", "name": "fechaCosecha", "type": "date"}, {"label": "Método de Selección", "name": "metodoSeleccion", "type": "text", "description": "Flotación en agua, selección manual, etc."}, {"label": "Foto", "name": "imageUrl", "type": "image"}]
+          }
+        },
+        {
+          "nombre_etapa": "Secado",
+          "orden": 2,
+          "campos_json": {
+            "entradas": [{"label": "Peso Cereza Seleccionada (kg)", "name": "pesoCerezaSeleccionada", "type": "number"}],
+            "salidas": [{"label": "Peso Cereza Seca (kg)", "name": "pesoCerezaSeca", "type": "number"}],
+            "variables": [{"label": "Lugar del Proceso", "name": "lugarProceso", "type": "selectLugar"}, {"label": "Fecha Inicio", "name": "fechaInicio", "type": "date"}, {"label": "Tipo de Secado", "name": "tipoSecado", "type": "select", "options": ["Camas africanas", "Patio de cemento"]}, {"label": "Duración (días)", "name": "duracion", "type": "number"}, {"label": "Frecuencia de Removido", "name": "frecuenciaRemovido", "type": "text"}, {"label": "Humedad Final (%)", "name": "humedadFinal", "type": "number"}, {"label": "Temperatura de Secado (°C)", "name": "temperaturaSecado", "type": "number"}, {"label": "Foto", "name": "imageUrl", "type": "image"}]
+          }
+        },
+        {
+          "nombre_etapa": "Trilla y Selección",
+          "orden": 3,
+          "campos_json": {
+            "entradas": [{"label": "Peso Cereza Seca (kg)", "name": "pesoCerezaSeca", "type": "number"}],
+            "salidas": [{"label": "Peso Café Verde (kg)", "name": "pesoCafeVerde", "type": "number"}],
+            "variables": [{"label": "Procesadora", "name": "procesadora", "type": "selectProcesadora"}, {"label": "Fecha Trilla", "name": "fechaTrilla", "type": "date"}, {"label": "Método de Selección", "name": "metodoSeleccion", "type": "text"}, {"label": "Densidad del grano (g/L)", "name": "densidadGrano", "type": "number"}, {"label": "Foto", "name": "imageUrl", "type": "image"}]
+          }
+        },
+        {
+          "nombre_etapa": "Tostado",
+          "orden": 4,
+          "campos_json": {
+            "entradas": [{"label": "Peso Café Verde (kg)", "name": "pesoCafeVerde", "type": "number"}],
+            "salidas": [{"label": "Peso Café Tostado (kg)", "name": "pesoCafeTostado", "type": "number"}],
+            "variables": [{"label": "Procesadora", "name": "procesadora", "type": "selectProcesadora"}, {"label": "Fecha Tostado", "name": "fechaTostado", "type": "date"}, {"label": "Perfil de Tueste", "name": "perfilTueste", "type": "text"}, {"label": "Tiempo de Tueste (min)", "name": "tiempoTueste", "type": "number"}, {"label": "Temperatura de Carga (°C)", "name": "temperaturaCarga", "type": "number"}, {"label": "Temperatura Final (°C)", "name": "temperaturaFinal", "type": "number"}, {"label": "Notas de Cata", "name": "notasCata", "type": "textarea"}, {"label": "Foto", "name": "imageUrl", "type": "image"}]
+          }
+        },
+        {
+          "nombre_etapa": "Evaluación en Taza",
+          "orden": 5,
+          "campos_json": {
+            "entradas": [{"label": "Peso Muestra Tostada (g)", "name": "pesoMuestraTostada", "type": "number"}],
+            "salidas": [],
+            "variables": [
+                {"label": "Fecha de Catación", "name": "fechaCatacion", "type": "date"},
+                {"label": "Catador (Q Grader)", "name": "nombreCatador", "type": "text"},
+                {"label": "Puntuación Final (SCA)", "name": "puntuacionSCA", "type": "number", "step": "0.25"},
+                {"label": "Perfil de Sabor", "name": "perfilSabor", "type": "textarea", "placeholder": "Ej: Notas a panela, cítricos como mandarina, cuerpo medio, acidez brillante..."},
+                {"label": "Nivel de Tueste (Agtron)", "name": "nivelTueste", "type": "number"}
+                ]
+          }
         }
       ]
     }
