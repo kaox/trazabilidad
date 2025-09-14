@@ -14,99 +14,93 @@ const PORT = process.env.PORT || 3000;
 // Middlewares
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
-app.use(express.static(path.join(__dirname, 'public'))); // Sirve archivos públicos
-app.use(cookieParser()); // Middleware para parsear cookies
+app.use(cookieParser());
+
+// Servir archivos estáticos desde la carpeta 'public'
+app.use(express.static(path.join(__dirname, 'public')));
 
 // --- Middleware de Autenticación Unificado ---
 const authenticate = (req, res, next, isPageRequest = false) => {
-    // 1. Prioriza la cookie, que es más segura.
-    let token = req.cookies.token;
-
-    // 2. Si no hay cookie, busca en el header 'Authorization' como respaldo.
+    let token = req.cookies.token || req.headers['authorization']?.split(' ')[1];
     if (!token) {
-        const authHeader = req.headers['authorization'];
-        if (authHeader) {
-            token = authHeader.split(' ')[1];
-        }
+        return isPageRequest 
+            ? res.redirect(`/login.html?redirect=${req.originalUrl}`)
+            : res.sendStatus(401);
     }
-
-    if (token == null) {
-        // Si no hay token por ninguna vía
-        if (isPageRequest) {
-            return res.redirect(`/login.html?redirect=${req.originalUrl}`);
-        }
-        return res.sendStatus(401); // Para peticiones de API
-    }
-
     jwt.verify(token, process.env.JWT_SECRET || 'supersecretkey', (err, user) => {
         if (err) {
-            // Si el token es inválido o expiró
-            if (isPageRequest) {
-                return res.clearCookie('token', { path: '/' }).redirect(`/login.html?redirect=${req.originalUrl}`);
-            }
-            return res.sendStatus(403); // Para peticiones de API
+            return isPageRequest
+                ? res.clearCookie('token', { path: '/' }).redirect(`/login.html?redirect=${req.originalUrl}`)
+                : res.sendStatus(403);
         }
         req.user = user;
         next();
     });
 };
-
 const authenticatePage = (req, res, next) => authenticate(req, res, next, true);
 const authenticateApi = (req, res, next) => authenticate(req, res, next, false);
 
-// --- Rutas Públicas (API y Páginas) ---
+// --- Rutas Públicas (API) ---
 app.post('/api/register', db.registerUser);
 app.post('/api/login', db.loginUser);
 app.post('/api/logout', db.logoutUser);
 app.get('/api/trazabilidad/:id', db.getTrazabilidad);
 
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'about.html'));
-});
+// --- Rutas Públicas (Páginas) ---
+app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'public', 'about.html')));
 
+// Nueva ruta para trazabilidad pública con ID corto en la URL
 app.get('/:loteId([A-Z]{3}-[A-Z0-9]{8})', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'trazabilidad.html'));
 });
 
+// Ruta anterior para compatibilidad o si se usa el formulario
 app.get('/qr', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'trazabilidad.html'));
 });
 
+
 // --- Rutas Protegidas de la Aplicación (Vistas) ---
+app.get('/app/dashboard', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'dashboard.html')));
 app.get('/app/trazabilidad', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'index.html')));
 app.get('/app/fincas', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'fincas.html')));
-app.get('/app/dashboard', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'dashboard.html')));
 app.get('/app/perfiles', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'perfiles.html')));
+app.get('/app/perfiles-cafe', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'perfiles-cafe.html')));
 app.get('/app/procesadoras', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'procesadoras.html')));
 app.get('/app/plantillas', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'plantillas.html')));
-app.get('/app/cuenta', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'cuenta.html')));
 app.get('/app/ruedas-sabores', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'ruedas-sabores.html')));
-app.get('/app/perfiles-cafe', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'perfiles-cafe.html')));
+app.get('/app/cuenta', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'cuenta.html')));
 
 // --- Rutas Protegidas de la API ---
+// Fincas
 app.get('/api/fincas', authenticateApi, db.getFincas);
 app.post('/api/fincas', authenticateApi, db.createFinca);
 app.put('/api/fincas/:id', authenticateApi, db.updateFinca);
 app.delete('/api/fincas/:id', authenticateApi, db.deleteFinca);
 
-app.get('/api/batches/tree', authenticateApi, db.getBatchesTree);
-app.post('/api/batches', authenticateApi, db.createBatch);
-app.put('/api/batches/:id', authenticateApi, db.updateBatch);
-app.delete('/api/batches/:id', authenticateApi, db.deleteBatch);
-
-app.get('/api/perfiles', authenticateApi, db.getPerfiles);
-app.post('/api/perfiles', authenticateApi, db.createPerfil);
-
+// Procesadoras
 app.get('/api/procesadoras', authenticateApi, db.getProcesadoras);
 app.post('/api/procesadoras', authenticateApi, db.createProcesadora);
 app.put('/api/procesadoras/:id', authenticateApi, db.updateProcesadora);
 app.delete('/api/procesadoras/:id', authenticateApi, db.deleteProcesadora);
 
-app.get('/api/user/profile', authenticateApi, db.getUserProfile);
-app.put('/api/user/profile', authenticateApi, db.updateUserProfile);
-app.put('/api/user/password', authenticateApi, db.updateUserPassword);
+// Perfiles Cacao
+app.get('/api/perfiles', authenticateApi, db.getPerfiles);
+app.post('/api/perfiles', authenticateApi, db.createPerfil);
 
-// Nuevas rutas para plantillas
+// Perfiles Café
+app.get('/api/perfiles-cafe', authenticateApi, db.getPerfilesCafe);
+app.post('/api/perfiles-cafe', authenticateApi, db.createPerfilCafe);
+app.put('/api/perfiles-cafe/:id', authenticateApi, db.updatePerfilCafe);
+app.delete('/api/perfiles-cafe/:id', authenticateApi, db.deletePerfilCafe);
+
+// Ruedas de Sabores
+app.get('/api/ruedas-sabores', authenticateApi, db.getRuedasSabores);
+app.post('/api/ruedas-sabores', authenticateApi, db.createRuedaSabores);
+app.put('/api/ruedas-sabores/:id', authenticateApi, db.updateRuedaSabores);
+app.delete('/api/ruedas-sabores/:id', authenticateApi, db.deleteRuedaSabores);
+
+// Plantillas y Etapas
 app.get('/api/templates', authenticateApi, db.getTemplates);
 app.post('/api/templates', authenticateApi, db.createTemplate);
 app.put('/api/templates/:templateId', authenticateApi, db.updateTemplate);
@@ -116,17 +110,17 @@ app.post('/api/templates/:templateId/stages', authenticateApi, db.createStage);
 app.put('/api/templates/stages/:stageId', authenticateApi, db.updateStage);
 app.delete('/api/templates/stages/:stageId', authenticateApi, db.deleteStage);
 
-// Nuevas rutas para Ruedas de Sabores
-app.get('/api/ruedas-sabores', authenticateApi, db.getRuedasSabores);
-app.post('/api/ruedas-sabores', authenticateApi, db.createRuedaSabores);
-app.put('/api/ruedas-sabores/:id', authenticateApi, db.updateRuedaSabores);
-app.delete('/api/ruedas-sabores/:id', authenticateApi, db.deleteRuedaSabores);
+// Lotes
+app.get('/api/batches/tree', authenticateApi, db.getBatchesTree);
+app.post('/api/batches', authenticateApi, db.createBatch);
+app.put('/api/batches/:id', authenticateApi, db.updateBatch);
+app.delete('/api/batches/:id', authenticateApi, db.deleteBatch);
 
-// Nuevas rutas para Perfiles de Café
-app.get('/api/perfiles-cafe', authenticateApi, db.getPerfilesCafe);
-app.post('/api/perfiles-cafe', authenticateApi, db.createPerfilCafe);
-app.put('/api/perfiles-cafe/:id', authenticateApi, db.updatePerfilCafe);
-app.delete('/api/perfiles-cafe/:id', authenticateApi, db.deletePerfilCafe);
+// Cuenta de Usuario
+app.get('/api/user/profile', authenticateApi, db.getUserProfile);
+app.put('/api/user/profile', authenticateApi, db.updateUserProfile);
+app.put('/api/user/password', authenticateApi, db.updateUserPassword);
+
 
 // Iniciar Servidor
 app.listen(PORT, () => {

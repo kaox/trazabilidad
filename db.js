@@ -378,8 +378,10 @@ const createBatch = async (req, res) => {
     } else {
         const isOwner = await checkBatchOwnership(parent_id, userId);
         if (!isOwner) return res.status(403).json({ error: "No tienes permiso para añadir a este lote." });
+        
         const parentLote = await get('SELECT plantilla_id FROM lotes WHERE id = ?', [parent_id]);
         if (!parentLote) return res.status(404).json({ error: "Lote padre no encontrado." });
+
         sql = 'INSERT INTO lotes (id, plantilla_id, etapa_id, parent_id, data) VALUES (?, ?, ?, ?, ?)';
         params = [data.id, parentLote.plantilla_id, etapa_id, parent_id, JSON.stringify(data)];
     }
@@ -420,15 +422,19 @@ const getTrazabilidad = async (req, res) => {
             SELECT * FROM trazabilidad_completa;
         `, [id]);
         if (rows.length === 0) return res.status(404).json({ error: 'Lote no encontrado' });
+        
         const loteRaiz = rows.find(r => !r.parent_id);
         if (!loteRaiz || !loteRaiz.user_id) return res.status(404).json({ error: 'Trazabilidad incompleta.' });
+        
         const ownerId = loteRaiz.user_id;
         const plantillaId = loteRaiz.plantilla_id;
+
         const allStages = await all('SELECT id, nombre_etapa FROM etapas_plantilla WHERE plantilla_id = ?', [plantillaId]);
         const stageMap = allStages.reduce((acc, stage) => {
             acc[stage.id] = stage.nombre_etapa.toLowerCase().replace(/ & /g, '_and_');
             return acc;
         }, {});
+
         const history = {};
         rows.forEach(row => {
             const key = stageMap[row.etapa_id];
@@ -436,6 +442,7 @@ const getTrazabilidad = async (req, res) => {
                 history[key] = JSON.parse(row.data);
             }
         });
+        
         if (history.cosecha && history.cosecha.finca) {
             const finca = await get('SELECT * FROM fincas WHERE nombre_finca = ? AND user_id = ?', [history.cosecha.finca, ownerId]);
             if (finca) history.fincaData = { ...finca, coordenadas: JSON.parse(finca.coordenadas || 'null') };
@@ -450,6 +457,103 @@ const getTrazabilidad = async (req, res) => {
         res.status(500).json({ error: "Error interno del servidor." }); 
     }
 };
+const getPerfilesCafe = async (req, res) => {
+    const userId = req.user.id;
+    try {
+        const perfiles = await all('SELECT * FROM perfiles_cafe WHERE user_id = ? ORDER BY nombre_perfil', [userId]);
+        const parsedPerfiles = perfiles.map(p => ({ ...p, perfil_data: JSON.parse(p.perfil_data) }));
+        res.status(200).json(parsedPerfiles);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};
+
+const createPerfilCafe = async (req, res) => {
+    const userId = req.user.id;
+    const { nombre_perfil, perfil_data } = req.body;
+    try {
+        const result = await run('INSERT INTO perfiles_cafe (user_id, nombre_perfil, perfil_data) VALUES (?, ?, ?)', [userId, nombre_perfil, JSON.stringify(perfil_data)]);
+        res.status(201).json({ id: result.lastID, user_id: userId, nombre_perfil, perfil_data });
+    } catch (err) {
+        if (err.message.includes('UNIQUE')) return res.status(409).json({ error: 'Ya existe un perfil de café con ese nombre.' });
+        res.status(500).json({ error: err.message });
+    }
+};
+
+const updatePerfilCafe = async (req, res) => {
+    const userId = req.user.id;
+    const { id } = req.params;
+    const { nombre_perfil, perfil_data } = req.body;
+    try {
+        const result = await run('UPDATE perfiles_cafe SET nombre_perfil = ?, perfil_data = ? WHERE id = ? AND user_id = ?', [nombre_perfil, JSON.stringify(perfil_data), id, userId]);
+        if (result.changes === 0) return res.status(404).json({ error: 'Perfil no encontrado o sin permiso.' });
+        res.status(200).json({ message: 'Perfil de café actualizado.' });
+    } catch (err) {
+        if (err.message.includes('UNIQUE')) return res.status(409).json({ error: 'Ya existe un perfil de café con ese nombre.' });
+        res.status(500).json({ error: err.message });
+    }
+};
+
+const deletePerfilCafe = async (req, res) => {
+    const userId = req.user.id;
+    const { id } = req.params;
+    try {
+        const result = await run('DELETE FROM perfiles_cafe WHERE id = ? AND user_id = ?', [id, userId]);
+        if (result.changes === 0) return res.status(404).json({ error: 'Perfil no encontrado o sin permiso.' });
+        res.status(204).send();
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};
+
+const getRuedasSabores = async (req, res) => {
+    const userId = req.user.id;
+    try {
+        const ruedas = await all('SELECT * FROM ruedas_sabores WHERE user_id = ? ORDER BY nombre_rueda', [userId]);
+        const parsedRuedas = ruedas.map(r => ({ ...r, notas_json: JSON.parse(r.notas_json) }));
+        res.status(200).json(parsedRuedas);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};
+
+const createRuedaSabores = async (req, res) => {
+    const userId = req.user.id;
+    const { nombre_rueda, notas_json } = req.body;
+    try {
+        const result = await run('INSERT INTO ruedas_sabores (user_id, nombre_rueda, notas_json) VALUES (?, ?, ?)', [userId, nombre_rueda, JSON.stringify(notas_json)]);
+        res.status(201).json({ id: result.lastID, user_id: userId, nombre_rueda, notas_json });
+    } catch (err) {
+        if (err.message.includes('UNIQUE')) return res.status(409).json({ error: 'Ya existe una rueda con ese nombre.' });
+        res.status(500).json({ error: err.message });
+    }
+};
+
+const updateRuedaSabores = async (req, res) => {
+    const userId = req.user.id;
+    const { id } = req.params;
+    const { nombre_rueda, notas_json } = req.body;
+    try {
+        const result = await run('UPDATE ruedas_sabores SET nombre_rueda = ?, notas_json = ? WHERE id = ? AND user_id = ?', [nombre_rueda, JSON.stringify(notas_json), id, userId]);
+        if (result.changes === 0) return res.status(404).json({ error: 'Rueda no encontrada o sin permiso.' });
+        res.status(200).json({ message: 'Rueda actualizada.' });
+    } catch (err) {
+        if (err.message.includes('UNIQUE')) return res.status(409).json({ error: 'Ya existe una rueda con ese nombre.' });
+        res.status(500).json({ error: err.message });
+    }
+};
+
+const deleteRuedaSabores = async (req, res) => {
+    const userId = req.user.id;
+    const { id } = req.params;
+    try {
+        const result = await run('DELETE FROM ruedas_sabores WHERE id = ? AND user_id = ?', [id, userId]);
+        if (result.changes === 0) return res.status(404).json({ error: 'Rueda no encontrada o sin permiso.' });
+        res.status(204).send();
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};
 
 module.exports = {
     registerUser, loginUser, logoutUser,
@@ -461,5 +565,6 @@ module.exports = {
     getBatchesTree, createBatch, updateBatch, deleteBatch,
     getTrazabilidad,
     getUserProfile, updateUserProfile, updateUserPassword,
+    getPerfilesCafe, createPerfilCafe, updatePerfilCafe, deletePerfilCafe,
+    getRuedasSabores, createRuedaSabores, updateRuedaSabores, deleteRuedaSabores
 };
-
