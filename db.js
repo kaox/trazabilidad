@@ -205,7 +205,7 @@ const getPerfiles = async (req, res) => {
             }
             perfiles = await all('SELECT * FROM perfiles_cacao WHERE user_id = ? ORDER BY nombre', [userId]);
         }
-        const parsedPerfiles = perfiles.map(p => ({ ...p, perfil_data: JSON.parse(p.perfil_data) }));
+        const parsedPerfiles = perfiles.map(p => ({ ...p, perfil_data: typeof p.perfil_data === 'string' ? JSON.parse(p.perfil_data) : p.perfil_data }));
         res.status(200).json(parsedPerfiles);
     } catch (err) { res.status(500).json({ error: err.message }); }
 };
@@ -278,7 +278,7 @@ const getStagesForTemplate = async (req, res) => {
             return res.status(403).json({ error: "No tienes permiso para ver estas etapas." });
         }
         const stages = await all('SELECT * FROM etapas_plantilla WHERE plantilla_id = ? ORDER BY orden', [templateId]);
-        const parsedStages = stages.map(s => ({...s, campos_json: JSON.parse(s.campos_json)}));
+        const parsedStages = stages.map(s => ({...s, campos_json: typeof s.campos_json === 'string' ? JSON.parse(s.campos_json) : s.campos_json}));
         res.status(200).json(parsedStages);
     } catch (err) { res.status(500).json({ error: err.message }); }
 };
@@ -321,55 +321,37 @@ const deleteStage = async (req, res) => {
 const getBatchesTree = async (req, res) => {
     const userId = req.user.id;
     try {
-        const [templates, allStages, allLotes] = await Promise.all([
-            all('SELECT * FROM plantillas_proceso WHERE user_id = ?', [userId]),
-            all('SELECT * FROM etapas_plantilla WHERE plantilla_id IN (SELECT id FROM plantillas_proceso WHERE user_id = ?)', [userId]),
-            all('SELECT * FROM lotes WHERE user_id = ? OR id IN (SELECT id FROM lotes WHERE parent_id IN (SELECT id FROM lotes WHERE user_id = ?))', [userId, userId])
-        ]);
-        
-        const stagesByTemplate = allStages.reduce((acc, stage) => {
-            if (!acc[stage.plantilla_id]) acc[stage.plantilla_id] = [];
-            acc[stage.plantilla_id].push(stage);
-            return acc;
-        }, {});
-        
+        const allLotes = await all('SELECT l.*, e.nombre_etapa FROM lotes l JOIN etapas_plantilla e ON l.etapa_id = e.id WHERE l.user_id = ? OR l.parent_id IN (SELECT id FROM lotes WHERE user_id = ?)', [userId, userId]);
         const lotes = allLotes.map(lote => ({...lote, data: JSON.parse(lote.data), children: []}));
-        
-        const lotesById = lotes.reduce((acc, lote) => {
-            acc[lote.id] = lote;
-            return acc;
-        }, {});
-
+        const lotesById = lotes.reduce((acc, lote) => { acc[lote.id] = lote; return acc; }, {});
         const roots = [];
         lotes.forEach(lote => {
             if (lote.parent_id) {
-                const parent = lotesById[lote.parent_id];
-                if (parent) {
-                    parent.children.push(lote);
+                if (lotesById[lote.parent_id]) {
+                    lotesById[lote.parent_id].children.push(lote);
                 }
             } else {
                 roots.push(lote);
             }
         });
-        
-        const buildClientTree = (loteNode) => {
-            const template = templates.find(t => t.id === loteNode.plantilla_id);
-            const stage = stagesByTemplate[template.id].find(s => s.id === loteNode.etapa_id);
+        const buildClientTree = (loteNode, allStages, allTemplates) => {
+            const template = allTemplates.find(t => t.id === loteNode.plantilla_id);
+            const stage = allStages.find(s => s.id === loteNode.etapa_id);
             const loteData = { ...loteNode.data, plantilla_id: loteNode.plantilla_id, etapa_id: loteNode.etapa_id };
-
-            if (loteNode.children && loteNode.children.length > 0) {
-                const nextStageOrder = stage.orden + 1;
-                const nextStage = stagesByTemplate[template.id].find(s => s.orden === nextStageOrder);
+            if (loteNode.children.length > 0) {
+                const nextStage = allStages.find(s => s.plantilla_id === template.id && s.orden === stage.orden + 1);
                 if (nextStage) {
                     const childKey = nextStage.nombre_etapa.toLowerCase().replace(/ & /g, '_and_');
-                    loteData[childKey] = loteNode.children.map(childNode => buildClientTree(childNode));
+                    loteData[childKey] = loteNode.children.map(childNode => buildClientTree(childNode, allStages, allTemplates));
                 }
             }
             return loteData;
         };
-        
-        const finalTree = roots.map(rootNode => buildClientTree(rootNode));
-        
+        const [templates, allStages] = await Promise.all([
+            all('SELECT * FROM plantillas_proceso WHERE user_id = ?', [userId]),
+            all('SELECT * FROM etapas_plantilla WHERE plantilla_id IN (SELECT id FROM plantillas_proceso WHERE user_id = ?)', [userId]),
+        ]);
+        const finalTree = roots.map(rootNode => buildClientTree(rootNode, allStages, templates));
         res.status(200).json(finalTree);
     } catch (error) {
         console.error("Error en getBatchesTree:", error);
@@ -386,53 +368,25 @@ const checkBatchOwnership = async (batchId, userId) => {
         SELECT user_id FROM ancestry WHERE user_id IS NOT NULL`, [batchId]);
     return owner && owner.user_id == userId;
 };
-
-// --- Lotes (con Generación de ID en Backend) ---
-const generateUniqueLoteId = async (prefix) => {
-    let id;
-    let isUnique = false;
-    while (!isUnique) {
-        const randomPart = Math.random().toString(36).substring(2, 10).toUpperCase();
-        id = `${prefix}-${randomPart}`;
-        const existing = await get('SELECT id FROM lotes WHERE id = ?', [id]);
-        if (!existing) {
-            isUnique = true;
-        }
-    }
-    return id;
-};
-
 const createBatch = async (req, res) => {
     const userId = req.user.id;
     const { plantilla_id, etapa_id, parent_id, data } = req.body;
-    
+    let sql, params;
+    if (!parent_id) {
+        sql = 'INSERT INTO lotes (id, user_id, plantilla_id, etapa_id, parent_id, data) VALUES (?, ?, ?, ?, ?, ?)';
+        params = [data.id, userId, plantilla_id, etapa_id, null, JSON.stringify(data)];
+    } else {
+        const isOwner = await checkBatchOwnership(parent_id, userId);
+        if (!isOwner) return res.status(403).json({ error: "No tienes permiso para añadir a este lote." });
+        const parentLote = await get('SELECT plantilla_id FROM lotes WHERE id = ?', [parent_id]);
+        if (!parentLote) return res.status(404).json({ error: "Lote padre no encontrado." });
+        sql = 'INSERT INTO lotes (id, plantilla_id, etapa_id, parent_id, data) VALUES (?, ?, ?, ?, ?)';
+        params = [data.id, parentLote.plantilla_id, etapa_id, parent_id, JSON.stringify(data)];
+    }
     try {
-        const stage = await get('SELECT nombre_etapa FROM etapas_plantilla WHERE id = ?', [etapa_id]);
-        if (!stage) return res.status(404).json({ error: "Etapa no encontrada." });
-        
-        const prefix = stage.nombre_etapa.substring(0, 3).toUpperCase();
-        const newId = await generateUniqueLoteId(prefix);
-        data.id = newId;
-
-        let sql, params;
-        if (!parent_id) {
-            sql = 'INSERT INTO lotes (id, user_id, plantilla_id, etapa_id, parent_id, data) VALUES (?, ?, ?, ?, ?, ?)';
-            params = [data.id, userId, plantilla_id, etapa_id, null, JSON.stringify(data)];
-        } else {
-            const isOwner = await checkBatchOwnership(parent_id, userId);
-            if (!isOwner) return res.status(403).json({ error: "No tienes permiso para añadir a este lote." });
-            
-            const parentLote = await get('SELECT plantilla_id FROM lotes WHERE id = ?', [parent_id]);
-            if (!parentLote) return res.status(404).json({ error: "Lote padre no encontrado." });
-
-            sql = 'INSERT INTO lotes (id, plantilla_id, etapa_id, parent_id, data) VALUES (?, ?, ?, ?, ?)';
-            params = [data.id, parentLote.plantilla_id, etapa_id, parent_id, JSON.stringify(data)];
-        }
         await run(sql, params);
         res.status(201).json({ message: "Lote creado" });
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
+    } catch (err) { res.status(500).json({ error: err.message }); }
 };
 const updateBatch = async (req, res) => {
     const { id } = req.params;
@@ -466,19 +420,15 @@ const getTrazabilidad = async (req, res) => {
             SELECT * FROM trazabilidad_completa;
         `, [id]);
         if (rows.length === 0) return res.status(404).json({ error: 'Lote no encontrado' });
-        
         const loteRaiz = rows.find(r => !r.parent_id);
         if (!loteRaiz || !loteRaiz.user_id) return res.status(404).json({ error: 'Trazabilidad incompleta.' });
-        
         const ownerId = loteRaiz.user_id;
         const plantillaId = loteRaiz.plantilla_id;
-
         const allStages = await all('SELECT id, nombre_etapa FROM etapas_plantilla WHERE plantilla_id = ?', [plantillaId]);
         const stageMap = allStages.reduce((acc, stage) => {
             acc[stage.id] = stage.nombre_etapa.toLowerCase().replace(/ & /g, '_and_');
             return acc;
         }, {});
-
         const history = {};
         rows.forEach(row => {
             const key = stageMap[row.etapa_id];
@@ -486,7 +436,6 @@ const getTrazabilidad = async (req, res) => {
                 history[key] = JSON.parse(row.data);
             }
         });
-        
         if (history.cosecha && history.cosecha.finca) {
             const finca = await get('SELECT * FROM fincas WHERE nombre_finca = ? AND user_id = ?', [history.cosecha.finca, ownerId]);
             if (finca) history.fincaData = { ...finca, coordenadas: JSON.parse(finca.coordenadas || 'null') };
@@ -502,106 +451,6 @@ const getTrazabilidad = async (req, res) => {
     }
 };
 
-// --- Ruedas de Sabores ---
-const getRuedasSabores = async (req, res) => {
-    const userId = req.user.id;
-    try {
-        const ruedas = await all('SELECT * FROM ruedas_sabores WHERE user_id = ? ORDER BY nombre_rueda', [userId]);
-        const parsedRuedas = ruedas.map(r => ({ ...r, notas_json: JSON.parse(r.notas_json) }));
-        res.status(200).json(parsedRuedas);
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-};
-
-const createRuedaSabores = async (req, res) => {
-    const userId = req.user.id;
-    const { nombre_rueda, notas_json } = req.body;
-    try {
-        const result = await run('INSERT INTO ruedas_sabores (user_id, nombre_rueda, notas_json) VALUES (?, ?, ?)', [userId, nombre_rueda, JSON.stringify(notas_json)]);
-        res.status(201).json({ id: result.lastID, user_id: userId, nombre_rueda, notas_json });
-    } catch (err) {
-        if (err.message.includes('UNIQUE')) return res.status(409).json({ error: 'Ya existe una rueda con ese nombre.' });
-        res.status(500).json({ error: err.message });
-    }
-};
-
-const updateRuedaSabores = async (req, res) => {
-    const userId = req.user.id;
-    const { id } = req.params;
-    const { nombre_rueda, notas_json } = req.body;
-    try {
-        const result = await run('UPDATE ruedas_sabores SET nombre_rueda = ?, notas_json = ? WHERE id = ? AND user_id = ?', [nombre_rueda, JSON.stringify(notas_json), id, userId]);
-        if (result.changes === 0) return res.status(404).json({ error: 'Rueda no encontrada o sin permiso.' });
-        res.status(200).json({ message: 'Rueda actualizada.' });
-    } catch (err) {
-        if (err.message.includes('UNIQUE')) return res.status(409).json({ error: 'Ya existe una rueda con ese nombre.' });
-        res.status(500).json({ error: err.message });
-    }
-};
-
-const deleteRuedaSabores = async (req, res) => {
-    const userId = req.user.id;
-    const { id } = req.params;
-    try {
-        const result = await run('DELETE FROM ruedas_sabores WHERE id = ? AND user_id = ?', [id, userId]);
-        if (result.changes === 0) return res.status(404).json({ error: 'Rueda no encontrada o sin permiso.' });
-        res.status(204).send();
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-};
-
-// --- Perfiles de Café ---
-const getPerfilesCafe = async (req, res) => {
-    const userId = req.user.id;
-    try {
-        const perfiles = await all('SELECT * FROM perfiles_cafe WHERE user_id = ? ORDER BY nombre_perfil', [userId]);
-        const parsedPerfiles = perfiles.map(p => ({ ...p, perfil_data: JSON.parse(p.perfil_data) }));
-        res.status(200).json(parsedPerfiles);
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-};
-
-const createPerfilCafe = async (req, res) => {
-    const userId = req.user.id;
-    const { nombre_perfil, perfil_data } = req.body;
-    try {
-        const result = await run('INSERT INTO perfiles_cafe (user_id, nombre_perfil, perfil_data) VALUES (?, ?, ?)', [userId, nombre_perfil, JSON.stringify(perfil_data)]);
-        res.status(201).json({ id: result.lastID, user_id: userId, nombre_perfil, perfil_data });
-    } catch (err) {
-        if (err.message.includes('UNIQUE')) return res.status(409).json({ error: 'Ya existe un perfil de café con ese nombre.' });
-        res.status(500).json({ error: err.message });
-    }
-};
-
-const updatePerfilCafe = async (req, res) => {
-    const userId = req.user.id;
-    const { id } = req.params;
-    const { nombre_perfil, perfil_data } = req.body;
-    try {
-        const result = await run('UPDATE perfiles_cafe SET nombre_perfil = ?, perfil_data = ? WHERE id = ? AND user_id = ?', [nombre_perfil, JSON.stringify(perfil_data), id, userId]);
-        if (result.changes === 0) return res.status(404).json({ error: 'Perfil no encontrado o sin permiso.' });
-        res.status(200).json({ message: 'Perfil de café actualizado.' });
-    } catch (err) {
-        if (err.message.includes('UNIQUE')) return res.status(409).json({ error: 'Ya existe un perfil de café con ese nombre.' });
-        res.status(500).json({ error: err.message });
-    }
-};
-
-const deletePerfilCafe = async (req, res) => {
-    const userId = req.user.id;
-    const { id } = req.params;
-    try {
-        const result = await run('DELETE FROM perfiles_cafe WHERE id = ? AND user_id = ?', [id, userId]);
-        if (result.changes === 0) return res.status(404).json({ error: 'Perfil no encontrado o sin permiso.' });
-        res.status(204).send();
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-};
-
 module.exports = {
     registerUser, loginUser, logoutUser,
     getFincas, createFinca, updateFinca, deleteFinca,
@@ -612,7 +461,5 @@ module.exports = {
     getBatchesTree, createBatch, updateBatch, deleteBatch,
     getTrazabilidad,
     getUserProfile, updateUserProfile, updateUserPassword,
-    getRuedasSabores, createRuedaSabores, updateRuedaSabores, deleteRuedaSabores,
-    getPerfilesCafe, createPerfilCafe, updatePerfilCafe, deletePerfilCafe
 };
 
