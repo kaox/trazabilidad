@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Trazabilidad de Chocolate: Bean to Bar</title>
+    <title>Trazabilidad de Procesos</title>
     <script src="/auth.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/qrcode-generator/qrcode.js"></script>
@@ -14,10 +14,10 @@
         body { font-family: 'Inter', sans-serif; background-color: #fdfaf6; }
         h1, h2, h3, .font-display { font-family: 'Playfair Display', serif; }
         dialog::backdrop { background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(2px); }
+        .rotate-90 { transform: rotate(90deg); }
     </style>
 </head>
 <body class="text-stone-800 antialiased">
-
     <nav class="bg-amber-900 text-white shadow-lg">
         <div class="container mx-auto px-4">
             <div class="flex justify-between items-center h-16">
@@ -40,9 +40,12 @@
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                         </button>
                         <div id="gestion-dropdown-desktop" class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-50 hidden" onmouseleave="this.classList.add('hidden')">
+                            <a href="/app/plantillas" class="block px-4 py-2 text-sm text-stone-700 hover:bg-amber-100">Plantillas</a>
                             <a href="/app/fincas" class="block px-4 py-2 text-sm text-stone-700 hover:bg-amber-100">Fincas</a>
-                            <a href="/app/perfiles" class="block px-4 py-2 text-sm text-stone-700 hover:bg-amber-100">Perfiles</a>
                             <a href="/app/procesadoras" class="block px-4 py-2 text-sm text-stone-700 hover:bg-amber-100">Procesadoras</a>
+                            <a href="/app/perfiles" class="block px-4 py-2 text-sm text-stone-700 hover:bg-amber-100">Perfiles</a>
+                            <a href="/app/perfiles-cafe" class="block px-4 py-2 text-sm text-stone-700 hover:bg-amber-100">Perfiles Café</a>
+                            <a href="/app/ruedas-sabores" class="block px-4 py-2 text-sm text-stone-700 hover:bg-amber-100">Ruedas de Sabores</a>
                         </div>
                     </div>
                     <a href="/app/cuenta" class="p-2 rounded-full hover:bg-amber-800 transition" title="Mi Cuenta">
@@ -57,40 +60,42 @@
             <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3">
                 <a href="/app/dashboard" class="block px-3 py-2 rounded-md text-base font-medium bg-amber-800">Dashboard</a>
                 <a href="/app/trazabilidad" class="block px-3 py-2 rounded-md text-base font-medium hover:bg-amber-800">Trazabilidad</a>
+                <a href="/app/plantillas" class="block px-3 py-2 rounded-md text-base font-medium hover:bg-amber-800">Gestión: Plantillas</a>
                 <a href="/app/fincas" class="block px-3 py-2 rounded-md text-base font-medium hover:bg-amber-800">Gestión: Fincas</a>
-                <a href="/app/perfiles" class="block px-3 py-2 rounded-md text-base font-medium hover:bg-amber-800">Gestión: Perfiles</a>
                 <a href="/app/procesadoras" class="block px-3 py-2 rounded-md text-base font-medium hover:bg-amber-800">Gestión: Procesadoras</a>
+                <a href="/app/perfiles" class="block px-3 py-2 rounded-md text-base font-medium hover:bg-amber-800">Gestión: Perfiles</a>
+                <a href="/app/perfiles-cafe" class="block px-3 py-2 rounded-md text-base font-medium hover:bg-amber-800">Gestión: Perfiles de Café</a>
+                <a href="/app/ruedas-sabores" class="block px-3 py-2 rounded-md text-base font-medium hover:bg-amber-800">Ruedas de Sabores</a>
                 <a href="/app/cuenta" class="block px-3 py-2 rounded-md text-base font-medium hover:bg-amber-800">Mi Cuenta</a>
                 <button onclick="logout()" class="w-full text-left block px-3 py-2 rounded-md text-base font-medium bg-red-600 hover:bg-red-700">Cerrar Sesión</button>
             </div>
         </div>
     </nav>
-    
     <div id="app" class="container mx-auto p-4 md:p-8 max-w-6xl">
         <header class="text-center mb-8 mt-4">
-            <h1 class="text-4xl md:text-5xl font-bold text-amber-900 mb-2">Trazabilidad "Bean to Bar"</h1>
-            <p class="text-stone-600">Gestión jerárquica de lotes, desde la cosecha hasta la molienda.</p>
+            <h1 class="text-4xl md:text-5xl font-bold text-amber-900 mb-2">Trazabilidad de Procesos</h1>
+            <p class="text-stone-600">Gestión jerárquica de lotes, desde el origen hasta el producto final.</p>
         </header>
         <div class="bg-white p-6 rounded-2xl shadow-lg mb-8">
             <div class="flex justify-center">
-                <button id="crearCosechaBtn" class="bg-amber-800 hover:bg-amber-900 text-white font-bold py-3 px-6 rounded-xl shadow-md hover:shadow-lg transition transform hover:-translate-y-0.5">
-                    + Iniciar Nueva Cosecha
+                <button id="crear-proceso-btn" class="bg-amber-800 hover:bg-amber-900 text-white font-bold py-3 px-6 rounded-xl shadow-md">
+                    + Iniciar Nuevo Proceso
                 </button>
             </div>
         </div>
         <main id="dashboard-view"></main>
         <div id="welcome-screen" class="text-center bg-white p-8 rounded-2xl shadow-lg hidden">
-            <img src="https://placehold.co/150x150/854d0e/ffffff?text=🍫" alt="Icono de Chocolate" class="mx-auto mb-4 rounded-full">
+            <img src="https://placehold.co/150x150/854d0e/ffffff?text=📋" alt="Icono de Proceso" class="mx-auto mb-4 rounded-full">
             <h2 class="text-3xl font-display text-amber-900 mb-2">Bienvenido</h2>
-            <p class="text-stone-600">Inicia una nueva cosecha para comenzar a registrar el proceso.</p>
+            <p class="text-stone-600">Inicia un nuevo proceso para comenzar a registrar tus lotes.</p>
         </div>
     </div>
 
-    <dialog id="form-modal" class="p-0 rounded-2xl shadow-2xl w-full max-w-xl">
+    <dialog id="form-modal" class="p-0 rounded-2xl shadow-2xl w-11/12 max-w-xl">
         <div id="modal-content" class="p-6"></div>
     </dialog>
     <div id="qr-code-container" style="display: none;"></div>
-    
+
     <script src="/trazabilidad-app.js"></script>
     <script>
         document.getElementById('mobile-menu-button').addEventListener('click', () => {

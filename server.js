@@ -64,13 +64,24 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'about.html'));
 });
 
+app.get('/:loteId([A-Z]{3}-[A-Z0-9]{8})', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'trazabilidad.html'));
+});
+
+app.get('/qr', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'trazabilidad.html'));
+});
+
 // --- Rutas Protegidas de la Aplicación (Vistas) ---
 app.get('/app/trazabilidad', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'index.html')));
 app.get('/app/fincas', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'fincas.html')));
 app.get('/app/dashboard', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'dashboard.html')));
 app.get('/app/perfiles', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'perfiles.html')));
 app.get('/app/procesadoras', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'procesadoras.html')));
+app.get('/app/plantillas', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'plantillas.html')));
 app.get('/app/cuenta', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'cuenta.html')));
+app.get('/app/ruedas-sabores', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'ruedas-sabores.html')));
+app.get('/app/perfiles-cafe', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'perfiles-cafe.html')));
 
 // --- Rutas Protegidas de la API ---
 app.get('/api/fincas', authenticateApi, db.getFincas);
@@ -94,6 +105,28 @@ app.delete('/api/procesadoras/:id', authenticateApi, db.deleteProcesadora);
 app.get('/api/user/profile', authenticateApi, db.getUserProfile);
 app.put('/api/user/profile', authenticateApi, db.updateUserProfile);
 app.put('/api/user/password', authenticateApi, db.updateUserPassword);
+
+// Nuevas rutas para plantillas
+app.get('/api/templates', authenticateApi, db.getTemplates);
+app.post('/api/templates', authenticateApi, db.createTemplate);
+app.put('/api/templates/:templateId', authenticateApi, db.updateTemplate);
+app.delete('/api/templates/:templateId', authenticateApi, db.deleteTemplate);
+app.get('/api/templates/:templateId/stages', authenticateApi, db.getStagesForTemplate);
+app.post('/api/templates/:templateId/stages', authenticateApi, db.createStage);
+app.put('/api/templates/stages/:stageId', authenticateApi, db.updateStage);
+app.delete('/api/templates/stages/:stageId', authenticateApi, db.deleteStage);
+
+// Nuevas rutas para Ruedas de Sabores
+app.get('/api/ruedas-sabores', authenticateApi, db.getRuedasSabores);
+app.post('/api/ruedas-sabores', authenticateApi, db.createRuedaSabores);
+app.put('/api/ruedas-sabores/:id', authenticateApi, db.updateRuedaSabores);
+app.delete('/api/ruedas-sabores/:id', authenticateApi, db.deleteRuedaSabores);
+
+// Nuevas rutas para Perfiles de Café
+app.get('/api/perfiles-cafe', authenticateApi, db.getPerfilesCafe);
+app.post('/api/perfiles-cafe', authenticateApi, db.createPerfilCafe);
+app.put('/api/perfiles-cafe/:id', authenticateApi, db.updatePerfilCafe);
+app.delete('/api/perfiles-cafe/:id', authenticateApi, db.deletePerfilCafe);
 
 // Iniciar Servidor
 app.listen(PORT, () => {

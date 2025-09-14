@@ -31,16 +31,32 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function renderHistory(h) {
+        resultadoContainer.innerHTML = '';
+        
+        const stageOrder = [
+            { key: 'cosecha', title: 'La Cuna - El Origen de Todo', func: createChapterCosecha, icon: 'cosecha' },
+            { key: 'fermentacion', title: 'La Metamorfosis - El Despertar del Sabor', func: createChapterFermentacion, icon: 'fermentacion' },
+            { key: 'secado', title: 'El Reposo - El Abrazo del Sol y el Aire', func: createChapterSecado, icon: 'secado' },
+            { key: 'tostado', title: 'La Danza de Fuego - La Revelación del Aroma', func: createChapterTostado, icon: 'tostado' },
+            { key: 'descascarillado_and_molienda', title: 'La Liberación - La Esencia Pura', func: createChapterMolienda, icon: 'molienda' }
+        ];
+
         let finalHTML = '';
-        if (h.cosecha) finalHTML += createChapterCosecha(h);
-        if (h.fermentacion) finalHTML += createChapterFermentacion(h);
-        if (h.secado) finalHTML += createChapterSecado(h);
-        if (h.tostado) finalHTML += createChapterTostado(h);
-        if (h.molienda) {
-            finalHTML += createChapterMolienda(h);
-            finalHTML += createFinalReport(h);
+        let chapterNum = 1;
+
+        stageOrder.forEach(stageInfo => {
+            if (h[stageInfo.key]) {
+                finalHTML += stageInfo.func(h, chapterNum, stageInfo.title, stageInfo.icon);
+                chapterNum++;
+            }
+        });
+        
+        if (h.descascarillado_and_molienda || h.secado) {
+             finalHTML += createFinalReport(h);
         }
+        
         resultadoContainer.innerHTML = finalHTML;
+        
         if (h.fincaData && h.fincaData.coordenadas) initializeCosechaMap(h.fincaData.coordenadas);
         if (h.tostado && h.tostado.perfilSensorialData) {
             initializePerfilChart('perfil-radar-chart', h.tostado.perfilSensorialData);
@@ -54,42 +70,47 @@ document.addEventListener('DOMContentLoaded', () => {
         return `<div class="mb-12 relative pt-8"><div class="chapter-icon">${chapterIcons[type]}</div><div class="bg-white p-6 md:p-8 rounded-2xl shadow-lg"><h3 class="text-stone-500 font-semibold">Capítulo ${chapterNum}</h3><h2 class="text-3xl font-display text-amber-900 mt-1 mb-4">${title}</h2>${narrative}${visualContent}</div></div>`;
     }
 
-    function createChapterCosecha(h) {
-        const { cosecha, fincaData } = h;
+    function createChapterCosecha(h, num, title, icon) {
+        const cosecha = h.cosecha;
+        const fincaData = h.fincaData;
         const fecha = cosecha.fechaCosecha ? new Date(cosecha.fechaCosecha + 'T00:00:00').toLocaleDateString('es-ES',{year:'numeric',month:'long',day:'numeric'}) : 'una fecha memorable';
         const narrative = `<div class="flex justify-between items-start gap-6"><div class="prose max-w-none text-stone-600 leading-relaxed flex-grow"><p>Mi historia comenzó en <strong>${cosecha.finca}</strong>, un santuario de tierra fértil donde fui nutrido hasta la perfección. Las manos expertas de <strong>${fincaData?.propietario || 'nuestros agricultores'}</strong> me cuidaron y supieron reconocer el momento exacto de mi madurez. Fui cosechado el <strong>${fecha}</strong>, un día que marcó el inicio de mi destino: llegar hasta ti.</p></div>${cosecha.imageUrl ? `<div class="ml-4 flex-shrink-0"><button data-img-src="${cosecha.imageUrl}" data-img-title="Foto de Cosecha" class="view-photo-btn group block"><img src="${cosecha.imageUrl}" alt="Miniatura de la cosecha" class="w-24 h-24 rounded-lg object-cover shadow-md transition-transform group-hover:scale-105"></button></div>` : ''}</div>`;
         const visualContent = `<div class="mt-6 pt-4 border-t"><h4 class="font-semibold text-stone-700 mb-2">Ubicación de la Finca</h4><div id="map-cosecha" class="w-full h-[250px] rounded-xl border border-stone-300"></div></div>`;
-        return createChapterHTML('cosecha', 1, "La Cuna - El Origen de Todo", narrative, visualContent);
+        return createChapterHTML(icon, num, title, narrative, visualContent);
     }
 
-    function createChapterFermentacion(h) {
-        const { fermentacion } = h;
+    function createChapterFermentacion(h, num, title, icon) {
+        const fermentacion = h.fermentacion;
         const narrative = `<div class="flex justify-between items-start gap-6"><div class="prose max-w-none text-stone-600 leading-relaxed flex-grow"><p>Mi alma se forjó en un sueño profundo y cálido. Durante <strong>${fermentacion.duracion} días</strong>, descansé, siguiendo el tradicional método de <strong>${fermentacion.metodo}</strong>. Fue un proceso de paciencia y magia, donde los azúcares de mi pulpa se transformaron, despertando las notas complejas y afrutadas que definen mi carácter. Fue mi verdadero nacimiento.</p></div>${fermentacion.imageUrl ? `<div class="ml-4 flex-shrink-0"><button data-img-src="${fermentacion.imageUrl}" data-img-title="Foto de Fermentación" class="view-photo-btn group block"><img src="${fermentacion.imageUrl}" alt="Miniatura de la fermentación" class="w-24 h-24 rounded-lg object-cover shadow-md transition-transform group-hover:scale-105"></button></div>` : ''}</div>`;
-        return createChapterHTML('fermentacion', 2, "La Metamorfosis - El Despertar del Sabor", narrative);
+        return createChapterHTML(icon, num, title, narrative);
     }
 
-    function createChapterSecado(h) {
-        const { secado } = h;
+    function createChapterSecado(h, num, title, icon) {
+        const secado = h.secado;
         const narrative = `<div class="flex justify-between items-start gap-6"><div class="prose max-w-none text-stone-600 leading-relaxed flex-grow"><p>Después de mi despertar, me entregaron al sol. Mi reposo duró <strong>${secado.duracion} días</strong>, utilizando un método de <strong>${secado.metodo}</strong> que garantiza el equilibrio perfecto. Cada grano fue removido con cuidado para que el calor y el aire nos abrazaran por igual, sellando los sabores que nacieron en la fermentación y preparándome para la prueba de fuego.</p></div>${secado.imageUrl ? `<div class="ml-4 flex-shrink-0"><button data-img-src="${secado.imageUrl}" data-img-title="Foto de Secado" class="view-photo-btn group block"><img src="${secado.imageUrl}" alt="Miniatura del secado" class="w-24 h-24 rounded-lg object-cover shadow-md transition-transform group-hover:scale-105"></button></div>` : ''}</div>`;
-        return createChapterHTML('secado', 3, "El Reposo - El Abrazo del Sol y el Aire", narrative);
+        return createChapterHTML(icon, num, title, narrative);
     }
     
-    function createChapterTostado(h) {
-        const { tostado } = h;
+    function createChapterTostado(h, num, title, icon) {
+        const tostado = h.tostado;
         const narrative = `<div class="flex justify-between items-start gap-6"><div class="prose max-w-none text-stone-600 leading-relaxed flex-grow"><p>Llegó el momento de la verdad. Dancé con el fuego durante <strong>${tostado.duracion} minutos</strong>, alcanzando un clímax de <strong>${tostado.tempMaxima}°C</strong>. Este ritual reveló mi perfil de aroma a <strong>${tostado.perfilAroma || 'notas únicas'}</strong>, liberando fragancias que cuentan la historia de mi origen. El resultado es un perfil sensorial de tipo <strong>${tostado.tipoPerfil}</strong>, una personalidad forjada en el calor para tu deleite.</p></div>${tostado.imageUrl ? `<div class="ml-4 flex-shrink-0"><button data-img-src="${tostado.imageUrl}" data-img-title="Foto de Tostado" class="view-photo-btn group block"><img src="${tostado.imageUrl}" alt="Miniatura del tostado" class="w-24 h-24 rounded-lg object-cover shadow-md transition-transform group-hover:scale-105"></button></div>` : ''}</div>`;
         const visualContent = tostado.perfilSensorialData ? `<div class="mt-6 pt-4 border-t"><h4 class="font-semibold text-stone-700 text-center mb-2">Perfil Sensorial: ${tostado.tipoPerfil}</h4><div class="w-full max-w-xs mx-auto"><canvas id="perfil-radar-chart"></canvas></div></div>` : '';
-        return createChapterHTML('tostado', 4, "La Danza de Fuego - La Revelación del Aroma", narrative, visualContent);
+        return createChapterHTML(icon, num, title, narrative, visualContent);
     }
 
-    function createChapterMolienda(h) {
-        const { molienda } = h;
+    function createChapterMolienda(h, num, title, icon) {
+        const molienda = h.descascarillado_and_molienda;
         const narrative = `<p>Finalmente, fui liberado de mi cáscara. En el proceso, se desprendieron <strong>${molienda.pesoCascarilla} kg</strong> de mi cubierta protectora, dejando solo mi corazón puro. Este núcleo se transformó en <strong>${molienda.pesoProductoFinal} kg</strong> de <strong>${molienda.productoFinal}</strong>, la esencia misma de mi viaje, lista para convertirse en la obra de arte que ahora sostienes.</p>`;
-        return createChapterHTML('molienda', 5, "La Liberación - La Esencia Pura", narrative, '');
+        return createChapterHTML(icon, num, title, narrative, '');
     }
 
     function createFinalReport(h) {
-        const { molienda, cosecha, fincaData, tostado, secado } = h;
-        const loteId = molienda ? molienda.id : tostado ? tostado.id : secado.id;
+        const { fincaData, cosecha, tostado } = h;
+        const molienda = h.descascarillado_and_molienda;
+        const secado = h.secado;
+        const loteId = molienda?.id || secado?.id;
+        if (!loteId) return '';
+
         return `
             <div class="mt-16 text-center">
                 <h2 class="text-3xl font-display text-amber-900 mb-4">El Certificado de Identidad de tu Chocolate</h2>
@@ -97,7 +118,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div class="bg-white p-8 rounded-2xl shadow-xl border border-amber-800/20 max-w-2xl mx-auto">
                     <div class="grid grid-cols-2 gap-6 text-left">
                         <div><h4 class="text-sm text-stone-500">Lote</h4><p class="font-semibold">${loteId}</p></div>
-                        <div><h4 class="text-sm text-stone-500">Origen</h4><p class="font-semibold">${cosecha.finca}, por ${fincaData?.propietario || 'N/A'}</p></div>
+                        <div><h4 class="text-sm text-stone-500">Origen</h4><p class="font-semibold">${fincaData?.ciudad || cosecha.finca}, ${fincaData?.pais || 'N/A'}</p></div>
                         <div><h4 class="text-sm text-stone-500">Cosecha</h4><p class="font-semibold">${new Date(cosecha.fechaCosecha + 'T00:00:00').toLocaleDateString('es-ES',{year:'numeric',month:'long',day:'numeric'})}</p></div>
                         ${tostado ? `<div><h4 class="text-sm text-stone-500">Notas Dominantes</h4><p class="font-semibold">${tostado.perfilAroma || 'No especificado'}</p></div>` : ''}
                         ${tostado && tostado.tipoPerfil ? `<div class="col-span-2"><h4 class="text-sm text-stone-500 text-center mb-2">Perfil Sensorial: ${tostado.tipoPerfil}</h4><div class="w-full max-w-md mx-auto"><canvas id="final-radar-chart"></canvas></div></div>` : ''}
@@ -114,7 +135,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
             </div>`;
     }
-
     function initializeCosechaMap(coords) {
         const mapContainer = document.getElementById('map-cosecha');
         if (!mapContainer) return;
@@ -196,8 +216,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const shareButton = e.target.closest('.share-btn');
         if (shareButton) {
             const loteId = shareButton.dataset.loteId;
-            const pageUrl = `${window.location.origin}/trazabilidad.html?lote=${loteId}`;
-            const shareText = `¡Descubre el ADN de mi chocolate! Lote: ${loteId}`;
+            const pageUrl = `${window.location.origin}/qr?lote=${loteId}`;
+            const shareText = `¡Descubre el ADN de mi producto! Lote: ${loteId}`;
             let shareUrl;
             if (shareButton.title.includes('Facebook')) shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(pageUrl)}`;
             else if (shareButton.title.includes('X')) shareUrl = `https://twitter.com/intent/tweet?url=${encodeURIComponent(pageUrl)}&text=${encodeURIComponent(shareText)}`;
@@ -216,8 +236,21 @@ document.addEventListener('DOMContentLoaded', () => {
     closeModalBtn.addEventListener('click', () => imageModal.close());
     imageModal.addEventListener('click', (e) => { if (e.target.id === 'image-modal') imageModal.close(); });
 
+    // --- Lógica de Carga Automática Mejorada ---
     const params = new URLSearchParams(window.location.search);
-    const loteIdFromUrl = params.get('lote');
-    if (loteIdFromUrl) { loteIdInput.value = loteIdFromUrl; handleSearch(); }
+    let loteIdFromUrl = params.get('lote');
+
+    if (!loteIdFromUrl) {
+        const pathSegments = window.location.pathname.split('/').filter(Boolean);
+        const potentialId = pathSegments[pathSegments.length - 1];
+        if (potentialId && /^[A-Z]{3}-[A-Z0-9]{8}$/.test(potentialId)) {
+            loteIdFromUrl = potentialId;
+        }
+    }
+
+    if (loteIdFromUrl) {
+        loteIdInput.value = loteIdFromUrl;
+        handleSearch();
+    }
 });
 
