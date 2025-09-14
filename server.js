@@ -64,6 +64,14 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'about.html'));
 });
 
+app.get('/:loteId([A-Z]{3}-[A-Z0-9]{8})', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'trazabilidad.html'));
+});
+
+app.get('/qr', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'trazabilidad.html'));
+});
+
 // --- Rutas Protegidas de la Aplicación (Vistas) ---
 app.get('/app/trazabilidad', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'index.html')));
 app.get('/app/fincas', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'fincas.html')));

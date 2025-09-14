@@ -216,8 +216,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const shareButton = e.target.closest('.share-btn');
         if (shareButton) {
             const loteId = shareButton.dataset.loteId;
-            const pageUrl = `${window.location.origin}/trazabilidad.html?lote=${loteId}`;
-            const shareText = `¡Descubre el ADN de mi chocolate! Lote: ${loteId}`;
+            const pageUrl = `${window.location.origin}/qr?lote=${loteId}`;
+            const shareText = `¡Descubre el ADN de mi producto! Lote: ${loteId}`;
             let shareUrl;
             if (shareButton.title.includes('Facebook')) shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(pageUrl)}`;
             else if (shareButton.title.includes('X')) shareUrl = `https://twitter.com/intent/tweet?url=${encodeURIComponent(pageUrl)}&text=${encodeURIComponent(shareText)}`;
@@ -236,8 +236,21 @@ document.addEventListener('DOMContentLoaded', () => {
     closeModalBtn.addEventListener('click', () => imageModal.close());
     imageModal.addEventListener('click', (e) => { if (e.target.id === 'image-modal') imageModal.close(); });
 
+    // --- Lógica de Carga Automática Mejorada ---
     const params = new URLSearchParams(window.location.search);
-    const loteIdFromUrl = params.get('lote');
-    if (loteIdFromUrl) { loteIdInput.value = loteIdFromUrl; handleSearch(); }
+    let loteIdFromUrl = params.get('lote');
+
+    if (!loteIdFromUrl) {
+        const pathSegments = window.location.pathname.split('/').filter(Boolean);
+        const potentialId = pathSegments[pathSegments.length - 1];
+        if (potentialId && /^[A-Z]{3}-[A-Z0-9]{8}$/.test(potentialId)) {
+            loteIdFromUrl = potentialId;
+        }
+    }
+
+    if (loteIdFromUrl) {
+        loteIdInput.value = loteIdFromUrl;
+        handleSearch();
+    }
 });
 

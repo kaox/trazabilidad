@@ -5,6 +5,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const formModal = document.getElementById('form-modal');
     const modalContent = document.getElementById('modal-content');
 
+    // --- Lógica de Datos ---
     function generateId(prefix = 'LOTE') {
         const now = new Date();
         const timestamp = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}`;
@@ -12,6 +13,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return `${prefix}-${timestamp}-${random}`;
     }
 
+    // --- Inicialización ---
     async function init() {
         await loadTemplates();
         await loadBatches();
@@ -42,6 +44,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // --- Renderizado ---
     function renderDashboard(lotesRaiz) {
         dashboardView.innerHTML = '';
         document.getElementById('welcome-screen').classList.toggle('hidden', lotesRaiz.length > 0);
@@ -103,8 +106,15 @@ document.addEventListener('DOMContentLoaded', () => {
                         </div>
                     </div>
                     <div class="flex flex-wrap gap-2 items-center justify-start sm:justify-end flex-shrink-0">
-                        <button class="edit-btn text-xs bg-stone-200 hover:bg-stone-300 px-3 py-1.5 rounded-lg" data-batch-id="${batchData.id}" data-template-id="${template.id}" data-stage-id="${stage.id}">Editar</button>
-                        <button class="delete-btn text-xs bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded-lg" data-batch-id="${batchData.id}">X</button>
+                        <button class="qr-btn text-xs bg-sky-600 hover:bg-sky-700 text-white p-2 rounded-lg" data-id="${batchData.id}" title="Generar QR">
+                           <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 3a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H4a1 1 0 01-1-1V3zm2 2a1 1 0 100-2 1 1 0 000 2zM3 11a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H4a1 1 0 01-1-1v-4zm2 2a1 1 0 100-2 1 1 0 000 2zM11 3a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1V3zm2 2a1 1 0 100-2 1 1 0 000 2zM12 11a1 1 0 00-1 1v1h1a1 1 0 110 2h-1v1a1 1 0 102 0v-1h1a1 1 0 100-2h-1v-1a1 1 0 00-1-1zm-1 5a1 1 0 100-2 1 1 0 000 2zm3 0a1 1 0 100-2 1 1 0 000 2zm2 0a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd" /></svg>
+                        </button>
+                        <button class="edit-btn text-xs bg-stone-200 hover:bg-stone-300 p-2 rounded-lg" data-batch-id="${batchData.id}" data-template-id="${template.id}" data-stage-id="${stage.id}" title="Editar">
+                           <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" /><path fill-rule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clip-rule="evenodd" /></svg>
+                        </button>
+                        <button class="delete-btn text-xs bg-red-600 hover:bg-red-700 text-white p-2 rounded-lg" data-batch-id="${batchData.id}" title="Eliminar">
+                           <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm4 0a1 1 0 012 0v6a1 1 0 11-2 0V8z" clip-rule="evenodd" /></svg>
+                        </button>
                         ${nextStage ? `<button ${outputWeight <= 0 ? 'disabled' : ''} class="add-sub-btn text-xs bg-green-600 hover:bg-green-700 text-white font-bold px-3 py-1.5 rounded-lg disabled:bg-gray-400" data-parent-id="${batchData.id}" data-template-id="${template.id}" data-next-stage-id="${nextStage.id}">+ Añadir ${nextStage.nombre_etapa}</button>` : ''}
                     </div>
                 </div>
@@ -188,7 +198,6 @@ document.addEventListener('DOMContentLoaded', () => {
             const newData = Object.fromEntries(formData.entries());
             try {
                 if (mode === 'create') {
-                    newData.id = generateId(stage.nombre_etapa.substring(0, 3).toUpperCase());
                     await api('/api/batches', { method: 'POST', body: JSON.stringify({ 
                         plantilla_id: template.id, 
                         etapa_id: stage.id, 
@@ -373,7 +382,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         if (button.classList.contains('delete-btn')) {
             const batchId = button.dataset.batchId;
-            if (confirm('¿Seguro que quieres eliminar este lote y todos sus sub-procesos?')) {
+            if (confirm('¿Estás seguro de que quieres eliminar este lote y todos sus sub-procesos?')) {
                 try {
                     await api(`/api/batches/${batchId}`, { method: 'DELETE' });
                     await loadBatches();
@@ -381,6 +390,17 @@ document.addEventListener('DOMContentLoaded', () => {
                     alert('Error al eliminar el lote: ' + error.message);
                 }
             }
+        }
+        
+        if (button.classList.contains('qr-btn')) {
+            const url = `${window.location.origin}/${button.dataset.id}`; // URL corta
+            const qr = qrcode(0, 'L');
+            qr.addData(url);
+            qr.make();
+            const link = document.createElement('a');
+            link.href = qr.createDataURL(4, 2);
+            link.download = `QR_${button.dataset.id}.png`;
+            link.click();
         }
     }
 

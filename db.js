@@ -386,27 +386,53 @@ const checkBatchOwnership = async (batchId, userId) => {
         SELECT user_id FROM ancestry WHERE user_id IS NOT NULL`, [batchId]);
     return owner && owner.user_id == userId;
 };
+
+// --- Lotes (con Generación de ID en Backend) ---
+const generateUniqueLoteId = async (prefix) => {
+    let id;
+    let isUnique = false;
+    while (!isUnique) {
+        const randomPart = Math.random().toString(36).substring(2, 10).toUpperCase();
+        id = `${prefix}-${randomPart}`;
+        const existing = await get('SELECT id FROM lotes WHERE id = ?', [id]);
+        if (!existing) {
+            isUnique = true;
+        }
+    }
+    return id;
+};
+
 const createBatch = async (req, res) => {
     const userId = req.user.id;
     const { plantilla_id, etapa_id, parent_id, data } = req.body;
-    let sql, params;
-    if (!parent_id) {
-        sql = 'INSERT INTO lotes (id, user_id, plantilla_id, etapa_id, parent_id, data) VALUES (?, ?, ?, ?, ?, ?)';
-        params = [data.id, userId, plantilla_id, etapa_id, null, JSON.stringify(data)];
-    } else {
-        const isOwner = await checkBatchOwnership(parent_id, userId);
-        if (!isOwner) return res.status(403).json({ error: "No tienes permiso para añadir a este lote." });
-        
-        const parentLote = await get('SELECT plantilla_id FROM lotes WHERE id = ?', [parent_id]);
-        if (!parentLote) return res.status(404).json({ error: "Lote padre no encontrado." });
-
-        sql = 'INSERT INTO lotes (id, user_id, plantilla_id, etapa_id, parent_id, data) VALUES (?, ?, ?, ?, ?, ?)';
-        params = [data.id, userId, parentLote.plantilla_id, etapa_id, parent_id, JSON.stringify(data)];
-    }
+    
     try {
+        const stage = await get('SELECT nombre_etapa FROM etapas_plantilla WHERE id = ?', [etapa_id]);
+        if (!stage) return res.status(404).json({ error: "Etapa no encontrada." });
+        
+        const prefix = stage.nombre_etapa.substring(0, 3).toUpperCase();
+        const newId = await generateUniqueLoteId(prefix);
+        data.id = newId;
+
+        let sql, params;
+        if (!parent_id) {
+            sql = 'INSERT INTO lotes (id, user_id, plantilla_id, etapa_id, parent_id, data) VALUES (?, ?, ?, ?, ?, ?)';
+            params = [data.id, userId, plantilla_id, etapa_id, null, JSON.stringify(data)];
+        } else {
+            const isOwner = await checkBatchOwnership(parent_id, userId);
+            if (!isOwner) return res.status(403).json({ error: "No tienes permiso para añadir a este lote." });
+            
+            const parentLote = await get('SELECT plantilla_id FROM lotes WHERE id = ?', [parent_id]);
+            if (!parentLote) return res.status(404).json({ error: "Lote padre no encontrado." });
+
+            sql = 'INSERT INTO lotes (id, plantilla_id, etapa_id, parent_id, data) VALUES (?, ?, ?, ?, ?)';
+            params = [data.id, parentLote.plantilla_id, etapa_id, parent_id, JSON.stringify(data)];
+        }
         await run(sql, params);
         res.status(201).json({ message: "Lote creado" });
-    } catch (err) { res.status(500).json({ error: err.message }); }
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 };
 const updateBatch = async (req, res) => {
     const { id } = req.params;
