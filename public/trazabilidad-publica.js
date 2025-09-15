@@ -155,7 +155,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div>
                         <h3 class="text-2xl font-display text-amber-800 border-b pb-2 mb-4">Calidad y Perfil Sensorial</h3>
                         <dl class="grid grid-cols-2 gap-x-6 gap-y-4">
-                            <div><dt class="text-sm text-stone-500">Variedad</dt><dd class="font-semibold">N/A</dd></div>
+                            <div><dt class="text-sm text-stone-500">Variedad</dt><dd class="font-semibold">${cosecha?.variedadCacao || 'N/A'}</dd></div>
                              <div><dt class="text-sm text-stone-500">Perfil</dt><dd class="font-semibold">${tostado?.tipoPerfil || 'N/A'}</dd></div>
                             <div class="col-span-2"><dt class="text-sm text-stone-500">Notas de Aroma y Sabor</dt><dd class="text-stone-700 text-sm">${tostado?.perfilAroma || 'No especificadas.'}</dd></div>
                             <div class="col-span-2"><dt class="text-sm text-stone-500">Maridaje Sugerido</dt><dd class="text-stone-700 text-sm">Vinos tintos robustos, quesos añejos o un buen libro.</dd></div>
@@ -255,7 +255,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const shareButton = e.target.closest('.share-btn');
         if (shareButton) {
             const loteId = shareButton.dataset.loteId;
-            const pageUrl = `${window.location.origin}/qr?lote=${loteId}`;
+            const pageUrl = `${window.location.origin}/${loteId}`;
             const shareText = `¡Descubre el ADN de mi producto! Lote: ${loteId}`;
             let shareUrl;
             if (shareButton.title.includes('Facebook')) shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(pageUrl)}`;
@@ -274,9 +274,18 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     closeModalBtn.addEventListener('click', () => imageModal.close());
     imageModal.addEventListener('click', (e) => { if (e.target.id === 'image-modal') imageModal.close(); });
-
+    
     const params = new URLSearchParams(window.location.search);
-    const loteIdFromUrl = params.get('lote');
+    let loteIdFromUrl = params.get('lote');
+
+    if (!loteIdFromUrl) {
+        const pathSegments = window.location.pathname.split('/').filter(Boolean);
+        const potentialId = pathSegments[pathSegments.length - 1];
+        if (potentialId && /^[A-Z]{3}-[A-Z0-9]{8}$/.test(potentialId)) {
+            loteIdFromUrl = potentialId;
+        }
+    }
+
     if (loteIdFromUrl) {
         loteIdInput.value = loteIdFromUrl;
         handleSearch();
