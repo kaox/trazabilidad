@@ -1,6 +1,7 @@
 -- Paso 1: Eliminar las tablas existentes en el orden correcto para evitar errores de dependencia.
 -- La cláusula "CASCADE" asegura que también se eliminen las relaciones.
 DROP TABLE IF EXISTS perfiles_cacao CASCADE;
+DROP TABLE IF EXISTS perfiles_cafe CASCADE;
 DROP TABLE IF EXISTS ruedas_sabores CASCADE;
 DROP TABLE IF EXISTS lotes CASCADE;
 DROP TABLE IF EXISTS etapas_plantilla CASCADE;
@@ -88,6 +89,17 @@ CREATE TABLE IF NOT EXISTS perfiles_cacao (
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(user_id, nombre)
 );
+
+-- Tabla de Perfiles de Café (Añadida)
+CREATE TABLE IF NOT EXISTS perfiles_cafe (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    nombre_perfil TEXT NOT NULL,
+    perfil_data JSONB NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(user_id, nombre_perfil)
+);
+
 -- Tabla de Ruedas de Sabores
 CREATE TABLE IF NOT EXISTS ruedas_sabores (
     id SERIAL PRIMARY KEY,

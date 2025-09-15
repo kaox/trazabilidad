@@ -50,6 +50,9 @@ if (environment === 'production') {
     run = (sql, params = []) => new Promise((resolve, reject) => db.run(sql, params, function(err) { err ? reject(err) : resolve({ changes: this.changes, lastID: this.lastID }); }));
 }
 
+// --- Helper para parsear JSON de forma segura ---
+const safeJSONParse = (data) => typeof data === 'string' ? JSON.parse(data) : data;
+
 // --- Lógica de la API (usa las funciones adaptadoras) ---
 const registerUser = async (req, res) => {
     const { usuario, password, nombre, apellido, dni, ruc, empresa, celular, correo } = req.body;
@@ -122,7 +125,7 @@ const getFincas = async (req, res) => {
     const userId = req.user.id;
     try {
         const rows = await all('SELECT * FROM fincas WHERE user_id = ? ORDER BY nombre_finca', [userId]);
-        const fincas = rows.map(f => ({ ...f, coordenadas: typeof f.coordenadas === 'string' ? JSON.parse(f.coordenadas || 'null') : f.coordenadas }));
+        const fincas = rows.map(f => ({ ...f, coordenadas: safeJSONParse(f.coordenadas || 'null') }));
         res.status(200).json(fincas);
     } catch (err) { res.status(500).json({ error: err.message }); }
 };
@@ -205,7 +208,7 @@ const getPerfiles = async (req, res) => {
             }
             perfiles = await all('SELECT * FROM perfiles_cacao WHERE user_id = ? ORDER BY nombre', [userId]);
         }
-        const parsedPerfiles = perfiles.map(p => ({ ...p, perfil_data: typeof p.perfil_data === 'string' ? JSON.parse(p.perfil_data) : p.perfil_data }));
+        const parsedPerfiles = perfiles.map(p => ({ ...p, perfil_data: safeJSONParse(p.perfil_data) }));
         res.status(200).json(parsedPerfiles);
     } catch (err) { res.status(500).json({ error: err.message }); }
 };
@@ -278,7 +281,7 @@ const getStagesForTemplate = async (req, res) => {
             return res.status(403).json({ error: "No tienes permiso para ver estas etapas." });
         }
         const stages = await all('SELECT * FROM etapas_plantilla WHERE plantilla_id = ? ORDER BY orden', [templateId]);
-        const parsedStages = stages.map(s => ({...s, campos_json: typeof s.campos_json === 'string' ? JSON.parse(s.campos_json) : s.campos_json}));
+        const parsedStages = stages.map(s => ({...s, campos_json: safeJSONParse(s.campos_json)}));
         res.status(200).json(parsedStages);
     } catch (err) { res.status(500).json({ error: err.message }); }
 };
@@ -322,7 +325,7 @@ const getBatchesTree = async (req, res) => {
     const userId = req.user.id;
     try {
         const allLotes = await all('SELECT l.*, e.nombre_etapa FROM lotes l JOIN etapas_plantilla e ON l.etapa_id = e.id WHERE l.user_id = ? OR l.parent_id IN (SELECT id FROM lotes WHERE user_id = ?)', [userId, userId]);
-        const lotes = allLotes.map(lote => ({...lote, data: JSON.parse(lote.data), children: []}));
+        const lotes = allLotes.map(lote => ({...lote, data: safeJSONParse(lote.data), children: []}));
         const lotesById = lotes.reduce((acc, lote) => { acc[lote.id] = lote; return acc; }, {});
         const roots = [];
         lotes.forEach(lote => {
@@ -461,13 +464,12 @@ const getPerfilesCafe = async (req, res) => {
     const userId = req.user.id;
     try {
         const perfiles = await all('SELECT * FROM perfiles_cafe WHERE user_id = ? ORDER BY nombre_perfil', [userId]);
-        const parsedPerfiles = perfiles.map(p => ({ ...p, perfil_data: JSON.parse(p.perfil_data) }));
+        const parsedPerfiles = perfiles.map(p => ({ ...p, perfil_data: safeJSONParse(p.perfil_data) }));
         res.status(200).json(parsedPerfiles);
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
 };
-
 const createPerfilCafe = async (req, res) => {
     const userId = req.user.id;
     const { nombre_perfil, perfil_data } = req.body;
@@ -479,7 +481,6 @@ const createPerfilCafe = async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 };
-
 const updatePerfilCafe = async (req, res) => {
     const userId = req.user.id;
     const { id } = req.params;
@@ -493,7 +494,6 @@ const updatePerfilCafe = async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 };
-
 const deletePerfilCafe = async (req, res) => {
     const userId = req.user.id;
     const { id } = req.params;
@@ -505,18 +505,16 @@ const deletePerfilCafe = async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 };
-
 const getRuedasSabores = async (req, res) => {
     const userId = req.user.id;
     try {
         const ruedas = await all('SELECT * FROM ruedas_sabores WHERE user_id = ? ORDER BY nombre_rueda', [userId]);
-        const parsedRuedas = ruedas.map(r => ({ ...r, notas_json: JSON.parse(r.notas_json) }));
+        const parsedRuedas = ruedas.map(r => ({ ...r, notas_json: safeJSONParse(r.notas_json) }));
         res.status(200).json(parsedRuedas);
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
 };
-
 const createRuedaSabores = async (req, res) => {
     const userId = req.user.id;
     const { nombre_rueda, notas_json } = req.body;
@@ -528,7 +526,6 @@ const createRuedaSabores = async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 };
-
 const updateRuedaSabores = async (req, res) => {
     const userId = req.user.id;
     const { id } = req.params;
@@ -542,7 +539,6 @@ const updateRuedaSabores = async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 };
-
 const deleteRuedaSabores = async (req, res) => {
     const userId = req.user.id;
     const { id } = req.params;
@@ -568,3 +564,4 @@ module.exports = {
     getPerfilesCafe, createPerfilCafe, updatePerfilCafe, deletePerfilCafe,
     getRuedasSabores, createRuedaSabores, updateRuedaSabores, deleteRuedaSabores
 };
+

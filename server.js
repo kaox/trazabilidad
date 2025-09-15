@@ -21,22 +21,38 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // --- Middleware de Autenticación Unificado ---
 const authenticate = (req, res, next, isPageRequest = false) => {
-    let token = req.cookies.token || req.headers['authorization']?.split(' ')[1];
+    // 1. Prioriza la cookie, que es más segura.
+    let token = req.cookies.token;
+
+    // 2. Si no hay cookie, busca en el header 'Authorization' como respaldo.
     if (!token) {
-        return isPageRequest 
-            ? res.redirect(`/login.html?redirect=${req.originalUrl}`)
-            : res.sendStatus(401);
+        const authHeader = req.headers['authorization'];
+        if (authHeader) {
+            token = authHeader.split(' ')[1];
+        }
     }
+
+    if (token == null) {
+        // Si no hay token por ninguna vía
+        if (isPageRequest) {
+            return res.redirect(`/login.html?redirect=${req.originalUrl}`);
+        }
+        return res.sendStatus(401); // Para peticiones de API
+    }
+
     jwt.verify(token, process.env.JWT_SECRET || 'supersecretkey', (err, user) => {
         if (err) {
-            return isPageRequest
-                ? res.clearCookie('token', { path: '/' }).redirect(`/login.html?redirect=${req.originalUrl}`)
-                : res.sendStatus(403);
+            // Si el token es inválido o expiró
+            if (isPageRequest) {
+                return res.clearCookie('token', { path: '/' }).redirect(`/login.html?redirect=${req.originalUrl}`);
+            }
+            return res.sendStatus(403); // Para peticiones de API
         }
         req.user = user;
         next();
     });
 };
+
 const authenticatePage = (req, res, next) => authenticate(req, res, next, true);
 const authenticateApi = (req, res, next) => authenticate(req, res, next, false);
 

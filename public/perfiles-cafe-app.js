@@ -34,10 +34,13 @@ document.addEventListener('DOMContentLoaded', () => {
     async function loadPerfiles() {
         try {
             perfiles = await api('/api/perfiles-cafe');
+            console.log("1");
             populateSelector();
             if (perfiles.length > 0) {
+                console.log("2");
                 selectPerfil(perfiles[0].id);
             } else {
+                console.log("3");
                 updateChart({ nombre_perfil: 'Crea tu primer perfil', perfil_data: {} });
             }
         } catch (error) {
