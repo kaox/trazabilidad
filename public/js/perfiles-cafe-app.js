@@ -7,6 +7,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const editIdInput = document.getElementById('edit-id');
     const cancelEditBtn = document.getElementById('cancel-edit-btn');
     const nombrePerfilInput = document.getElementById('nombre_perfil');
+    const editProfileBtn = document.getElementById('edit-profile-btn');
+    const deleteProfileBtn = document.getElementById('delete-profile-btn');
 
     let radarChart;
     let perfiles = [];
@@ -29,18 +31,17 @@ document.addEventListener('DOMContentLoaded', () => {
         form.addEventListener('submit', handleFormSubmit);
         selector.addEventListener('change', handleSelectorChange);
         cancelEditBtn.addEventListener('click', resetForm);
+        editProfileBtn.addEventListener('click', handleEditClick);
+        deleteProfileBtn.addEventListener('click', handleDeleteClick);
     }
 
     async function loadPerfiles() {
         try {
             perfiles = await api('/api/perfiles-cafe');
-            console.log("1");
             populateSelector();
             if (perfiles.length > 0) {
-                console.log("2");
                 selectPerfil(perfiles[0].id);
             } else {
-                console.log("3");
                 updateChart({ nombre_perfil: 'Crea tu primer perfil', perfil_data: {} });
             }
         } catch (error) {
@@ -150,6 +151,43 @@ document.addEventListener('DOMContentLoaded', () => {
             updateChart(selectedPerfil);
         }
     }
+    
+    function handleEditClick() {
+        const selectedId = selector.value;
+        const perfil = perfiles.find(p => p.id == selectedId);
+        if (!perfil) return;
+        
+        resetForm();
+        formTitle.textContent = "Editar Perfil";
+        editIdInput.value = perfil.id;
+        nombrePerfilInput.value = perfil.nombre_perfil;
+        
+        atributos.forEach(attr => {
+            const slider = document.getElementById(attr.id);
+            const valueSpan = document.getElementById(`${attr.id}-value`);
+            const value = perfil.perfil_data[attr.id] || 5;
+            slider.value = value;
+            valueSpan.textContent = parseFloat(value).toFixed(1);
+        });
+        
+        cancelEditBtn.classList.remove('hidden');
+    }
+
+    async function handleDeleteClick() {
+        const selectedId = selector.value;
+        const perfil = perfiles.find(p => p.id == selectedId);
+        if (!perfil) return;
+        
+        if (confirm(`¿Seguro que quieres eliminar el perfil "${perfil.nombre_perfil}"?`)) {
+            try {
+                await api(`/api/perfiles-cafe/${selectedId}`, { method: 'DELETE' });
+                await loadPerfiles();
+            } catch (error) {
+                alert(`Error al eliminar: ${error.message}`);
+            }
+        }
+    }
+
     
     function resetForm() {
         form.reset();

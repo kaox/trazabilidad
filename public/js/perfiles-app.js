@@ -3,6 +3,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const form = document.getElementById('perfil-form');
     const slidersContainer = document.getElementById('sliders-container');
     const chartCanvas = document.getElementById('radar-chart');
+    const formTitle = document.getElementById('form-title');
+    const editIdInput = document.getElementById('edit-id');
+    const cancelEditBtn = document.getElementById('cancel-edit-btn');
+    const nombrePerfilInput = document.getElementById('nombre_perfil');
+    const editProfileBtn = document.getElementById('edit-profile-btn');
+    const deleteProfileBtn = document.getElementById('delete-profile-btn');
     let radarChart;
     let perfiles = [];
 
@@ -21,6 +27,9 @@ document.addEventListener('DOMContentLoaded', () => {
         await loadPerfiles();
         form.addEventListener('submit', handleFormSubmit);
         selector.addEventListener('change', handleSelectorChange);
+        cancelEditBtn.addEventListener('click', resetForm);
+        editProfileBtn.addEventListener('click', handleEditClick);
+        deleteProfileBtn.addEventListener('click', handleDeleteClick);
     }
 
     // --- Carga y Renderizado de Datos ---
@@ -120,31 +129,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function handleFormSubmit(e) {
         e.preventDefault();
-        const nombreCacao = document.getElementById('nombre-cacao').value;
-        const perfilData = {};
+        const formData = new FormData(form);
+        const perfil_data = {};
         atributos.forEach(attr => {
-            perfilData[attr.id] = parseInt(document.getElementById(attr.id).value, 10);
+            perfil_data[attr.id] = parseFloat(formData.get(attr.id));
         });
-
-        const nuevoPerfil = {
-            nombre: nombreCacao,
-            perfil_data: perfilData
-        };
+        const data = { nombre: formData.get('nombre'), perfil_data };
+        const editId = editIdInput.value;
 
         try {
-            await api('/api/perfiles', {
-                method: 'POST',
-                body: JSON.stringify(nuevoPerfil)
-            });
-            form.reset();
-            // Reset sliders visualmente
-            slidersContainer.querySelectorAll('input[type="range"]').forEach(slider => {
-                slider.value = 5;
-                document.getElementById(`${slider.id}-value`).textContent = 5;
-            });
+            if (editId) {
+                await api(`/api/perfiles/${editId}`, { method: 'PUT', body: JSON.stringify(data) });
+            } else {
+                await api('/api/perfiles', { method: 'POST', body: JSON.stringify(data) });
+            }
+            resetForm();
             await loadPerfiles();
         } catch (error) {
-            alert(`Error al guardar el perfil: ${error.message}`);
+            alert(`Error al guardar: ${error.message}`);
         }
     }
     
@@ -154,6 +156,53 @@ document.addEventListener('DOMContentLoaded', () => {
         if (selectedPerfil) {
             updateChart(selectedPerfil);
         }
+    }
+
+    function handleEditClick() {
+        const selectedId = selector.value;
+        const perfil = perfiles.find(p => p.id == selectedId);
+        if (!perfil) return;
+        
+        resetForm();
+        formTitle.textContent = "Editar Perfil";
+        editIdInput.value = perfil.id;
+        nombrePerfilInput.value = perfil.nombre;
+        
+        atributos.forEach(attr => {
+            const slider = document.getElementById(attr.id);
+            const valueSpan = document.getElementById(`${attr.id}-value`);
+            const value = perfil.perfil_data[attr.id] || 5;
+            slider.value = value;
+            valueSpan.textContent = parseFloat(value).toFixed(1);
+        });
+        
+        cancelEditBtn.classList.remove('hidden');
+    }
+    
+    async function handleDeleteClick() {
+        const selectedId = selector.value;
+        const perfil = perfiles.find(p => p.id == selectedId);
+        if (!perfil) return;
+        
+        if (confirm(`¿Seguro que quieres eliminar el perfil "${perfil.nombre}"?`)) {
+            try {
+                await api(`/api/perfiles/${selectedId}`, { method: 'DELETE' });
+                await loadPerfiles();
+            } catch (error) {
+                alert(`Error al eliminar: ${error.message}`);
+            }
+        }
+    }
+
+    function resetForm() {
+        form.reset();
+        editIdInput.value = '';
+        formTitle.textContent = 'Crear Nuevo Perfil';
+        cancelEditBtn.classList.add('hidden');
+        slidersContainer.querySelectorAll('input[type="range"]').forEach(slider => {
+            slider.value = 5;
+            document.getElementById(`${slider.id}-value`).textContent = '5.0';
+        });
     }
 
     init();

@@ -53,25 +53,17 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function renderRuedas() {
-        listContainer.innerHTML = `
-            <div class="flex justify-between items-center mb-2">
-                <h3 id="current-profile-name" class="font-bold text-lg text-amber-900 flex-grow"></h3>
-                <div class="flex items-center flex-shrink-0">
-                    <button class="edit-btn text-sky-600 hover:text-sky-800 p-1 rounded-full"><svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z"></path><path fill-rule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clip-rule="evenodd"></path></svg></button>
-                    <button class="delete-btn text-red-500 hover:text-red-700 text-xl font-bold leading-none p-1">&times;</button>
+        listContainer.innerHTML = ruedas.map(r => `
+            <div class="p-3 border rounded-xl cursor-pointer hover:bg-amber-50 ${r.id === selectedRuedaId ? 'bg-amber-100 border-amber-800' : ''}" data-id="${r.id}">
+                <div class="flex justify-between items-center">
+                    <span class="font-semibold flex-grow">${r.nombre_rueda}</span>
+                    <div class="flex items-center flex-shrink-0">
+                        <button data-id="${r.id}" class="edit-btn text-sky-600 hover:text-sky-800 p-1 rounded-full"><svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z"></path><path fill-rule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clip-rule="evenodd"></path></svg></button>
+                        <button data-id="${r.id}" class="delete-btn text-red-500 hover:text-red-700 text-xl font-bold leading-none p-1">&times;</button>
+                    </div>
                 </div>
             </div>
-            <select id="rueda-selector" class="w-full p-2 border rounded-md text-sm bg-white">
-                ${ruedas.map(r => `<option value="${r.id}" ${r.id === selectedRuedaId ? 'selected' : ''}>${r.nombre_rueda}</option>`).join('')}
-            </select>
-        `;
-        document.getElementById('rueda-selector').addEventListener('change', (e) => selectRueda(parseInt(e.target.value, 10)));
-        
-        const currentProfileName = document.getElementById('current-profile-name');
-        const selectedRueda = ruedas.find(r => r.id === selectedRuedaId);
-        if (currentProfileName) {
-            currentProfileName.textContent = selectedRueda ? selectedRueda.nombre_rueda : 'Perfil Actual';
-        }
+        `).join('');
     }
     
     function selectRueda(id) {
@@ -104,7 +96,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
         ['l1', 'l2'].forEach(l => { if (charts[l]) charts[l].destroy(); });
 
-        const chartOptions = { responsive: true, maintainAspectRatio: true, plugins: { legend: { display: false }, tooltip: { enabled: false }, datalabels: { display: false } } };
+        const chartOptions = {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: { display: false },
+                tooltip: { enabled: false },
+                datalabels: { display: false }
+            }
+        };
         
         const selectedCategories = {};
         notes.forEach(note => {
@@ -137,6 +137,7 @@ document.addEventListener('DOMContentLoaded', () => {
             options: {...chartOptions, cutout: '65%'} 
         });
         
+        document.getElementById('chart-title').textContent = title;
         renderCustomLegend(selectedCategories);
     }
     
@@ -217,11 +218,13 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function handleListClick(e) {
-        const target = e.target.closest('button, [data-id]');
-        if (!target) return;
+        const card = e.target.closest('[data-id]');
+        if (!card) return;
+
+        const id = parseInt(card.dataset.id, 10);
         
-        const id = parseInt(target.dataset.id, 10);
-        if (target.closest('.delete-btn')) {
+        if (e.target.closest('.delete-btn')) {
+            e.stopPropagation();
             if (confirm('¿Seguro que quieres eliminar esta rueda de sabor?')) {
                 api(`/api/ruedas-sabores/${id}`, { method: 'DELETE' }).then(() => {
                     selectedRuedaId = null;
@@ -229,7 +232,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     loadRuedas();
                 });
             }
-        } else if (target.closest('.edit-btn')) {
+        } else if (e.target.closest('.edit-btn')) {
+            e.stopPropagation();
             populateFormForEdit(id);
         } else {
             resetForm();

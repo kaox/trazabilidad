@@ -1,0 +1,323 @@
+{
+    "defaultPerfilesCacao": [
+        {
+            "nombre": "SS01",
+            "perfil_data": {
+                "cacao": 9,
+                "acidez": 9,
+                "amargor": 8,
+                "astringencia": 4,
+                "frutaFresca": 9,
+                "frutaMarron": 3,
+                "vegetal": 1,
+                "floral": 1,
+                "madera": 6,
+                "especia": 4,
+                "nuez": 3,
+                "caramelo": 8
+            }
+        },
+        {
+            "nombre": "SS02",
+            "perfil_data": {
+                "cacao": 8,
+                "acidez": 4,
+                "amargor": 6,
+                "astringencia": 4,
+                "frutaFresca": 2,
+                "frutaMarron": 6,
+                "vegetal": 1,
+                "floral": 2,
+                "madera": 7,
+                "especia": 6,
+                "nuez": 4,
+                "caramelo": 6
+            }
+        },
+        {
+            "nombre": "SS03",
+            "perfil_data": {
+                "cacao": 9,
+                "acidez": 6,
+                "amargor": 8,
+                "astringencia": 4,
+                "frutaFresca": 4,
+                "frutaMarron": 2,
+                "vegetal": 1,
+                "floral": 1,
+                "madera": 4,
+                "especia": 2,
+                "nuez": 4,
+                "caramelo": 6
+            }
+        },
+        {
+            "nombre": "SS04",
+            "perfil_data": {
+                "cacao": 8,
+                "acidez": 4,
+                "amargor": 6,
+                "astringencia": 6,
+                "frutaFresca": 2,
+                "frutaMarron": 2,
+                "vegetal": 4,
+                "floral": 1,
+                "madera": 4,
+                "especia": 2,
+                "nuez": 2,
+                "caramelo": 4
+            }
+        },
+        {
+            "nombre": "SS05",
+            "perfil_data": {
+                "cacao": 8,
+                "acidez": 4,
+                "amargor": 6,
+                "astringencia": 6,
+                "frutaFresca": 4,
+                "frutaMarron": 4,
+                "vegetal": 2,
+                "floral": 1,
+                "madera": 4,
+                "especia": 4,
+                "nuez": 4,
+                "caramelo": 6
+            }
+        },
+        {
+            "nombre": "SS06",
+            "perfil_data": {
+                "cacao": 9,
+                "acidez": 4,
+                "amargor": 7,
+                "astringencia": 4,
+                "frutaFresca": 4,
+                "frutaMarron": 2,
+                "vegetal": 2,
+                "floral": 1,
+                "madera": 4,
+                "especia": 2,
+                "nuez": 3,
+                "caramelo": 5
+            }
+        },
+        {
+            "nombre": "SS07",
+            "perfil_data": {
+                "cacao": 9,
+                "acidez": 4,
+                "amargor": 7,
+                "astringencia": 6,
+                "frutaFresca": 4,
+                "frutaMarron": 4,
+                "vegetal": 1,
+                "floral": 1,
+                "madera": 4,
+                "especia": 2,
+                "nuez": 3,
+                "caramelo": 5
+            }
+        },
+        {
+            "nombre": "SS08",
+            "perfil_data": {
+                "cacao": 9,
+                "acidez": 5,
+                "amargor": 8,
+                "astringencia": 6,
+                "frutaFresca": 2,
+                "frutaMarron": 4,
+                "vegetal": 2,
+                "floral": 1,
+                "madera": 4,
+                "especia": 2,
+                "nuez": 3,
+                "caramelo": 4
+            }
+        },
+        {
+            "nombre": "CSS02",
+            "perfil_data": {
+                "cacao": 9,
+                "acidez": 5,
+                "amargor": 7,
+                "astringencia": 6,
+                "frutaFresca": 5,
+                "frutaMarron": 4,
+                "vegetal": 2,
+                "floral": 1,
+                "madera": 4,
+                "especia": 2,
+                "nuez": 3,
+                "caramelo": 6
+            }
+        },
+        {
+            "nombre": "CMP15",
+            "perfil_data": {
+                "cacao": 8,
+                "acidez": 6,
+                "amargor": 6,
+                "astringencia": 4,
+                "frutaFresca": 4,
+                "frutaMarron": 4,
+                "vegetal": 2,
+                "floral": 1,
+                "madera": 3,
+                "especia": 2,
+                "nuez": 2,
+                "caramelo": 6
+            }
+        },
+        {
+            "nombre": "CSS03",
+            "perfil_data": {
+                "cacao": 8,
+                "acidez": 6,
+                "amargor": 7,
+                "astringencia": 4,
+                "frutaFresca": 2,
+                "frutaMarron": 2,
+                "vegetal": 2,
+                "floral": 1,
+                "madera": 4,
+                "especia": 2,
+                "nuez": 2,
+                "caramelo": 4
+            }
+        },
+        {
+            "nombre": "VRAE99",
+            "perfil_data": {
+                "cacao": 8,
+                "acidez": 6,
+                "amargor": 6,
+                "astringencia": 4,
+                "frutaFresca": 4,
+                "frutaMarron": 2,
+                "vegetal": 1,
+                "floral": 2,
+                "madera": 4,
+                "especia": 2,
+                "nuez": 2,
+                "caramelo": 5
+            }
+        },
+        {
+            "nombre": "TSH812",
+            "perfil_data": {
+                "cacao": 7,
+                "acidez": 4,
+                "amargor": 6,
+                "astringencia": 4,
+                "frutaFresca": 2,
+                "frutaMarron": 2,
+                "vegetal": 1,
+                "floral": 1,
+                "madera": 4,
+                "especia": 2,
+                "nuez": 2,
+                "caramelo": 4
+            }
+        },
+        {
+            "nombre": "PRIMAVERA",
+            "perfil_data": {
+                "cacao": 8,
+                "acidez": 4,
+                "amargor": 6,
+                "astringencia": 4,
+                "frutaFresca": 2,
+                "frutaMarron": 2,
+                "vegetal": 1,
+                "floral": 1,
+                "madera": 4,
+                "especia": 2,
+                "nuez": 2,
+                "caramelo": 4
+            }
+        },
+        {
+            "nombre": "CSS07",
+            "perfil_data": {
+                "cacao": 8,
+                "acidez": 4,
+                "amargor": 6,
+                "astringencia": 4,
+                "frutaFresca": 2,
+                "frutaMarron": 2,
+                "vegetal": 1,
+                "floral": 1,
+                "madera": 3,
+                "especia": 2,
+                "nuez": 2,
+                "caramelo": 4
+            }
+        },
+        {
+            "nombre": "CSS08",
+            "perfil_data": {
+                "cacao": 8,
+                "acidez": 4,
+                "amargor": 7,
+                "astringencia": 6,
+                "frutaFresca": 2,
+                "frutaMarron": 4,
+                "vegetal": 1,
+                "floral": 1,
+                "madera": 4,
+                "especia": 2,
+                "nuez": 2,
+                "caramelo": 4
+            }
+        },
+        {
+            "nombre": "CSS10",
+            "perfil_data": {
+                "cacao": 8,
+                "acidez": 6,
+                "amargor": 6,
+                "astringencia": 4,
+                "frutaFresca": 4,
+                "frutaMarron": 2,
+                "vegetal": 1,
+                "floral": 1,
+                "madera": 4,
+                "especia": 2,
+                "nuez": 2,
+                "caramelo": 6
+            }
+        }
+    ],
+    "defaultPerfilesCafe": [
+        {
+            "nombre_perfil": "Perfil Balanceado",
+            "perfil_data": {
+                "fraganciaAroma": 8,
+                "sabor": 7.5,
+                "postgusto": 7,
+                "acidez": 8,
+                "cuerpo": 7,
+                "dulzura": 8,
+                "balance": 8.5,
+                "limpieza": 9,
+                "impresionGeneral": 8
+            }
+        },
+        {
+            "nombre_perfil": "Perfil Intenso y Achocolatado",
+            "perfil_data": {
+                "fraganciaAroma": 8.5,
+                "sabor": 8,
+                "postgusto": 8,
+                "acidez": 6.5,
+                "cuerpo": 9,
+                "dulzura": 7,
+                "balance": 7.5,
+                "limpieza": 8,
+                "impresionGeneral": 8
+            }
+        }
+    ]
+}

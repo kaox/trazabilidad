@@ -62,6 +62,17 @@ app.post('/api/login', db.loginUser);
 app.post('/api/logout', db.logoutUser);
 app.get('/api/trazabilidad/:id', db.getTrazabilidad);
 
+// Nueva ruta para servir los parciales de HTML
+app.get('/partials/:partialName', (req, res) => {
+    const { partialName } = req.params;
+    // Añadimos una validación simple para seguridad
+    if (partialName.match(/^[a-zA-Z0-9_-]+\.html$/)) {
+        res.sendFile(path.join(__dirname, 'views', 'partials', partialName));
+    } else {
+        res.status(404).send('Partial not found');
+    }
+});
+
 // --- Rutas Públicas (Páginas) ---
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'public', 'about.html')));
 
@@ -86,6 +97,7 @@ app.get('/app/procesadoras', authenticatePage, (req, res) => res.sendFile(path.j
 app.get('/app/plantillas', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'plantillas.html')));
 app.get('/app/ruedas-sabores', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'ruedas-sabores.html')));
 app.get('/app/cuenta', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'cuenta.html')));
+app.get('/app/maridaje', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'maridaje.html'))); // <-- Nueva ruta
 
 // --- Rutas Protegidas de la API ---
 // Fincas
@@ -103,6 +115,8 @@ app.delete('/api/procesadoras/:id', authenticateApi, db.deleteProcesadora);
 // Perfiles Cacao
 app.get('/api/perfiles', authenticateApi, db.getPerfiles);
 app.post('/api/perfiles', authenticateApi, db.createPerfil);
+app.put('/api/perfiles/:id', authenticateApi, db.updatePerfil);
+app.delete('/api/perfiles/:id', authenticateApi, db.deletePerfil);
 
 // Perfiles Café
 app.get('/api/perfiles-cafe', authenticateApi, db.getPerfilesCafe);

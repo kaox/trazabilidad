@@ -204,8 +204,8 @@ const getPerfiles = async (req, res) => {
     try {
         let perfiles = await all('SELECT * FROM perfiles_cacao WHERE user_id = ? ORDER BY nombre', [userId]);
         if (perfiles.length === 0) {
-            const defaultTemplates = require('./default-templates.json');
-            const defaultPerfiles = defaultTemplates.defaultPerfiles;
+            const defaultProfiles = require('./default-profiles.json');
+            const defaultPerfiles = defaultProfiles.defaultPerfilesCacao;
             const insertSql = 'INSERT INTO perfiles_cacao (user_id, nombre, perfil_data) VALUES (?, ?, ?)';
             for (const perfil of defaultPerfiles) {
                 await run(insertSql, [userId, perfil.nombre, JSON.stringify(perfil.perfil_data)]);
@@ -225,6 +225,30 @@ const createPerfil = async (req, res) => {
     } catch (err) {
         if (err.message.includes('UNIQUE constraint failed')) res.status(409).json({ error: "Ya existe un perfil con ese nombre." });
         else res.status(500).json({ error: err.message });
+    }
+};
+const updatePerfil = async (req, res) => {
+    const userId = req.user.id;
+    const { id } = req.params;
+    const { nombre, perfil_data } = req.body;
+    try {
+        const result = await run('UPDATE perfiles_cacao SET nombre = ?, perfil_data = ? WHERE id = ? AND user_id = ?', [nombre, JSON.stringify(perfil_data), id, userId]);
+        if (result.changes === 0) return res.status(404).json({ error: 'Perfil no encontrado o sin permiso.' });
+        res.status(200).json({ message: 'Perfil de cacao actualizado.' });
+    } catch (err) {
+        if (err.message.includes('UNIQUE')) return res.status(409).json({ error: 'Ya existe un perfil de cacao con ese nombre.' });
+        res.status(500).json({ error: err.message });
+    }
+};
+const deletePerfil = async (req, res) => {
+    const userId = req.user.id;
+    const { id } = req.params;
+    try {
+        const result = await run('DELETE FROM perfiles_cacao WHERE id = ? AND user_id = ?', [id, userId]);
+        if (result.changes === 0) return res.status(404).json({ error: 'Perfil no encontrado o sin permiso.' });
+        res.status(204).send();
+    } catch (err) {
+        res.status(500).json({ error: err.message });
     }
 };
 const getTemplates = async (req, res) => {
@@ -510,7 +534,16 @@ const getTrazabilidad = async (req, res) => {
 const getPerfilesCafe = async (req, res) => {
     const userId = req.user.id;
     try {
-        const perfiles = await all('SELECT * FROM perfiles_cafe WHERE user_id = ? ORDER BY nombre_perfil', [userId]);
+        let perfiles = await all('SELECT * FROM perfiles_cafe WHERE user_id = ? ORDER BY nombre_perfil', [userId]);
+        if (perfiles.length === 0) {
+            const defaultProfiles = require('./default-profiles.json');
+            const defaultPerfilesCafe = defaultProfiles.defaultPerfilesCafe;
+            const insertSql = 'INSERT INTO perfiles_cafe (user_id, nombre_perfil, perfil_data) VALUES (?, ?, ?)';
+            for (const perfil of defaultPerfilesCafe) {
+                await run(insertSql, [userId, perfil.nombre_perfil, JSON.stringify(perfil.perfil_data)]);
+            }
+            perfiles = await all('SELECT * FROM perfiles_cafe WHERE user_id = ? ORDER BY nombre_perfil', [userId]);
+        }
         const parsedPerfiles = perfiles.map(p => ({ ...p, perfil_data: safeJSONParse(p.perfil_data) }));
         res.status(200).json(parsedPerfiles);
     } catch (err) {
@@ -602,7 +635,7 @@ module.exports = {
     registerUser, loginUser, logoutUser,
     getFincas, createFinca, updateFinca, deleteFinca,
     getProcesadoras, createProcesadora, updateProcesadora, deleteProcesadora,
-    getPerfiles, createPerfil,
+    getPerfiles, createPerfil, updatePerfil, deletePerfil,
     getTemplates, createTemplate, updateTemplate, deleteTemplate, 
     getStagesForTemplate, createStage, updateStage, deleteStage,
     getBatchesTree, createBatch, updateBatch, deleteBatch,
