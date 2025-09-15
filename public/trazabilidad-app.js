@@ -198,6 +198,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const newData = Object.fromEntries(formData.entries());
             try {
                 if (mode === 'create') {
+                    // Ya no se genera el ID aquí, se elimina la línea.
                     await api('/api/batches', { method: 'POST', body: JSON.stringify({ 
                         plantilla_id: template.id, 
                         etapa_id: stage.id, 

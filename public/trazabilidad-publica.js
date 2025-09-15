@@ -51,9 +51,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
         
-        if (h.descascarillado_and_molienda || h.secado) {
-             finalHTML += createFinalReport(h);
-        }
+        finalHTML += createFinalReport(h);
         
         resultadoContainer.innerHTML = finalHTML;
         
@@ -103,26 +101,67 @@ document.addEventListener('DOMContentLoaded', () => {
         const narrative = `<p>Finalmente, fui liberado de mi cáscara. En el proceso, se desprendieron <strong>${molienda.pesoCascarilla} kg</strong> de mi cubierta protectora, dejando solo mi corazón puro. Este núcleo se transformó en <strong>${molienda.pesoProductoFinal} kg</strong> de <strong>${molienda.productoFinal}</strong>, la esencia misma de mi viaje, lista para convertirse en la obra de arte que ahora sostienes.</p>`;
         return createChapterHTML(icon, num, title, narrative, '');
     }
+    
+    function formatDate(dateString) {
+        if (!dateString) return 'N/A';
+        return new Date(dateString + 'T00:00:00').toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' });
+    }
+
+    function calculateEndDate(startDateStr, durationDays) {
+        if (!startDateStr || !durationDays) return 'N/A';
+        const startDate = new Date(startDateStr + 'T00:00:00');
+        startDate.setDate(startDate.getDate() + parseInt(durationDays, 10));
+        return formatDate(startDate.toISOString().split('T')[0]);
+    }
 
     function createFinalReport(h) {
-        const { fincaData, cosecha, tostado } = h;
+        const { fincaData, cosecha, fermentacion, secado, tostado } = h;
         const molienda = h.descascarillado_and_molienda;
-        const secado = h.secado;
-        const loteId = molienda?.id || secado?.id;
+        const loteId = molienda?.id || tostado?.id || secado?.id;
         if (!loteId) return '';
 
         return `
             <div class="mt-16 text-center">
-                <h2 class="text-3xl font-display text-amber-900 mb-4">El Certificado de Identidad de tu Chocolate</h2>
-                <p class="text-stone-600 max-w-2xl mx-auto mb-8">Esta es la huella digital de tu chocolate. Única e irrepetible.</p>
-                <div class="bg-white p-8 rounded-2xl shadow-xl border border-amber-800/20 max-w-2xl mx-auto">
-                    <div class="grid grid-cols-2 gap-6 text-left">
-                        <div><h4 class="text-sm text-stone-500">Lote</h4><p class="font-semibold">${loteId}</p></div>
-                        <div><h4 class="text-sm text-stone-500">Origen</h4><p class="font-semibold">${fincaData?.ciudad || cosecha.finca}, ${fincaData?.pais || 'N/A'}</p></div>
-                        <div><h4 class="text-sm text-stone-500">Cosecha</h4><p class="font-semibold">${new Date(cosecha.fechaCosecha + 'T00:00:00').toLocaleDateString('es-ES',{year:'numeric',month:'long',day:'numeric'})}</p></div>
-                        ${tostado ? `<div><h4 class="text-sm text-stone-500">Notas Dominantes</h4><p class="font-semibold">${tostado.perfilAroma || 'No especificado'}</p></div>` : ''}
-                        ${tostado && tostado.tipoPerfil ? `<div class="col-span-2"><h4 class="text-sm text-stone-500 text-center mb-2">Perfil Sensorial: ${tostado.tipoPerfil}</h4><div class="w-full max-w-md mx-auto"><canvas id="final-radar-chart"></canvas></div></div>` : ''}
+                <h2 class="text-3xl font-display text-amber-900 mb-4">Certificado de Identidad</h2>
+                <p class="text-stone-600 max-w-2xl mx-auto mb-8">Esta es la huella digital de tu producto. Única e irrepetible.</p>
+                <div class="bg-white p-8 rounded-2xl shadow-xl border border-amber-800/20 max-w-3xl mx-auto text-left space-y-8">
+                    
+                    <!-- Origen -->
+                    <div>
+                        <h3 class="text-2xl font-display text-amber-800 border-b pb-2 mb-4">Origen</h3>
+                        <dl class="grid grid-cols-2 gap-x-6 gap-y-4">
+                            <div><dt class="text-sm text-stone-500">País</dt><dd class="font-semibold">${fincaData?.pais || 'N/A'}</dd></div>
+                            <div><dt class="text-sm text-stone-500">Ciudad</dt><dd class="font-semibold">${fincaData?.ciudad || 'N/A'}</dd></div>
+                            <div><dt class="text-sm text-stone-500">Finca</dt><dd class="font-semibold">${cosecha?.finca || 'N/A'}</dd></div>
+                            <div><dt class="text-sm text-stone-500">Altitud</dt><dd class="font-semibold">${fincaData?.altura ? fincaData.altura + ' msnm' : 'N/A'}</dd></div>
+                            <div class="col-span-2"><dt class="text-sm text-stone-500">Productor</dt><dd class="font-semibold">${fincaData?.propietario || 'N/A'}</dd></div>
+                            <div class="col-span-2"><dt class="text-sm text-stone-500">Historia</dt><dd class="text-stone-700 text-sm">${fincaData?.historia || 'Sin historia registrada.'}</dd></div>
+                        </dl>
                     </div>
+
+                    <!-- Proceso -->
+                    <div>
+                        <h3 class="text-2xl font-display text-amber-800 border-b pb-2 mb-4">Proceso</h3>
+                        <dl class="grid grid-cols-2 gap-x-6 gap-y-4">
+                            <div><dt class="text-sm text-stone-500">Fecha Cosecha</dt><dd class="font-semibold">${formatDate(cosecha?.fechaCosecha)}</dd></div>
+                            <div><dt class="text-sm text-stone-500">Fecha Tostado</dt><dd class="font-semibold">${formatDate(tostado?.fechaTostado)}</dd></div>
+                            <div><dt class="text-sm text-stone-500">Fermentación</dt><dd class="font-semibold">${formatDate(fermentacion?.fechaInicio)} - ${calculateEndDate(fermentacion?.fechaInicio, fermentacion?.duracion)}</dd></div>
+                            <div><dt class="text-sm text-stone-500">Tiempo de Tueste</dt><dd class="font-semibold">${tostado?.duracion ? tostado.duracion + ' min' : 'N/A'}</dd></div>
+                            <div><dt class="text-sm text-stone-500">Secado</dt><dd class="font-semibold">${formatDate(secado?.fechaInicio)} - ${calculateEndDate(secado?.fechaInicio, secado?.duracion)}</dd></div>
+                        </dl>
+                    </div>
+
+                    <!-- Calidad -->
+                    <div>
+                        <h3 class="text-2xl font-display text-amber-800 border-b pb-2 mb-4">Calidad y Perfil Sensorial</h3>
+                        <dl class="grid grid-cols-2 gap-x-6 gap-y-4">
+                            <div><dt class="text-sm text-stone-500">Variedad</dt><dd class="font-semibold">N/A</dd></div>
+                             <div><dt class="text-sm text-stone-500">Perfil</dt><dd class="font-semibold">${tostado?.tipoPerfil || 'N/A'}</dd></div>
+                            <div class="col-span-2"><dt class="text-sm text-stone-500">Notas de Aroma y Sabor</dt><dd class="text-stone-700 text-sm">${tostado?.perfilAroma || 'No especificadas.'}</dd></div>
+                            <div class="col-span-2"><dt class="text-sm text-stone-500">Maridaje Sugerido</dt><dd class="text-stone-700 text-sm">Vinos tintos robustos, quesos añejos o un buen libro.</dd></div>
+                        </dl>
+                    </div>
+                    ${tostado?.perfilSensorialData ? `<div class="pt-4 border-t"><div class="w-full max-w-md mx-auto"><canvas id="final-radar-chart"></canvas></div></div>` : ''}
                 </div>
             </div>
             <div class="mt-12 text-center">
@@ -236,18 +275,8 @@ document.addEventListener('DOMContentLoaded', () => {
     closeModalBtn.addEventListener('click', () => imageModal.close());
     imageModal.addEventListener('click', (e) => { if (e.target.id === 'image-modal') imageModal.close(); });
 
-    // --- Lógica de Carga Automática Mejorada ---
     const params = new URLSearchParams(window.location.search);
-    let loteIdFromUrl = params.get('lote');
-
-    if (!loteIdFromUrl) {
-        const pathSegments = window.location.pathname.split('/').filter(Boolean);
-        const potentialId = pathSegments[pathSegments.length - 1];
-        if (potentialId && /^[A-Z]{3}-[A-Z0-9]{8}$/.test(potentialId)) {
-            loteIdFromUrl = potentialId;
-        }
-    }
-
+    const loteIdFromUrl = params.get('lote');
     if (loteIdFromUrl) {
         loteIdInput.value = loteIdFromUrl;
         handleSearch();
