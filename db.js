@@ -121,6 +121,7 @@ const updateUserPassword = async (req, res) => {
         res.status(200).json({ message: "Contraseña actualizada." });
     } catch (err) { res.status(500).json({ error: err.message }); }
 };
+// --- Fincas (Actualizado) ---
 const getFincas = async (req, res) => {
     const userId = req.user.id;
     try {
@@ -129,26 +130,29 @@ const getFincas = async (req, res) => {
         res.status(200).json(fincas);
     } catch (err) { res.status(500).json({ error: err.message }); }
 };
+
 const createFinca = async (req, res) => {
     const userId = req.user.id;
-    const { propietario, dni_ruc, nombre_finca, pais, ciudad, altura, superficie, coordenadas } = req.body;
+    const { propietario, dni_ruc, nombre_finca, pais, ciudad, altura, superficie, coordenadas, telefono, historia } = req.body;
     const id = require('crypto').randomUUID();
     try {
-        await run('INSERT INTO fincas (id, user_id, propietario, dni_ruc, nombre_finca, pais, ciudad, altura, superficie, coordenadas) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [id, userId, propietario, dni_ruc, nombre_finca, pais, ciudad, altura, superficie, JSON.stringify(coordenadas)]);
+        await run('INSERT INTO fincas (id, user_id, propietario, dni_ruc, nombre_finca, pais, ciudad, altura, superficie, coordenadas, telefono, historia) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [id, userId, propietario, dni_ruc, nombre_finca, pais, ciudad, altura, superficie, JSON.stringify(coordenadas), telefono, historia]);
         res.status(201).json({ message: "Finca creada" });
     } catch (err) { res.status(500).json({ error: err.message }); }
 };
+
 const updateFinca = async (req, res) => {
     const userId = req.user.id;
     const { id } = req.params;
-    const { propietario, dni_ruc, nombre_finca, pais, ciudad, altura, superficie, coordenadas } = req.body;
-    const sql = 'UPDATE fincas SET propietario = ?, dni_ruc = ?, nombre_finca = ?, pais = ?, ciudad = ?, altura = ?, superficie = ?, coordenadas = ? WHERE id = ? AND user_id = ?';
+    const { propietario, dni_ruc, nombre_finca, pais, ciudad, altura, superficie, coordenadas, telefono, historia } = req.body;
+    const sql = 'UPDATE fincas SET propietario = ?, dni_ruc = ?, nombre_finca = ?, pais = ?, ciudad = ?, altura = ?, superficie = ?, coordenadas = ?, telefono = ?, historia = ? WHERE id = ? AND user_id = ?';
     try {
-        const result = await run(sql, [propietario, dni_ruc, nombre_finca, pais, ciudad, altura, superficie, JSON.stringify(coordenadas), id, userId]);
+        const result = await run(sql, [propietario, dni_ruc, nombre_finca, pais, ciudad, altura, superficie, JSON.stringify(coordenadas), telefono, historia, id, userId]);
         if (result.changes === 0) return res.status(404).json({ error: "Finca no encontrada o no tienes permiso." });
         res.status(200).json({ message: "Finca actualizada" });
     } catch (err) { res.status(500).json({ error: err.message }); }
 };
+
 const deleteFinca = async (req, res) => {
     const userId = req.user.id;
     const { id } = req.params;
@@ -324,25 +328,39 @@ const deleteStage = async (req, res) => {
 const getBatchesTree = async (req, res) => {
     const userId = req.user.id;
     try {
-        const allLotes = await all('SELECT l.*, e.nombre_etapa FROM lotes l JOIN etapas_plantilla e ON l.etapa_id = e.id WHERE l.user_id = ? OR l.parent_id IN (SELECT id FROM lotes WHERE user_id = ?)', [userId, userId]);
+        const allLotes = await all(`
+            SELECT l.id, l.parent_id, l.data, l.plantilla_id, l.etapa_id
+            FROM lotes l
+            WHERE l.user_id = ? OR l.id IN (
+                WITH RECURSIVE descendents AS (
+                    SELECT id FROM lotes WHERE user_id = ?
+                    UNION ALL
+                    SELECT l.id FROM lotes l JOIN descendents d ON l.parent_id = d.id
+                )
+                SELECT id FROM descendents WHERE user_id IS NULL
+            )
+        `, [userId, userId]);
+
         const lotes = allLotes.map(lote => ({...lote, data: safeJSONParse(lote.data), children: []}));
         const lotesById = lotes.reduce((acc, lote) => { acc[lote.id] = lote; return acc; }, {});
+
         const roots = [];
         lotes.forEach(lote => {
-            if (lote.parent_id) {
-                if (lotesById[lote.parent_id]) {
-                    lotesById[lote.parent_id].children.push(lote);
-                }
+            if (lote.parent_id && lotesById[lote.parent_id]) {
+                lotesById[lote.parent_id].children.push(lote);
             } else {
                 roots.push(lote);
             }
         });
+        
         const buildClientTree = (loteNode, allStages, allTemplates) => {
             const template = allTemplates.find(t => t.id === loteNode.plantilla_id);
             const stage = allStages.find(s => s.id === loteNode.etapa_id);
             const loteData = { ...loteNode.data, plantilla_id: loteNode.plantilla_id, etapa_id: loteNode.etapa_id };
-            if (loteNode.children.length > 0) {
-                const nextStage = allStages.find(s => s.plantilla_id === template.id && s.orden === stage.orden + 1);
+
+            if (loteNode.children.length > 0 && template) {
+                const nextStageOrder = stage.orden + 1;
+                const nextStage = allStages.find(s => s.plantilla_id === template.id && s.orden === nextStageOrder);
                 if (nextStage) {
                     const childKey = nextStage.nombre_etapa.toLowerCase().replace(/ & /g, '_and_');
                     loteData[childKey] = loteNode.children.map(childNode => buildClientTree(childNode, allStages, allTemplates));
@@ -350,11 +368,14 @@ const getBatchesTree = async (req, res) => {
             }
             return loteData;
         };
+        
         const [templates, allStages] = await Promise.all([
             all('SELECT * FROM plantillas_proceso WHERE user_id = ?', [userId]),
             all('SELECT * FROM etapas_plantilla WHERE plantilla_id IN (SELECT id FROM plantillas_proceso WHERE user_id = ?)', [userId]),
         ]);
+
         const finalTree = roots.map(rootNode => buildClientTree(rootNode, allStages, templates));
+        
         res.status(200).json(finalTree);
     } catch (error) {
         console.error("Error en getBatchesTree:", error);
@@ -371,27 +392,53 @@ const checkBatchOwnership = async (batchId, userId) => {
         SELECT user_id FROM ancestry WHERE user_id IS NOT NULL`, [batchId]);
     return owner && owner.user_id == userId;
 };
+
+// --- Lotes (con Generación de ID en Backend) ---
+const generateUniqueLoteId = async (prefix) => {
+    let id;
+    let isUnique = false;
+    while (!isUnique) {
+        const randomPart = Math.random().toString(36).substring(2, 10).toUpperCase();
+        id = `${prefix}-${randomPart}`;
+        const existing = await get('SELECT id FROM lotes WHERE id = ?', [id]);
+        if (!existing) {
+            isUnique = true;
+        }
+    }
+    return id;
+};
+
 const createBatch = async (req, res) => {
     const userId = req.user.id;
     const { plantilla_id, etapa_id, parent_id, data } = req.body;
-    let sql, params;
-    if (!parent_id) {
-        sql = 'INSERT INTO lotes (id, user_id, plantilla_id, etapa_id, parent_id, data) VALUES (?, ?, ?, ?, ?, ?)';
-        params = [data.id, userId, plantilla_id, etapa_id, null, JSON.stringify(data)];
-    } else {
-        const isOwner = await checkBatchOwnership(parent_id, userId);
-        if (!isOwner) return res.status(403).json({ error: "No tienes permiso para añadir a este lote." });
-        
-        const parentLote = await get('SELECT plantilla_id FROM lotes WHERE id = ?', [parent_id]);
-        if (!parentLote) return res.status(404).json({ error: "Lote padre no encontrado." });
-
-        sql = 'INSERT INTO lotes (id, plantilla_id, etapa_id, parent_id, data) VALUES (?, ?, ?, ?, ?)';
-        params = [data.id, parentLote.plantilla_id, etapa_id, parent_id, JSON.stringify(data)];
-    }
+    
     try {
+        const stage = await get('SELECT nombre_etapa FROM etapas_plantilla WHERE id = ?', [etapa_id]);
+        if (!stage) return res.status(404).json({ error: "Etapa no encontrada." });
+        
+        const prefix = stage.nombre_etapa.substring(0, 3).toUpperCase();
+        const newId = await generateUniqueLoteId(prefix);
+        data.id = newId;
+
+        let sql, params;
+        if (!parent_id) {
+            sql = 'INSERT INTO lotes (id, user_id, plantilla_id, etapa_id, parent_id, data) VALUES (?, ?, ?, ?, ?, ?)';
+            params = [data.id, userId, plantilla_id, etapa_id, null, JSON.stringify(data)];
+        } else {
+            const isOwner = await checkBatchOwnership(parent_id, userId);
+            if (!isOwner) return res.status(403).json({ error: "No tienes permiso para añadir a este lote." });
+            
+            const parentLote = await get('SELECT plantilla_id FROM lotes WHERE id = ?', [parent_id]);
+            if (!parentLote) return res.status(404).json({ error: "Lote padre no encontrado." });
+
+            sql = 'INSERT INTO lotes (id, plantilla_id, etapa_id, parent_id, data) VALUES (?, ?, ?, ?, ?)';
+            params = [data.id, parentLote.plantilla_id, etapa_id, parent_id, JSON.stringify(data)];
+        }
         await run(sql, params);
         res.status(201).json({ message: "Lote creado" });
-    } catch (err) { res.status(500).json({ error: err.message }); }
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 };
 const updateBatch = async (req, res) => {
     const { id } = req.params;

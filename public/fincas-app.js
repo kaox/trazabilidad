@@ -53,7 +53,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         <h3 class="font-bold text-lg text-amber-900">${finca.nombre_finca}</h3>
                         <p class="text-sm text-stone-600">${finca.propietario} - ${finca.dni_ruc}</p>
                         <p class="text-sm text-stone-500">${finca.ciudad || 'N/A'}, ${finca.pais || 'N/A'} - ${finca.altura || 'S/A'} msnm</p>
-                        <p class="text-sm text-stone-500">${finca.superficie} Hectáreas</p>
+                        <p class="text-sm text-stone-500">Tel: ${finca.telefono || 'N/A'}</p>
                     </div>
                     <div class="flex gap-2 flex-shrink-0">
                         <button data-id="${finca.id}" class="edit-btn text-sm bg-sky-600 hover:bg-sky-700 text-white px-3 py-1 rounded-lg">Editar</button>
@@ -86,6 +86,8 @@ document.addEventListener('DOMContentLoaded', () => {
             form.ciudad.value = finca.ciudad;
             form.altura.value = finca.altura;
             form.superficie.value = finca.superficie;
+            form.telefono.value = finca.telefono;
+            form.historia.value = finca.historia;
             form.coordenadas.value = JSON.stringify(finca.coordenadas);
             editIdInput.value = finca.id;
             drawnItems.clearLayers();
@@ -104,13 +106,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const fincaData = Object.fromEntries(formData.entries());
         
         if (fincaData.coordenadas && typeof fincaData.coordenadas === 'string' && fincaData.coordenadas.trim() !== '') {
-            try {
-                fincaData.coordenadas = JSON.parse(fincaData.coordenadas);
-            } catch (err) {
-                console.error("Error al parsear coordenadas:", err);
-                alert("Las coordenadas del mapa no son válidas.");
-                return;
-            }
+            fincaData.coordenadas = JSON.parse(fincaData.coordenadas);
         } else {
             fincaData.coordenadas = null;
         }

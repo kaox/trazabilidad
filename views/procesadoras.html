@@ -18,7 +18,7 @@
     <nav class="bg-amber-900 text-white shadow-lg">
         <div class="container mx-auto px-4">
             <div class="flex justify-between items-center h-16">
-                <a href="/app/dashboard" class="text-xl font-bold">CHOCOLATE CO.</a>
+                <a href="/app/dashboard" class="text-xl font-bold">AgriTraza</a>
 
                 <!-- Botón de Menú Móvil (Hamburguesa) -->
                 <div class="md:hidden">
@@ -75,6 +75,10 @@
         </header>
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
             <div class="bg-white p-6 rounded-2xl shadow-lg">
+                 <h2 class="text-2xl font-display text-amber-900 border-b pb-2 mb-6">Procesadoras Registradas</h2>
+                 <div id="procesadoras-list" class="space-y-4 max-h-[80vh] overflow-y-auto"></div>
+            </div>
+            <div class="bg-white p-6 rounded-2xl shadow-lg">
                 <h2 id="form-title" class="text-2xl font-display text-amber-900 border-b pb-2 mb-6">Nueva Procesadora</h2>
                 <form id="procesadora-form" class="space-y-4">
                     <input type="hidden" id="edit-id">
@@ -99,10 +103,7 @@
                     </div>
                 </form>
             </div>
-            <div class="bg-white p-6 rounded-2xl shadow-lg">
-                 <h2 class="text-2xl font-display text-amber-900 border-b pb-2 mb-6">Procesadoras Registradas</h2>
-                 <div id="procesadoras-list" class="space-y-4 max-h-[80vh] overflow-y-auto"></div>
-            </div>
+            
         </div>
     </div>
     <script src="/procesadoras-app.js"></script>

@@ -5,6 +5,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const submitButton = form.querySelector('button[type="submit"]');
     const cancelEditBtn = document.getElementById('cancel-edit-btn');
     const formTitle = document.getElementById('form-title');
+    const chartTitle = document.getElementById('chart-title');
     const interactiveWheelContainer = document.getElementById('interactive-wheel');
     const legendContainer = document.getElementById('chart-legend');
     
@@ -54,7 +55,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function renderRuedas() {
         listContainer.innerHTML = `
             <div class="flex justify-between items-center mb-2">
-                <h3 class="font-bold text-lg text-amber-900">${form.nombre_rueda.value || 'Perfil Actual'}</h3>
+                <h3 id="current-profile-name" class="font-bold text-lg text-amber-900 flex-grow"></h3>
                 <div class="flex items-center flex-shrink-0">
                     <button class="edit-btn text-sky-600 hover:text-sky-800 p-1 rounded-full"><svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z"></path><path fill-rule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clip-rule="evenodd"></path></svg></button>
                     <button class="delete-btn text-red-500 hover:text-red-700 text-xl font-bold leading-none p-1">&times;</button>
@@ -65,6 +66,12 @@ document.addEventListener('DOMContentLoaded', () => {
             </select>
         `;
         document.getElementById('rueda-selector').addEventListener('change', (e) => selectRueda(parseInt(e.target.value, 10)));
+        
+        const currentProfileName = document.getElementById('current-profile-name');
+        const selectedRueda = ruedas.find(r => r.id === selectedRuedaId);
+        if (currentProfileName) {
+            currentProfileName.textContent = selectedRueda ? selectedRueda.nombre_rueda : 'Perfil Actual';
+        }
     }
     
     function selectRueda(id) {
@@ -92,6 +99,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function updateChart(rueda) {
+        const title = rueda ? rueda.nombre_rueda : 'Selecciona o crea un perfil';
         const notes = rueda ? rueda.notas_json : [];
 
         ['l1', 'l2'].forEach(l => { if (charts[l]) charts[l].destroy(); });
@@ -138,7 +146,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        legendContainer.innerHTML = Object.entries(selectedCategories).map(([category, data]) => `
+        const legendHtml = Object.entries(selectedCategories).map(([category, data]) => `
             <div class="mb-3">
                 <h4 class="font-semibold text-sm flex items-center gap-2">
                     <span class="w-3 h-3 rounded-full" style="background-color: ${data.color}"></span>
@@ -149,6 +157,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 </ul>
             </div>
         `).join('');
+        
+        legendContainer.innerHTML = `<div class="grid grid-cols-2 gap-x-4">${legendHtml}</div>`;
     }
     
     function handleWheelClick(e) {

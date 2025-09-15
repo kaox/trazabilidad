@@ -80,8 +80,18 @@ async function initializeDatabase() {
                 CREATE TABLE IF NOT EXISTS fincas (
                     id TEXT PRIMARY KEY,
                     user_id INTEGER NOT NULL,
-                    propietario TEXT, dni_ruc TEXT, nombre_finca TEXT NOT NULL, pais TEXT, ciudad TEXT, altura INTEGER, superficie REAL, coordenadas TEXT,
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    propietario TEXT,
+                    dni_ruc TEXT,
+                    nombre_finca TEXT NOT NULL,
+                    pais TEXT,
+                    ciudad TEXT,
+                    altura INTEGER,
+                    superficie REAL,
+                    coordenadas TEXT,
+                    telefono TEXT,
+                    historia TEXT,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
                     UNIQUE(user_id, nombre_finca)
                 )`);
