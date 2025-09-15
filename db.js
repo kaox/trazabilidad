@@ -489,17 +489,17 @@ const getTrazabilidad = async (req, res) => {
         rows.forEach(row => {
             const key = stageMap[row.etapa_id];
             if (key) {
-                history[key] = JSON.parse(row.data);
+                history[key] = safeJSONParse(row.data);
             }
         });
         
         if (history.cosecha && history.cosecha.finca) {
             const finca = await get('SELECT * FROM fincas WHERE nombre_finca = ? AND user_id = ?', [history.cosecha.finca, ownerId]);
-            if (finca) history.fincaData = { ...finca, coordenadas: JSON.parse(finca.coordenadas || 'null') };
+            if (finca) history.fincaData = { ...finca, coordenadas: safeJSONParse(finca.coordenadas || 'null') };
         }
         if (history.tostado && history.tostado.tipoPerfil) {
             const perfil = await get('SELECT perfil_data FROM perfiles_cacao WHERE nombre = ? AND user_id = ?', [history.tostado.tipoPerfil, ownerId]);
-            if (perfil) history.tostado.perfilSensorialData = JSON.parse(perfil.perfil_data);
+            if (perfil) history.tostado.perfilSensorialData = safeJSONParse(perfil.perfil_data);
         }
         res.status(200).json(history);
     } catch (error) { 
