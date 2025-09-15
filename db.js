@@ -328,36 +328,23 @@ const deleteStage = async (req, res) => {
 const getBatchesTree = async (req, res) => {
     const userId = req.user.id;
     try {
-        const allLotes = await all(`
-            SELECT l.id, l.parent_id, l.data, l.plantilla_id, l.etapa_id
-            FROM lotes l
-            WHERE l.user_id = ? OR l.id IN (
-                WITH RECURSIVE descendents AS (
-                    SELECT id FROM lotes WHERE user_id = ?
-                    UNION ALL
-                    SELECT l.id FROM lotes l JOIN descendents d ON l.parent_id = d.id
-                )
-                SELECT id FROM descendents WHERE user_id IS NULL
-            )
-        `, [userId, userId]);
-
+        const allLotes = await all('SELECT l.*, e.nombre_etapa FROM lotes l JOIN etapas_plantilla e ON l.etapa_id = e.id WHERE l.user_id = ? OR l.parent_id IN (SELECT id FROM lotes WHERE user_id = ?)', [userId, userId]);
         const lotes = allLotes.map(lote => ({...lote, data: safeJSONParse(lote.data), children: []}));
         const lotesById = lotes.reduce((acc, lote) => { acc[lote.id] = lote; return acc; }, {});
-
         const roots = [];
         lotes.forEach(lote => {
-            if (lote.parent_id && lotesById[lote.parent_id]) {
-                lotesById[lote.parent_id].children.push(lote);
+            if (lote.parent_id) {
+                if (lotesById[lote.parent_id]) {
+                    lotesById[lote.parent_id].children.push(lote);
+                }
             } else {
                 roots.push(lote);
             }
         });
-        
         const buildClientTree = (loteNode, allStages, allTemplates) => {
             const template = allTemplates.find(t => t.id === loteNode.plantilla_id);
             const stage = allStages.find(s => s.id === loteNode.etapa_id);
             const loteData = { ...loteNode.data, plantilla_id: loteNode.plantilla_id, etapa_id: loteNode.etapa_id };
-
             if (loteNode.children.length > 0 && template) {
                 const nextStageOrder = stage.orden + 1;
                 const nextStage = allStages.find(s => s.plantilla_id === template.id && s.orden === nextStageOrder);
@@ -368,14 +355,11 @@ const getBatchesTree = async (req, res) => {
             }
             return loteData;
         };
-        
         const [templates, allStages] = await Promise.all([
             all('SELECT * FROM plantillas_proceso WHERE user_id = ?', [userId]),
             all('SELECT * FROM etapas_plantilla WHERE plantilla_id IN (SELECT id FROM plantillas_proceso WHERE user_id = ?)', [userId]),
         ]);
-
         const finalTree = roots.map(rootNode => buildClientTree(rootNode, allStages, templates));
-        
         res.status(200).json(finalTree);
     } catch (error) {
         console.error("Error en getBatchesTree:", error);
