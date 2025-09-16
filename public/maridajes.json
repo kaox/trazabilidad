@@ -1,0 +1,160 @@
+{
+"defaultPerfilesVino": [
+        {
+            "id": "v1",
+            "nombre": "Pinot Noir (Elegante y Terroso)",
+            "perfil_data": {
+                "tipo": "tinto",
+                "intensidad": 6,
+                "acidez": 8,
+                "cuerpo": 3,
+                "dulzura": 1,
+                "taninos": 3
+            }
+        },
+        {
+            "id": "v2",
+            "nombre": "Merlot (Suave y Frutal)",
+            "perfil_data": {
+                "tipo": "tinto",
+                "intensidad": 7,
+                "acidez": 6,
+                "cuerpo": 6,
+                "dulzura": 1,
+                "taninos": 5
+            }
+        },
+        {
+            "id": "v3",
+            "nombre": "Malbec (Argentino de Altitud)",
+            "perfil_data": {
+                "tipo": "tinto",
+                "intensidad": 8,
+                "acidez": 7,
+                "cuerpo": 7,
+                "dulzura": 1,
+                "taninos": 6
+            }
+        },
+        {
+            "id": "v4",
+            "nombre": "Cabernet Sauvignon (Robusto y Complejo)",
+            "perfil_data": {
+                "tipo": "tinto",
+                "intensidad": 9,
+                "acidez": 7,
+                "cuerpo": 9,
+                "dulzura": 1,
+                "taninos": 9
+            }
+        },
+        {
+            "id": "v5",
+            "nombre": "Syrah/Shiraz (Especiado y Potente)",
+            "perfil_data": {
+                "tipo": "tinto",
+                "intensidad": 9,
+                "acidez": 6,
+                "cuerpo": 9,
+                "dulzura": 1,
+                "taninos": 8
+            }
+        },
+        {
+            "id": "v6",
+            "nombre": "Sauvignon Blanc (Herbáceo y Mineral)",
+            "perfil_data": {
+                "tipo": "blanco",
+                "intensidad": 8,
+                "acidez": 9,
+                "cuerpo": 3,
+                "dulzura": 1,
+                "taninos": 0
+            }
+        },
+        {
+            "id": "v7",
+            "nombre": "Riesling (Aromático y Ácido)",
+            "perfil_data": {
+                "tipo": "blanco",
+                "intensidad": 8,
+                "acidez": 10,
+                "cuerpo": 2,
+                "dulzura": 2,
+                "taninos": 0
+            }
+        },
+        {
+            "id": "v8",
+            "nombre": "Chardonnay (Sin Madera, Mineral)",
+            "perfil_data": {
+                "tipo": "blanco",
+                "intensidad": 6,
+                "acidez": 8,
+                "cuerpo": 4,
+                "dulzura": 1,
+                "taninos": 0
+            }
+        },
+        {
+            "id": "v9",
+            "nombre": "Chardonnay (Con Crianza en Roble)",
+            "perfil_data": {
+                "tipo": "blanco",
+                "intensidad": 8,
+                "acidez": 6,
+                "cuerpo": 8,
+                "dulzura": 1,
+                "taninos": 1
+            }
+        },
+        {
+            "id": "v10",
+            "nombre": "Vino Rosado de Garnacha",
+            "perfil_data": {
+                "tipo": "rosado",
+                "intensidad": 6,
+                "acidez": 7,
+                "cuerpo": 3,
+                "dulzura": 1,
+                "taninos": 1
+            }
+        },
+        {
+            "id": "v11",
+            "nombre": "Vino Espumoso Prosecco (Brut)",
+            "perfil_data": {
+                "tipo": "espumoso",
+                "intensidad": 6,
+                "acidez": 8,
+                "cuerpo": 3,
+                "dulzura": 2,
+                "taninos": 0
+            }
+        },
+        {
+            "id": "v12",
+            "nombre": "Vino Fortificado Oporto Ruby",
+            "perfil_data": {
+                "tipo": "fortificado",
+                "intensidad": 8,
+                "acidez": 5,
+                "cuerpo": 8,
+                "dulzura": 8,
+                "taninos": 7
+            }
+        },
+        {
+            "id": "v13",
+            "nombre": "Vino Fortificado Oporto Tawny (10 Años)",
+            "perfil_data": {
+                "tipo": "fortificado",
+                "intensidad": 8,
+                "acidez": 6,
+                "cuerpo": 7,
+                "dulzura": 7,
+                "taninos": 4
+            }
+        }
+    ]
+}
