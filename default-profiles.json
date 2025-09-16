@@ -319,5 +319,150 @@
                 "impresionGeneral": 8
             }
         }
+    ],
+    "defaultPerfilesVino": [
+        {
+            "nombre": "Pinot Noir (Elegante y Terroso)",
+            "perfil_data": {
+                "tipo": "tinto",
+                "Intensidad": 6,
+                "Acidez": 8,
+                "Cuerpo": 3,
+                "Dulzura": 1,
+                "Taninos": 3
+            }
+        },
+        {
+            "nombre": "Merlot (Suave y Frutal)",
+            "perfil_data": {
+                "tipo": "tinto",
+                "Intensidad": 7,
+                "Acidez": 6,
+                "Cuerpo": 6,
+                "Dulzura": 1,
+                "Taninos": 5
+            }
+        },
+        {
+            "nombre": "Malbec (Argentino de Altitud)",
+            "perfil_data": {
+                "tipo": "tinto",
+                "Intensidad": 8,
+                "Acidez": 7,
+                "Cuerpo": 7,
+                "Dulzura": 1,
+                "Taninos": 6
+            }
+        },
+        {
+            "nombre": "Cabernet Sauvignon (Robusto y Complejo)",
+            "perfil_data": {
+                "tipo": "tinto",
+                "Intensidad": 9,
+                "Acidez": 7,
+                "Cuerpo": 9,
+                "Dulzura": 1,
+                "Taninos": 9
+            }
+        },
+        {
+            "nombre": "Syrah/Shiraz (Especiado y Potente)",
+            "perfil_data": {
+                "tipo": "tinto",
+                "Intensidad": 9,
+                "Acidez": 6,
+                "Cuerpo": 9,
+                "Dulzura": 1,
+                "Taninos": 8
+            }
+        },
+        {
+            "nombre": "Sauvignon Blanc (Herbáceo y Mineral)",
+            "perfil_data": {
+                "tipo": "blanco",
+                "Intensidad": 8,
+                "Acidez": 9,
+                "Cuerpo": 3,
+                "Dulzura": 1,
+                "Taninos": 0
+            }
+        },
+        {
+            "nombre": "Riesling (Aromático y Ácido)",
+            "perfil_data": {
+                "tipo": "blanco",
+                "Intensidad": 8,
+                "Acidez": 10,
+                "Cuerpo": 2,
+                "Dulzura": 2,
+                "Taninos": 0
+            }
+        },
+        {
+            "nombre": "Chardonnay (Sin Madera, Mineral)",
+            "perfil_data": {
+                "tipo": "blanco",
+                "Intensidad": 6,
+                "Acidez": 8,
+                "Cuerpo": 4,
+                "Dulzura": 1,
+                "Taninos": 0
+            }
+        },
+        {
+            "nombre": "Chardonnay (Con Crianza en Roble)",
+            "perfil_data": {
+                "tipo": "blanco",
+                "Intensidad": 8,
+                "Acidez": 6,
+                "Cuerpo": 8,
+                "Dulzura": 1,
+                "Taninos": 1
+            }
+        },
+        {
+            "nombre": "Vino Rosado de Garnacha",
+            "perfil_data": {
+                "tipo": "rosado",
+                "Intensidad": 6,
+                "Acidez": 7,
+                "Cuerpo": 3,
+                "Dulzura": 1,
+                "Taninos": 1
+            }
+        },
+        {
+            "nombre": "Vino Espumoso Prosecco (Brut)",
+            "perfil_data": {
+                "tipo": "espumoso",
+                "Intensidad": 6,
+                "Acidez": 8,
+                "Cuerpo": 3,
+                "Dulzura": 2,
+                "Taninos": 0
+            }
+        },
+        {
+            "nombre": "Vino Fortificado Oporto Ruby",
+            "perfil_data": {
+                "tipo": "fortificado",
+                "Intensidad": 8,
+                "Acidez": 5,
+                "Cuerpo": 8,
+                "Dulzura": 8,
+                "Taninos": 7
+            }
+        },
+        {
+            "nombre": "Vino Fortificado Oporto Tawny (10 Años)",
+            "perfil_data": {
+                "tipo": "fortificado",
+                "Intensidad": 8,
+                "Acidez": 6,
+                "Cuerpo": 7,
+                "Dulzura": 7,
+                "Taninos": 4
+            }
+        }
     ]
 }
