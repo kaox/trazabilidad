@@ -89,7 +89,7 @@ app.get('/qr', (req, res) => {
 
 // --- Rutas Protegidas de la Aplicación (Vistas) ---
 app.get('/app/dashboard', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'dashboard.html')));
-app.get('/app/trazabilidad', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'index.html')));
+app.get('/app/trazabilidad', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'trazabilidad.html')));
 app.get('/app/fincas', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'fincas.html')));
 app.get('/app/perfiles', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'perfiles.html')));
 app.get('/app/perfiles-cafe', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'perfiles-cafe.html')));
