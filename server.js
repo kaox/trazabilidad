@@ -98,6 +98,8 @@ app.get('/app/plantillas', authenticatePage, (req, res) => res.sendFile(path.joi
 app.get('/app/ruedas-sabores', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'ruedas-sabores.html')));
 app.get('/app/cuenta', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'cuenta.html')));
 app.get('/app/maridaje', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'maridaje.html'))); // <-- Nueva ruta
+app.get('/app/blends', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'blends.html'))); // <-- Nueva ruta
+
 
 // --- Rutas Protegidas de la API ---
 // Fincas
@@ -150,6 +152,13 @@ app.delete('/api/batches/:id', authenticateApi, db.deleteBatch);
 app.get('/api/user/profile', authenticateApi, db.getUserProfile);
 app.put('/api/user/profile', authenticateApi, db.updateUserProfile);
 app.put('/api/user/password', authenticateApi, db.updateUserPassword);
+
+// Nuevas rutas para Blends
+app.get('/api/blends', authenticateApi, db.getBlends);
+app.post('/api/blends', authenticateApi, db.createBlend);
+app.delete('/api/blends/:id', authenticateApi, db.deleteBlend);
+//app.put('/api/blends/:id', authenticateApi, db.updateBlend);
+
 
 
 // Iniciar Servidor

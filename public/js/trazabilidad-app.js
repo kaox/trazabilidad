@@ -9,7 +9,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function generateId(prefix = 'LOTE') {
         const now = new Date();
         const timestamp = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}`;
-        const random = Math.random().toString(36).substring(2, 6);
+        const random = Math.random().toString(36).substring(2, 6).toUpperCase();
         return `${prefix}-${timestamp}-${random}`;
     }
 
@@ -59,7 +59,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function createBatchCard(batchData, template, stage, parentBatch = null) {
         const card = document.createElement('div');
-        card.className = 'bg-white rounded-xl shadow-md mb-4 overflow-hidden';
+        card.className = 'batch-card-wrapper';
         
         const nextStage = state.stagesByTemplate[template.id]?.find(s => s.orden === stage.orden + 1);
         const childrenKey = nextStage ? nextStage.nombre_etapa.toLowerCase().replace(/ & /g, '_and_') : null;
@@ -94,11 +94,13 @@ document.addEventListener('DOMContentLoaded', () => {
         
         const fechaKey = variables.find(v => v.type === 'date')?.name;
         const fecha = fechaKey ? batchData[fechaKey] : 'Sin fecha';
-
-        card.innerHTML = `
+        
+        const cardContent = document.createElement('div');
+        cardContent.className = 'bg-white rounded-xl shadow-md';
+        cardContent.innerHTML = `
             <div class="p-4 border-l-4" style="border-color: ${getTemplateColor(template.id)}">
                 <div class="flex flex-col sm:flex-row justify-between sm:items-start gap-2">
-                    <div class="flex items-center gap-2 flex-grow ${hasChildren ? 'cursor-pointer' : ''}" ${hasChildren ? `onclick="this.closest('.p-4').nextElementSibling.classList.toggle('hidden'); this.querySelector('.expand-icon').classList.toggle('rotate-90')"` : ''}>
+                    <div class="flex items-center gap-2 flex-grow ${hasChildren ? 'cursor-pointer expand-trigger' : ''}">
                         ${hasChildren ? `<svg class="w-5 h-5 text-stone-400 transition-transform duration-300 flex-shrink-0 expand-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7-7"></path></svg>` : '<div class="w-5 flex-shrink-0"></div>' }
                         <div>
                             <h3 class="font-bold text-lg text-amber-900">${stage.nombre_etapa} <span class="text-base font-normal text-stone-500">[${fecha}]</span></h3>
@@ -130,15 +132,20 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>
                 </div>
             </div>
-            <div class="ml-4 sm:ml-6 mt-0 pl-4 border-l-2 border-stone-200 hidden children-container"></div>
         `;
+        
+        const childrenContainer = document.createElement('div');
+        childrenContainer.className = 'children-container hidden pl-5 border-l-2 border-dashed border-stone-300 md:ml-6 md:pl-4 md:border-l-solid md:border-stone-200';
 
         if (hasChildren) {
-            const childrenContainer = card.querySelector('.children-container');
             batchData[childrenKey].forEach(childBatch => {
                 childrenContainer.appendChild(createBatchCard(childBatch, template, nextStage, batchData));
             });
         }
+        
+        card.appendChild(cardContent);
+        card.appendChild(childrenContainer);
+
         return card;
     }
 
@@ -198,7 +205,6 @@ document.addEventListener('DOMContentLoaded', () => {
             const newData = Object.fromEntries(formData.entries());
             try {
                 if (mode === 'create') {
-                    // Ya no se genera el ID aquí, se elimina la línea.
                     await api('/api/batches', { method: 'POST', body: JSON.stringify({ 
                         plantilla_id: template.id, 
                         etapa_id: stage.id, 
@@ -287,7 +293,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if(procesadoras.length > 0) {
                 optionsHTML += `<optgroup label="Procesadoras">${procesadoras.map(p => `<option value="Procesadora: ${p.nombre_comercial || p.razon_social}" ${`Procesadora: ${p.nombre_comercial || p.razon_social}` === selectedValue ? 'selected' : ''}>${p.nombre_comercial || p.razon_social}</option>`).join('')}</optgroup>`;
             }
-            return `<div><label for="${name}" class="block text-sm font-medium text-stone-700 mb-1">${label}</label><select id="${name}" name="${name}" class="w-full p-3 border border-stone-300 rounded-xl" >${optionsHTML}</select></div>`;
+            return `<div><label for="${name}" class="block text-sm font-medium text-stone-700 mb-1">${label}</label><select id="${name}" name="${name}" class="w-full p-3 border border-stone-300 rounded-xl">${optionsHTML}</select></div>`;
         } catch (error) {
             return `<div class="text-red-500">Error al cargar lugares.</div>`;
         }
@@ -329,27 +335,6 @@ document.addEventListener('DOMContentLoaded', () => {
         return null;
     }
 
-    function getBatchByPath(path) {
-        if (!path) return null;
-        const ids = path.split('>');
-        let currentBatch = null;
-        let currentList = state.batches;
-        for (let i = 0; i < ids.length; i++) {
-            const [type, key] = ids[i].split(':');
-            const found = currentList.find(b => b.id === key);
-            if (!found) return null;
-            currentBatch = found;
-            const template = state.templates.find(t => t.id === currentBatch.plantilla_id);
-            const stage = state.stagesByTemplate[template.id]?.find(s => s.nombre_etapa.toLowerCase().replace(/ & /g, '_and_') === type);
-            const nextStage = state.stagesByTemplate[template.id]?.find(s => s.orden === stage.orden + 1);
-            if(nextStage) {
-                 const nextKey = nextStage.nombre_etapa.toLowerCase().replace(/ & /g, '_and_');
-                 currentList = currentBatch[nextKey] || [];
-            }
-        }
-        return currentBatch;
-    }
-
     function getTemplateColor(templateId, isLight = false) {
         const colors = [
             { main: '#78350f', light: '#fed7aa' }, // Amber
@@ -364,6 +349,19 @@ document.addEventListener('DOMContentLoaded', () => {
     
     async function handleDashboardClick(e) {
         const button = e.target.closest('button');
+        const expandTrigger = e.target.closest('.expand-trigger');
+
+        if (expandTrigger) {
+            const wrapper = expandTrigger.closest('.batch-card-wrapper');
+            if (wrapper) {
+                const childrenContainer = wrapper.querySelector('.children-container');
+                const icon = expandTrigger.querySelector('.expand-icon');
+                if (childrenContainer) childrenContainer.classList.toggle('hidden');
+                if (icon) icon.classList.toggle('rotate-90');
+            }
+            return;
+        }
+
         if (!button) return;
         
         if (button.classList.contains('add-sub-btn')) {
@@ -394,7 +392,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         
         if (button.classList.contains('qr-btn')) {
-            const url = `${window.location.origin}/${button.dataset.id}`; // URL corta
+            const url = `${window.location.origin}/${button.dataset.id}`;
             const qr = qrcode(0, 'L');
             qr.addData(url);
             qr.make();

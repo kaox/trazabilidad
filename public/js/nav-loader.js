@@ -14,8 +14,10 @@ document.addEventListener('DOMContentLoaded', () => {
 function initializeNav() {
     const mobileMenuButton = document.getElementById('mobile-menu-button');
     const mobileMenu = document.getElementById('mobile-menu');
-    const gestionDropdownBtn = document.getElementById('gestion-dropdown-btn');
-    const gestionDropdown = document.getElementById('gestion-dropdown-desktop');
+    const labDropdownBtn = document.getElementById('lab-dropdown-btn');
+    const labDropdown = document.getElementById('lab-dropdown-desktop');
+    const configDropdownBtn = document.getElementById('config-dropdown-btn');
+    const configDropdown = document.getElementById('config-dropdown-desktop');
 
     if (mobileMenuButton && mobileMenu) {
         mobileMenuButton.addEventListener('click', () => {
@@ -23,38 +25,68 @@ function initializeNav() {
         });
     }
 
-    if (gestionDropdownBtn && gestionDropdown) {
-        gestionDropdownBtn.addEventListener('click', (e) => {
+    function setupDropdown(btn, dropdown) {
+        if (!btn || !dropdown) return;
+
+        const container = btn.parentElement; // El <div class="relative">
+        let hideTimer;
+
+        // Abrir/cerrar con clic en el botón (ideal para touch)
+        btn.addEventListener('click', (e) => {
             e.stopPropagation();
-            gestionDropdown.classList.toggle('hidden');
+            const isHidden = dropdown.classList.contains('hidden');
+            // Ocultar todos los dropdowns primero
+            document.querySelectorAll('.absolute.z-50').forEach(d => d.classList.add('hidden'));
+            // Mostrar/ocultar el actual
+            if (isHidden) {
+                dropdown.classList.remove('hidden');
+            }
         });
-        gestionDropdownBtn.parentElement.addEventListener('mouseleave', () => {
-            gestionDropdown.classList.add('hidden');
+
+        // Mantener abierto mientras el mouse esté sobre el botón o el menú
+        container.addEventListener('mouseenter', () => {
+            clearTimeout(hideTimer); // Cancela cualquier temporizador de cierre pendiente
+            dropdown.classList.remove('hidden');
         });
-        document.addEventListener('click', () => {
-            gestionDropdown.classList.add('hidden');
+
+        // Iniciar un temporizador para cerrar cuando el mouse salga del área
+        container.addEventListener('mouseleave', () => {
+            hideTimer = setTimeout(() => {
+                dropdown.classList.add('hidden');
+            }, 500); // Medio segundo de retraso
         });
     }
+
+    setupDropdown(labDropdownBtn, labDropdown);
+    setupDropdown(configDropdownBtn, configDropdown);
+    
+    // Cerrar todos los dropdowns si se hace clic en cualquier otro lugar
+    document.addEventListener('click', () => {
+        if(labDropdown) labDropdown.classList.add('hidden');
+        if(configDropdown) configDropdown.classList.add('hidden');
+    });
+
 
     // Lógica para resaltar el enlace activo
     const currentPage = window.location.pathname;
     const navLinks = document.querySelectorAll('a.nav-link, a.nav-link-mobile');
     
     navLinks.forEach(link => {
-        // FIX: Asegurarse de que el link tiene un href antes de procesarlo
         if (link.href) {
             const linkPath = new URL(link.href).pathname;
             
-            // Lógica para resaltar el link de la página actual
-            if (currentPage === linkPath) {
+            if (currentPage === linkPath || (currentPage.startsWith('/app/trazabilidad') && linkPath.startsWith('/app/trazabilidad'))) {
                 link.classList.add('bg-amber-800');
-            }
-            
-            // Lógica para resaltar el botón de Gestión si estamos en una de sus sub-páginas
-            if (gestionDropdownBtn && (currentPage.startsWith('/app/fincas') || currentPage.startsWith('/app/perfiles') || currentPage.startsWith('/app/procesadoras') || currentPage.startsWith('/app/plantillas') || currentPage.startsWith('/app/ruedas-sabores'))) {
-                 gestionDropdownBtn.classList.add('bg-amber-800');
             }
         }
     });
+
+    // Lógica para resaltar el botón del dropdown activo
+    if (labDropdownBtn && (currentPage.startsWith('/app/maridaje') || currentPage.startsWith('/app/blends'))) {
+        labDropdownBtn.classList.add('bg-amber-800');
+    }
+    if (configDropdownBtn && (currentPage.startsWith('/app/fincas') || currentPage.startsWith('/app/perfiles') || currentPage.startsWith('/app/procesadoras') || currentPage.startsWith('/app/plantillas') || currentPage.startsWith('/app/ruedas-sabores'))) {
+        configDropdownBtn.classList.add('bg-amber-800');
+    }
 }
 

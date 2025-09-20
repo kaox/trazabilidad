@@ -486,15 +486,17 @@ const deleteBatch = async (req, res) => {
 const getTrazabilidad = async (req, res) => {
     const { id } = req.params;
     try {
+        // 1. Obtener toda la cadena de lotes hacia atrás, desde el lote consultado hasta el origen.
         const rows = await all(`
             WITH RECURSIVE trazabilidad_completa AS (
-                SELECT id, parent_id, data, user_id, etapa_id, plantilla_id FROM lotes WHERE id = ?
+                SELECT * FROM lotes WHERE id = ?
                 UNION ALL
-                SELECT l.id, l.parent_id, l.data, l.user_id, l.etapa_id, l.plantilla_id FROM lotes l
+                SELECT l.* FROM lotes l
                 INNER JOIN trazabilidad_completa tc ON l.id = tc.parent_id
             )
             SELECT * FROM trazabilidad_completa;
         `, [id]);
+
         if (rows.length === 0) return res.status(404).json({ error: 'Lote no encontrado' });
         
         const loteRaiz = rows.find(r => !r.parent_id);
@@ -503,28 +505,40 @@ const getTrazabilidad = async (req, res) => {
         const ownerId = loteRaiz.user_id;
         const plantillaId = loteRaiz.plantilla_id;
 
-        const allStages = await all('SELECT id, nombre_etapa FROM etapas_plantilla WHERE plantilla_id = ?', [plantillaId]);
-        const stageMap = allStages.reduce((acc, stage) => {
-            acc[stage.id] = stage.nombre_etapa.toLowerCase().replace(/ & /g, '_and_');
-            return acc;
-        }, {});
-
-        const history = {};
-        rows.forEach(row => {
-            const key = stageMap[row.etapa_id];
-            if (key) {
-                history[key] = safeJSONParse(row.data);
+        // 2. Obtener todas las etapas de la plantilla correspondiente y ordenarlas.
+        const allStages = await all('SELECT id, nombre_etapa, orden FROM etapas_plantilla WHERE plantilla_id = ? ORDER BY orden', [plantillaId]);
+        
+        // 3. Construir la historia ordenada
+        const history = {
+            stages: [],
+            fincaData: null,
+            perfilSensorialData: null
+        };
+        
+        // Mapear cada lote encontrado a su definición de etapa
+        rows.reverse().forEach(row => {
+            const stageInfo = allStages.find(s => s.id === row.etapa_id);
+            if(stageInfo) {
+                history.stages.push({
+                    nombre_etapa: stageInfo.nombre_etapa,
+                    data: safeJSONParse(row.data)
+                });
             }
         });
-        
-        if (history.cosecha && history.cosecha.finca) {
-            const finca = await get('SELECT * FROM fincas WHERE nombre_finca = ? AND user_id = ?', [history.cosecha.finca, ownerId]);
+
+        // 4. Enriquecer con datos adicionales (Finca y Perfil)
+        const cosechaData = history.stages[0]?.data;
+        if (cosechaData && cosechaData.finca) {
+            const finca = await get('SELECT * FROM fincas WHERE nombre_finca = ? AND user_id = ?', [cosechaData.finca, ownerId]);
             if (finca) history.fincaData = { ...finca, coordenadas: safeJSONParse(finca.coordenadas || 'null') };
         }
-        if (history.tostado && history.tostado.tipoPerfil) {
-            const perfil = await get('SELECT perfil_data FROM perfiles_cacao WHERE nombre = ? AND user_id = ?', [history.tostado.tipoPerfil, ownerId]);
-            if (perfil) history.tostado.perfilSensorialData = safeJSONParse(perfil.perfil_data);
+        
+        const tostadoData = history.stages.find(s => s.nombre_etapa.toLowerCase().includes('tostado'))?.data;
+        if (tostadoData && tostadoData.tipoPerfil) {
+            const perfil = await get('SELECT perfil_data FROM perfiles_cacao WHERE nombre = ? AND user_id = ?', [tostadoData.tipoPerfil, ownerId]);
+            if (perfil) history.perfilSensorialData = safeJSONParse(perfil.perfil_data);
         }
+        
         res.status(200).json(history);
     } catch (error) { 
         console.error(`Error en getTrazabilidad para el lote ${id}:`, error.message);
@@ -631,6 +645,50 @@ const deleteRuedaSabores = async (req, res) => {
     }
 };
 
+// --- Blends ---
+const getBlends = async (req, res) => {
+    const userId = req.user.id;
+    try {
+        const blends = await all('SELECT * FROM blends WHERE user_id = ? ORDER BY nombre_blend', [userId]);
+        const parsedBlends = blends.map(b => ({
+            ...b,
+            componentes_json: safeJSONParse(b.componentes_json),
+            perfil_final_json: safeJSONParse(b.perfil_final_json)
+        }));
+        res.status(200).json(parsedBlends);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};
+
+const createBlend = async (req, res) => {
+    const userId = req.user.id;
+    const { nombre_blend, tipo_producto, componentes_json, perfil_final_json } = req.body;
+    const id = require('crypto').randomUUID(); // Generar ID aquí
+    try {
+        await run(
+            'INSERT INTO blends (id, user_id, nombre_blend, tipo_producto, componentes_json, perfil_final_json) VALUES (?, ?, ?, ?, ?, ?)',
+            [id, userId, nombre_blend, tipo_producto, JSON.stringify(componentes_json), JSON.stringify(perfil_final_json)]
+        );
+        res.status(201).json({ id: id, message: 'Blend guardado' });
+    } catch (err) {
+        if (err.message.includes('UNIQUE')) return res.status(409).json({ error: 'Ya existe un blend con ese nombre.' });
+        res.status(500).json({ error: err.message });
+    }
+};
+
+const deleteBlend = async (req, res) => {
+    const userId = req.user.id;
+    const { id } = req.params;
+    try {
+        const result = await run('DELETE FROM blends WHERE id = ? AND user_id = ?', [id, userId]);
+        if (result.changes === 0) return res.status(404).json({ error: 'Blend no encontrado.' });
+        res.status(204).send();
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};
+
 module.exports = {
     registerUser, loginUser, logoutUser,
     getFincas, createFinca, updateFinca, deleteFinca,
@@ -642,6 +700,7 @@ module.exports = {
     getTrazabilidad,
     getUserProfile, updateUserProfile, updateUserPassword,
     getPerfilesCafe, createPerfilCafe, updatePerfilCafe, deletePerfilCafe,
-    getRuedasSabores, createRuedaSabores, updateRuedaSabores, deleteRuedaSabores
+    getRuedasSabores, createRuedaSabores, updateRuedaSabores, deleteRuedaSabores,
+    getBlends, createBlend, deleteBlend
 };
 

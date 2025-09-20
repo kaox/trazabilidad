@@ -144,6 +144,19 @@ async function initializeDatabase() {
                 )`);
             console.log("Tabla 'perfiles_cafe' lista.");
 
+            await runQuery(db, `
+                CREATE TABLE IF NOT EXISTS blends (
+                    id SERIAL PRIMARY KEY,
+                    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                    nombre_blend TEXT NOT NULL,
+                    tipo_producto TEXT NOT NULL, -- 'cacao' o 'cafe'
+                    componentes_json JSONB NOT NULL,
+                    perfil_final_json JSONB NOT NULL,
+                    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+                    UNIQUE(user_id, nombre_blend)
+                )`);
+            console.log("Tabla 'perfiles_cafe' lista.");
+
             console.log('Esquema de base de datos listo.');
 
         } catch (error) {

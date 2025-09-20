@@ -9,11 +9,13 @@ DROP TABLE IF EXISTS plantillas_proceso CASCADE;
 DROP TABLE IF EXISTS procesadoras CASCADE;
 DROP TABLE IF EXISTS fincas CASCADE;
 DROP TABLE IF EXISTS users CASCADE;
+DROP TABLE IF EXISTS blends CASCADE;
 
 -- Paso 2: Crear las tablas con la estructura más reciente y correcta.
 
 -- Habilitar la extensión para UUIDs si no está habilitada
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
 
 -- Tabla de Usuarios
 CREATE TABLE IF NOT EXISTS users (
@@ -114,4 +116,16 @@ CREATE TABLE IF NOT EXISTS ruedas_sabores (
     notas_json JSONB NOT NULL,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(user_id, nombre_rueda)
+);
+
+-- Tabla de Blends (Corregida)
+CREATE TABLE IF NOT EXISTS blends (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(), -- Cambiado a UUID para consistencia
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    nombre_blend TEXT NOT NULL,
+    tipo_producto TEXT NOT NULL,
+    componentes_json JSONB NOT NULL,
+    perfil_final_json JSONB NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(user_id, nombre_blend)
 );
