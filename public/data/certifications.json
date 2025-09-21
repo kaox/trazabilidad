@@ -1,0 +1,46 @@
+{
+  "certifications": [
+    {
+      "id": 1,
+      "nombre": "USDA Organic",
+      "categoria": "Orgánico",
+      "descripcion": "Certifica que los productos han sido cultivados y procesados siguiendo estándares federales que prohíben el uso de pesticidas y fertilizantes sintéticos.",
+      "logo_url": "https://placehold.co/100x100/34d399/FFFFFF?text=USDA"
+    },
+    {
+      "id": 2,
+      "nombre": "Fair Trade Certified",
+      "categoria": "Comercio Justo",
+      "descripcion": "Garantiza que los productores recibieron un precio justo por sus productos y que se cumplieron estándares sociales, económicos y medioambientales.",
+      "logo_url": "https://placehold.co/100x100/3b82f6/FFFFFF?text=Fair+Trade"
+    },
+    {
+      "id": 3,
+      "nombre": "Rainforest Alliance",
+      "categoria": "Sostenible",
+      "descripcion": "Certifica que la finca cumple con rigurosos estándares de sostenibilidad ambiental, social y económica para proteger la biodiversidad y los medios de vida de los agricultores.",
+      "logo_url": "https://placehold.co/100x100/22c55e/FFFFFF?text=Rainforest"
+    },
+    {
+      "id": 4,
+      "nombre": "Bird Friendly Smithsonian",
+      "categoria": "Sostenible",
+      "descripcion": "Certificación para café que garantiza que ha sido cultivado bajo un dosel de árboles nativos, proporcionando un hábitat saludable para las aves migratorias.",
+      "logo_url": "https://placehold.co/100x100/f59e0b/FFFFFF?text=Bird"
+    },
+    {
+      "id": 5,
+      "nombre": "UTZ Certified",
+      "categoria": "Sostenible",
+      "descripcion": "Programa de sostenibilidad para café, cacao y té que se enfoca en buenas prácticas agrícolas, gestión de fincas y condiciones laborales.",
+      "logo_url": "https://placehold.co/100x100/ef4444/FFFFFF?text=UTZ"
+    },
+    {
+      "id": 6,
+      "nombre": "Cacao of Excellence",
+      "categoria": "Calidad",
+      "descripcion": "Reconoce a los productores de cacao de alta calidad a nivel mundial, celebrando y promoviendo la diversidad de sabores del cacao.",
+      "logo_url": "https://placehold.co/100x100/78350f/FFFFFF?text=CoEx"
+    }
+  ]
+}
