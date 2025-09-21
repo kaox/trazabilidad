@@ -9,35 +9,92 @@ document.addEventListener('DOMContentLoaded', () => {
     const searchInput = document.getElementById('ciudad-search');
     const searchBtn = document.getElementById('search-btn');
     const locateBtn = document.getElementById('locate-btn');
+    const fotosInput = document.getElementById('fotos');
+    const fotosPreviewContainer = document.getElementById('fotos-preview-container');
+    const certSelect = document.getElementById('certification-select');
+    const certExpiryInput = document.getElementById('certification-expiry');
+    const addCertBtn = document.getElementById('add-certification-btn');
+    const certsListContainer = document.getElementById('certifications-list');
     
-    const map = L.map('map').setView([4.60971, -74.08175], 6);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; <a href="https://www.openstreetmap.org">OpenStreetMap</a>' }).addTo(map);
-    const drawnItems = new L.FeatureGroup();
+    let allCertifications = [];
+    let currentFincaCertifications = [];
+    let currentImages = [];
+    
+    let map = L.map('map').setView([-12.046374, -77.042793], 6); // Centrado en Perú
+    let drawnItems = new L.FeatureGroup();
     map.addLayer(drawnItems);
     let currentPolygon = null;
-    const drawControl = new L.Control.Draw({ draw: { polygon: { allowIntersection: false }, polyline: false, rectangle: false, circle: false, marker: false, circlemarker: false }, edit: { featureGroup: drawnItems } });
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
+    const drawControl = new L.Control.Draw({
+        edit: { featureGroup: drawnItems },
+        draw: {
+            polyline: false, marker: false, circle: false,
+            rectangle: false, circlemarker: false,
+            polygon: {
+                allowIntersection: false,
+                shapeOptions: { color: '#854d0e' }
+            }
+        }
+    });
     map.addControl(drawControl);
 
-    map.on(L.Draw.Event.CREATED, e => { if (currentPolygon) drawnItems.removeLayer(currentPolygon); drawnItems.addLayer(e.layer); currentPolygon = e.layer; form.coordenadas.value = JSON.stringify(e.layer.getLatLngs()[0]); });
-    map.on(L.Draw.Event.EDITED, e => { e.layers.eachLayer(layer => { currentPolygon = layer; form.coordenadas.value = JSON.stringify(layer.getLatLngs()[0]); }); });
+    map.on(L.Draw.Event.CREATED, (e) => {
+        drawnItems.clearLayers();
+        currentPolygon = e.layer;
+        drawnItems.addLayer(currentPolygon);
+        const latlngs = currentPolygon.getLatLngs()[0].map(p => [p.lat, p.lng]);
+        document.getElementById('coordenadas').value = JSON.stringify(latlngs);
+    });
+    
+    map.on(L.Draw.Event.EDITED, (e) => {
+        const layers = e.layers;
+        layers.eachLayer(layer => {
+            currentPolygon = layer;
+            const latlngs = currentPolygon.getLatLngs()[0].map(p => [p.lat, p.lng]);
+            document.getElementById('coordenadas').value = JSON.stringify(latlngs);
+        });
+    });
+
+    async function init() {
+        await Promise.all([loadCountries(), loadCertifications(), loadFincas()]);
+        setupEventListeners();
+    }
+
+    function setupEventListeners() {
+        form.addEventListener('submit', handleFormSubmit);
+        cancelEditBtn.addEventListener('click', resetForm);
+        fincasList.addEventListener('click', handleFincaListClick);
+        fotosInput.addEventListener('change', handleImageUpload);
+        fotosPreviewContainer.addEventListener('click', handleImageDelete);
+        addCertBtn.addEventListener('click', handleAddCertification);
+        certsListContainer.addEventListener('click', handleCertificationAction);
+        searchBtn.addEventListener('click', searchLocation);
+        locateBtn.addEventListener('click', locateUser);
+    }
 
     async function loadCountries() {
         try {
-            const response = await fetch('/countries.json');
+            const response = await fetch('/data/countries.json');
             const countries = await response.json();
-            countrySelect.innerHTML = '<option value="">Seleccionar país...</option>';
-            countries.forEach(country => {
-                const option = document.createElement('option');
-                option.value = country.name;
-                option.textContent = country.name;
-                countrySelect.appendChild(option);
-            });
+            countrySelect.innerHTML = countries.map(c => `<option value="${c.name_es}">${c.name_es}</option>`).join('');
+            countrySelect.value = 'Perú';
         } catch (error) {
-            console.error("Error al cargar países:", error);
-            countrySelect.innerHTML = '<option value="">Error al cargar</option>';
+            console.error("Error cargando países:", error);
         }
     }
-
+    
+    async function loadCertifications() {
+        try {
+            const data = await fetch('/data/certifications.json').then(res => res.json());
+            allCertifications = data.certifications;
+            certSelect.innerHTML = `<option value="">Seleccionar certificación...</option>` + allCertifications.map(c => `<option value="${c.id}">${c.nombre}</option>`).join('');
+        } catch (error) {
+            console.error("Error cargando certificaciones:", error);
+        }
+    }
+    
     async function loadFincas() {
         try {
             const fincas = await api('/api/fincas');
@@ -66,6 +123,10 @@ document.addEventListener('DOMContentLoaded', () => {
     function resetForm() {
         form.reset();
         editIdInput.value = '';
+        currentImages = [];
+        currentFincaCertifications = [];
+        renderImagePreviews();
+        renderAddedCertifications();
         if (currentPolygon) drawnItems.removeLayer(currentPolygon);
         drawnItems.clearLayers(); currentPolygon = null;
         formTitle.textContent = 'Nueva Finca';
@@ -79,19 +140,32 @@ document.addEventListener('DOMContentLoaded', () => {
             const fincas = await api('/api/fincas');
             const finca = fincas.find(f => f.id === id);
             if (!finca) return;
-            form.propietario.value = finca.propietario;
-            form.dni_ruc.value = finca.dni_ruc;
-            form.nombre_finca.value = finca.nombre_finca;
-            form.pais.value = finca.pais;
-            form.ciudad.value = finca.ciudad;
-            form.altura.value = finca.altura;
-            form.superficie.value = finca.superficie;
-            form.telefono.value = finca.telefono;
-            form.historia.value = finca.historia;
+            
+            resetForm(); // Limpia el formulario antes de poblarlo
+
+            form.propietario.value = finca.propietario || '';
+            form.dni_ruc.value = finca.dni_ruc || '';
+            form.nombre_finca.value = finca.nombre_finca || '';
+            form.pais.value = finca.pais || '';
+            form.ciudad.value = finca.ciudad || '';
+            form.altura.value = finca.altura || '';
+            form.superficie.value = finca.superficie || '';
+            form.telefono.value = finca.telefono || '';
+            form.historia.value = finca.historia || '';
             form.coordenadas.value = JSON.stringify(finca.coordenadas);
             editIdInput.value = finca.id;
-            drawnItems.clearLayers();
-            if (finca.coordenadas) { const polygon = L.polygon(finca.coordenadas); drawnItems.addLayer(polygon); currentPolygon = polygon; map.fitBounds(polygon.getBounds()); }
+
+            currentImages = finca.imagenes_json || [];
+            currentFincaCertifications = finca.certificaciones_json || [];
+            renderImagePreviews();
+            renderAddedCertifications();
+            
+            if (finca.coordenadas) { 
+                const polygon = L.polygon(finca.coordenadas); 
+                drawnItems.addLayer(polygon); 
+                currentPolygon = polygon; 
+                map.fitBounds(polygon.getBounds()); 
+            }
             formTitle.textContent = `Editando: ${finca.nombre_finca}`;
             submitButton.textContent = 'Actualizar Finca';
             submitButton.className = 'bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 rounded-xl shadow-md';
@@ -99,17 +173,101 @@ document.addEventListener('DOMContentLoaded', () => {
             window.scrollTo({ top: 0, behavior: 'smooth' });
         } catch (error) { alert('Error al cargar datos para editar.'); }
     }
+    
+    function handleImageUpload(e) {
+        const files = Array.from(e.target.files);
+        files.forEach(file => {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                currentImages.push(reader.result);
+                renderImagePreviews();
+            };
+            reader.readAsDataURL(file);
+        });
+        e.target.value = ''; // Reset input para poder subir el mismo archivo otra vez
+    }
 
-    form.addEventListener('submit', async (e) => {
+    function handleImageDelete(e) {
+        if (e.target.classList.contains('delete-img-btn')) {
+            const index = parseInt(e.target.dataset.index, 10);
+            currentImages.splice(index, 1);
+            renderImagePreviews();
+        }
+    }
+
+    function renderImagePreviews() {
+        fotosPreviewContainer.innerHTML = currentImages.map((imgSrc, index) => `
+            <div class="relative">
+                <img src="${imgSrc}" class="w-full h-24 object-cover rounded-lg">
+                <button type="button" data-index="${index}" class="delete-img-btn absolute top-1 right-1 bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center font-bold">&times;</button>
+            </div>
+        `).join('');
+    }
+    
+    function handleAddCertification() {
+        const certId = parseInt(certSelect.value, 10);
+        const expiryDate = certExpiryInput.value;
+
+        if (!certId || !expiryDate) {
+            alert('Por favor, selecciona una certificación y su fecha de vencimiento.');
+            return;
+        }
+        
+        if (currentFincaCertifications.some(c => c.id === certId)) {
+            alert('Esta certificación ya ha sido añadida.');
+            return;
+        }
+
+        const certification = allCertifications.find(c => c.id === certId);
+        if (certification) {
+            currentFincaCertifications.push({ id: certId, nombre: certification.nombre, logo_url: certification.logo_url, fecha_vencimiento: expiryDate });
+            renderAddedCertifications();
+            certSelect.value = '';
+            certExpiryInput.value = '';
+        }
+    }
+    
+    function handleCertificationAction(e) {
+        if (e.target.classList.contains('delete-cert-btn')) {
+            const certId = parseInt(e.target.dataset.id, 10);
+            currentFincaCertifications = currentFincaCertifications.filter(c => c.id !== certId);
+            renderAddedCertifications();
+        }
+    }
+
+    function renderAddedCertifications() {
+        certsListContainer.innerHTML = currentFincaCertifications.map(cert => {
+            const isExpired = new Date(cert.fecha_vencimiento) < new Date();
+            const statusClass = isExpired ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800';
+            const statusText = isExpired ? 'Vencida' : 'Vigente';
+
+            return `
+                <div class="flex items-center justify-between p-2 border rounded-lg">
+                    <div class="flex items-center gap-3">
+                        <img src="${cert.logo_url}" alt="${cert.nombre}" class="w-8 h-8 rounded-full">
+                        <div>
+                            <p class="font-semibold text-sm">${cert.nombre}</p>
+                            <p class="text-xs text-stone-500">Vence: ${cert.fecha_vencimiento}</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                         <span class="text-xs font-medium px-2 py-1 rounded-full ${statusClass}">${statusText}</span>
+                         <button type="button" data-id="${cert.id}" class="delete-cert-btn text-red-500 hover:text-red-700 font-bold">&times;</button>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    async function handleFormSubmit(e) {
         e.preventDefault();
         const formData = new FormData(form);
         const fincaData = Object.fromEntries(formData.entries());
+        fincaData.imagenes_json = currentImages;
+        fincaData.certificaciones_json = currentFincaCertifications;
         
-        if (fincaData.coordenadas && typeof fincaData.coordenadas === 'string' && fincaData.coordenadas.trim() !== '') {
-            fincaData.coordenadas = JSON.parse(fincaData.coordenadas);
-        } else {
-            fincaData.coordenadas = null;
-        }
+        if (fincaData.coordenadas) fincaData.coordenadas = JSON.parse(fincaData.coordenadas);
+        else fincaData.coordenadas = null;
 
         const editId = editIdInput.value;
         try {
@@ -124,66 +282,37 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error("Error al guardar:", error);
             alert('Error al guardar la finca.'); 
         }
-    });
+    }
 
-    fincasList.addEventListener('click', async e => {
-        const button = e.target.closest('button');
-        if (!button) return;
-        const id = button.dataset.id;
-        if (button.classList.contains('delete-btn')) {
-            if (confirm('¿Seguro que quieres eliminar esta finca?')) {
-                try { 
-                    await api(`/api/fincas/${id}`, { method: 'DELETE' }); 
-                    await loadFincas(); 
-                }
-                catch (error) { 
-                    alert('Error al eliminar la finca.'); 
-                }
-            }
-        } else if (button.classList.contains('edit-btn')) { 
-            populateFormForEdit(id); 
+    function handleFincaListClick(e) {
+        if (e.target.classList.contains('edit-btn')) {
+            populateFormForEdit(e.target.dataset.id);
         }
-    });
-    
-    cancelEditBtn.addEventListener('click', resetForm);
+        if (e.target.classList.contains('delete-btn')) {
+            const id = e.target.dataset.id;
+            if (confirm('¿Seguro que quieres eliminar esta finca?')) {
+                api(`/api/fincas/${id}`, { method: 'DELETE' }).then(loadFincas);
+            }
+        }
+    }
     
     async function searchLocation() {
-        const query = searchInput.value.trim();
+        const query = searchInput.value;
         if (!query) return;
-        const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`);
+        const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${query}`);
         const data = await response.json();
         if (data && data.length > 0) {
-            map.setView([data[0].lat, data[0].lon], 13);
+            const { lat, lon } = data[0];
+            map.setView([lat, lon], 13);
         } else {
             alert('Ubicación no encontrada.');
         }
     }
 
-    searchBtn.addEventListener('click', searchLocation);
-    searchInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            searchLocation();
-        }
-    });
+    function locateUser() {
+        map.locate({ setView: true, maxZoom: 16 });
+    }
 
-    locateBtn.addEventListener('click', () => {
-        if ('geolocation' in navigator) {
-            navigator.geolocation.getCurrentPosition(position => {
-                const { latitude, longitude } = position.coords;
-                map.setView([latitude, longitude], 15);
-                L.marker([latitude, longitude]).addTo(map)
-                    .bindPopup('Tu ubicación actual.').openPopup();
-            }, error => {
-                alert('No se pudo obtener tu ubicación. Error: ' + error.message);
-            });
-        } else {
-            alert('La geolocalización no está disponible en tu navegador.');
-        }
-    });
-
-    // Inicializar la carga de datos
-    loadCountries();
-    loadFincas();
+    init();
 });
 

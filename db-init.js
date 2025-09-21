@@ -90,12 +90,14 @@ async function initializeDatabase() {
                     coordenadas TEXT,
                     telefono TEXT,
                     historia TEXT,
+                    imagenes_json TEXT,
+                    certificaciones_json,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
                     UNIQUE(user_id, nombre_finca)
                 )`);
-            console.log("Tabla 'fincas' lista.");
+            console.log("Tabla 'fincas' actualizada y lista.");
 
             await runQuery(db, `
                 CREATE TABLE IF NOT EXISTS procesadoras (
@@ -146,13 +148,14 @@ async function initializeDatabase() {
 
             await runQuery(db, `
                 CREATE TABLE IF NOT EXISTS blends (
-                    id SERIAL PRIMARY KEY,
-                    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                    id TEXT PRIMARY KEY, -- Cambiado a TEXT para soportar UUIDs
+                    user_id INTEGER NOT NULL,
                     nombre_blend TEXT NOT NULL,
-                    tipo_producto TEXT NOT NULL, -- 'cacao' o 'cafe'
-                    componentes_json JSONB NOT NULL,
-                    perfil_final_json JSONB NOT NULL,
-                    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+                    tipo_producto TEXT NOT NULL,
+                    componentes_json TEXT NOT NULL,
+                    perfil_final_json TEXT NOT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
                     UNIQUE(user_id, nombre_blend)
                 )`);
             console.log("Tabla 'perfiles_cafe' lista.");

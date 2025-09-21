@@ -75,8 +75,11 @@ CREATE TABLE IF NOT EXISTS fincas (
     coordenadas JSONB,
     telefono TEXT,
     historia TEXT,
-    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    imagenes_json TEXT,
+    certificaciones_json TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     UNIQUE(user_id, nombre_finca)
 );
 -- Tabla de Procesadoras
