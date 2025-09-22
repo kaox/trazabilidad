@@ -491,7 +491,6 @@ const deleteBatch = async (req, res) => {
 const getTrazabilidad = async (req, res) => {
     const { id } = req.params;
     try {
-        // 1. Obtener toda la cadena de lotes hacia atrás, desde el lote consultado hasta el origen.
         const rows = await all(`
             WITH RECURSIVE trazabilidad_completa AS (
                 SELECT * FROM lotes WHERE id = ?
@@ -501,7 +500,7 @@ const getTrazabilidad = async (req, res) => {
             )
             SELECT * FROM trazabilidad_completa;
         `, [id]);
-
+        
         if (rows.length === 0) return res.status(404).json({ error: 'Lote no encontrado' });
         
         const loteRaiz = rows.find(r => !r.parent_id);
@@ -510,18 +509,22 @@ const getTrazabilidad = async (req, res) => {
         const ownerId = loteRaiz.user_id;
         const plantillaId = loteRaiz.plantilla_id;
 
-        // 2. Obtener todas las etapas de la plantilla correspondiente y ordenarlas.
-        const allStages = await all('SELECT id, nombre_etapa, orden FROM etapas_plantilla WHERE plantilla_id = ? ORDER BY orden', [plantillaId]);
+        const allStages = await all('SELECT id, nombre_etapa, orden FROM etapas_plantilla WHERE plantilla_id = ?', [plantillaId]);
         
-        // 3. Construir la historia ordenada
         const history = {
             stages: [],
             fincaData: null,
             perfilSensorialData: null
         };
         
-        // Mapear cada lote encontrado a su definición de etapa
-        rows.reverse().forEach(row => {
+        // Ordenar la cadena de lotes desde el origen hasta el final
+        const sortedRows = rows.sort((a, b) => {
+            const stageA = allStages.find(s => s.id === a.etapa_id)?.orden || 0;
+            const stageB = allStages.find(s => s.id === b.etapa_id)?.orden || 0;
+            return stageA - stageB;
+        });
+
+        sortedRows.forEach(row => {
             const stageInfo = allStages.find(s => s.id === row.etapa_id);
             if(stageInfo) {
                 history.stages.push({
@@ -531,19 +534,26 @@ const getTrazabilidad = async (req, res) => {
             }
         });
 
-        // 4. Enriquecer con datos adicionales (Finca y Perfil)
         const cosechaData = history.stages[0]?.data;
         if (cosechaData && cosechaData.finca) {
             const finca = await get('SELECT * FROM fincas WHERE nombre_finca = ? AND user_id = ?', [cosechaData.finca, ownerId]);
-            if (finca) history.fincaData = { ...finca, coordenadas: safeJSONParse(finca.coordenadas || 'null') };
+            if (finca) {
+                history.fincaData = { 
+                    ...finca, 
+                    coordenadas: safeJSONParse(finca.coordenadas || 'null'),
+                    imagenes_json: safeJSONParse(finca.imagenes_json || '[]'),
+                    certificaciones_json: safeJSONParse(finca.certificaciones_json || '[]')
+                };
+            }
         }
         
         const tostadoData = history.stages.find(s => s.nombre_etapa.toLowerCase().includes('tostado'))?.data;
         if (tostadoData && tostadoData.tipoPerfil) {
             const perfil = await get('SELECT perfil_data FROM perfiles_cacao WHERE nombre = ? AND user_id = ?', [tostadoData.tipoPerfil, ownerId]);
-            if (perfil) history.perfilSensorialData = safeJSONParse(perfil.perfil_data);
+            if (perfil) {
+                history.perfilSensorialData = safeJSONParse(perfil.perfil_data);
+            }
         }
-        
         res.status(200).json(history);
     } catch (error) { 
         console.error(`Error en getTrazabilidad para el lote ${id}:`, error.message);

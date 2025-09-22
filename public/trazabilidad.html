@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>La Historia de tu Producto - Ruru Lab</title>
+    <title>La Historia de tu Producto - AgriTraza</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
@@ -15,8 +15,6 @@
         body { font-family: 'Inter', sans-serif; background-color: #fdfaf6; }
         h1, h2, h3, h4, .font-display { font-family: 'Playfair Display', serif; }
         dialog::backdrop { background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(3px); }
-        
-        /* Desktop Timeline */
         .timeline-container {
             position: relative;
             max-width: 1000px;
@@ -55,7 +53,6 @@
         .timeline-item.right::after { left: -14px; }
         .timeline-content { padding: 20px 30px; background-color: white; position: relative; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
 
-        /* Mobile Timeline */
         @media screen and (max-width: 768px) {
             .timeline-container::after {
                 left: 18px;
@@ -78,7 +75,11 @@
     <nav class="bg-amber-900 text-white shadow-lg sticky top-0 z-50">
         <div class="container mx-auto px-4">
              <div class="flex justify-between items-center h-16">
-                <a href="/" class="text-xl font-bold">Ruru Lab</a>
+                <a href="/" class="text-xl font-bold">AgriTraza</a>
+                <div>
+                    <a href="/qr" class="px-4 py-2 rounded-md text-sm font-medium bg-amber-800 transition">Consultar Lote</a>
+                    <a href="/login.html" class="ml-4 px-4 py-2 rounded-md text-sm font-medium hover:bg-amber-700 transition">Iniciar Sesión</a>
+                </div>
             </div>
         </div>
     </nav>
@@ -87,8 +88,8 @@
             <div class="flex justify-center items-center mb-6">
                 <svg class="w-24 h-24 text-amber-900" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
             </div>
-            <h1 class="text-4xl md:text-5xl font-bold font-display text-amber-900 mb-4">Ficha Técnica del Lote</h1>
-            <p class="text-stone-600 max-w-2xl mx-auto">Consulta toda la información de trazabilidad de este producto, desde su origen hasta su perfil final.</p>
+            <h1 class="text-4xl md:text-5xl font-bold font-display text-amber-900 mb-4">El ADN de tu Producto</h1>
+            <p class="text-stone-600 max-w-2xl mx-auto">Cada producto tiene una historia. El tuyo tiene una identidad. Estás a punto de descubrir el viaje único que dio vida al producto que tienes en tus manos. Esta es su historia.</p>
         </header>
 
         <div class="bg-white p-6 rounded-2xl shadow-lg mb-16">
@@ -99,6 +100,7 @@
         </div>
     </div>
     
+    <div id="pre-timeline-container"></div>
     <main id="resultado-container" class="pb-16">
         <!-- El contenido dinámico se insertará aquí -->
     </main>
