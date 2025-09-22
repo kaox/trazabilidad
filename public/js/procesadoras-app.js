@@ -9,7 +9,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function loadCountries() {
         try {
-            const response = await fetch('/countries.json');
+            const response = await fetch('/data/countries.json');
             const countries = await response.json();
             countrySelect.innerHTML = '<option value="">Seleccionar país...</option>';
             countries.forEach(country => {

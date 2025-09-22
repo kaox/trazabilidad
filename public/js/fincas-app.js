@@ -78,7 +78,7 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const response = await fetch('/data/countries.json');
             const countries = await response.json();
-            countrySelect.innerHTML = countries.map(c => `<option value="${c.name_es}">${c.name_es}</option>`).join('');
+            countrySelect.innerHTML = countries.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
             countrySelect.value = 'Perú';
         } catch (error) {
             console.error("Error cargando países:", error);

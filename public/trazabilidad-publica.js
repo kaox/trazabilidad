@@ -8,6 +8,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const closeModalBtn = document.getElementById('close-modal-btn');
     
     let chartInstances = {};
+    let globalHistory = {};
 
     // --- Funciones Globales para Interacción ---
     window.openImageModal = (src, title) => {
@@ -22,8 +23,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const loteId = loteIdInput.value.trim();
         if (!loteId) { alert("Ingresa un ID de lote."); return; }
         try {
-            const history = await fetch(`/api/trazabilidad/${loteId}`).then(res => res.ok ? res.json() : Promise.reject(res));
-            renderHistory(history);
+            globalHistory = await fetch(`/api/trazabilidad/${loteId}`).then(res => res.ok ? res.json() : Promise.reject(res));
+            renderHistory(globalHistory);
         } catch (error) {
             resultadoContainer.innerHTML = `<div class="container mx-auto px-6"><div class="text-center bg-red-100 text-red-800 p-6 rounded-2xl shadow-md"><h3 class="font-bold text-xl mb-2">Lote no encontrado</h3><p>Verifica el código e inténtalo de nuevo.</p></div></div>`;
         }
@@ -188,11 +189,12 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             if (!Array.isArray(coords) || coords.length === 0) throw new Error("Coordenadas inválidas");
             requestAnimationFrame(() => {
-                chartInstances.cosechaMap = L.map('map-cosecha').setView(coords[0], 15);
-                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(chartInstances.cosechaMap);
-                const polygon = L.polygon(coords, { color: '#854d0e' }).addTo(chartInstances.cosechaMap);
-                chartInstances.cosechaMap.fitBounds(polygon.getBounds());
-                setTimeout(() => chartInstances.cosechaMap.invalidateSize(), 100);
+                const map = L.map(mapContainer).setView(coords[0], 15);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+                const polygon = L.polygon(coords, { color: '#854d0e' }).addTo(map);
+                map.fitBounds(polygon.getBounds());
+                setTimeout(() => map.invalidateSize(), 100);
+                chartInstances.cosechaMap = map;
             });
         } catch(e) { console.error("Error al renderizar mapa:", e); mapContainer.innerHTML = '<p class="text-red-600">Error al mostrar mapa.</p>'; }
     }
@@ -242,6 +244,10 @@ document.addEventListener('DOMContentLoaded', () => {
     buscarBtn.addEventListener('click', handleSearch);
     loteIdInput.addEventListener('keypress', e => { if (e.key === 'Enter') handleSearch(); });
     resultadoContainer.addEventListener('click', e => {
+        if (e.target.id === 'open-finca-modal-btn') {
+            openFincaModal();
+        }
+        
         const shareButton = e.target.closest('.share-btn');
         if (shareButton) {
             const loteId = shareButton.dataset.loteId;
@@ -262,9 +268,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
     });
-
-    closeModalBtn.addEventListener('click', () => imageModal.close());
-    imageModal.addEventListener('click', (e) => { if (e.target.id === 'image-modal') imageModal.close(); });
 
     const params = new URLSearchParams(window.location.search);
     let loteIdFromUrl = params.get('lote');
