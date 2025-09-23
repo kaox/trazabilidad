@@ -4,13 +4,15 @@ document.addEventListener('DOMContentLoaded', () => {
     let perfilesCacao = [];
     let perfilesCafe = [];
     let perfilesVino = [];
+    let perfilesQueso = [];
 
     async function init() {
         try {
-            [perfilesCacao, perfilesCafe, perfilesVino] = await Promise.all([
+            [perfilesCacao, perfilesCafe, perfilesVino, perfilesQueso] = await Promise.all([
                 api('/api/perfiles'),
                 api('/api/perfiles-cafe'),
-                fetch('/maridajes.json').then(res => res.json()).then(data => data.defaultPerfilesVino)
+                fetch('/data/maridajes_vino.json').then(res => res.json()).then(data => data.defaultPerfilesVino),
+                fetch('/data/maridajes_quesos.json').then(res => res.json())
             ]);
             populateSelector();
             selector.addEventListener('change', handleSelection);
@@ -35,6 +37,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (perfilesVino.length > 0) {
             optionsHtml += `<optgroup label="Perfiles de Vino">${perfilesVino.map(p => `<option value="vino-${p.id}">${p.nombre}</option>`).join('')}</optgroup>`;
         }
+        if (perfilesQueso.length > 0) {
+            optionsHtml += `<optgroup label="Perfiles de Queso">${perfilesQueso.map(p => `<option value="queso-${p.id}">${p.nombre}</option>`).join('')}</optgroup>`;
+        }
         selector.innerHTML = optionsHtml;
     }
 
@@ -52,47 +57,95 @@ document.addEventListener('DOMContentLoaded', () => {
             productoBase = perfilesCacao.find(p => p.id == id);
             const recCafe = calcularMaridajes(productoBase, perfilesCafe, 'cacao-cafe');
             const recVino = calcularMaridajes(productoBase, perfilesVino, 'cacao-vino');
-            renderRecomendaciones(recCafe, recVino, productoBase.nombre);
-        } else if (tipo === 'cafe') {
-            productoBase = perfilesCafe.find(p => p.id == id);
-            const recCacao = calcularMaridajes(productoBase, perfilesCacao, 'cafe-cacao');
-            renderRecomendaciones(recCacao, [], productoBase.nombre_perfil);
-        } else if (tipo === 'vino') {
-            productoBase = perfilesVino.find(p => p.id == id);
-            const recCacao = calcularMaridajes(productoBase, perfilesCacao, 'vino-cacao');
-            renderRecomendaciones(recCacao, [], productoBase.nombre);
+            const recQueso = calcularMaridajes(productoBase, perfilesQueso, 'cacao-queso');
+            renderRecomendaciones({ cafe: recCafe, vino: recVino, queso: recQueso }, productoBase.nombre);
+        } else {
+            if (tipo === 'cafe') productoBase = perfilesCafe.find(p => p.id == id);
+            if (tipo === 'vino') productoBase = perfilesVino.find(p => p.id == id);
+            if (tipo === 'queso') productoBase = perfilesQueso.find(p => p.id == id);
+            const recCacao = calcularMaridajes(productoBase, perfilesCacao, `${tipo}-cacao`);
+            renderRecomendaciones({ cacao: recCacao }, productoBase.nombre || productoBase.nombre_perfil);
         }
     }
-
+    
     function calcularMaridajes(base, comparables, tipoMaridaje) {
         return comparables.map(item => {
-            if (tipoMaridaje === 'cacao-cafe' || tipoMaridaje === 'cafe-cacao') {
-                const cacao = tipoMaridaje === 'cacao-cafe' ? base : item;
-                const cafe = tipoMaridaje === 'cacao-cafe' ? item : base;
-                // Lógica Cacao-Café
+            let cacao, cafe, vino, queso;
+            let puntuacionFinal = 0;
+            let justificacion = 'Una combinación excelente por su equilibrio de perfiles.';
+
+            if (tipoMaridaje.includes('cacao-cafe') || tipoMaridaje.includes('cafe-cacao')) {
+                cacao = tipoMaridaje.startsWith('cacao') ? base : item;
+                cafe = tipoMaridaje.startsWith('cacao') ? item : base;
                 const pInt = 1 - (Math.abs((cacao.perfil_data.cacao || 0) - (cafe.perfil_data.sabor || 0)) / 10);
                 const pAcid = 1 - (Math.abs((cacao.perfil_data.acidez || 0) - (cafe.perfil_data.acidez || 0)) / 10);
                 const pDulz = 1 - (Math.abs((cacao.perfil_data.caramelo || 0) - (cafe.perfil_data.dulzura || 0)) / 10);
                 const pComp = 1 - (Math.abs(((cacao.perfil_data.amargor || 0) + (cacao.perfil_data.madera || 0))/2 - ((cafe.perfil_data.cuerpo || 0) + (cafe.perfil_data.postgusto || 0))/2) / 10);
-                const pFinal = ((pInt * 0.4) + (((pAcid + pDulz + pComp) / 3) * 0.6)) * 100;
-                return { producto: item, puntuacion: pFinal, justificacion: generarJustificacionCacaoCafe(cacao, cafe), cacaoProfile: cacao, cafeProfile: cafe };
-            } else if (tipoMaridaje === 'cacao-vino' || tipoMaridaje === 'vino-cacao') {
-                const cacao = tipoMaridaje === 'cacao-vino' ? base : item;
-                const vino = tipoMaridaje === 'cacao-vino' ? item : base;
-                // Lógica Cacao-Vino
+                puntuacionFinal = ((pInt * 0.4) + (((pAcid + pDulz + pComp) / 3) * 0.6)) * 100;
+                justificacion = generarJustificacionCacaoCafe(cacao, cafe);
+            } else if (tipoMaridaje.includes('cacao-vino') || tipoMaridaje.includes('vino-cacao')) {
+                cacao = tipoMaridaje.startsWith('cacao') ? base : item;
+                vino = tipoMaridaje.startsWith('cacao') ? item : base;
                 const pInt = 1 - (Math.abs((cacao.perfil_data.cacao || 0) - (vino.perfil_data.intensidad || 0)) / 10);
                 const pEst = 1 - (Math.abs(((cacao.perfil_data.amargor || 0) + (cacao.perfil_data.astringencia || 0))/2 - (vino.perfil_data.taninos || 0)) / 10);
                 const pAcid = 1 - (Math.abs((cacao.perfil_data.acidez || 0) - (vino.perfil_data.acidez || 0)) / 10);
                 const pDulz = 1 - (Math.abs((cacao.perfil_data.caramelo || 0) - (vino.perfil_data.dulzura || 0)) / 10);
                 const bonusDulzura = (vino.perfil_data.dulzura || 0) >= (cacao.perfil_data.caramelo || 0) ? 1.1 : 1;
                 const pArmonia = ((pAcid + pDulz) / 2) * bonusDulzura;
-                const pFinal = ((pInt * 0.3) + (pEst * 0.3) + (pArmonia * 0.4)) * 100;
-                return { producto: item, puntuacion: pFinal, justificacion: generarJustificacionCacaoVino(cacao, vino), cacaoProfile: cacao, vinoProfile: vino };
+                puntuacionFinal = ((pInt * 0.3) + (pEst * 0.3) + (pArmonia * 0.4)) * 100;
+                justificacion = generarJustificacionCacaoVino(cacao, vino);
+            } else if (tipoMaridaje.includes('cacao-queso') || tipoMaridaje.includes('queso-cacao')) {
+                cacao = tipoMaridaje.startsWith('cacao') ? base : item;
+                queso = tipoMaridaje.startsWith('cacao') ? item : base;
+                const pInt = 1 - (Math.abs((cacao.perfil_data.cacao || 0) - (queso.perfil_data.intensidad || 0)) / 10);
+                const contraste = ((queso.perfil_data.cremosidad || 0) + (queso.perfil_data.salinidad || 0)) * ((cacao.perfil_data.amargor || 0) + (cacao.perfil_data.astringencia || 0));
+                const pContraste = Math.min(1, contraste / 200);
+                let pArmonia = 0;
+                if(queso.perfil_data.notas_sabor.includes('nuez') && (cacao.perfil_data.nuez || 0) > 5) pArmonia += 0.5;
+                if(queso.perfil_data.notas_sabor.includes('caramelo') && (cacao.perfil_data.caramelo || 0) > 5) pArmonia += 0.5;
+                puntuacionFinal = ((pInt * 0.4) + (pContraste * 0.4) + (pArmonia * 0.2)) * 100;
+                justificacion = generarJustificacionCacaoQueso(cacao, queso);
             }
-        }).sort((a, b) => b.puntuacion - a.puntuacion).slice(0, 2);
+
+            return {
+                producto: item,
+                puntuacion: puntuacionFinal,
+                justificacion,
+                cacaoProfile: cacao,
+                cafeProfile: cafe,
+                vinoProfile: vino,
+                quesoProfile: queso
+            };
+        }).sort((a, b) => b.puntuacion - a.puntuacion);
     }
 
-    function generarJustificacionCacaoCafe(cacao, cafe) { /* ... (lógica existente sin cambios) ... */ }
+    function generarJustificacionCacaoCafe(cacao, cafe) {
+        const intensidadCacao = cacao.perfil_data.cacao || 0;
+        const intensidadCafe = cafe.perfil_data.sabor || 0;
+        const acidezCacao = cacao.perfil_data.acidez || 0;
+        const acidezCafe = cafe.perfil_data.acidez || 0;
+        const dulzuraCacao = cacao.perfil_data.caramelo || 0;
+        const dulzuraCafe = cafe.perfil_data.dulzura || 0;
+        
+        let justificacion = `Este maridaje es una excelente opción. `;
+        
+        if (Math.abs(intensidadCacao - intensidadCafe) < 2) {
+            justificacion += `La intensidad de sabor del café (${intensidadCafe.toFixed(1)}) y la del cacao (${intensidadCacao.toFixed(1)}) son muy similares, creando una base equilibrada. `;
+        } else {
+            justificacion += `Las intensidades del café (${intensidadCafe.toFixed(1)}) y del cacao (${intensidadCacao.toFixed(1)}) ofrecen un contraste interesante. `;
+        }
+
+        if (Math.abs(acidezCacao - acidezCafe) < 2.5) {
+             justificacion += `Además, la acidez similar (${acidezCafe.toFixed(1)} en café y ${acidezCacao.toFixed(1)} en cacao) se complementa perfectamente. `;
+        }
+
+        if (Math.abs(dulzuraCacao - dulzuraCafe) < 2.5) {
+             justificacion += `Las notas de caramelo del cacao (${dulzuraCacao.toFixed(1)}) resuenan con la dulzura natural del café (${dulzuraCafe.toFixed(1)}).`;
+        }
+
+        return justificacion;
+    }
+    
     function generarJustificacionCacaoVino(cacao, vino) {
         const intensidadCacao = cacao.perfil_data.cacao || 0;
         const intensidadVino = vino.perfil_data.intensidad || 0;
@@ -107,23 +160,74 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         return justificacion;
     }
+
+    function generarJustificacionCacaoQueso(cacao, queso) {
+        const intensidadCacao = cacao.perfil_data.cacao || 0;
+        const intensidadQueso = queso.perfil_data.intensidad || 0;
+        let justificacion = `Una pairing audaz y delicioso. `;
+        if (Math.abs(intensidadCacao - intensidadQueso) < 2.5) {
+            justificacion += `La intensidad similar del queso (${intensidadQueso.toFixed(1)}) y del cacao (${intensidadCacao.toFixed(1)}) crea una base sólida. `;
+        }
+        if ((queso.perfil_data.cremosidad || 0) > 6 && (cacao.perfil_data.amargor || 0) > 6) {
+            justificacion += `La cremosidad del queso equilibra a la perfección las notas amargas del chocolate.`;
+        }
+        return justificacion;
+    }
     
-    function renderRecomendaciones(recCafe, recVino, nombreProductoBase) {
+    function renderRecomendaciones(recomendaciones, nombreProductoBase) {
         let html = `<h2 class="text-3xl font-display text-center text-amber-900 mb-8">Mejores Maridajes para ${nombreProductoBase}</h2>`;
-        if (recCafe.length > 0) {
-            html += `<h3 class="text-2xl font-display text-green-800 mb-4">Con Café:</h3>`;
-            html += `<div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">${recCafe.map((rec, i) => createCard(rec, `cafe-${i}`)).join('')}</div>`;
+        
+        const renderGroup = (recs, type, colorClass) => {
+            const excepcionales = recs.filter(r => r.puntuacion >= 90);
+            const recomendados = recs.filter(r => r.puntuacion >= 75 && r.puntuacion < 90);
+            
+            let groupHtml = '';
+            if (excepcionales.length > 0) {
+                groupHtml += `<div class="mb-8">
+                                <h4 class="text-xl font-display ${colorClass} mb-3">Sinergia Excepcional (Maridaje "Mágico")</h4>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">${excepcionales.map((rec, i) => createCard(rec, `${type}-excepcional-${i}`)).join('')}</div>
+                             </div>`;
+            }
+            if (recomendados.length > 0) {
+                groupHtml += `<div>
+                                <h4 class="text-xl font-display ${colorClass} mb-3">Muy Buen Maridaje (Altamente Recomendado)</h4>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">${recomendados.map((rec, i) => createCard(rec, `${type}-recomendado-${i}`)).join('')}</div>
+                             </div>`;
+            }
+            return groupHtml;
+        };
+
+        if (recomendaciones.cafe?.length > 0) {
+            html += `<h3 class="text-2xl font-display text-green-800 mb-4 border-b pb-2">Con Café:</h3>`;
+            html += renderGroup(recomendaciones.cafe, 'cafe', 'text-green-700');
         }
-        if (recVino.length > 0) {
-            html += `<h3 class="text-2xl font-display text-red-800 mb-4">Con Vino:</h3>`;
-            html += `<div class="grid grid-cols-1 md:grid-cols-2 gap-8">${recVino.map((rec, i) => createCard(rec, `vino-${i}`)).join('')}</div>`;
+        if (recomendaciones.vino?.length > 0) {
+            html += `<h3 class="text-2xl font-display text-red-800 mt-12 mb-4 border-b pb-2">Con Vino:</h3>`;
+            html += renderGroup(recomendaciones.vino, 'vino', 'text-red-700');
         }
+        if (recomendaciones.queso?.length > 0) {
+            html += `<h3 class="text-2xl font-display text-blue-800 mt-12 mb-4 border-b pb-2">Con Queso:</h3>`;
+            html += renderGroup(recomendaciones.queso, 'queso', 'text-blue-700');
+        }
+        if (recomendaciones.cacao?.length > 0) {
+            html += `<h3 class="text-2xl font-display text-amber-800 mt-12 mb-4 border-b pb-2">Con Cacao:</h3>`;
+            html += renderGroup(recomendaciones.cacao, 'cacao', 'text-amber-700');
+        }
+        
         recomendacionesContainer.innerHTML = html;
         
-        setTimeout(() => {
-            recCafe.forEach((rec, i) => renderMaridajeChart(rec, `cafe-${i}`));
-            recVino.forEach((rec, i) => renderMaridajeChart(rec, `vino-${i}`));
-        }, 0);
+        // CORRECCIÓN: Usar requestAnimationFrame para asegurar que el DOM esté listo
+        requestAnimationFrame(() => {
+            Object.entries(recomendaciones).forEach(([type, recs]) => {
+                if (recs && recs.length > 0) {
+                    const excepcionales = recs.filter(r => r.puntuacion >= 90);
+                    const recomendados = recs.filter(r => r.puntuacion >= 75 && r.puntuacion < 90);
+                    
+                    excepcionales.forEach((rec, i) => renderMaridajeChart(rec, `${type}-excepcional-${i}`));
+                    recomendados.forEach((rec, i) => renderMaridajeChart(rec, `${type}-recomendado-${i}`));
+                }
+            });
+        });
     }
 
     function createCard(rec, index) {
@@ -139,37 +243,29 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function renderMaridajeChart(rec, index) {
         const canvas = document.getElementById(`maridaje-chart-${index}`);
-        if (!canvas) return;
+        if (!canvas) {
+            console.error(`Canvas with id maridaje-chart-${index} not found`);
+            return;
+        }
 
-        const cacao = rec.cacaoProfile?.perfil_data;
-        const cafe = rec.cafeProfile?.perfil_data;
-        const vino = rec.vinoProfile?.perfil_data;
-        
-        const labels = ['Intensidad', 'Acidez', 'Dulzura', 'Cuerpo', 'Notas Frutales'];
+        const getUnifiedProfile = (profile, type) => {
+            if (!profile) return [0,0,0,0,0];
+            const p = profile.perfil_data;
+            if (type === 'cacao') return [p.cacao || 0, p.acidez || 0, p.caramelo || 0, ((p.amargor || 0) + (p.astringencia || 0)) / 2, (p.nuez || 0) + (p.floral || 0) + (p.especia || 0)];
+            if (type === 'cafe') return [p.sabor || 0, p.acidez || 0, p.dulzura || 0, p.cuerpo || 0, (p.fraganciaAroma || 0) / 2];
+            if (type === 'vino') return [p.intensidad || 0, p.acidez || 0, p.dulzura || 0, p.cuerpo || 0, ((p.intensidad || 0) + (p.acidez || 0)) / 2];
+            if (type === 'queso') return [p.intensidad || 0, p.acidez || 0, p.cremosidad || 0, ((p.intensidad || 0) + (p.salinidad || 0)) / 2, p.notas_sabor.length > 3 ? 5 : 3];
+        };
+
         const datasets = [];
-
-        if (cacao) {
-            datasets.push({
-                label: 'Cacao', data: [cacao.cacao || 0, cacao.acidez || 0, cacao.caramelo || 0, ((cacao.amargor || 0) + (cacao.astringencia || 0)) / 2, cacao.frutaFresca || 0],
-                backgroundColor: 'rgba(120, 53, 15, 0.2)', borderColor: 'rgb(120, 53, 15)', pointBackgroundColor: 'rgb(120, 53, 15)'
-            });
-        }
-        if (cafe) {
-            datasets.push({
-                label: 'Café', data: [cafe.sabor || 0, cafe.acidez || 0, cafe.dulzura || 0, cafe.cuerpo || 0, (cafe.fraganciaAroma || 0) / 2],
-                backgroundColor: 'rgba(22, 101, 52, 0.2)', borderColor: 'rgb(22, 101, 52)', pointBackgroundColor: 'rgb(22, 101, 52)'
-            });
-        }
-        if (vino) {
-            datasets.push({
-                label: 'Vino', data: [vino.intensidad || 0, vino.acidez || 0, vino.dulzura || 0, vino.cuerpo || 0, ((vino.intensidad || 0) + (vino.acidez || 0)) / 2],
-                backgroundColor: 'rgba(159, 18, 57, 0.2)', borderColor: 'rgb(159, 18, 57)', pointBackgroundColor: 'rgb(159, 18, 57)'
-            });
-        }
+        if(rec.cacaoProfile) datasets.push({ label: 'Cacao', data: getUnifiedProfile(rec.cacaoProfile, 'cacao'), backgroundColor: 'rgba(120, 53, 15, 0.2)', borderColor: 'rgb(120, 53, 15)' });
+        if(rec.cafeProfile) datasets.push({ label: 'Café', data: getUnifiedProfile(rec.cafeProfile, 'cafe'), backgroundColor: 'rgba(22, 101, 52, 0.2)', borderColor: 'rgb(22, 101, 52)' });
+        if(rec.vinoProfile) datasets.push({ label: 'Vino', data: getUnifiedProfile(rec.vinoProfile, 'vino'), backgroundColor: 'rgba(159, 18, 57, 0.2)', borderColor: 'rgb(159, 18, 57)' });
+        if(rec.quesoProfile) datasets.push({ label: 'Queso', data: getUnifiedProfile(rec.quesoProfile, 'queso'), backgroundColor: 'rgba(59, 130, 246, 0.2)', borderColor: 'rgb(59, 130, 246)' });
 
         new Chart(canvas, {
             type: 'radar',
-            data: { labels, datasets },
+            data: { labels: ['Intensidad', 'Acidez', 'Riqueza/Dulzura', 'Cuerpo/Estructura', 'Complejidad Aromática'], datasets },
             options: { responsive: true, scales: { r: { suggestedMin: 0, suggestedMax: 10 } }, plugins: { legend: { position: 'top' } } }
         });
     }

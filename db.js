@@ -1,6 +1,9 @@
 const environment = process.env.NODE_ENV || 'development';
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const fs = require('fs');
+const path = require('path');
+
 
 let get, all, run;
 
@@ -514,7 +517,8 @@ const getTrazabilidad = async (req, res) => {
         const history = {
             stages: [],
             fincaData: null,
-            perfilSensorialData: null
+            perfilSensorialData: null,
+            maridajesRecomendados: {}
         };
         
         // Ordenar la cadena de lotes desde el origen hasta el final
@@ -549,17 +553,56 @@ const getTrazabilidad = async (req, res) => {
         
         const tostadoData = history.stages.find(s => s.nombre_etapa.toLowerCase().includes('tostado'))?.data;
         if (tostadoData && tostadoData.tipoPerfil) {
-            const perfil = await get('SELECT perfil_data FROM perfiles_cacao WHERE nombre = ? AND user_id = ?', [tostadoData.tipoPerfil, ownerId]);
+            const perfil = await get('SELECT * FROM perfiles_cacao WHERE nombre = ? AND user_id = ?', [tostadoData.tipoPerfil, ownerId]);
             if (perfil) {
-                history.perfilSensorialData = safeJSONParse(perfil.perfil_data);
+                perfil.perfil_data = safeJSONParse(perfil.perfil_data);
+                history.perfilSensorialData = perfil.perfil_data;
+                const maridajesData = JSON.parse(fs.readFileSync(path.join(__dirname, 'public', 'data', 'maridajes_vino.json'), 'utf8'));
+
+                // Calcular maridajes
+                const allCafes = await all('SELECT * FROM perfiles_cafe WHERE user_id = ?', [ownerId]);
+                const allVinos = maridajesData.defaultPerfilesVino;
+
+                const recCafe = allCafes.map(cafe => ({
+                    producto: { ...cafe, perfil_data: safeJSONParse(cafe.perfil_data) },
+                    puntuacion: calcularMaridajeCacaoCafe(perfil, { ...cafe, perfil_data: safeJSONParse(cafe.perfil_data) })
+                })).sort((a, b) => b.puntuacion - a.puntuacion).slice(0, 2);
+
+                const recVino = allVinos.map(vino => ({
+                    producto: vino,
+                    puntuacion: calcularMaridajeCacaoVino(perfil, vino)
+                })).sort((a, b) => b.puntuacion - a.puntuacion).slice(0, 2);
+                
+                history.maridajesRecomendados = { cafe: recCafe, vino: recVino };
             }
         }
+
         res.status(200).json(history);
     } catch (error) { 
         console.error(`Error en getTrazabilidad para el lote ${id}:`, error.message);
         res.status(500).json({ error: "Error interno del servidor." }); 
     }
 };
+
+// --- Lógica de Maridaje (Backend) ---
+function calcularMaridajeCacaoCafe(cacao, cafe) {
+    const pInt = 1 - (Math.abs((cacao.perfil_data.cacao || 0) - (cafe.perfil_data.sabor || 0)) / 10);
+    const pAcid = 1 - (Math.abs((cacao.perfil_data.acidez || 0) - (cafe.perfil_data.acidez || 0)) / 10);
+    const pDulz = 1 - (Math.abs((cacao.perfil_data.caramelo || 0) - (cafe.perfil_data.dulzura || 0)) / 10);
+    const pComp = 1 - (Math.abs(((cacao.perfil_data.amargor || 0) + (cacao.perfil_data.madera || 0))/2 - ((cafe.perfil_data.cuerpo || 0) + (cafe.perfil_data.postgusto || 0))/2) / 10);
+    return ((pInt * 0.4) + (((pAcid + pDulz + pComp) / 3) * 0.6)) * 100;
+}
+
+function calcularMaridajeCacaoVino(cacao, vino) {
+    const pInt = 1 - (Math.abs((cacao.perfil_data.cacao || 0) - (vino.perfil_data.intensidad || 0)) / 10);
+    const pEst = 1 - (Math.abs(((cacao.perfil_data.amargor || 0) + (cacao.perfil_data.astringencia || 0))/2 - (vino.perfil_data.taninos || 0)) / 10);
+    const pAcid = 1 - (Math.abs((cacao.perfil_data.acidez || 0) - (vino.perfil_data.acidez || 0)) / 10);
+    const pDulz = 1 - (Math.abs((cacao.perfil_data.caramelo || 0) - (vino.perfil_data.dulzura || 0)) / 10);
+    const bonusDulzura = (vino.perfil_data.dulzura || 0) >= (cacao.perfil_data.caramelo || 0) ? 1.1 : 1;
+    const pArmonia = ((pAcid + pDulz) / 2) * bonusDulzura;
+    return ((pInt * 0.3) + (pEst * 0.3) + (pArmonia * 0.4)) * 100;
+}
+
 const getPerfilesCafe = async (req, res) => {
     const userId = req.user.id;
     try {
