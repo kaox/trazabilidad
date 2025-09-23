@@ -1,0 +1,665 @@
+[
+  {
+    "id": "Q02",
+    "nombre": "Camembert de Normandie",
+    "tipo_leche": "vaca",
+    "perfil_data": {
+      "familia": "blando",
+      "intensidad": 7,
+      "salinidad": 4,
+      "cremosidad": 9,
+      "acidez": 4,
+      "notas_sabor": ["terroso", "umami", "heno", "mantequilla"]
+    }
+  },
+  {
+    "id": "Q03",
+    "nombre": "Roquefort",
+    "tipo_leche": "oveja",
+    "perfil_data": {
+      "familia": "azul",
+      "intensidad": 9,
+      "salinidad": 8,
+      "cremosidad": 6,
+      "acidez": 7,
+      "notas_sabor": ["picante", "salino", "especiado", "lanolina"]
+    }
+  },
+  {
+    "id": "Q04",
+    "nombre": "Comté (18 meses)",
+    "tipo_leche": "vaca",
+    "perfil_data": {
+      "familia": "duro",
+      "intensidad": 7,
+      "salinidad": 5,
+      "cremosidad": 3,
+      "acidez": 3,
+      "notas_sabor": ["nuez tostada", "mantequilla dorada", "fruta de hueso", "caldo de res"]
+    }
+  },
+  {
+    "id": "Q05",
+    "nombre": "Gruyère AOP (9 meses)",
+    "tipo_leche": "vaca",
+    "perfil_data": {
+      "familia": "duro",
+      "intensidad": 6,
+      "salinidad": 5,
+      "cremosidad": 4,
+      "acidez": 3,
+      "notas_sabor": ["nuez", "frutal", "terroso", "cremoso"]
+    }
+  },
+  {
+    "id": "Q06",
+    "nombre": "Emmental",
+    "tipo_leche": "vaca",
+    "perfil_data": {
+      "familia": "semiduro",
+      "intensidad": 4,
+      "salinidad": 3,
+      "cremosidad": 5,
+      "acidez": 2,
+      "notas_sabor": ["nuez", "dulce", "mantequilla", "fruta madura"]
+    }
+  },
+  {
+    "id": "Q07",
+    "nombre": "Époisses de Bourgogne",
+    "tipo_leche": "vaca",
+    "perfil_data": {
+      "familia": "de corteza lavada",
+      "intensidad": 10,
+      "salinidad": 7,
+      "cremosidad": 9,
+      "acidez": 4,
+      "notas_sabor": ["cárnico", "salino", "funky", "brandy"]
+    }
+  },
+  {
+    "id": "Q08",
+    "nombre": "Reblochon",
+    "tipo_leche": "vaca",
+    "perfil_data": {
+      "familia": "de corteza lavada",
+      "intensidad": 5,
+      "salinidad": 4,
+      "cremosidad": 8,
+      "acidez": 3,
+      "notas_sabor": ["nuez", "frutal", "mantequilla", "heno"]
+    }
+  },
+  {
+    "id": "Q09",
+    "nombre": "Morbier",
+    "tipo_leche": "vaca",
+    "perfil_data": {
+      "familia": "semiduro",
+      "intensidad": 5,
+      "salinidad": 4,
+      "cremosidad": 7,
+      "acidez": 4,
+      "notas_sabor": ["nuez", "frutal", "cremoso", "heno"]
+    }
+  },
+  {
+    "id": "Q10",
+    "nombre": "Mimolette (Vieille)",
+    "tipo_leche": "vaca",
+    "perfil_data": {
+      "familia": "duro",
+      "intensidad": 7,
+      "salinidad": 6,
+      "cremosidad": 2,
+      "acidez": 3,
+      "notas_sabor": ["caramelo", "toffee", "nuez", "salino"]
+    }
+  },
+  {
+    "id": "Q11",
+    "nombre": "Parmigiano Reggiano (24 meses)",
+    "tipo_leche": "vaca",
+    "perfil_data": {
+      "familia": "duro",
+      "intensidad": 8,
+      "salinidad": 7,
+      "cremosidad": 1,
+      "acidez": 4,
+      "notas_sabor": ["nuez tostada", "piña", "caldo de res", "caramelo salado"]
+    }
+  },
+  {
+    "id": "Q12",
+    "nombre": "Grana Padano (16 meses)",
+    "tipo_leche": "vaca",
+    "perfil_data": {
+      "familia": "duro",
+      "intensidad": 6,
+      "salinidad": 6,
+      "cremosidad": 2,
+      "acidez": 3,
+      "notas_sabor": ["nuez", "láctico", "mantequilla", "heno"]
+    }
+  },
+  {
+    "id": "Q13",
+    "nombre": "Pecorino Romano",
+    "tipo_leche": "oveja",
+    "perfil_data": {
+      "familia": "duro",
+      "intensidad": 8,
+      "salinidad": 9,
+      "cremosidad": 2,
+      "acidez": 5,
+      "notas_sabor": ["salino", "picante", "lanolina", "nuez"]
+    }
+  },
+  {
+    "id": "Q14",
+    "nombre": "Gorgonzola Piccante",
+    "tipo_leche": "vaca",
+    "perfil_data": {
+      "familia": "azul",
+      "intensidad": 8,
+      "salinidad": 7,
+      "cremosidad": 5,
+      "acidez": 6,
+      "notas_sabor": ["terroso", "picante", "especiado", "mantequilla"]
+    }
+  },
+  {
+    "id": "Q15",
+    "nombre": "Mozzarella di Bufala Campana",
+    "tipo_leche": "búfala",
+    "perfil_data": {
+      "familia": "fresco",
+      "intensidad": 3,
+      "salinidad": 2,
+      "cremosidad": 8,
+      "acidez": 5,
+      "notas_sabor": ["láctico", "crema fresca", "ácido", "hierba"]
+    }
+  },
+  {
+    "id": "Q16",
+    "nombre": "Taleggio",
+    "tipo_leche": "vaca",
+    "perfil_data": {
+      "familia": "de corteza lavada",
+      "intensidad": 7,
+      "salinidad": 6,
+      "cremosidad": 8,
+      "acidez": 5,
+      "notas_sabor": ["cárnico", "frutal", "terroso", "nuez"]
+    }
+  },
+  {
+    "id": "Q17",
+    "nombre": "Fontina Val d'Aosta",
+    "tipo_leche": "vaca",
+    "perfil_data": {
+      "familia": "semiduro",
+      "intensidad": 6,
+      "salinidad": 5,
+      "cremosidad": 6,
+      "acidez": 3,
+      "notas_sabor": ["nuez", "terroso", "frutal", "hierba"]
+    }
+  },
+  {
+    "id": "Q18",
+    "nombre": "Provolone Piccante",
+    "tipo_leche": "vaca",
+    "perfil_data": {
+      "familia": "semiduro",
+      "intensidad": 6,
+      "salinidad": 6,
+      "cremosidad": 5,
+      "acidez": 5,
+      "notas_sabor": ["picante", "salino", "ahumado", "nuez"]
+    }
+  },
+  {
+    "id": "Q19",
+    "nombre": "Cheddar (Añejo)",
+    "tipo_leche": "vaca",
+    "perfil_data": {
+      "familia": "duro",
+      "intensidad": 7,
+      "salinidad": 6,
+      "cremosidad": 3,
+      "acidez": 6,
+      "notas_sabor": ["nuez", "picante", "terroso", "dulce"]
+    }
+  },
+  {
+    "id": "Q20",
+    "nombre": "Stilton",
+    "tipo_leche": "vaca",
+    "perfil_data": {
+      "familia": "azul",
+      "intensidad": 7,
+      "salinidad": 6,
+      "cremosidad": 6,
+      "acidez": 5,
+      "notas_sabor": ["terroso", "especiado", "cremoso", "nuez"]
+    }
+  },
+  {
+    "id": "Q21",
+    "nombre": "Gouda (Añejo)",
+    "tipo_leche": "vaca",
+    "perfil_data": {
+      "familia": "duro",
+      "intensidad": 8,
+      "salinidad": 7,
+      "cremosidad": 2,
+      "acidez": 2,
+      "notas_sabor": ["caramelo", "toffee", "nuez tostada", "whisky"]
+    }
+  },
+  {
+    "id": "Q22",
+    "nombre": "Edam",
+    "tipo_leche": "vaca",
+    "perfil_data": {
+      "familia": "semiduro",
+      "intensidad": 3,
+      "salinidad": 4,
+      "cremosidad": 5,
+      "acidez": 2,
+      "notas_sabor": ["nuez", "mantequilla", "cremoso", "dulce"]
+    }
+  },
+  {
+    "id": "Q23",
+    "nombre": "Havarti",
+    "tipo_leche": "vaca",
+    "perfil_data": {
+      "familia": "semiduro",
+      "intensidad": 3,
+      "salinidad": 4,
+      "cremosidad": 7,
+      "acidez": 3,
+      "notas_sabor": ["mantequilla", "cremoso", "dulce", "ácido"]
+    }
+  },
+  {
+    "id": "Q24",
+    "nombre": "Manchego (Curado)",
+    "tipo_leche": "oveja",
+    "perfil_data": {
+      "familia": "duro",
+      "intensidad": 6,
+      "salinidad": 6,
+      "cremosidad": 3,
+      "acidez": 4,
+      "notas_sabor": ["nuez", "lanolina", "caramelo", "hierba seca"]
+    }
+  },
+  {
+    "id": "Q25",
+    "nombre": "Cabrales",
+    "tipo_leche": "mezcla",
+    "perfil_data": {
+      "familia": "azul",
+      "intensidad": 9,
+      "salinidad": 8,
+      "cremosidad": 6,
+      "acidez": 8,
+      "notas_sabor": ["picante", "especiado", "ácido", "terroso"]
+    }
+  },
+  {
+    "id": "Q26",
+    "nombre": "Feta",
+    "tipo_leche": "mezcla",
+    "perfil_data": {
+      "familia": "fresco",
+      "intensidad": 6,
+      "salinidad": 9,
+      "cremosidad": 3,
+      "acidez": 7,
+      "notas_sabor": ["salino", "ácido", "láctico", "herbáceo"]
+    }
+  },
+  {
+    "id": "Q27",
+    "nombre": "Halloumi",
+    "tipo_leche": "mezcla",
+    "perfil_data": {
+      "familia": "fresco",
+      "intensidad": 4,
+      "salinidad": 8,
+      "cremosidad": 5,
+      "acidez": 4,
+      "notas_sabor": ["salino", "láctico", "menta", "parrillado"]
+    }
+  },
+  {
+    "id": "Q28",
+    "nombre": "Monterey Jack",
+    "tipo_leche": "vaca",
+    "perfil_data": {
+      "familia": "semiduro",
+      "intensidad": 2,
+      "salinidad": 3,
+      "cremosidad": 7,
+      "acidez": 3,
+      "notas_sabor": ["mantequilla", "láctico", "suave", "cremoso"]
+    }
+  },
+  {
+    "id": "Q29",
+    "nombre": "Humboldt Fog",
+    "tipo_leche": "cabra",
+    "perfil_data": {
+      "familia": "blando",
+      "intensidad": 5,
+      "salinidad": 3,
+      "cremosidad": 8,
+      "acidez": 7,
+      "notas_sabor": ["cítrico", "herbáceo", "crema agria", "terroso"]
+    }
+  },
+  {
+    "id": "Q30",
+    "nombre": "Cotija (Añejo)",
+    "tipo_leche": "vaca",
+    "perfil_data": {
+      "familia": "duro",
+      "intensidad": 7,
+      "salinidad": 9,
+      "cremosidad": 2,
+      "acidez": 5,
+      "notas_sabor": ["salino", "umami", "picante", "láctico"]
+    }
+  },
+  {
+    "id": "Q31",
+    "nombre": "Queso Oaxaca",
+    "tipo_leche": "vaca",
+    "perfil_data": {
+      "familia": "fresco",
+      "intensidad": 3,
+      "salinidad": 4,
+      "cremosidad": 6,
+      "acidez": 4,
+      "notas_sabor": ["mantequilla", "láctico", "salino", "suave"]
+    }
+  },
+  {
+    "id": "Q32",
+    "nombre": "Mascarpone",
+    "tipo_leche": "vaca",
+    "perfil_data": {
+      "familia": "fresco",
+      "intensidad": 2,
+      "salinidad": 1,
+      "cremosidad": 9,
+      "acidez": 1,
+      "notas_sabor": ["crema dulce", "mantequilla", "láctico", "aterciopelado"]
+    }
+  },
+  {
+    "id": "Q33",
+    "nombre": "Chèvre (Fresco)",
+    "tipo_leche": "cabra",
+    "perfil_data": {
+      "familia": "fresco",
+      "intensidad": 5,
+      "salinidad": 3,
+      "cremosidad": 8,
+      "acidez": 8,
+      "notas_sabor": ["cítrico", "ácido", "herbáceo", "terroso"]
+    }
+  },
+  {
+    "id": "Q34",
+    "nombre": "Ricotta",
+    "tipo_leche": "vaca",
+    "perfil_data": {
+      "familia": "fresco",
+      "intensidad": 2,
+      "salinidad": 2,
+      "cremosidad": 6,
+      "acidez": 2,
+      "notas_sabor": ["láctico", "suero de leche", "dulce", "cremoso"]
+    }
+  },
+  {
+    "id": "Q35",
+    "nombre": "Burrata",
+    "tipo_leche": "vaca",
+    "perfil_data": {
+      "familia": "fresco",
+      "intensidad": 3,
+      "salinidad": 2,
+      "cremosidad": 10,
+      "acidez": 4,
+      "notas_sabor": ["crema fresca", "mantequilla", "láctico", "dulce"]
+    }
+  },
+  {
+    "id": "Q36",
+    "nombre": "Butterkäse",
+    "tipo_leche": "vaca",
+    "perfil_data": {
+      "familia": "semiduro",
+      "intensidad": 2,
+      "salinidad": 3,
+      "cremosidad": 8,
+      "acidez": 1,
+      "notas_sabor": ["mantequilla", "suave", "cremoso", "láctico"]
+    }
+  },
+  {
+    "id": "Q37",
+    "nombre": "Raclette",
+    "tipo_leche": "vaca",
+    "perfil_data": {
+      "familia": "de corteza lavada",
+      "intensidad": 6,
+      "salinidad": 6,
+      "cremosidad": 7,
+      "acidez": 4,
+      "notas_sabor": ["frutal", "nuez", "láctico", "terroso"]
+    }
+  },
+  {
+    "id": "Q38",
+    "nombre": "Danablu (Danish Blue)",
+    "tipo_leche": "vaca",
+    "perfil_data": {
+      "familia": "azul",
+      "intensidad": 8,
+      "salinidad": 8,
+      "cremosidad": 6,
+      "acidez": 6,
+      "notas_sabor": ["picante", "salino", "especiado", "mazapán"]
+    }
+  },
+  {
+    "id": "Q39",
+    "nombre": "Cantal (Entre-Deux)",
+    "tipo_leche": "vaca",
+    "perfil_data": {
+      "familia": "duro",
+      "intensidad": 6,
+      "salinidad": 5,
+      "cremosidad": 4,
+      "acidez": 5,
+      "notas_sabor": ["nuez", "mantequilla", "ácido", "heno"]
+    }
+  },
+  {
+    "id": "Q40",
+    "nombre": "Paneer",
+    "tipo_leche": "vaca",
+    "perfil_data": {
+      "familia": "fresco",
+      "intensidad": 1,
+      "salinidad": 1,
+      "cremosidad": 4,
+      "acidez": 2,
+      "notas_sabor": ["láctico", "suave", "leche fresca", "neutro"]
+    }
+  },
+  {
+    "id": "Q41",
+    "nombre": "Asiago (d'Allevo)",
+    "tipo_leche": "vaca",
+    "perfil_data": {
+      "familia": "duro",
+      "intensidad": 7,
+      "salinidad": 7,
+      "cremosidad": 3,
+      "acidez": 4,
+      "notas_sabor": ["nuez", "picante", "frutal", "salino"]
+    }
+  },
+  {
+    "id": "Q42",
+    "nombre": "Caciocavallo",
+    "tipo_leche": "vaca",
+    "perfil_data": {
+      "familia": "semiduro",
+      "intensidad": 5,
+      "salinidad": 5,
+      "cremosidad": 5,
+      "acidez": 4,
+      "notas_sabor": ["nuez", "mantequilla", "láctico", "dulce"]
+    }
+  },
+  {
+    "id": "Q43",
+    "nombre": "Brillat-Savarin",
+    "tipo_leche": "vaca",
+    "perfil_data": {
+      "familia": "blando",
+      "intensidad": 4,
+      "salinidad": 2,
+      "cremosidad": 10,
+      "acidez": 4,
+      "notas_sabor": ["mantequilla", "crema dulce", "champiñón", "nuez"]
+    }
+  },
+  {
+    "id": "Q44",
+    "nombre": "Saint-Nectaire",
+    "tipo_leche": "vaca",
+    "perfil_data": {
+      "familia": "semiduro",
+      "intensidad": 6,
+      "salinidad": 5,
+      "cremosidad": 7,
+      "acidez": 3,
+      "notas_sabor": ["terroso", "nuez", "champiñón", "cueva húmeda"]
+    }
+  },
+  {
+    "id": "Q45",
+    "nombre": "Crottin de Chavignol",
+    "tipo_leche": "cabra",
+    "perfil_data": {
+      "familia": "blando",
+      "intensidad": 6,
+      "salinidad": 4,
+      "cremosidad": 6,
+      "acidez": 7,
+      "notas_sabor": ["nuez", "terroso", "cítrico", "herbáceo"]
+    }
+  },
+  {
+    "id": "Q46",
+    "nombre": "Bleu d'Auvergne",
+    "tipo_leche": "vaca",
+    "perfil_data": {
+      "familia": "azul",
+      "intensidad": 7,
+      "salinidad": 7,
+      "cremosidad": 7,
+      "acidez": 5,
+      "notas_sabor": ["especiado", "herbáceo", "mantequilla", "picante"]
+    }
+  },
+  {
+    "id": "Q47",
+    "nombre": "Limburger",
+    "tipo_leche": "vaca",
+    "perfil_data": {
+      "familia": "de corteza lavada",
+      "intensidad": 9,
+      "salinidad": 7,
+      "cremosidad": 8,
+      "acidez": 4,
+      "notas_sabor": ["terroso", "cárnico", "picante", "funky"]
+    }
+  },
+  {
+    "id": "Q48",
+    "nombre": "Colby",
+    "tipo_leche": "vaca",
+    "perfil_data": {
+      "familia": "semiduro",
+      "intensidad": 2,
+      "salinidad": 3,
+      "cremosidad": 7,
+      "acidez": 2,
+      "notas_sabor": ["suave", "láctico", "dulce", "cremoso"]
+    }
+  },
+  {
+    "id": "Q49",
+    "nombre": "Queso Fresco",
+    "tipo_leche": "vaca",
+    "perfil_data": {
+      "familia": "fresco",
+      "intensidad": 3,
+      "salinidad": 5,
+      "cremosidad": 4,
+      "acidez": 5,
+      "notas_sabor": ["láctico", "salino", "ácido", "leche fresca"]
+    }
+  },
+  {
+    "id": "Q50",
+    "nombre": "Beaufort",
+    "tipo_leche": "vaca",
+    "perfil_data": {
+      "familia": "duro",
+      "intensidad": 7,
+      "salinidad": 5,
+      "cremosidad": 4,
+      "acidez": 3,
+      "notas_sabor": ["frutal", "nuez", "floral", "herbáceo"]
+    }
+  },
+  {
+    "id": "Q51",
+    "nombre": "Muenster (Americano)",
+    "tipo_leche": "vaca",
+    "perfil_data": {
+      "familia": "semiduro",
+      "intensidad": 3,
+      "salinidad": 5,
+      "cremosidad": 8,
+      "acidez": 2,
+      "notas_sabor": ["mantequilla", "suave", "nuez", "salino"]
+    }
+  },
+  {
+    "id": "Q52",
+    "nombre": "Cambozola",
+    "tipo_leche": "vaca",
+    "perfil_data": {
+      "familia": "blando",
+      "intensidad": 5,
+      "salinidad": 5,
+      "cremosidad": 9,
+      "acidez": 4,
+      "notas_sabor": ["mantequilla", "champiñón", "picante suave", "cremoso"]
+    }
+  }
+]
