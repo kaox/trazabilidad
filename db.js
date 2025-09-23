@@ -4,6 +4,10 @@ const jwt = require('jsonwebtoken');
 const fs = require('fs');
 const path = require('path');
 
+const defaultProfilesData = JSON.parse(fs.readFileSync(path.join(__dirname, 'default-profiles.json'), 'utf8'));
+const maridajesVinoData = JSON.parse(fs.readFileSync(path.join(__dirname, 'public', 'data', 'maridajes_vino.json'), 'utf8'));
+const maridajesQuesoData = JSON.parse(fs.readFileSync(path.join(__dirname, 'public', 'data', 'maridajes_quesos.json'), 'utf8'));
+
 
 let get, all, run;
 
@@ -491,6 +495,7 @@ const deleteBatch = async (req, res) => {
         res.status(204).send();
     } catch (err) { res.status(500).json({ error: err.message }); }
 };
+
 const getTrazabilidad = async (req, res) => {
     const { id } = req.params;
     try {
@@ -498,8 +503,7 @@ const getTrazabilidad = async (req, res) => {
             WITH RECURSIVE trazabilidad_completa AS (
                 SELECT * FROM lotes WHERE id = ?
                 UNION ALL
-                SELECT l.* FROM lotes l
-                INNER JOIN trazabilidad_completa tc ON l.id = tc.parent_id
+                SELECT l.* FROM lotes l INNER JOIN trazabilidad_completa tc ON l.id = tc.parent_id
             )
             SELECT * FROM trazabilidad_completa;
         `, [id]);
@@ -512,7 +516,7 @@ const getTrazabilidad = async (req, res) => {
         const ownerId = loteRaiz.user_id;
         const plantillaId = loteRaiz.plantilla_id;
 
-        const allStages = await all('SELECT id, nombre_etapa, orden FROM etapas_plantilla WHERE plantilla_id = ?', [plantillaId]);
+        const allStages = await all('SELECT id, nombre_etapa, orden FROM etapas_plantilla WHERE plantilla_id = ? ORDER BY orden', [plantillaId]);
         
         const history = {
             stages: [],
@@ -521,7 +525,6 @@ const getTrazabilidad = async (req, res) => {
             maridajesRecomendados: {}
         };
         
-        // Ordenar la cadena de lotes desde el origen hasta el final
         const sortedRows = rows.sort((a, b) => {
             const stageA = allStages.find(s => s.id === a.etapa_id)?.orden || 0;
             const stageB = allStages.find(s => s.id === b.etapa_id)?.orden || 0;
@@ -553,30 +556,34 @@ const getTrazabilidad = async (req, res) => {
         
         const tostadoData = history.stages.find(s => s.nombre_etapa.toLowerCase().includes('tostado'))?.data;
         if (tostadoData && tostadoData.tipoPerfil) {
-            const perfil = await get('SELECT * FROM perfiles_cacao WHERE nombre = ? AND user_id = ?', [tostadoData.tipoPerfil, ownerId]);
-            if (perfil) {
-                perfil.perfil_data = safeJSONParse(perfil.perfil_data);
-                history.perfilSensorialData = perfil.perfil_data;
-                const maridajesData = JSON.parse(fs.readFileSync(path.join(__dirname, 'public', 'data', 'maridajes_vino.json'), 'utf8'));
+            const perfilCacao = await get('SELECT * FROM perfiles_cacao WHERE nombre = ? AND user_id = ?', [tostadoData.tipoPerfil, ownerId]);
+            if (perfilCacao) {
+                perfilCacao.perfil_data = safeJSONParse(perfilCacao.perfil_data);
+                history.perfilSensorialData = perfilCacao.perfil_data;
 
-                // Calcular maridajes
                 const allCafes = await all('SELECT * FROM perfiles_cafe WHERE user_id = ?', [ownerId]);
-                const allVinos = maridajesData.defaultPerfilesVino;
+                const allVinos = maridajesVinoData.defaultPerfilesVino;
+                const allQuesos = maridajesQuesoData;
 
                 const recCafe = allCafes.map(cafe => ({
                     producto: { ...cafe, perfil_data: safeJSONParse(cafe.perfil_data) },
-                    puntuacion: calcularMaridajeCacaoCafe(perfil, { ...cafe, perfil_data: safeJSONParse(cafe.perfil_data) })
-                })).sort((a, b) => b.puntuacion - a.puntuacion).slice(0, 2);
+                    puntuacion: calcularMaridajeCacaoCafe(perfilCacao, { ...cafe, perfil_data: safeJSONParse(cafe.perfil_data) })
+                })).sort((a, b) => b.puntuacion - a.puntuacion);
 
                 const recVino = allVinos.map(vino => ({
                     producto: vino,
-                    puntuacion: calcularMaridajeCacaoVino(perfil, vino)
-                })).sort((a, b) => b.puntuacion - a.puntuacion).slice(0, 2);
+                    puntuacion: calcularMaridajeCacaoVino(perfilCacao, vino)
+                })).sort((a, b) => b.puntuacion - a.puntuacion);
                 
-                history.maridajesRecomendados = { cafe: recCafe, vino: recVino };
+                const recQueso = allQuesos.map(queso => ({
+                    producto: queso,
+                    puntuacion: calcularMaridajeCacaoQueso(perfilCacao, queso)
+                })).sort((a, b) => b.puntuacion - a.puntuacion);
+                
+                history.maridajesRecomendados = { cafe: recCafe, vino: recVino, queso: recQueso };
             }
         }
-
+        
         res.status(200).json(history);
     } catch (error) { 
         console.error(`Error en getTrazabilidad para el lote ${id}:`, error.message);
@@ -601,6 +608,16 @@ function calcularMaridajeCacaoVino(cacao, vino) {
     const bonusDulzura = (vino.perfil_data.dulzura || 0) >= (cacao.perfil_data.caramelo || 0) ? 1.1 : 1;
     const pArmonia = ((pAcid + pDulz) / 2) * bonusDulzura;
     return ((pInt * 0.3) + (pEst * 0.3) + (pArmonia * 0.4)) * 100;
+}
+
+function calcularMaridajeCacaoQueso(cacao, queso) {
+    const pInt = 1 - (Math.abs((cacao.perfil_data.cacao || 0) - (queso.perfil_data.intensidad || 0)) / 10);
+    const contraste = ((queso.perfil_data.cremosidad || 0) + (queso.perfil_data.salinidad || 0)) * ((cacao.perfil_data.amargor || 0) + (cacao.perfil_data.astringencia || 0));
+    const pContraste = Math.min(1, contraste / 200);
+    let pArmonia = 0;
+    if(queso.perfil_data.notas_sabor.includes('nuez') && (cacao.perfil_data.nuez || 0) > 5) pArmonia += 0.5;
+    if(queso.perfil_data.notas_sabor.includes('caramelo') && (cacao.perfil_data.caramelo || 0) > 5) pArmonia += 0.5;
+    return ((pInt * 0.4) + (pContraste * 0.4) + (pArmonia * 0.2)) * 100;
 }
 
 const getPerfilesCafe = async (req, res) => {
