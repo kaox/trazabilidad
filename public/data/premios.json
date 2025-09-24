@@ -1,0 +1,28 @@
+{
+  "premios": [
+    {
+      "id": 1,
+      "nombre": "Cacao of Excellence",
+      "descripcion": "Reconoce a los productores de cacao de alta calidad a nivel mundial, celebrando y promoviendo la diversidad de sabores del cacao.",
+      "logo_url": "/images/ENG_COLOR_CacaoOfExcellenceNewLogo2023.png"
+    },
+    {
+      "id": 2,
+      "nombre": "International Chocolate Awards - Oro",
+      "descripcion": "Máximo galardón en la competencia de chocolatería fina más grande del mundo.",
+      "logo_url": "https://placehold.co/100x100/f59e0b/FFFFFF?text=Oro"
+    },
+    {
+      "id": 3,
+      "nombre": "International Chocolate Awards - Plata",
+      "descripcion": "Reconocimiento de plata en la competencia de chocolatería fina más grande del mundo.",
+      "logo_url": "https://placehold.co/100x100/a8a29e/FFFFFF?text=Plata"
+    },
+    {
+      "id": 4,
+      "nombre": "International Chocolate Awards - Bronce",
+      "descripcion": "Reconocimiento de bronce en la competencia de chocolatería fina más grande del mundo.",
+      "logo_url": "https://placehold.co/100x100/cd7f32/FFFFFF?text=Bronce"
+    }
+  ]
+}
