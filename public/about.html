@@ -3,109 +3,334 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RuruLab - Trazabilidad Simplificada para Productos Únicos</title>
+    <title>Ruru Lab - La Historia que Vende tu Producto</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- CORRECCIÓN: Se cambió la ruta local del script del QR por un CDN para que funcione correctamente. -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" xintegrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <style>
-        body { font-family: 'Inter', sans-serif; background-color: #fdfaf6; }
-        h1, h2, h3, .font-display { font-family: 'Playfair Display', serif; }
+        body { font-family: 'Inter', sans-serif; background-color: #fdfdfb; }
+        .font-display { font-family: 'Playfair Display', serif; }
         .hero-section {
-            background-image: url('https://placehold.co/1200x700/224229/FFFFFF?text=Del+Origen+a+tus+Manos');
+            background-image: url('https://images.unsplash.com/photo-1579532824334-a8c095a59d35?q=80&w=2670&auto=format&fit=crop');
             background-size: cover;
             background-position: center;
+        }
+        /* Estilo para el trazo de la animación */
+        #trace-path {
+            stroke-dasharray: 1;
+            stroke-dashoffset: 1;
         }
     </style>
 </head>
 <body class="text-stone-800 antialiased">
-
-    <nav class="absolute top-0 left-0 right-0 z-20 bg-transparent text-white">
-        <div class="container mx-auto px-6 py-4 flex justify-between items-center">
-            <a href="/" class="text-xl font-bold">RuruLab</a>
-            <div>
-                <a href="/qr" class="px-4 py-2 rounded-md text-sm font-medium hover:bg-white hover:text-amber-900 transition">Consultar Lote</a>
-                <!--a href="/login.html" class="ml-4 px-4 py-2 rounded-md text-sm font-medium bg-white text-amber-900 hover:bg-stone-200 transition">Iniciar Sesión</a-->
-            </div>
-        </div>
-    </nav>
     
-    <section class="hero-section relative text-white">
-        <div class="absolute inset-0 bg-black bg-opacity-60"></div>
-        <div class="container mx-auto px-6 py-32 text-center relative z-10">
-            <h1 class="text-4xl md:text-6xl font-bold font-display leading-tight mb-4">Trazabilidad Simplificada para Productos Únicos</h1>
-            <p class="text-lg md:text-xl max-w-3xl mx-auto">Crea la historia de tu producto, desde el campo hasta el cliente. Define tus propios procesos para cacao, café o cualquier producto agroindustrial y conéctate con tus consumidores a través de un simple QR.</p>
-            <div class="mt-8 flex justify-center gap-4">
-                <a href="/register.html" class="inline-block bg-amber-800 hover:bg-amber-900 text-white font-bold py-3 px-8 rounded-xl shadow-lg transition transform hover:-translate-y-0.5">
-                    Registrarse Gratis
-                </a>
-                 <a href="/login.html" class="inline-block bg-transparent border-2 border-white hover:bg-white hover:text-amber-900 text-white font-bold py-3 px-8 rounded-xl shadow-lg transition">
-                    Iniciar Sesión
-                </a>
-            </div>
-        </div>
-    </section>
-    
-    <section class="py-16 md:py-24 bg-white">
-        <div class="container mx-auto px-6">
-            <h2 class="text-3xl md:text-4xl font-display text-amber-900 mb-12 text-center">Una Plataforma, Infinitas Posibilidades</h2>
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                <div class="text-center p-6">
-                    <div class="flex items-center justify-center h-16 w-16 rounded-full bg-amber-100 text-amber-800 mx-auto mb-4">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" viewBox="0 0 20 20" fill="currentColor"><path d="M5 3a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2H5zM5 11a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2H5zM11 5a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V5zM11 13a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>
-                    </div>
-                    <h3 class="text-xl font-display font-bold mb-2">Plantillas Flexibles</h3>
-                    <p class="text-stone-600">Diseña tus propios flujos de trabajo. Define las etapas y campos exactos para la trazabilidad de cacao, café, miel o cualquier producto que imagines.</p>
-                </div>
-                <div class="text-center p-6">
-                    <div class="flex items-center justify-center h-16 w-16 rounded-full bg-amber-100 text-amber-800 mx-auto mb-4">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" /></svg>
-                    </div>
-                    <h3 class="text-xl font-display font-bold mb-2">Control de Principio a Fin</h3>
-                    <p class="text-stone-600">Registra cada etapa del proceso, desde la cosecha hasta el producto final. Controla pesos, rendimientos y variables clave en un solo lugar.</p>
-                </div>
-                <div class="text-center p-6">
-                     <div class="flex items-center justify-center h-16 w-16 rounded-full bg-amber-100 text-amber-800 mx-auto mb-4">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 4a1 1 0 011-1h4a1 1 0 010 2H5v10h10v-3a1 1 0 112 0v3a2 2 0 01-2 2H4a2 2 0 01-2-2V4zm11 1a1 1 0 10-2 0v2a1 1 0 102 0V5z" clip-rule="evenodd" /><path d="M12 3a1 1 0 011 1v5a1 1 0 11-2 0V4a1 1 0 011-1zM9 7a1 1 0 011-1h5a1 1 0 110 2H10a1 1 0 01-1-1z" /></svg>
-                    </div>
-                    <h3 class="text-xl font-display font-bold mb-2">El Poder del QR</h3>
-                    <p class="text-stone-600">Transforma cada producto en una experiencia. Permite que tus clientes escaneen un código y descubran la historia y el "ADN" único de lo que están comprando.</p>
-                </div>
-            </div>
-        </div>
-    </section>
+    <!-- Contenedor para los elementos de la animación (SVG y Hoja) -->
+    <div id="animation-container" class="fixed top-0 left-0 w-full h-full pointer-events-none z-10">
+        <svg id="trace-svg" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg" class="overflow-visible">
+            <!-- Esta ruta se generará dinámicamente con JavaScript -->
+            <path id="trace-path" fill="none" stroke="#22c55e" stroke-width="2.5" stroke-linecap="round" style="opacity: 0.5;"></path>
+        </svg>
 
-    <section class="py-16 md:py-24">
-        <div class="container mx-auto px-6">
-            <h2 class="text-3xl md:text-4xl font-display text-amber-900 mb-12 text-center">¿Por Qué Trazar tus Productos? <br class="hidden sm:block"> Beneficios para tu Negocio</h2>
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
-                <div class="flex gap-4">
-                    <div class="flex-shrink-0 h-12 w-12 rounded-full bg-teal-100 text-teal-800 flex items-center justify-center"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 20 20" fill="currentColor"><path d="M8.433 7.418c.158-.103.346-.195.552-.273a.5.5 0 01.43 0c.206.078.394.17.552.273L10 8.332l.465-.914a.5.5 0 01.866.499l-.464.914c.11.063.214.132.313.205l.464-.914a.5.5 0 01.866.499l-.464.914c.158.103.346.195.552.273a.5.5 0 01.43 0c.206.078.394.17.552.273l.465-.914a.5.5 0 01.866.499l-.464.914a1.873 1.873 0 010 3.828l.464.914a.5.5 0 01-.866.499l-.465-.914c-.158.103-.346.195-.552.273a.5.5 0 01-.43 0c-.206-.078-.394-.17-.552-.273l-.465.914a.5.5 0 01-.866-.499l.464-.914c-.11-.063-.214-.132-.313-.205l-.464.914a.5.5 0 01-.866-.499l.464-.914c-.158-.103-.346-.195-.552-.273a.5.5 0 01-.43 0c-.206-.078-.394-.17-.552-.273l-.465.914a.5.5 0 01-.866-.499l.464-.914a1.873 1.873 0 010-3.828l-.464-.914a.5.5 0 01.866-.499l.465.914z" /></svg></div>
-                    <div><h3 class="text-lg font-bold font-display">Valor Agregado y Precios Premium</h3><p class="mt-1 text-stone-600">Justifica un precio superior demostrando la calidad y el origen único de tu producto. La transparencia es el nuevo lujo.</p></div>
+        <div id="leaf" class="absolute text-green-500 text-3xl shadow-lg" style="transform: translate(-50%, -50%); opacity: 0;">
+            <i class="fa-solid fa-leaf"></i>
+        </div>
+    </div>
+
+    <!-- Contenido Principal -->
+    <div class="relative z-20 bg-[#fdfdfb]">
+        <!-- Header -->
+        <header class="absolute top-0 left-0 right-0 z-30 text-white">
+            <div class="container mx-auto px-6 py-4 flex justify-between items-center">
+                <h1 class="text-2xl font-bold font-display"><i class="fa-solid fa-fingerprint mr-2"></i>Ruru Lab</h1>
+                <nav class="hidden md:flex space-x-8 items-center">
+                    <a href="#features" class="hover:text-amber-200 transition">Funcionalidades</a>
+                    <a href="#testimonials" class="hover:text-amber-200 transition">Testimonios</a>
+                    <a href="/qr" class="bg-white text-amber-900 font-bold py-2 px-5 rounded-lg hover:bg-stone-200 transition">Descubrir Lote</a>
+                </nav>
+                <a href="/qr" class="md:hidden bg-white text-amber-900 font-bold py-2 px-5 rounded-lg hover:bg-stone-200 transition">Descubrir Lote</a>
+            </div>
+        </header>
+
+        <!-- Sección Hero -->
+        <section class="hero-section relative text-white min-h-screen flex items-center">
+            <div class="absolute inset-0 bg-black bg-opacity-60"></div>
+            <div class="container mx-auto px-6 relative z-10 flex flex-col md:flex-row items-center">
+                <div class="w-full md:w-2/3 text-center md:text-left">
+                    <h1 class="text-4xl md:text-6xl font-bold font-display leading-tight mb-4">Desde la Huella hasta tu Mano. La Historia que Vende tu Producto.</h1>
+                    <p class="text-lg md:text-xl max-w-2xl text-amber-50">Transforma cada grano de cacao y café en una experiencia única. Conecta con tus clientes, optimiza tus procesos y crea sabores innovadores con nuestra plataforma todo-en-uno.</p>
+                    <div class="mt-8">
+                        <a href="/login.html" class="inline-block bg-amber-800 hover:bg-amber-900 text-white font-bold py-4 px-10 rounded-xl shadow-lg transition transform hover:-translate-y-1 text-lg">
+                            Iniciar Sesión
+                        </a>
+                    </div>
                 </div>
-                <div class="flex gap-4">
-                    <div class="flex-shrink-0 h-12 w-12 rounded-full bg-teal-100 text-teal-800 flex items-center justify-center"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 2a8 8 0 100 16 8 8 0 000-16zM2 10a8 8 0 1116 0 8 8 0 01-16 0zm10.707-3.707a1 1 0 00-1.414-1.414L8 8.586 6.707 7.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" /></svg></div>
-                    <div><h3 class="text-lg font-bold font-display">Acceso a Mercados Exigentes</h3><p class="mt-1 text-stone-600">Cumple con las normativas internacionales y abre las puertas a mercados que valoran la transparencia y la calidad certificada.</p></div>
-                </div>
-                <div class="flex gap-4">
-                    <div class="flex-shrink-0 h-12 w-12 rounded-full bg-teal-100 text-teal-800 flex items-center justify-center"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 20 20" fill="currentColor"><path d="M10 16a6 6 0 100-12 6 6 0 000 12zM10 18a8 8 0 100-16 8 8 0 000 16z" /></svg></div>
-                    <div><h3 class="text-lg font-bold font-display">Eficiencia Operativa</h3><p class="mt-1 text-stone-600">Identifica cuellos de botella, optimiza rendimientos y toma decisiones basadas en datos reales de tu cadena de producción.</p></div>
-                </div>
-                <div class="flex gap-4">
-                    <div class="flex-shrink-0 h-12 w-12 rounded-full bg-teal-100 text-teal-800 flex items-center justify-center"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" /></svg></div>
-                    <div><h3 class="text-lg font-bold font-display">Confianza y Lealtad de Marca</h3><p class="mt-1 text-stone-600">Construye una marca sólida y confiable. Demuestra tu compromiso con la calidad y la honestidad a tus clientes y socios.</p></div>
-                </div>
-                <div class="flex gap-4">
-                    <div class="flex-shrink-0 h-12 w-12 rounded-full bg-teal-100 text-teal-800 flex items-center justify-center"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 20 20" fill="currentColor"><path d="M10 12a2 2 0 100-4 2 2 0 000 4z" /><path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd" /></svg></div>
-                    <div><h3 class="text-lg font-bold font-display">Gestión de Calidad Precisa</h3><p class="mt-1 text-stone-600">Aísla y replica los lotes de mayor calidad. Entiende qué variables de tu proceso resultan en un producto excepcional.</p></div>
-                </div>
-                <div class="flex gap-4">
-                    <div class="flex-shrink-0 h-12 w-12 rounded-full bg-teal-100 text-teal-800 flex items-center justify-center"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 1.944A11.954 11.954 0 012.166 5.05l.162.382a1.5 1.5 0 01-1.056 2.05l-.382.162A11.954 11.954 0 011.944 10a11.954 11.954 0 012.166-4.95l.382-.162a1.5 1.5 0 012.05 1.056l.162.382A11.954 11.954 0 0110 1.944zM10 18.056a11.954 11.954 0 01-4.95-2.166l-.162-.382a1.5 1.5 0 011.056-2.05l.382-.162A11.954 11.954 0 0110 18.056z" clip-rule="evenodd" /></svg></div>
-                    <div><h3 class="text-lg font-bold font-display">Cumplimiento y Seguridad</h3><p class="mt-1 text-stone-600">Simplifica las auditorías y gestiona cualquier eventualidad de forma rápida y precisa, teniendo el historial completo de cada lote a un clic de distancia.</p></div>
+                <div class="w-full md:w-1/3 flex justify-center items-center mt-12 md:mt-0">
+                    <svg id="footprint" class="w-64 h-64 text-white" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640"><path opacity=".4" d="M136.2 416.9C132.8 432.5 144.1 448 160.1 448C170.6 448 180 441 182.3 430.7C188.7 402.6 192 373.9 192 344.9L192 320C192 292.8 200.5 267.6 214.9 246.9C222.1 236.5 222.9 222.3 214.7 212.7C205.6 202.1 189.4 201.3 180.8 212.3C157.7 242.1 144 279.4 144 320L144 344.9C144 369.1 141.4 393.3 136.2 416.8zM257.2 188.5C264.3 196.8 276 199.3 286.6 196.4C297.2 193.5 308.4 192 320 192C390.7 192 448 249.3 448 320L448 344.9C448 370.1 446.5 395.2 443.6 420.2C441.9 434.8 453 448 467.8 448C479.6 448 489.7 439.4 491.1 427.7C494.4 400.3 496.1 372.7 496.1 345L496.1 320.1C496.1 222.9 417.3 144.1 320.1 144.1C301.1 144.1 282.7 147.1 265.6 152.7C250.4 157.7 246.9 176.4 257.3 188.6zM257.6 535.4C252.8 547.8 259 561.7 271.4 566.4C283.8 571.1 297.7 565 302.4 552.6L308.3 537.3C331.9 475.9 344 410.7 344 344.9L344 320C344 306.7 333.3 296 320 296C306.7 296 296 306.7 296 320L296 344.9C296 404.8 285 464.2 263.5 520.1L257.6 535.4z"/><path d="M112 320C112 205.1 205.1 112 320 112C383.1 112 439.6 140.1 477.8 184.5C486.4 194.6 501.6 195.7 511.6 187.1C521.6 178.5 522.8 163.3 514.2 153.3C467.3 98.6 397.7 64 320 64C178.6 64 64 178.6 64 320L64 360C64 373.3 74.7 384 88 384C101.3 384 112 373.3 112 360L112 320zM570.5 267.1C567.8 254.1 555 245.8 542.1 248.6C529.2 251.4 520.8 264.1 523.6 277C526.5 290.9 528.1 305.3 528.1 320.1L528.1 360.1C528.1 373.4 538.8 384.1 552.1 384.1C565.4 384.1 576.1 373.4 576.1 360.1L576.1 320.1C576.1 302 574.2 284.3 570.6 267.2zM416 320C416 267 373 224 320 224C267 224 224 267 224 320L224 344.9C224 380.8 219.4 416.4 210.2 451C206.4 465.3 216.9 480 231.7 480C241.2 480 249.6 473.8 252.1 464.6C262.6 425.6 268 385.4 268 344.9L268 320C268 291.3 291.3 268 320 268C348.7 268 372 291.3 372 320L372 344.9C372 381.2 368.5 417.3 361.6 452.8C358.9 466.7 369.3 480 383.4 480C393.6 480 402.4 473 404.4 463C412.1 424.2 416 384.7 416 344.9L416 320z"/></svg>
                 </div>
             </div>
-        </div>
-    </section>
+        </section>
+        
+        <section class="py-12 md:py-16 bg-white">
+            <div class="container mx-auto px-6 text-center max-w-4xl">
+                <h2 class="text-3xl md:text-4xl font-display text-amber-900 mb-4">El Mercado Cambió. ¿Tu Historia También?</h2>
+                <p class="text-lg text-stone-600 leading-relaxed">Los consumidores de hoy no solo compran un producto, compran una historia. Exigen transparencia, valoran el origen y buscan una conexión auténtica. Ruru Lab es el puente digital entre tu dedicación en el campo y la curiosidad de tus clientes, convirtiendo la trazabilidad en tu herramienta de marketing más poderosa.</p>
+            </div>
+        </section>
+
+        <!-- Sección de Funcionalidades -->
+        <section id="features" class="py-12 md:py-16">
+             <div class="container mx-auto px-6">
+                <h2 class="text-3xl md:text-4xl font-display text-amber-900 mb-16 text-center">Un Ecosistema de Valor para tu Marca</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+                    <div class="text-center p-6">
+                        <div class="flex items-center justify-center h-16 w-16 rounded-full bg-green-100 text-green-800 mx-auto mb-4">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" /></svg>
+                        </div>
+                        <h3 class="text-xl font-display font-bold mb-2">Construye Confianza Inquebrantable</h3>
+                        <p class="text-stone-600">Mapea cada paso, desde la finca hasta el producto final. Ofrece a tus clientes una transparencia total y certifica la calidad de tu proceso con datos reales.</p>
+                    </div>
+                    <div class="text-center p-6">
+                        <div class="flex items-center justify-center h-16 w-16 rounded-full bg-sky-100 text-sky-800 mx-auto mb-4">
+                           <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" viewBox="0 0 20 20" fill="currentColor"><path d="M5 3a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2H5zM5 11a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2H5zM11 5a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V5zM11 13a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>
+                        </div>
+                        <h3 class="text-xl font-display font-bold mb-2">Innova y Crea Sabores Únicos</h3>
+                        <p class="text-stone-600">Utiliza nuestro laboratorio virtual para diseñar y predecir el perfil de tus blends. Combina orígenes, ajusta porcentajes y crea productos consistentes antes de la producción.</p>
+                    </div>
+                    <div class="text-center p-6">
+                        <div class="flex items-center justify-center h-16 w-16 rounded-full bg-red-100 text-red-800 mx-auto mb-4">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clip-rule="evenodd" /></svg>
+                        </div>
+                        <h3 class="text-xl font-display font-bold mb-2">Eleva la Experiencia del Cliente</h3>
+                        <p class="text-stone-600">Nuestro sommelier de IA sugiere maridajes perfectos para tus perfiles de cacao y café, añadiendo un valor incalculable a la experiencia de tus consumidores.</p>
+                    </div>
+                    <div class="text-center p-6">
+                        <div class="flex items-center justify-center h-16 w-16 rounded-full bg-amber-100 text-amber-800 mx-auto mb-4">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10" viewBox="0 0 640 640"><path d="M160 224L224 224L224 160L160 160L160 224zM96 144C96 117.5 117.5 96 144 96L240 96C266.5 96 288 117.5 288 144L288 240C288 266.5 266.5 288 240 288L144 288C117.5 288 96 266.5 96 240L96 144zM160 480L224 480L224 416L160 416L160 480zM96 400C96 373.5 117.5 352 144 352L240 352C266.5 352 288 373.5 288 400L288 496C288 522.5 266.5 544 240 544L144 544C117.5 544 96 522.5 96 496L96 400zM416 160L416 224L480 224L480 160L416 160zM400 96L496 96C522.5 96 544 117.5 544 144L544 240C544 266.5 522.5 288 496 288L400 288C373.5 288 352 266.5 352 240L352 144C352 117.5 373.5 96 400 96zM384 416C366.3 416 352 401.7 352 384C352 366.3 366.3 352 384 352C401.7 352 416 366.3 416 384C416 401.7 401.7 416 384 416zM384 480C401.7 480 416 494.3 416 512C416 529.7 401.7 544 384 544C366.3 544 352 529.7 352 512C352 494.3 366.3 480 384 480zM480 512C480 494.3 494.3 480 512 480C529.7 480 544 494.3 544 512C544 529.7 529.7 544 512 544C494.3 544 480 529.7 480 512zM512 416C494.3 416 480 401.7 480 384C480 366.3 494.3 352 512 352C529.7 352 544 366.3 544 384C544 401.7 529.7 416 512 416zM480 448C480 465.7 465.7 480 448 480C430.3 480 416 465.7 416 448C416 430.3 430.3 416 448 416C465.7 416 480 430.3 480 448z"/></svg>
+                        </div>
+                        <h3 class="text-xl font-display font-bold mb-2">Convierte tu Empaque en Marketing</h3>
+                        <p class="text-stone-600">Cada producto cuenta su propia historia a través de un QR. Conecta directamente con tus clientes, comparte el viaje desde el origen y fideliza tu marca.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Sección "Para Quién es" -->
+        <section class="py-12 md:py-16 bg-white">
+            <div class="container mx-auto px-6 max-w-4xl text-center">
+                <h2 class="text-3xl md:text-4xl font-display text-amber-900 mb-12">Diseñado para los Artesanos del Sabor</h2>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-8 text-stone-600">
+                    <div class="text-center">
+                        <div class="h-36 w-36 rounded-full bg-amber-800 text-white flex items-center justify-center mx-auto mb-4 text-5xl">
+                            <i class="fa-solid fa-mortar-pestle"></i>
+                        </div>
+                        <p class="font-bold">Maestros Chocolateros</p>
+                    </div>
+                    <div class="text-center">
+                        <div class="h-36 w-36 rounded-full bg-green-800 text-white flex items-center justify-center mx-auto mb-4 text-5xl">
+                            <i class="fa-solid fa-mug-hot"></i>
+                        </div>
+                        <p class="font-bold">Tostadores de Café</p>
+                    </div>
+                    <div class="text-center">
+                        <div class="h-36 w-36 rounded-full bg-amber-600 text-white flex items-center justify-center mx-auto mb-4 text-5xl">
+                            <i class="fa-solid fa-gem"></i>
+                        </div>
+                        <p class="font-bold">Marcas Gourmet</p>
+                    </div>
+                    <div class="text-center">
+                        <div class="h-36 w-36 rounded-full bg-teal-800 text-white flex items-center justify-center mx-auto mb-4 text-5xl">
+                            <i class="fa-solid fa-handshake"></i>
+                        </div>
+                        <p class="font-bold">Cooperativas</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Sección Testimonios -->
+        <section id="testimonials" class="py-12 md:py-16">
+             <div class="container mx-auto px-6 max-w-4xl text-center">
+                 <h2 class="text-3xl md:text-4xl font-display text-amber-900 mb-12">Lo que Dicen Nuestros Clientes</h2>
+                 <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                    <div class="bg-white p-6 rounded-xl shadow-lg text-left">
+                        <p class="text-stone-600 mb-4">"Ruru Lab nos permitió estandarizar nuestros perfiles de cacao. Ahora, cada barra de chocolate tiene la consistencia que nuestros clientes aman. El laboratorio de blends es nuestra arma secreta."</p>
+                        <p class="font-bold">- Ana Lucía, Maestra Chocolatera</p>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl shadow-lg text-left">
+                        <p class="text-stone-600 mb-4">"La trazabilidad ya no es un simple requisito, es nuestra mejor historia de marketing. Nuestros clientes escanean el QR en la bolsa de café y viajan a la finca. La conexión es increíble."</p>
+                        <p class="font-bold">- Carlos Vélez, Tostador de Café de Especialidad</p>
+                    </div>
+                     <div class="bg-white p-6 rounded-xl shadow-lg text-left">
+                        <p class="text-stone-600 mb-4">"Gestionar los lotes de nuestros 50 productores asociados era un caos. Con Ruru Lab, tenemos control total sobre el rendimiento y la calidad desde la cosecha. Ha optimizado nuestra operación."</p>
+                        <p class="font-bold">- Sofía Rojas, Gerente de Cooperativa</p>
+                    </div>
+                 </div>
+             </div>
+        </section>
+
+        <!-- Sección CTA Final con QR -->
+        <section id="cta-final" class="py-12 md:py-16 bg-amber-900 text-white">
+            <div class="container mx-auto px-6 max-w-3xl text-center">
+                <h2 class="text-3xl md:text-4xl font-display mb-4">El Viaje Termina Aquí. La Conexión Comienza.</h2>
+                <p class="text-lg text-amber-100 mb-8">Cada QR es una puerta al origen de tu producto. Descubre cómo Ruru Lab puede transformar tu empaque en una experiencia inolvidable.</p>
+                <!-- Este es el contenedor de destino para la animación -->
+                <div id="qr-container" class="relative w-48 h-48 mx-auto group bg-white p-4 rounded-lg"></div>
+                 <a href="http://wa.me/51961222040" target="_blank" class="inline-block mt-8 bg-white hover:bg-stone-200 text-amber-900 font-bold py-4 px-10 rounded-xl shadow-lg transition transform hover:-translate-y-1 text-lg">
+                    Contáctanos <i class="fa-brands fa-whatsapp"></i>
+                </a>
+            </div>
+        </section>
+
+        <footer class="py-8 bg-stone-800 text-stone-300">
+            <div class="container mx-auto px-6 text-center">
+                <div class="flex justify-center space-x-6 mb-4">
+                    <a href="#" aria-label="Instagram" class="text-2xl hover:text-white transition"><i class="fa-brands fa-instagram"></i></a>
+                    <a href="#" aria-label="Facebook" class="text-2xl hover:text-white transition"><i class="fa-brands fa-facebook"></i></a>
+                    <a href="#" aria-label="TikTok" class="text-2xl hover:text-white transition"><i class="fa-brands fa-tiktok"></i></a>
+                    <a href="http://wa.me/51961222040" target="_blank" aria-label="WhatsApp" class="text-2xl hover:text-white transition"><i class="fa-brands fa-whatsapp"></i></a>
+                </div>
+                <p>&copy; 2025 Ruru Lab. Todos los derechos reservados.</p>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Librerías GSAP -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/MotionPathPlugin.min.js"></script>
+    
+    <!-- Script de Animación Corregido -->
+    <script>
+        // Genera el código QR cuando la ventana se carga.
+        window.onload = function() {
+            var qrcode = new QRCode(document.getElementById("qr-container"), {
+                text: "https://agritraza.com/demo-finca",
+                width: 160,
+                height: 160,
+                colorDark : "#4c2b12", // amber-900
+                colorLight : "#ffffff",
+                correctLevel : QRCode.CorrectLevel.H
+            });
+        };
+
+        // CORRECCIÓN: Se usa 'DOMContentLoaded' para asegurar que el DOM está listo antes de ejecutar el script.
+        document.addEventListener('DOMContentLoaded', () => {
+            gsap.registerPlugin(ScrollTrigger, MotionPathPlugin);
+
+            const path = document.getElementById("trace-path");
+            const leaf = document.getElementById("leaf");
+            const qrContainer = document.getElementById("qr-container");
+            const footprint = document.getElementById("footprint");
+            
+            let mainTimeline;
+
+            function setupAnimation() {
+                if (!footprint || !qrContainer) {
+                    console.error("No se encontraron los elementos de la huella o del contenedor QR para la animación.");
+                    return;
+                }
+
+                // Limpia animaciones anteriores para evitar conflictos al redimensionar la ventana.
+                if (mainTimeline) {
+                    mainTimeline.kill();
+                    ScrollTrigger.getAll().forEach(trigger => trigger.kill());
+                }
+                
+                // 1. Calcular la posición INICIAL (centro de la huella).
+                const footprintRect = footprint.getBoundingClientRect();
+                const startX = footprintRect.left + footprintRect.width / 2;
+                const startY = footprintRect.top + footprintRect.height / 2;
+                
+                // 2. Calcular la posición FINAL.
+                // CORRECCIÓN: El punto final es el centro de la ventana, porque ahí es donde ScrollTrigger detendrá la animación.
+                const endX = window.innerWidth / 2;
+                const endY = window.innerHeight / 2;
+
+                // 3. Crear una ruta SVG dinámica (una curva suave).
+                // Se ajustan los puntos de control para una curva más natural.
+                const controlX = startX > endX ? startX * 0.8 : startX * 1.2;
+                const controlY = startY * 0.5 + endY * 0.5;
+                const pathData = `M ${startX} ${startY} Q ${controlX} ${controlY} ${endX} ${endY}`;
+                
+                // 4. Aplicar la ruta dinámica al elemento SVG.
+                path.setAttribute("d", pathData);
+                
+                // 5. Preparar la animación del trazado de la ruta.
+                const pathLength = path.getTotalLength();
+                gsap.set(path, {
+                    strokeDasharray: pathLength,
+                    strokeDashoffset: pathLength,
+                    opacity: 0.5
+                });
+                
+                // 6. Establecer el estado inicial de la hoja.
+                gsap.set(leaf, { 
+                    x: startX, 
+                    y: startY,
+                    opacity: 1, // La hacemos visible para el inicio de la animación
+                    scale: 0.5,
+                    transformOrigin: "center center"
+                });
+
+                // 7. Crear la línea de tiempo principal de GSAP.
+                mainTimeline = gsap.timeline({
+                    scrollTrigger: {
+                        trigger: "body",
+                        start: "top top",
+                        endTrigger: "#cta-final", // El trigger final es la sección del QR
+                        end: "center center", // La animación termina cuando el centro de la sección llega al centro de la pantalla
+                        scrub: 1.5, // Suaviza el efecto de scroll
+                    }
+                });
+
+                // Añadir las animaciones a la línea de tiempo.
+                mainTimeline
+                    .to(leaf, {
+                        scale: 1.2, // La hoja crece al inicio
+                        duration: 0.2
+                    }, 0)
+                    .to(path, {
+                        strokeDashoffset: 0, // Dibuja la ruta
+                        ease: "power1.inOut"
+                    }, 0)
+                    .to(leaf, {
+                        motionPath: {
+                            path: path,
+                            align: path,
+                            alignOrigin: [0.5, 0.5],
+                            autoRotate: true,
+                        },
+                        ease: "power1.inOut"
+                    }, 0)
+                    .to([leaf, path], {
+                        opacity: 0, // Oculta la hoja y la ruta al final
+                        duration: 0.1,
+                        ease: "power1.inOut"
+                    });
+            }
+
+            // Función para evitar ejecuciones múltiples y seguidas al redimensionar.
+            function debounce(func, wait) {
+                let timeout;
+                return function executedFunction(...args) {
+                    const later = () => {
+                        clearTimeout(timeout);
+                        func(...args);
+                    };
+                    clearTimeout(timeout);
+                    timeout = setTimeout(later, wait);
+                };
+            };
+            
+            // Configuración inicial.
+            setupAnimation();
+            // Vuelve a calcular la ruta si la ventana cambia de tamaño.
+            window.addEventListener('resize', debounce(setupAnimation, 150));
+        });
+    </script>
 </body>
 </html>
-

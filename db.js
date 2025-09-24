@@ -137,7 +137,8 @@ const getFincas = async (req, res) => {
             ...f, 
             coordenadas: safeJSONParse(f.coordenadas || 'null'),
             imagenes_json: safeJSONParse(f.imagenes_json || '[]'),
-            certificaciones_json: safeJSONParse(f.certificaciones_json || '[]')
+            certificaciones_json: safeJSONParse(f.certificaciones_json || '[]'),
+            premios_json: safeJSONParse(f.premios_json || '[]')
         }));
         res.status(200).json(fincas);
     } catch (err) { res.status(500).json({ error: err.message }); }
@@ -145,10 +146,10 @@ const getFincas = async (req, res) => {
 
 const createFinca = async (req, res) => {
     const userId = req.user.id;
-    const { propietario, dni_ruc, nombre_finca, pais, ciudad, altura, superficie, coordenadas, telefono, historia, imagenes_json, certificaciones_json } = req.body;
+    const { propietario, dni_ruc, nombre_finca, pais, ciudad, altura, superficie, coordenadas, telefono, historia, imagenes_json, certificaciones_json, premios_json } = req.body;
     const id = require('crypto').randomUUID();
     try {
-        await run('INSERT INTO fincas (id, user_id, propietario, dni_ruc, nombre_finca, pais, ciudad, altura, superficie, coordenadas, telefono, historia, imagenes_json, certificaciones_json) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [id, userId, propietario, dni_ruc, nombre_finca, pais, ciudad, altura, superficie, JSON.stringify(coordenadas), telefono, historia, JSON.stringify(imagenes_json || []), JSON.stringify(certificaciones_json || [])]);
+        await run('INSERT INTO fincas (id, user_id, propietario, dni_ruc, nombre_finca, pais, ciudad, altura, superficie, coordenadas, telefono, historia, imagenes_json, certificaciones_json, premios_json) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [id, userId, propietario, dni_ruc, nombre_finca, pais, ciudad, altura, superficie, JSON.stringify(coordenadas), telefono, historia, JSON.stringify(imagenes_json || []), JSON.stringify(certificaciones_json || []), JSON.stringify(premios_json || [])]);
         res.status(201).json({ message: "Finca creada" });
     } catch (err) { res.status(500).json({ error: err.message }); }
 };
@@ -156,10 +157,10 @@ const createFinca = async (req, res) => {
 const updateFinca = async (req, res) => {
     const userId = req.user.id;
     const { id } = req.params;
-    const { propietario, dni_ruc, nombre_finca, pais, ciudad, altura, superficie, coordenadas, telefono, historia, imagenes_json, certificaciones_json } = req.body;
-    const sql = 'UPDATE fincas SET propietario = ?, dni_ruc = ?, nombre_finca = ?, pais = ?, ciudad = ?, altura = ?, superficie = ?, coordenadas = ?, telefono = ?, historia = ?, imagenes_json = ?, certificaciones_json = ? WHERE id = ? AND user_id = ?';
+    const { propietario, dni_ruc, nombre_finca, pais, ciudad, altura, superficie, coordenadas, telefono, historia, imagenes_json, certificaciones_json, premios_json } = req.body;
+    const sql = 'UPDATE fincas SET propietario = ?, dni_ruc = ?, nombre_finca = ?, pais = ?, ciudad = ?, altura = ?, superficie = ?, coordenadas = ?, telefono = ?, historia = ?, imagenes_json = ?, certificaciones_json = ?, premios_json = ? WHERE id = ? AND user_id = ?';
     try {
-        const result = await run(sql, [propietario, dni_ruc, nombre_finca, pais, ciudad, altura, superficie, JSON.stringify(coordenadas), telefono, historia, JSON.stringify(imagenes_json || []), JSON.stringify(certificaciones_json || []), id, userId]);
+        const result = await run(sql, [propietario, dni_ruc, nombre_finca, pais, ciudad, altura, superficie, JSON.stringify(coordenadas), telefono, historia, JSON.stringify(imagenes_json || []), JSON.stringify(certificaciones_json || []), JSON.stringify(premios_json || []), id, userId]);
         if (result.changes === 0) return res.status(404).json({ error: "Finca no encontrada o no tienes permiso." });
         res.status(200).json({ message: "Finca actualizada" });
     } catch (err) { res.status(500).json({ error: err.message }); }
@@ -178,26 +179,33 @@ const getProcesadoras = async (req, res) => {
     const userId = req.user.id;
     try {
         const rows = await all('SELECT * FROM procesadoras WHERE user_id = ? ORDER BY nombre_comercial', [userId]);
-        res.status(200).json(rows);
+        const procesadoras = rows.map(p => ({ 
+            ...p, 
+            premios_json: safeJSONParse(p.premios_json || '[]'),
+            certificaciones_json: safeJSONParse(p.certificaciones_json || '[]')
+        }));
+        res.status(200).json(procesadoras);
     } catch (err) { res.status(500).json({ error: err.message }); }
 };
+
 const createProcesadora = async (req, res) => {
     const userId = req.user.id;
-    const { ruc, razon_social, nombre_comercial, tipo_empresa, pais, ciudad, direccion, telefono } = req.body;
+    const { ruc, razon_social, nombre_comercial, tipo_empresa, pais, ciudad, direccion, telefono, premios_json, certificaciones_json } = req.body;
     const id = require('crypto').randomUUID();
-    const sql = 'INSERT INTO procesadoras (id, user_id, ruc, razon_social, nombre_comercial, tipo_empresa, pais, ciudad, direccion, telefono) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
+    const sql = 'INSERT INTO procesadoras (id, user_id, ruc, razon_social, nombre_comercial, tipo_empresa, pais, ciudad, direccion, telefono, premios_json, certificaciones_json) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
     try {
-        await run(sql, [id, userId, ruc, razon_social, nombre_comercial, tipo_empresa, pais, ciudad, direccion, telefono]);
+        await run(sql, [id, userId, ruc, razon_social, nombre_comercial, tipo_empresa, pais, ciudad, direccion, telefono, JSON.stringify(premios_json || []), JSON.stringify(certificaciones_json || [])]);
         res.status(201).json({ message: "Procesadora creada" });
     } catch (err) { res.status(500).json({ error: err.message }); }
 };
+
 const updateProcesadora = async (req, res) => {
     const userId = req.user.id;
     const { id } = req.params;
-    const { ruc, razon_social, nombre_comercial, tipo_empresa, pais, ciudad, direccion, telefono } = req.body;
-    const sql = 'UPDATE procesadoras SET ruc = ?, razon_social = ?, nombre_comercial = ?, tipo_empresa = ?, pais = ?, ciudad = ?, direccion = ?, telefono = ? WHERE id = ? AND user_id = ?';
+    const { ruc, razon_social, nombre_comercial, tipo_empresa, pais, ciudad, direccion, telefono, premios_json, certificaciones_json } = req.body;
+    const sql = 'UPDATE procesadoras SET ruc = ?, razon_social = ?, nombre_comercial = ?, tipo_empresa = ?, pais = ?, ciudad = ?, direccion = ?, telefono = ?, premios_json = ?, certificaciones_json = ? WHERE id = ? AND user_id = ?';
     try {
-        const result = await run(sql, [ruc, razon_social, nombre_comercial, tipo_empresa, pais, ciudad, direccion, telefono, id, userId]);
+        const result = await run(sql, [ruc, razon_social, nombre_comercial, tipo_empresa, pais, ciudad, direccion, telefono, JSON.stringify(premios_json || []), JSON.stringify(certificaciones_json || []), id, userId]);
         if (result.changes === 0) return res.status(404).json({ error: "Procesadora no encontrada o no tienes permiso." });
         res.status(200).json({ message: "Procesadora actualizada" });
     } catch (err) { res.status(500).json({ error: err.message }); }

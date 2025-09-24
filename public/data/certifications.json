@@ -27,13 +27,6 @@
       "categoria": "Sostenible",
       "descripcion": "Certificación para café que garantiza que ha sido cultivado bajo un dosel de árboles nativos, proporcionando un hábitat saludable para las aves migratorias.",
       "logo_url": "/images/pasted_birdfriendlylogo.png"
-    },
-    {
-      "id": 5,
-      "nombre": "Cacao of Excellence",
-      "categoria": "Calidad",
-      "descripcion": "Reconoce a los productores de cacao de alta calidad a nivel mundial, celebrando y promoviendo la diversidad de sabores del cacao.",
-      "logo_url": "/images/ENG_COLOR_CacaoOfExcellenceNewLogo2023.png"
     }
   ]
 }

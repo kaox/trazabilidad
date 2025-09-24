@@ -15,7 +15,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const certExpiryInput = document.getElementById('certification-expiry');
     const addCertBtn = document.getElementById('add-certification-btn');
     const certsListContainer = document.getElementById('certifications-list');
+    const premioSelect = document.getElementById('premio-select');
+    const premioYearInput = document.getElementById('premio-year');
+    const addPremioBtn = document.getElementById('add-premio-btn');
+    const premiosListContainer = document.getElementById('premios-list');
     
+    let allPremios = [];
+    let currentFincaPremios = [];
     let allCertifications = [];
     let currentFincaCertifications = [];
     let currentImages = [];
@@ -58,7 +64,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     async function init() {
-        await Promise.all([loadCountries(), loadCertifications(), loadFincas()]);
+        await Promise.all([loadCountries(), loadCertifications(), loadPremios(), loadFincas()]);
         setupEventListeners();
     }
 
@@ -72,6 +78,18 @@ document.addEventListener('DOMContentLoaded', () => {
         certsListContainer.addEventListener('click', handleCertificationAction);
         searchBtn.addEventListener('click', searchLocation);
         locateBtn.addEventListener('click', locateUser);
+        addPremioBtn.addEventListener('click', handleAddPremio);
+        premiosListContainer.addEventListener('click', handlePremioAction);
+    }
+
+    async function loadPremios() {
+        try {
+            const data = await fetch('/data/premios.json').then(res => res.json());
+            allPremios = data.premios;
+            premioSelect.innerHTML = `<option value="">Seleccionar premio...</option>` + allPremios.map(p => `<option value="${p.id}">${p.nombre}</option>`).join('');
+        } catch (error) {
+            console.error("Error cargando premios:", error);
+        }
     }
 
     async function loadCountries() {
@@ -125,8 +143,10 @@ document.addEventListener('DOMContentLoaded', () => {
         editIdInput.value = '';
         currentImages = [];
         currentFincaCertifications = [];
+        currentFincaPremios = [];
         renderImagePreviews();
         renderAddedCertifications();
+        renderAddedPremios();
         if (currentPolygon) drawnItems.removeLayer(currentPolygon);
         drawnItems.clearLayers(); currentPolygon = null;
         formTitle.textContent = 'Nueva Finca';
@@ -157,8 +177,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
             currentImages = finca.imagenes_json || [];
             currentFincaCertifications = finca.certificaciones_json || [];
+            currentFincaPremios = finca.premios_json || [];
             renderImagePreviews();
             renderAddedCertifications();
+            renderAddedPremios();
             
             if (finca.coordenadas) { 
                 const polygon = L.polygon(finca.coordenadas); 
@@ -172,6 +194,54 @@ document.addEventListener('DOMContentLoaded', () => {
             cancelEditBtn.classList.remove('hidden');
             window.scrollTo({ top: 0, behavior: 'smooth' });
         } catch (error) { alert('Error al cargar datos para editar.'); }
+    }
+
+    // --- Lógica de Premios ---
+    function handleAddPremio() {
+        const premioId = parseInt(premioSelect.value, 10);
+        const ano = premioYearInput.value;
+
+        if (!premioId || !ano) {
+            alert('Por favor, selecciona un premio y especifica el año.');
+            return;
+        }
+
+        const premio = allPremios.find(p => p.id === premioId);
+        if (premio) {
+            const yaExiste = currentFincaPremios.some(p => p.id === premioId && p.ano === ano);
+            if (yaExiste) {
+                alert('Este premio ya ha sido añadido para el año especificado.');
+                return;
+            }
+            currentFincaPremios.push({ id: premioId, nombre: premio.nombre, logo_url: premio.logo_url, ano });
+            renderAddedPremios();
+            premioSelect.value = '';
+            premioYearInput.value = '';
+        }
+    }
+    
+    function handlePremioAction(e) {
+        if (e.target.classList.contains('delete-premio-btn')) {
+            const premioId = parseInt(e.target.dataset.id, 10);
+            const ano = e.target.dataset.year;
+            currentFincaPremios = currentFincaPremios.filter(p => !(p.id === premioId && p.ano === ano));
+            renderAddedPremios();
+        }
+    }
+
+    function renderAddedPremios() {
+        premiosListContainer.innerHTML = currentFincaPremios.map(premio => `
+            <div class="flex items-center justify-between p-2 border rounded-lg">
+                <div class="flex items-center gap-3">
+                    <img src="${premio.logo_url}" alt="${premio.nombre}" class="w-8 h-8 rounded-full">
+                    <div>
+                        <p class="font-semibold text-sm">${premio.nombre}</p>
+                        <p class="text-xs text-stone-500">Año: ${premio.ano}</p>
+                    </div>
+                </div>
+                <button type="button" data-id="${premio.id}" data-year="${premio.ano}" class="delete-premio-btn text-red-500 hover:text-red-700 font-bold">&times;</button>
+            </div>
+        `).join('');
     }
     
     function handleImageUpload(e) {
@@ -265,6 +335,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const fincaData = Object.fromEntries(formData.entries());
         fincaData.imagenes_json = currentImages;
         fincaData.certificaciones_json = currentFincaCertifications;
+        fincaData.premios_json = currentFincaPremios;
         
         if (fincaData.coordenadas) fincaData.coordenadas = JSON.parse(fincaData.coordenadas);
         else fincaData.coordenadas = null;

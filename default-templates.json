@@ -73,7 +73,25 @@
             "variables": [
                 {"label": "Procesadora", "name": "procesadora", "type": "selectProcesadora"},
                 {"label": "Fecha", "name": "fecha", "type": "date"},
-                {"label": "Producto Final", "name": "productoFinal", "type": "text", "description":"Ej: Nibs, Licor/Pasta de Cacao"}]
+                {"label": "Producto Final", "name": "productoFinal", "type": "text", "description":"Ej: Nibs, Licor de Cacao"}]
+          }
+        },
+        {
+          "nombre_etapa": "Chocolate",
+          "orden": 6,
+          "campos_json": {
+            "entradas": [{"label": "Peso Entrada (kg)", "name": "pesoEntrada", "type": "number"}],
+            "salidas": [
+              {"label": "Peso Producto Final (gr)", "name": "pesoProductoFinal", "type": "number"}],
+            "variables": [
+              {"label": "Procesadora", "name": "procesadora", "type": "selectProcesadora"},
+              {"label": "Fecha", "name": "fecha", "type": "date"},
+              {"label": "Porcentaje de Cacao (%)", "name": "porcentajeCacao", "type": "number"},
+              {"label": "Endulzante", "name": "endulzante", "type": "text"},
+              {"label": "Ingredientes Adicionales", "name": "ingredientesAdicionales", "type": "textarea"},
+              {"label": "Producto Final", "name": "productoFinal", "type": "text", "description":"Ej: Barras, Pasta de Cacao, Grageas, etc"},
+              {"label": "Foto del Producto", "name": "imageUrl", "type": "image"}
+            ]
           }
         }
       ]
