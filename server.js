@@ -99,7 +99,7 @@ app.get('/app/ruedas-sabores', authenticatePage, (req, res) => res.sendFile(path
 app.get('/app/cuenta', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'cuenta.html')));
 app.get('/app/maridaje', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'maridaje.html'))); // <-- Nueva ruta
 app.get('/app/blends', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'blends.html'))); // <-- Nueva ruta
-
+app.get('/app/recetas-chocolate', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'formulador.html'))); // <-- Nueva ruta
 
 // --- Rutas Protegidas de la API ---
 // Fincas
@@ -159,7 +159,11 @@ app.post('/api/blends', authenticateApi, db.createBlend);
 app.delete('/api/blends/:id', authenticateApi, db.deleteBlend);
 //app.put('/api/blends/:id', authenticateApi, db.updateBlend);
 
-
+// Nuevas rutas para Recetas
+app.get('/api/recetas-chocolate', authenticateApi, db.getRecetas);
+app.post('/api/recetas-chocolate', authenticateApi, db.createReceta);
+app.delete('/api/recetas-chocolate/:id', authenticateApi, db.deleteReceta);
+app.put('/api/recetas-chocolate/:id', authenticateApi, db.updateReceta);
 
 // Iniciar Servidor
 app.listen(PORT, () => {

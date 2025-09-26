@@ -10,6 +10,7 @@ DROP TABLE IF EXISTS procesadoras CASCADE;
 DROP TABLE IF EXISTS fincas CASCADE;
 DROP TABLE IF EXISTS users CASCADE;
 DROP TABLE IF EXISTS blends CASCADE;
+DROP TABLE IF EXISTS recetas_chocolate;
 
 -- Paso 2: Crear las tablas con la estructura más reciente y correcta.
 
@@ -141,4 +142,15 @@ CREATE TABLE IF NOT EXISTS blends (
     perfil_final_json JSONB NOT NULL,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(user_id, nombre_blend)
+);
+
+-- Tabla de Recetas de Chocolate
+CREATE TABLE IF NOT EXISTS recetas_chocolate (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(), -- Cambiado a UUID para consistencia
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    nombre_receta TEXT NOT NULL,
+    componentes_json JSONB NOT NULL,
+    perfil_final_json JSONB NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(user_id, nombre_receta)
 );

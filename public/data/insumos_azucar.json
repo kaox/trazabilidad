@@ -1,0 +1,50 @@
+[
+  {
+    "id": "EDL01",
+    "nombre": "Azúcar de Caña Refinada",
+    "tipo": "azucar",
+    "impacto_perfil": { "cacao": 0, "acidez": 0, "amargor": 0, "astringencia": 0, "dulzura": 10, "frutaFresca": 0, "nuez": 0, "especia": 0, "floral": 0, "caramelo": 0, "lactico": 0 }
+  },
+  {
+    "id": "EDL02",
+    "nombre": "Panela",
+    "tipo": "azucar",
+    "impacto_perfil": { "cacao": 0, "acidez": 1, "amargor": 1, "astringencia": 1, "dulzura": 8, "frutaFresca": 1, "nuez": 0, "especia": 2, "floral": 0, "caramelo": 9, "lactico": 0 }
+  },
+  {
+    "id": "EDL03",
+    "nombre": "Azúcar de Coco",
+    "tipo": "azucar",
+    "impacto_perfil": { "cacao": 0, "acidez": 0, "amargor": 1, "astringencia": 0, "dulzura": 7, "frutaFresca": 0, "nuez": 4, "especia": 1, "floral": 0, "caramelo": 8, "lactico": 0 }
+  },
+  {
+    "id": "EDL04",
+    "nombre": "Azúcar Mascabado",
+    "tipo": "azucar",
+    "impacto_perfil": { "cacao": 0, "acidez": 1, "amargor": 2, "astringencia": 1, "dulzura": 8, "frutaFresca": 0, "nuez": 0, "especia": 3, "floral": 0, "caramelo": 9, "lactico": 0 }
+  },
+  {
+    "id": "EDL05",
+    "nombre": "Jarabe de Arce",
+    "tipo": "jarabe",
+    "impacto_perfil": { "cacao": 0, "acidez": 0, "amargor": 0, "astringencia": 0, "dulzura": 8, "frutaFresca": 1, "nuez": 3, "especia": 1, "floral": 2, "caramelo": 7, "lactico": 0 }
+  },
+  {
+    "id": "EDL06",
+    "nombre": "Miel de Abeja (Multiflora)",
+    "tipo": "miel",
+    "impacto_perfil": { "cacao": 0, "acidez": 2, "amargor": 0, "astringencia": 0, "dulzura": 8, "frutaFresca": 3, "nuez": 0, "especia": 0, "floral": 7, "caramelo": 2, "lactico": 0 }
+  },
+  {
+    "id": "EDL07",
+    "nombre": "Azúcar de Abedul (Xilitol)",
+    "tipo": "edulcorante",
+    "impacto_perfil": { "cacao": 0, "acidez": 0, "amargor": 0, "astringencia": 0, "dulzura": 9, "frutaFresca": 1, "nuez": 0, "especia": 0, "floral": 0, "caramelo": 0, "lactico": 2 }
+  },
+  {
+    "id": "EDL08",
+    "nombre": "Edulcorante (Eritritol/Stevia)",
+    "tipo": "edulcorante",
+    "impacto_perfil": { "cacao": 0, "acidez": 0, "amargor": 2, "astringencia": 1, "dulzura": 9, "frutaFresca": 0, "nuez": 0, "especia": 0, "floral": 0, "caramelo": 0, "lactico": 1 }
+  }
+]

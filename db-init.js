@@ -171,6 +171,18 @@ async function initializeDatabase() {
                 )`);
             console.log("Tabla 'blends' lista.");
 
+            await runQuery(db, `
+                CREATE TABLE IF NOT EXISTS recetas_chocolate (
+                    id TEXT PRIMARY KEY,
+                    user_id INTEGER NOT NULL,
+                    nombre_receta TEXT NOT NULL,
+                    componentes_json JSONB NOT NULL,
+                    perfil_final_json JSONB NOT NULL,
+                    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+                    UNIQUE(user_id, nombre_receta)
+                )`);
+            console.log("Tabla 'recetas_chocolate' lista.");
+
             console.log('Esquema de base de datos listo.');
 
         } catch (error) {

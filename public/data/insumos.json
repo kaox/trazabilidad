@@ -1,0 +1,296 @@
+[
+  {
+    "id": "FRT01",
+    "nombre": "Aguaje",
+    "tipo": "fruta",
+    "impacto_perfil": { "cacao": 0, "acidez": 5, "amargor": 1, "astringencia": 2, "dulzura": 5, "frutaFresca": 6, "nuez": 0, "especia": 0, "floral": 1, "caramelo": 0, "lactico": 3 }
+  },
+  {
+    "id": "FRT02",
+    "nombre": "Camu Camu",
+    "tipo": "fruta",
+    "impacto_perfil": { "cacao": 0, "acidez": 10, "amargor": 2, "astringencia": 3, "dulzura": 3, "frutaFresca": 9, "nuez": 0, "especia": 0, "floral": 1, "caramelo": 0, "lactico": 0 }
+  },
+  {
+    "id": "FRT03",
+    "nombre": "Cacao (Pulpa)",
+    "tipo": "fruta",
+    "impacto_perfil": { "cacao": 1, "acidez": 7, "amargor": 0, "astringencia": 1, "dulzura": 7, "frutaFresca": 8, "nuez": 0, "especia": 0, "floral": 3, "caramelo": 0, "lactico": 2 }
+  },
+  {
+    "id": "FRT04",
+    "nombre": "Café (Cereza)",
+    "tipo": "fruta",
+    "impacto_perfil": { "cacao": 0, "acidez": 4, "amargor": 1, "astringencia": 2, "dulzura": 7, "frutaFresca": 7, "nuez": 0, "especia": 0, "floral": 4, "caramelo": 1, "lactico": 0 }
+  },
+  {
+    "id": "FRT05",
+    "nombre": "Cocona",
+    "tipo": "fruta",
+    "impacto_perfil": { "cacao": 0, "acidez": 9, "amargor": 1, "astringencia": 2, "dulzura": 4, "frutaFresca": 8, "nuez": 0, "especia": 0, "floral": 1, "caramelo": 0, "lactico": 0 }
+  },
+  {
+    "id": "FRT06",
+    "nombre": "Guaba",
+    "tipo": "fruta",
+    "impacto_perfil": { "cacao": 0, "acidez": 1, "amargor": 0, "astringencia": 0, "dulzura": 8, "frutaFresca": 5, "nuez": 0, "especia": 0, "floral": 2, "caramelo": 0, "lactico": 1 }
+  },
+  {
+    "id": "FRT07",
+    "nombre": "Guanábana",
+    "tipo": "fruta",
+    "impacto_perfil": { "cacao": 0, "acidez": 6, "amargor": 0, "astringencia": 0, "dulzura": 8, "frutaFresca": 9, "nuez": 0, "especia": 0, "floral": 2, "caramelo": 1, "lactico": 7 }
+  },
+  {
+    "id": "FRT08",
+    "nombre": "Maracuyá",
+    "tipo": "fruta",
+    "impacto_perfil": { "cacao": 0, "acidez": 9, "amargor": 1, "astringencia": 1, "dulzura": 7, "frutaFresca": 10, "nuez": 0, "especia": 0, "floral": 5, "caramelo": 0, "lactico": 0 }
+  },
+  {
+    "id": "FRT09",
+    "nombre": "Piña",
+    "tipo": "fruta",
+    "impacto_perfil": { "cacao": 0, "acidez": 7, "amargor": 0, "astringencia": 1, "dulzura": 9, "frutaFresca": 9, "nuez": 0, "especia": 0, "floral": 1, "caramelo": 2, "lactico": 0 }
+  },
+  {
+    "id": "FRT10",
+    "nombre": "Plátano",
+    "tipo": "fruta",
+    "impacto_perfil": { "cacao": 0, "acidez": 1, "amargor": 0, "astringencia": 0, "dulzura": 9, "frutaFresca": 6, "nuez": 0, "especia": 0, "floral": 0, "caramelo": 2, "lactico": 4 }
+  },
+  {
+    "id": "FRT11",
+    "nombre": "Zapote",
+    "tipo": "fruta",
+    "impacto_perfil": { "cacao": 0, "acidez": 1, "amargor": 1, "astringencia": 1, "dulzura": 9, "frutaFresca": 3, "nuez": 2, "especia": 1, "floral": 0, "caramelo": 6, "lactico": 2 }
+  },
+  {
+    "id": "FRT12",
+    "nombre": "Arazá",
+    "tipo": "fruta",
+    "impacto_perfil": { "cacao": 0, "acidez": 8, "amargor": 1, "astringencia": 2, "dulzura": 5, "frutaFresca": 9, "nuez": 0, "especia": 0, "floral": 6, "caramelo": 0, "lactico": 0 }
+  },
+  {
+    "id": "FRT13",
+    "nombre": "Bacurí",
+    "tipo": "fruta",
+    "impacto_perfil": { "cacao": 0, "acidez": 6, "amargor": 1, "astringencia": 1, "dulzura": 7, "frutaFresca": 7, "nuez": 0, "especia": 0, "floral": 4, "caramelo": 0, "lactico": 2 }
+  },
+  {
+    "id": "FRT14",
+    "nombre": "Caimito",
+    "tipo": "fruta",
+    "impacto_perfil": { "cacao": 0, "acidez": 2, "amargor": 0, "astringencia": 1, "dulzura": 9, "frutaFresca": 6, "nuez": 0, "especia": 0, "floral": 1, "caramelo": 1, "lactico": 6 }
+  },
+  {
+    "id": "FRT15",
+    "nombre": "Carambola",
+    "tipo": "fruta",
+    "impacto_perfil": { "cacao": 0, "acidez": 5, "amargor": 1, "astringencia": 2, "dulzura": 6, "frutaFresca": 7, "nuez": 0, "especia": 0, "floral": 3, "caramelo": 0, "lactico": 0 }
+  },
+  {
+    "id": "FRT16",
+    "nombre": "Casho (Pseudofruto)",
+    "tipo": "fruta",
+    "impacto_perfil": { "cacao": 0, "acidez": 4, "amargor": 2, "astringencia": 7, "dulzura": 5, "frutaFresca": 6, "nuez": 0, "especia": 1, "floral": 2, "caramelo": 0, "lactico": 0 }
+  },
+  {
+    "id": "FRT17",
+    "nombre": "Chambira",
+    "tipo": "fruta",
+    "impacto_perfil": { "cacao": 0, "acidez": 2, "amargor": 1, "astringencia": 1, "dulzura": 5, "frutaFresca": 4, "nuez": 3, "especia": 0, "floral": 0, "caramelo": 1, "lactico": 4 }
+  },
+  {
+    "id": "FRT18",
+    "nombre": "Charichuelo",
+    "tipo": "fruta",
+    "impacto_perfil": { "cacao": 0, "acidez": 6, "amargor": 0, "astringencia": 1, "dulzura": 8, "frutaFresca": 8, "nuez": 0, "especia": 0, "floral": 3, "caramelo": 0, "lactico": 1 }
+  },
+  {
+    "id": "FRT19",
+    "nombre": "Copoazú",
+    "tipo": "fruta",
+    "impacto_perfil": { "cacao": 2, "acidez": 7, "amargor": 1, "astringencia": 1, "dulzura": 7, "frutaFresca": 9, "nuez": 1, "especia": 0, "floral": 4, "caramelo": 0, "lactico": 4 }
+  },
+  {
+    "id": "FRT20",
+    "nombre": "Granadilla",
+    "tipo": "fruta",
+    "impacto_perfil": { "cacao": 0, "acidez": 2, "amargor": 0, "astringencia": 0, "dulzura": 8, "frutaFresca": 7, "nuez": 0, "especia": 0, "floral": 5, "caramelo": 0, "lactico": 0 }
+  },
+  {
+    "id": "FRT21",
+    "nombre": "Guayaba",
+    "tipo": "fruta",
+    "impacto_perfil": { "cacao": 0, "acidez": 4, "amargor": 0, "astringencia": 1, "dulzura": 8, "frutaFresca": 9, "nuez": 0, "especia": 0, "floral": 7, "caramelo": 0, "lactico": 1 }
+  },
+  {
+    "id": "FRT22",
+    "nombre": "Huito",
+    "tipo": "fruta",
+    "impacto_perfil": { "cacao": 0, "acidez": 3, "amargor": 4, "astringencia": 4, "dulzura": 5, "frutaFresca": 3, "nuez": 1, "especia": 2, "floral": 0, "caramelo": 1, "lactico": 0 }
+  },
+  {
+    "id": "FRT23",
+    "nombre": "Lúcuma",
+    "tipo": "fruta",
+    "impacto_perfil": { "cacao": 0, "acidez": 0, "amargor": 1, "astringencia": 1, "dulzura": 9, "frutaFresca": 2, "nuez": 3, "especia": 0, "floral": 0, "caramelo": 9, "lactico": 1 }
+  },
+  {
+    "id": "FRT24",
+    "nombre": "Macambo (Pulpa)",
+    "tipo": "fruta",
+    "impacto_perfil": { "cacao": 0, "acidez": 6, "amargor": 0, "astringencia": 1, "dulzura": 6, "frutaFresca": 7, "nuez": 0, "especia": 0, "floral": 2, "caramelo": 0, "lactico": 1 }
+  },
+  {
+    "id": "FRT25",
+    "nombre": "Mamey",
+    "tipo": "fruta",
+    "impacto_perfil": { "cacao": 0, "acidez": 2, "amargor": 1, "astringencia": 1, "dulzura": 9, "frutaFresca": 5, "nuez": 4, "especia": 1, "floral": 1, "caramelo": 4, "lactico": 3 }
+  },
+  {
+    "id": "FRT26",
+    "nombre": "Mango",
+    "tipo": "fruta",
+    "impacto_perfil": { "cacao": 0, "acidez": 4, "amargor": 0, "astringencia": 1, "dulzura": 9, "frutaFresca": 9, "nuez": 0, "especia": 1, "floral": 3, "caramelo": 2, "lactico": 1 }
+  },
+  {
+    "id": "FRT27",
+    "nombre": "Masato",
+    "tipo": "bebida_fermentada",
+    "impacto_perfil": { "cacao": 0, "acidez": 7, "amargor": 1, "astringencia": 1, "dulzura": 4, "frutaFresca": 1, "nuez": 0, "especia": 0, "floral": 0, "caramelo": 0, "lactico": 8 }
+  },
+  {
+    "id": "FRT28",
+    "nombre": "Metohuayo",
+    "tipo": "nuez",
+    "impacto_perfil": { "cacao": 0, "acidez": 0, "amargor": 1, "astringencia": 1, "dulzura": 2, "frutaFresca": 0, "nuez": 9, "especia": 0, "floral": 0, "caramelo": 1, "lactico": 3 }
+  },
+  {
+    "id": "FRT29",
+    "nombre": "Naranja",
+    "tipo": "fruta",
+    "impacto_perfil": { "cacao": 0, "acidez": 8, "amargor": 1, "astringencia": 1, "dulzura": 7, "frutaFresca": 10, "nuez": 0, "especia": 0, "floral": 3, "caramelo": 0, "lactico": 0 }
+  },
+  {
+    "id": "FRT30",
+    "nombre": "Níspero",
+    "tipo": "fruta",
+    "impacto_perfil": { "cacao": 0, "acidez": 2, "amargor": 1, "astringencia": 3, "dulzura": 9, "frutaFresca": 4, "nuez": 1, "especia": 1, "floral": 0, "caramelo": 7, "lactico": 0 }
+  },
+  {
+    "id": "FRT31",
+    "nombre": "Palillo",
+    "tipo": "fruta",
+    "impacto_perfil": { "cacao": 0, "acidez": 8, "amargor": 1, "astringencia": 2, "dulzura": 4, "frutaFresca": 7, "nuez": 0, "especia": 0, "floral": 2, "caramelo": 0, "lactico": 0 }
+  },
+  {
+    "id": "FRT32",
+    "nombre": "Pan de árbol (Maduro)",
+    "tipo": "fruta",
+    "impacto_perfil": { "cacao": 0, "acidez": 2, "amargor": 0, "astringencia": 0, "dulzura": 7, "frutaFresca": 5, "nuez": 0, "especia": 0, "floral": 1, "caramelo": 1, "lactico": 5 }
+  },
+  {
+    "id": "FRT33",
+    "nombre": "Papaya",
+    "tipo": "fruta",
+    "impacto_perfil": { "cacao": 0, "acidez": 2, "amargor": 1, "astringencia": 0, "dulzura": 8, "frutaFresca": 7, "nuez": 0, "especia": 1, "floral": 3, "caramelo": 0, "lactico": 2 }
+  },
+  {
+    "id": "FRT34",
+    "nombre": "Pijuayo",
+    "tipo": "fruta",
+    "impacto_perfil": { "cacao": 0, "acidez": 0, "amargor": 1, "astringencia": 2, "dulzura": 3, "frutaFresca": 1, "nuez": 7, "especia": 0, "floral": 0, "caramelo": 1, "lactico": 2 }
+  },
+  {
+    "id": "FRT35",
+    "nombre": "Pitahaya",
+    "tipo": "fruta",
+    "impacto_perfil": { "cacao": 0, "acidez": 3, "amargor": 0, "astringencia": 0, "dulzura": 6, "frutaFresca": 7, "nuez": 0, "especia": 0, "floral": 2, "caramelo": 0, "lactico": 0 }
+  },
+  {
+    "id": "FRT36",
+    "nombre": "Rambután",
+    "tipo": "fruta",
+    "impacto_perfil": { "cacao": 0, "acidez": 4, "amargor": 0, "astringencia": 0, "dulzura": 9, "frutaFresca": 8, "nuez": 0, "especia": 0, "floral": 3, "caramelo": 0, "lactico": 0 }
+  },
+  {
+    "id": "FRT37",
+    "nombre": "Sacha Inchi (Tostado)",
+    "tipo": "nuez",
+    "impacto_perfil": { "cacao": 0, "acidez": 0, "amargor": 3, "astringencia": 1, "dulzura": 1, "frutaFresca": 0, "nuez": 9, "especia": 0, "floral": 0, "caramelo": 1, "lactico": 0 }
+  },
+  {
+    "id": "FRT38",
+    "nombre": "Sangre de grado",
+    "tipo": "resina",
+    "impacto_perfil": { "cacao": 0, "acidez": 1, "amargor": 8, "astringencia": 10, "dulzura": 0, "frutaFresca": 0, "nuez": 0, "especia": 3, "floral": 0, "caramelo": 0, "lactico": 0 }
+  },
+  {
+    "id": "FRT39",
+    "nombre": "Shimbillo",
+    "tipo": "fruta",
+    "impacto_perfil": { "cacao": 0, "acidez": 1, "amargor": 0, "astringencia": 0, "dulzura": 7, "frutaFresca": 5, "nuez": 0, "especia": 0, "floral": 1, "caramelo": 0, "lactico": 1 }
+  },
+  {
+    "id": "FRT40",
+    "nombre": "Tamarillo",
+    "tipo": "fruta",
+    "impacto_perfil": { "cacao": 0, "acidez": 8, "amargor": 3, "astringencia": 3, "dulzura": 5, "frutaFresca": 7, "nuez": 0, "especia": 1, "floral": 0, "caramelo": 0, "lactico": 0 }
+  },
+  {
+    "id": "FRT41",
+    "nombre": "Taperibá",
+    "tipo": "fruta",
+    "impacto_perfil": { "cacao": 0, "acidez": 9, "amargor": 1, "astringencia": 2, "dulzura": 4, "frutaFresca": 8, "nuez": 0, "especia": 1, "floral": 2, "caramelo": 0, "lactico": 0 }
+  },
+  {
+    "id": "FRT42",
+    "nombre": "Tumbo",
+    "tipo": "fruta",
+    "impacto_perfil": { "cacao": 0, "acidez": 9, "amargor": 1, "astringencia": 1, "dulzura": 5, "frutaFresca": 8, "nuez": 0, "especia": 0, "floral": 4, "caramelo": 0, "lactico": 0 }
+  },
+  {
+    "id": "FRT43",
+    "nombre": "Umarí",
+    "tipo": "fruta",
+    "impacto_perfil": { "cacao": 0, "acidez": 1, "amargor": 2, "astringencia": 1, "dulzura": 6, "frutaFresca": 4, "nuez": 2, "especia": 1, "floral": 2, "caramelo": 0, "lactico": 7 }
+  },
+  {
+    "id": "FRT44",
+    "nombre": "Ungurahui",
+    "tipo": "fruta",
+    "impacto_perfil": { "cacao": 1, "acidez": 1, "amargor": 2, "astringencia": 1, "dulzura": 2, "frutaFresca": 2, "nuez": 3, "especia": 0, "floral": 1, "caramelo": 0, "lactico": 4 }
+  },
+  {
+    "id": "FRT45",
+    "nombre": "Uvilla",
+    "tipo": "fruta",
+    "impacto_perfil": { "cacao": 0, "acidez": 7, "amargor": 1, "astringencia": 1, "dulzura": 7, "frutaFresca": 8, "nuez": 0, "especia": 0, "floral": 1, "caramelo": 0, "lactico": 0 }
+  },
+  {
+    "id": "FRT46",
+    "nombre": "Yaruri",
+    "tipo": "fruta",
+    "impacto_perfil": { "cacao": 0, "acidez": 2, "amargor": 0, "astringencia": 0, "dulzura": 8, "frutaFresca": 6, "nuez": 0, "especia": 0, "floral": 1, "caramelo": 1, "lactico": 0 }
+  },
+  {
+    "id": "FRT47",
+    "nombre": "Yuca (Cocinada)",
+    "tipo": "tuberculo",
+    "impacto_perfil": { "cacao": 0, "acidez": 0, "amargor": 0, "astringencia": 1, "dulzura": 2, "frutaFresca": 0, "nuez": 2, "especia": 0, "floral": 0, "caramelo": 0, "lactico": 1 }
+  },
+  {
+    "id": "ING02", "nombre": "Manteca de Cacao", "tipo": "grasa",
+    "impacto_perfil": { "cacao": 0, "acidez": 0, "amargor": 0, "astringencia": 0, "dulzura": 0, "frutaFresca": 0, "nuez": 0, "especia": 0, "floral": 0, "caramelo": 0, "lactico": 0 }
+  },
+  {
+    "id": "ING03", "nombre": "Frambuesa Liofilizada", "tipo": "fruta",
+    "impacto_perfil": { "cacao": 0, "acidez": 9, "amargor": 1, "astringencia": 2, "dulzura": 4, "frutaFresca": 10, "nuez": 0, "especia": 0, "floral": 2, "caramelo": 0, "lactico": 0 }
+  },
+  {
+    "id": "ING04", "nombre": "Leche en Polvo", "tipo": "lacteo",
+    "impacto_perfil": { "cacao": 0, "acidez": 1, "amargor": 0, "astringencia": 0, "dulzura": 6, "frutaFresca": 0, "nuez": 2, "caramelo": 7, "lactico": 9, "floral": 0, "especia": 0 }
+  }
+]

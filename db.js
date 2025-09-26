@@ -772,6 +772,64 @@ const deleteBlend = async (req, res) => {
     }
 };
 
+// --- Recetas de Chocolate ---
+const getRecetas = async (req, res) => {
+    const userId = req.user.id;
+    try {
+        const recetas = await all('SELECT * FROM recetas_chocolate WHERE user_id = ? ORDER BY nombre_receta', [userId]);
+        const parsedRecetas = recetas.map(r => ({
+            ...r,
+            componentes_json: safeJSONParse(r.componentes_json),
+            perfil_final_json: safeJSONParse(r.perfil_final_json)
+        }));
+        res.status(200).json(parsedRecetas);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+};
+
+const createReceta = async (req, res) => {
+    const userId = req.user.id;
+    const { nombre_receta, componentes_json, perfil_final_json, tiempo_conchado } = req.body;
+    const id = require('crypto').randomUUID();
+    try {
+        await run(
+            'INSERT INTO recetas_chocolate (id, user_id, nombre_receta, componentes_json, perfil_final_json, tiempo_conchado) VALUES (?, ?, ?, ?, ?, ?)',
+            [id, userId, nombre_receta, JSON.stringify(componentes_json), JSON.stringify(perfil_final_json), tiempo_conchado]
+        );
+        res.status(201).json({ id, message: 'Receta guardada' });
+    } catch (err) {
+        if (err.message.includes('UNIQUE')) return res.status(409).json({ error: 'Ya existe una receta con ese nombre.' });
+        res.status(500).json({ error: err.message });
+    }
+};
+const updateReceta = async (req, res) => {
+    const userId = req.user.id;
+    const { id } = req.params;
+    const { nombre_receta, componentes_json, perfil_final_json, tiempo_conchado } = req.body;
+    try {
+        const result = await run(
+            'UPDATE recetas_chocolate SET nombre_receta = ?, componentes_json = ?, perfil_final_json = ?, tiempo_conchado = ? WHERE id = ? AND user_id = ?',
+            [nombre_receta, JSON.stringify(componentes_json), JSON.stringify(perfil_final_json), tiempo_conchado, id, userId]
+        );
+        if (result.changes === 0) return res.status(404).json({ error: 'Receta no encontrada.' });
+        res.status(200).json({ message: 'Receta actualizada.' });
+    } catch (err) {
+        if (err.message.includes('UNIQUE')) return res.status(409).json({ error: 'Ya existe una receta con ese nombre.' });
+        res.status(500).json({ error: err.message });
+    }
+};
+
+const deleteReceta = async (req, res) => {
+    const userId = req.user.id;
+    const { id } = req.params;
+    try {
+        const result = await run('DELETE FROM recetas_chocolate WHERE id = ? AND user_id = ?', [id, userId]);
+        if (result.changes === 0) return res.status(404).json({ error: 'Receta no encontrada.' });
+        res.status(204).send();
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};
+
 module.exports = {
     registerUser, loginUser, logoutUser,
     getFincas, createFinca, updateFinca, deleteFinca,
@@ -784,6 +842,7 @@ module.exports = {
     getUserProfile, updateUserProfile, updateUserPassword,
     getPerfilesCafe, createPerfilCafe, updatePerfilCafe, deletePerfilCafe,
     getRuedasSabores, createRuedaSabores, updateRuedaSabores, deleteRuedaSabores,
-    getBlends, createBlend, deleteBlend
+    getBlends, createBlend, deleteBlend,
+    getRecetas, createReceta, deleteReceta, updateReceta
 };
 
