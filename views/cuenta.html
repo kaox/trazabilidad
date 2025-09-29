@@ -3,12 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mi Cuenta - Trazabilidad</title>
+    <title>Mi Cuenta - AgriTraza</title>
     <script src="/auth.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet">
+    <script src="/js/analytics-loader.js" defer></script>
     <style>
         body { font-family: 'Inter', sans-serif; background-color: #fdfaf6; }
         h1, h2, h3, .font-display { font-family: 'Playfair Display', serif; }
@@ -16,47 +17,113 @@
 </head>
 <body class="text-stone-800 antialiased">
     <div id="nav-placeholder"></div>
-    <div class="container mx-auto p-4 md:p-8 max-w-4xl">
+    
+    <div class="container mx-auto p-4 md:p-8">
         <header class="text-center mb-10 mt-4">
-            <h1 class="text-4xl md:text-5xl font-bold text-amber-900 mb-2">Gestión de mi Cuenta</h1>
-            <p class="text-stone-600">Actualiza tus datos personales y gestiona la seguridad de tu acceso.</p>
+            <h1 class="text-4xl md:text-5xl font-bold text-amber-900 mb-2">Gestión de Cuenta</h1>
+            <p class="text-stone-600">Actualiza tu información personal y gestiona tu suscripción.</p>
         </header>
 
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <div class="bg-white p-6 rounded-2xl shadow-lg">
-                <h2 class="text-2xl font-display text-amber-900 border-b pb-2 mb-6">Mis Datos Personales</h2>
-                <form id="profile-form" class="space-y-4">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div><label for="nombre" class="block text-sm font-medium">Nombre</label><input type="text" id="nombre" name="nombre" class="w-full p-3 border border-stone-300 rounded-xl" required></div>
-                        <div><label for="apellido" class="block text-sm font-medium">Apellido</label><input type="text" id="apellido" name="apellido" class="w-full p-3 border border-stone-300 rounded-xl" required></div>
-                    </div>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div><label for="dni" class="block text-sm font-medium">DNI</label><input type="text" id="dni" name="dni" class="w-full p-3 border border-stone-300 rounded-xl"></div>
-                        <div><label for="ruc" class="block text-sm font-medium">RUC</label><input type="text" id="ruc" name="ruc" class="w-full p-3 border border-stone-300 rounded-xl"></div>
-                    </div>
-                    <div><label for="empresa" class="block text-sm font-medium">Nombre de Empresa</label><input type="text" id="empresa" name="empresa" class="w-full p-3 border border-stone-300 rounded-xl"></div>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div><label for="celular" class="block text-sm font-medium">Celular</label><input type="tel" id="celular" name="celular" class="w-full p-3 border border-stone-300 rounded-xl" required></div>
-                        <div><label for="correo" class="block text-sm font-medium">Correo</label><input type="email" id="correo" name="correo" class="w-full p-3 border border-stone-300 rounded-xl" required></div>
-                    </div>
-                    <div class="pt-4 text-right">
-                        <button type="submit" class="bg-amber-800 hover:bg-amber-900 text-white font-bold py-3 px-8 rounded-xl">Guardar Cambios</button>
-                    </div>
-                </form>
+        <div class="max-w-4xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Columna de Perfil y Contraseña -->
+            <div class="lg:col-span-2 space-y-8">
+                <div class="bg-white p-6 rounded-2xl shadow-lg">
+                    <h2 class="text-2xl font-display text-amber-900 border-b pb-2 mb-6">Información de Perfil</h2>
+                    <form id="profile-form" class="space-y-4">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label for="nombre" class="block text-sm font-medium text-stone-700 mb-1">Nombre</label>
+                                <input type="text" id="nombre" name="nombre" class="w-full p-3 border border-stone-300 rounded-xl">
+                            </div>
+                            <div>
+                                <label for="apellido" class="block text-sm font-medium text-stone-700 mb-1">Apellido</label>
+                                <input type="text" id="apellido" name="apellido" class="w-full p-3 border border-stone-300 rounded-xl">
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label for="dni" class="block text-sm font-medium text-stone-700 mb-1">DNI</label>
+                                <input type="text" id="dni" name="dni" class="w-full p-3 border border-stone-300 rounded-xl">
+                            </div>
+                            <div>
+                                <label for="ruc" class="block text-sm font-medium text-stone-700 mb-1">RUC</label>
+                                <input type="text" id="ruc" name="ruc" class="w-full p-3 border border-stone-300 rounded-xl">
+                            </div>
+                        </div>
+                        <div>
+                            <label for="empresa" class="block text-sm font-medium text-stone-700 mb-1">Empresa</label>
+                            <input type="text" id="empresa" name="empresa" class="w-full p-3 border border-stone-300 rounded-xl">
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                             <div>
+                                <label for="celular" class="block text-sm font-medium text-stone-700 mb-1">Celular</label>
+                                <input type="tel" id="celular" name="celular" class="w-full p-3 border border-stone-300 rounded-xl">
+                            </div>
+                            <div>
+                                <label for="correo" class="block text-sm font-medium text-stone-700 mb-1">Correo Electrónico</label>
+                                <input type="email" id="correo" name="correo" class="w-full p-3 border border-stone-300 rounded-xl">
+                            </div>
+                        </div>
+                        <div class="pt-4 flex justify-end">
+                            <button type="submit" class="bg-amber-800 hover:bg-amber-900 text-white font-bold py-2 px-6 rounded-xl">Actualizar Perfil</button>
+                        </div>
+                    </form>
+                </div>
+                <div class="bg-white p-6 rounded-2xl shadow-lg">
+                    <h2 class="text-2xl font-display text-amber-900 border-b pb-2 mb-6">Cambiar Contraseña</h2>
+                    <form id="password-form" class="space-y-4">
+                        <div>
+                            <label for="oldPassword" class="block text-sm font-medium text-stone-700 mb-1">Contraseña Actual</label>
+                            <input type="password" id="oldPassword" name="oldPassword" class="w-full p-3 border border-stone-300 rounded-xl" required>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label for="newPassword" class="block text-sm font-medium text-stone-700 mb-1">Nueva Contraseña</label>
+                                <input type="password" id="newPassword" name="newPassword" class="w-full p-3 border border-stone-300 rounded-xl" required>
+                            </div>
+                            <div>
+                                <label for="confirmPassword" class="block text-sm font-medium text-stone-700 mb-1">Confirmar Nueva Contraseña</label>
+                                <input type="password" id="confirmPassword" name="confirmPassword" class="w-full p-3 border border-stone-300 rounded-xl" required>
+                            </div>
+                        </div>
+                         <div class="pt-4 flex justify-end">
+                            <button type="submit" class="bg-amber-800 hover:bg-amber-900 text-white font-bold py-2 px-6 rounded-xl">Cambiar Contraseña</button>
+                        </div>
+                    </form>
+                </div>
             </div>
+
+            <!-- Columna de Suscripción -->
             <div class="bg-white p-6 rounded-2xl shadow-lg">
-                 <h2 class="text-2xl font-display text-amber-900 border-b pb-2 mb-6">Cambiar Contraseña</h2>
-                 <form id="password-form" class="space-y-4">
-                    <div><label for="oldPassword" class="block text-sm font-medium">Contraseña Actual</label><input type="password" id="oldPassword" name="oldPassword" class="w-full p-3 border border-stone-300 rounded-xl" required></div>
-                    <div><label for="newPassword" class="block text-sm font-medium">Nueva Contraseña</label><input type="password" id="newPassword" name="newPassword" class="w-full p-3 border border-stone-300 rounded-xl" required></div>
-                    <div><label for="confirmPassword" class="block text-sm font-medium">Confirmar Nueva Contraseña</label><input type="password" id="confirmPassword" name="confirmPassword" class="w-full p-3 border border-stone-300 rounded-xl" required></div>
-                     <div class="pt-4 text-right">
-                        <button type="submit" class="bg-sky-600 hover:bg-sky-700 text-white font-bold py-3 px-8 rounded-xl">Actualizar Contraseña</button>
+                <h2 class="text-2xl font-display text-amber-900 border-b pb-2 mb-6">Plan y Suscripción</h2>
+                <div id="subscription-info" class="space-y-4">
+                    <div>
+                        <p class="text-sm text-stone-500">Plan Actual</p>
+                        <p id="current-plan" class="text-lg font-bold text-green-700 capitalize">Artesano</p>
                     </div>
-                 </form>
+                    <div id="trial-info" class="p-4 bg-amber-50 border border-amber-200 rounded-lg hidden">
+                        <p class="font-semibold text-amber-800">Prueba Gratuita Profesional</p>
+                        <p class="text-sm text-amber-700">Te quedan <strong id="trial-days-left"></strong> días para disfrutar de todas las funcionalidades.</p>
+                    </div>
+                    <div>
+                        <a href="/app/pricing" class="w-full text-center block bg-amber-800 hover:bg-amber-900 text-white font-bold py-3 px-6 rounded-xl shadow-md">
+                            Ver Planes y Precios
+                        </a>
+                    </div>
+                    <div class="pt-4 border-t">
+                        <h3 class="font-semibold text-stone-700 mb-2">Beneficios del Plan Profesional:</h3>
+                        <ul class="space-y-2 text-sm text-stone-600">
+                            <li class="flex items-center gap-2"><svg class="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>Lotes y Registros Ilimitados</li>
+                            <li class="flex items-center gap-2"><svg class="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>Dashboard Analítico</li>
+                            <li class="flex items-center gap-2"><svg class="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>Laboratorio I+D Completo</li>
+                            <li class="flex items-center gap-2"><svg class="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>Soporte Prioritario</li>
+                        </ul>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
+    
     <script src="/js/cuenta-app.js"></script>
     <script src="/js/nav-loader.js" defer></script>
 </body>

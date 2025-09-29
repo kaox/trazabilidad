@@ -56,6 +56,31 @@ const authenticate = (req, res, next, isPageRequest = false) => {
 const authenticatePage = (req, res, next) => authenticate(req, res, next, true);
 const authenticateApi = (req, res, next) => authenticate(req, res, next, false);
 
+// --- Middleware de Control de Acceso por Nivel ---
+const checkSubscription = (requiredTier) => async (req, res, next) => {
+    const userId = req.user.id;
+    try {
+        // Llama a la nueva función centralizada en db.js
+        const user = await db.getUserSubscriptionStatus(userId);
+        if (!user) return res.status(403).json({ error: 'Acceso denegado.' });
+
+        const hasActiveTrial = user.trial_ends_at && new Date(user.trial_ends_at) > new Date();
+        const hasProfesionalTier = user.subscription_tier === 'profesional';
+
+        if (hasProfesionalTier || hasActiveTrial) {
+            return next(); // Tiene acceso
+        }
+        
+        // Lógica para planes específicos si es necesario en el futuro
+        // Por ahora, solo profesional/trial tiene acceso a todo lo premium
+
+        return res.status(403).json({ error: 'Esta funcionalidad requiere un plan Profesional. Mejora tu cuenta para acceder.' });
+    } catch (error) {
+        console.error(`Error al verificar la suscripción para el usuario ${userId}:`, error);
+        res.status(500).json({ error: 'Error del servidor al verificar la suscripción.' });
+    }
+};
+
 // --- Rutas Públicas (API) ---
 app.post('/api/register', db.registerUser);
 app.post('/api/login', db.loginUser);
@@ -88,7 +113,6 @@ app.get('/qr', (req, res) => {
 
 
 // --- Rutas Protegidas de la Aplicación (Vistas) ---
-app.get('/app/dashboard', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'dashboard.html')));
 app.get('/app/trazabilidad', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'trazabilidad.html')));
 app.get('/app/fincas', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'fincas.html')));
 app.get('/app/perfiles', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'perfiles.html')));
@@ -100,6 +124,7 @@ app.get('/app/cuenta', authenticatePage, (req, res) => res.sendFile(path.join(__
 app.get('/app/maridaje', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'maridaje.html'))); // <-- Nueva ruta
 app.get('/app/blends', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'blends.html'))); // <-- Nueva ruta
 app.get('/app/recetas-chocolate', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'formulador.html'))); // <-- Nueva ruta
+app.get('/app/pricing', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'pricing.html'))); // Nueva ruta
 
 // --- Rutas Protegidas de la API ---
 // Fincas
@@ -153,17 +178,20 @@ app.get('/api/user/profile', authenticateApi, db.getUserProfile);
 app.put('/api/user/profile', authenticateApi, db.updateUserProfile);
 app.put('/api/user/password', authenticateApi, db.updateUserPassword);
 
+// Aplicar middleware a las rutas premium
+app.get('/app/dashboard', authenticatePage, checkSubscription('profesional'), (req, res) => res.sendFile(path.join(__dirname, 'views', 'dashboard.html')));
+
 // Nuevas rutas para Blends
-app.get('/api/blends', authenticateApi, db.getBlends);
-app.post('/api/blends', authenticateApi, db.createBlend);
-app.delete('/api/blends/:id', authenticateApi, db.deleteBlend);
+app.get('/api/blends', authenticateApi, checkSubscription('profesional'), db.getBlends);
+app.post('/api/blends', authenticateApi, checkSubscription('profesional'), db.createBlend);
+app.delete('/api/blends/:id', authenticateApi, checkSubscription('profesional'), db.deleteBlend);
 //app.put('/api/blends/:id', authenticateApi, db.updateBlend);
 
 // Nuevas rutas para Recetas
-app.get('/api/recetas-chocolate', authenticateApi, db.getRecetas);
-app.post('/api/recetas-chocolate', authenticateApi, db.createReceta);
-app.delete('/api/recetas-chocolate/:id', authenticateApi, db.deleteReceta);
-app.put('/api/recetas-chocolate/:id', authenticateApi, db.updateReceta);
+app.get('/api/recetas-chocolate', authenticateApi, checkSubscription('profesional'), db.getRecetas);
+app.post('/api/recetas-chocolate', authenticateApi, checkSubscription('profesional'), db.createReceta);
+app.delete('/api/recetas-chocolate/:id', authenticateApi, checkSubscription('profesional'), db.deleteReceta);
+app.put('/api/recetas-chocolate/:id', authenticateApi, checkSubscription('profesional'), db.updateReceta);
 
 // Iniciar Servidor
 app.listen(PORT, () => {

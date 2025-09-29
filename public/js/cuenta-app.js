@@ -1,66 +1,112 @@
 document.addEventListener('DOMContentLoaded', () => {
+    // --- Selectores del DOM ---
     const profileForm = document.getElementById('profile-form');
     const passwordForm = document.getElementById('password-form');
+    
+    // Selectores de Información de Suscripción
+    const currentPlanEl = document.getElementById('current-plan');
+    const trialInfoEl = document.getElementById('trial-info');
+    const trialDaysLeftEl = document.getElementById('trial-days-left');
+
+    async function init() {
+        await loadProfile();
+        setupEventListeners();
+    }
 
     async function loadProfile() {
         try {
-            const profile = await api('/api/user/profile');
-            // Poblar el formulario con los datos del usuario
-            for (const key in profile) {
-                if (profileForm.elements[key]) {
-                    profileForm.elements[key].value = profile[key] || '';
-                }
+            const user = await api('/api/user/profile');
+            
+            // Poblar formulario de perfil
+            if (profileForm) {
+                profileForm.nombre.value = user.nombre || '';
+                profileForm.apellido.value = user.apellido || '';
+                profileForm.dni.value = user.dni || '';
+                profileForm.ruc.value = user.ruc || '';
+                profileForm.empresa.value = user.empresa || '';
+                profileForm.celular.value = user.celular || '';
+                profileForm.correo.value = user.correo || '';
             }
+            
+            // Lógica de Suscripción
+            if (currentPlanEl && user.subscription_tier) {
+                currentPlanEl.textContent = user.subscription_tier;
+            }
+
+            if (trialInfoEl && user.trial_ends_at) {
+                const trialEndDate = new Date(user.trial_ends_at);
+                const now = new Date();
+                const diffTime = trialEndDate - now;
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+                if (diffDays > 0) {
+                    trialDaysLeftEl.textContent = diffDays;
+                    trialInfoEl.classList.remove('hidden');
+                } else {
+                    trialInfoEl.classList.add('hidden');
+                }
+            } else if(trialInfoEl) {
+                trialInfoEl.classList.add('hidden');
+            }
+
         } catch (error) {
-            console.error("Error al cargar el perfil:", error);
-            alert("No se pudo cargar la información de tu perfil.");
+            console.error("Error al cargar perfil:", error);
+            alert("No se pudo cargar la información de tu perfil. Por favor, intenta recargar la página.");
         }
     }
 
-    profileForm.addEventListener('submit', async (e) => {
+    function setupEventListeners() {
+        if (profileForm) {
+            profileForm.addEventListener('submit', handleProfileUpdate);
+        }
+        if (passwordForm) {
+            passwordForm.addEventListener('submit', handlePasswordChange);
+        }
+    }
+
+    async function handleProfileUpdate(e) {
         e.preventDefault();
         const formData = new FormData(profileForm);
         const data = Object.fromEntries(formData.entries());
 
         try {
-            await api('/api/user/profile', {
+            const result = await api('/api/user/profile', {
                 method: 'PUT',
                 body: JSON.stringify(data)
             });
-            alert("¡Tus datos han sido actualizados exitosamente!");
+            alert('Perfil actualizado con éxito.');
         } catch (error) {
             console.error("Error al actualizar perfil:", error);
             alert(`Error: ${error.message}`);
         }
-    });
+    }
 
-    passwordForm.addEventListener('submit', async (e) => {
+    async function handlePasswordChange(e) {
         e.preventDefault();
         const formData = new FormData(passwordForm);
         const data = Object.fromEntries(formData.entries());
 
         if (data.newPassword !== data.confirmPassword) {
-            alert("La nueva contraseña y la confirmación no coinciden.");
+            alert('Las nuevas contraseñas no coinciden.');
             return;
         }
 
         try {
-            const payload = {
-                oldPassword: data.oldPassword,
-                newPassword: data.newPassword
-            };
-            await api('/api/user/password', {
+            const result = await api('/api/user/password', {
                 method: 'PUT',
-                body: JSON.stringify(payload)
+                body: JSON.stringify({
+                    oldPassword: data.oldPassword,
+                    newPassword: data.newPassword
+                })
             });
-            alert("¡Contraseña actualizada exitosamente!");
+            alert('Contraseña actualizada con éxito.');
             passwordForm.reset();
         } catch (error) {
             console.error("Error al cambiar contraseña:", error);
             alert(`Error: ${error.message}`);
         }
-    });
+    }
 
-    loadProfile();
+    init();
 });
 

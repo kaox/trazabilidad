@@ -66,7 +66,14 @@ const registerUser = async (req, res) => {
     if (!usuario || !password) return res.status(400).json({ error: "Usuario y contraseña son requeridos." });
     try {
         const hashedPassword = await bcrypt.hash(password, 10);
-        await run('INSERT INTO users (usuario, password, nombre, apellido, dni, ruc, empresa, celular, correo) VALUES (?,?,?,?,?,?,?,?,?)', [usuario, hashedPassword, nombre, apellido, dni, ruc, empresa, celular, correo]);
+        // Establecer la fecha de fin de la prueba para 30 días en el futuro
+        const trialEndDate = new Date();
+        trialEndDate.setDate(trialEndDate.getDate() + 30);
+        
+        await run(
+            'INSERT INTO users (usuario, password, nombre, apellido, dni, ruc, empresa, celular, correo, subscription_tier, trial_ends_at) VALUES (?,?,?,?,?,?,?,?,?,?,?)', 
+            [usuario, hashedPassword, nombre, apellido, dni, ruc, empresa, celular, correo, 'artesano', trialEndDate.toISOString()]
+        );
         res.status(201).json({ message: "Usuario registrado exitosamente." });
     } catch (err) {
         if (err.message.includes('UNIQUE') || (err.code && err.code === '23505')) {
@@ -101,8 +108,18 @@ const logoutUser = (req, res) => {
 const getUserProfile = async (req, res) => {
     const userId = req.user.id;
     try {
-        const user = await get('SELECT id, usuario, nombre, apellido, dni, ruc, empresa, celular, correo FROM users WHERE id = ?', [userId]);
+        let user = await get('SELECT id, usuario, nombre, apellido, dni, ruc, empresa, celular, correo, subscription_tier, trial_ends_at FROM users WHERE id = ?', [userId]);
         if (!user) return res.status(404).json({ error: "Usuario no encontrado." });
+
+        // Si el usuario no tiene fecha de prueba (cuenta antigua), se le asigna una.
+        if (!user.trial_ends_at) {
+            const trialEndDate = new Date();
+            trialEndDate.setDate(trialEndDate.getDate() + 30);
+            user.trial_ends_at = trialEndDate.toISOString();
+            
+            await run('UPDATE users SET trial_ends_at = ? WHERE id = ?', [user.trial_ends_at, userId]);
+        }
+
         res.status(200).json(user);
     } catch (err) { res.status(500).json({ error: err.message }); }
 };
@@ -830,6 +847,11 @@ const deleteReceta = async (req, res) => {
     }
 };
 
+// Nueva función para obtener el estado de la suscripción
+const getUserSubscriptionStatus = async (userId) => {
+    return await get('SELECT subscription_tier, trial_ends_at FROM users WHERE id = ?', [userId]);
+};
+
 module.exports = {
     registerUser, loginUser, logoutUser,
     getFincas, createFinca, updateFinca, deleteFinca,
@@ -843,6 +865,7 @@ module.exports = {
     getPerfilesCafe, createPerfilCafe, updatePerfilCafe, deletePerfilCafe,
     getRuedasSabores, createRuedaSabores, updateRuedaSabores, deleteRuedaSabores,
     getBlends, createBlend, deleteBlend,
-    getRecetas, createReceta, deleteReceta, updateReceta
+    getRecetas, createReceta, deleteReceta, updateReceta,
+    getUserSubscriptionStatus, // Exportar la nueva función
 };
 
