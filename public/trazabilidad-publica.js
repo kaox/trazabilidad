@@ -38,7 +38,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (h.stages && h.stages.length > 0) {
             timelineHTML = h.stages.map((stage, index) => createTimelineItem(stage.nombre_etapa, stage.data, h, index)).join('');
         }
-        
+
         resultadoContainer.innerHTML = `<div class="timeline-container">${timelineHTML}</div>` + createSensoryProfileSection(h);
         
         if (h.fincaData && h.fincaData.coordenadas) {
@@ -66,6 +66,13 @@ document.addEventListener('DOMContentLoaded', () => {
             const statusClass = isExpired ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800';
             return `<div class="flex items-center gap-2"><img src="${cert.logo_url}" class="h-6 w-6 rounded-full"><span class="text-sm">${cert.nombre}</span><span class="text-xs font-medium px-2 py-0.5 rounded-full ${statusClass}">${isExpired ? 'Vencida' : 'Vigente'}</span></div>`;
         }).join('');
+
+        let premiosHtml = (fincaData.premios_json || []).map(premio => `
+            <div class="flex items-center gap-2">
+                <img src="${premio.logo_url}" alt="${premio.nombre}" class="h-6 w-6 rounded-full">
+                <span class="text-sm">${premio.nombre} (${premio.ano})</span>
+            </div>
+        `).join('');
 
         return `
             <div class="container mx-auto px-4 md:px-8 mb-16">
@@ -96,6 +103,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             <div><dt class="text-sm text-stone-500">Nombre de la Finca</dt><dd class="font-semibold">${fincaData.nombre_finca}</dd></div>
                             <div><dt class="text-sm text-stone-500">Altitud</dt><dd class="font-semibold">${fincaData.altura} msnm</dd></div>
                             <div><dt class="text-sm text-stone-500">Certificaciones</dt><dd class="mt-2 flex flex-wrap gap-4">${certsHtml || 'Ninguna'}</dd></div>
+                            <div><dt class="text-sm text-stone-500">Premios</dt><dd class="mt-2 flex flex-wrap gap-4">${premiosHtml || 'Ninguno'}</dd></div>
                         </div>
                         <div id="finca-map-pre-timeline" class="w-full h-64 rounded-lg border"></div>
                     </div>

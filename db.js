@@ -574,7 +574,8 @@ const getTrazabilidad = async (req, res) => {
                     ...finca, 
                     coordenadas: safeJSONParse(finca.coordenadas || 'null'),
                     imagenes_json: safeJSONParse(finca.imagenes_json || '[]'),
-                    certificaciones_json: safeJSONParse(finca.certificaciones_json || '[]')
+                    certificaciones_json: safeJSONParse(finca.certificaciones_json || '[]'),
+                    premios_json: safeJSONParse(finca.premios_json || '[]')
                 };
             }
         }
