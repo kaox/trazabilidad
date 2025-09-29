@@ -27,6 +27,8 @@ document.addEventListener('DOMContentLoaded', () => {
             globalHistory = await fetch(`/api/trazabilidad/${loteId}`).then(res => res.ok ? res.json() : Promise.reject(res));
             renderHistory(globalHistory);
         } catch (error) {
+            // CORRECCIÓN: Limpiar ambos contenedores en caso de error
+            preTimelineContainer.innerHTML = '';
             resultadoContainer.innerHTML = `<div class="container mx-auto px-6"><div class="text-center bg-red-100 text-red-800 p-6 rounded-2xl shadow-md"><h3 class="font-bold text-xl mb-2">Lote no encontrado</h3><p>Verifica el código e inténtalo de nuevo.</p></div></div>`;
         }
     }

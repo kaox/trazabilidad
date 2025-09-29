@@ -87,7 +87,7 @@ const registerUser = async (req, res) => {
 const loginUser = async (req, res) => {
     const { usuario, password } = req.body;
     try {
-        const user = await get('SELECT * FROM users WHERE usuario = ?', [usuario]);
+        const user = await get('SELECT * FROM users WHERE LOWER(usuario) = LOWER(?)', [usuario]);
         if (!user) return res.status(401).json({ error: "Credenciales inválidas." });
         
         const match = await bcrypt.compare(password, user.password);
@@ -526,9 +526,10 @@ const getTrazabilidad = async (req, res) => {
     try {
         const rows = await all(`
             WITH RECURSIVE trazabilidad_completa AS (
-                SELECT * FROM lotes WHERE id = ?
+                SELECT * FROM lotes WHERE UPPER(id) = UPPER(?)
                 UNION ALL
-                SELECT l.* FROM lotes l INNER JOIN trazabilidad_completa tc ON l.id = tc.parent_id
+                SELECT l.* FROM lotes l
+                INNER JOIN trazabilidad_completa tc ON l.id = tc.parent_id
             )
             SELECT * FROM trazabilidad_completa;
         `, [id]);
