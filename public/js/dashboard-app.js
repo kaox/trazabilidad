@@ -10,6 +10,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const kpiContainer = document.getElementById('kpi-container');
     const templateFilter = document.getElementById('template-filter');
+    const batchFilter = document.getElementById('batch-filter');
 
     async function init() {
         try {
@@ -24,8 +25,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 state.stagesByTemplate[t.id] = await api(`/api/templates/${t.id}/stages`);
             }
 
-            populateFilter();
-            templateFilter.addEventListener('change', handleFilterChange);
+            populateTemplateFilter();
+            populateBatchFilter(); // Carga inicial con todos los lotes
+            
+            templateFilter.addEventListener('change', handleTemplateFilterChange);
+            batchFilter.addEventListener('change', handleBatchFilterChange);
+            
             processAndRenderDashboard(state.batches); // Render inicial con todos los datos
         } catch (error) {
             console.error("Error al cargar datos para el dashboard:", error);
@@ -33,20 +38,49 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
     
-    function populateFilter() {
+    function populateTemplateFilter() {
         let optionsHtml = '<option value="all">Todos los Procesos</option>';
         optionsHtml += state.templates.map(t => `<option value="${t.id}">${t.nombre_producto}</option>`).join('');
         templateFilter.innerHTML = optionsHtml;
     }
 
-    function handleFilterChange() {
-        const selectedTemplateId = templateFilter.value;
-        if (selectedTemplateId === 'all') {
-            processAndRenderDashboard(state.batches);
-        } else {
-            const filteredBatches = state.batches.filter(b => b.plantilla_id == selectedTemplateId);
-            processAndRenderDashboard(filteredBatches);
+    function populateBatchFilter(templateId = 'all') {
+        let batchesToShow = state.batches;
+        if (templateId !== 'all') {
+            batchesToShow = state.batches.filter(b => b.plantilla_id == templateId);
         }
+
+        let optionsHtml = '<option value="all">Todos los Lotes</option>';
+        optionsHtml += batchesToShow.map(batch => {
+            const dateField = Object.keys(batch).find(key => key.toLowerCase().includes('fecha'));
+            const date = dateField ? batch[dateField] : 'Sin fecha';
+            return `<option value="${batch.id}">${batch.id} [${date}]</option>`;
+        }).join('');
+        batchFilter.innerHTML = optionsHtml;
+    }
+
+    function handleTemplateFilterChange() {
+        const selectedTemplateId = templateFilter.value;
+        populateBatchFilter(selectedTemplateId); // Actualizar el filtro de lotes
+        
+        const batchesToProcess = selectedTemplateId === 'all'
+            ? state.batches
+            : state.batches.filter(b => b.plantilla_id == selectedTemplateId);
+        
+        processAndRenderDashboard(batchesToProcess);
+    }
+
+    function handleBatchFilterChange() {
+        const selectedBatchId = batchFilter.value;
+        const selectedTemplateId = templateFilter.value;
+
+        if (selectedBatchId === 'all') {
+            handleTemplateFilterChange(); // Vuelve a la lógica del filtro de plantilla
+            return;
+        }
+
+        const selectedBatch = state.batches.find(b => b.id === selectedBatchId);
+        processAndRenderDashboard(selectedBatch ? [selectedBatch] : []);
     }
 
     function processAndRenderDashboard(filteredBatches) {
@@ -63,26 +97,27 @@ document.addEventListener('DOMContentLoaded', () => {
         const totalYields = [];
 
         function traverse(batchData, template, stage, parentBatch = null) {
-            let inputWeight = 0, outputWeight = 0;
+            let inputWeight = 0;
+            let outputWeight = 0;
             const entradas = stage.campos_json.entradas || [];
             const salidas = stage.campos_json.salidas || [];
-
-            if (entradas.length > 0 && entradas[0].name) {
-                if (parentBatch) {
-                    const parentStage = state.stagesByTemplate[template.id]?.find(s => s.orden === stage.orden - 1);
-                    if (parentStage?.campos_json.salidas[0]) {
-                        inputWeight = parseFloat(parentBatch[parentStage.campos_json.salidas[0].name]) || 0;
-                    }
-                } else {
-                    inputWeight = parseFloat(batchData[entradas[0].name]) || 0;
-                }
-            }
 
             if (salidas.length > 0 && salidas[0].name) {
                 outputWeight = parseFloat(batchData[salidas[0].name]) || 0;
             }
 
-            if (inputWeight > 0) {
+            const inputField = entradas[0]?.name;
+            if (inputField && batchData[inputField]) {
+                inputWeight = parseFloat(batchData[inputField]) || 0;
+            } else if (parentBatch) {
+                const parentStage = state.stagesByTemplate[template.id]?.find(s => s.orden === stage.orden - 1);
+                if (parentStage?.campos_json.salidas[0]) {
+                    const outputFieldOfParent = parentStage.campos_json.salidas[0].name;
+                    inputWeight = parseFloat(parentBatch[outputFieldOfParent]) || 0;
+                }
+            }
+
+            if (inputWeight > 0 && outputWeight > 0) {
                 const yieldPercent = (outputWeight / inputWeight) * 100;
                 if (!stageYields[stage.nombre_etapa]) {
                     stageYields[stage.nombre_etapa] = { total: 0, count: 0, order: stage.orden };
@@ -138,7 +173,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const avgYield = totalYields.length > 0 ? totalYields.reduce((a, b) => a + b, 0) / totalYields.length : 0;
 
         const kpis = [
-            { label: 'Lotes Activos', value: filteredBatches.length, icon: `<svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2a4 4 0 00-4-4H3V7a4 4 0 014-4h4a4 4 0 014 4v4m-6 6h6m-3 3v-3" /></svg>`, color: 'text-sky-700 bg-sky-100' },
+            { label: 'Lotes Analizados', value: filteredBatches.length, icon: `<svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2a4 4 0 00-4-4H3V7a4 4 0 014-4h4a4 4 0 014 4v4m-6 6h6m-3 3v-3" /></svg>`, color: 'text-sky-700 bg-sky-100' },
             { label: 'Rendimiento Promedio', value: `${avgYield.toFixed(1)}%`, icon: `<svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>`, color: 'text-green-700 bg-green-100' },
             { label: 'Fincas Registradas', value: state.fincas.length, icon: `<svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" viewBox="0 0 24 24" fill="currentColor"><path d="M12.71,2.58C12.32,2.2,11.69,2.2,11.3,2.58L4.31,9.54C3.93,9.93,4.23,10.58,4.76,10.58H7V18C7,18.55,7.45,19,8,19H16C16.55,19,17,18.55,17,18V10.58H19.24C19.77,10.58,20.07,9.93,19.7,9.54L12.71,2.58Z" /></svg>`, color: 'text-amber-800 bg-amber-100' },
             { label: 'Procesadoras', value: state.procesadoras.length, icon: `<svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" viewBox="0 0 24 24" fill="currentColor"><path d="M18 17H22V15H18V17M18 13H22V11H18V13M18 9H22V7H18V9M16 19H6V21H16V19M16 3H6C4.9 3 4 3.9 4 5V17H2V5C2 2.79 3.79 1 6 1H16V3Z" /></svg>`, color: 'text-indigo-700 bg-indigo-100' }

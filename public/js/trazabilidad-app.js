@@ -65,30 +65,52 @@ document.addEventListener('DOMContentLoaded', () => {
         const childrenKey = nextStage ? nextStage.nombre_etapa.toLowerCase().replace(/ & /g, '_and_') : null;
         const hasChildren = childrenKey && batchData[childrenKey] && Array.isArray(batchData[childrenKey]) && batchData[childrenKey].length > 0;
         
-        let inputWeight = 0, outputWeight = 0, yieldPercent = 0;
         const entradas = stage.campos_json.entradas || [];
         const salidas = stage.campos_json.salidas || [];
         const variables = stage.campos_json.variables || [];
         const imageUrlField = variables.find(v => v.type === 'image');
 
-        if (entradas.length > 0 && entradas[0].name) {
-            if (parentBatch) {
-                const parentStage = state.stagesByTemplate[template.id]?.find(s => s.orden === stage.orden - 1);
-                if (parentStage && parentStage.campos_json.salidas[0]) {
-                    const inputField = parentStage.campos_json.salidas[0].name;
-                    inputWeight = parseFloat(parentBatch[inputField]) || 0;
-                }
-            } else {
-                inputWeight = parseFloat(batchData[entradas[0].name]) || 0;
+        let inputWeight = 0;
+        let displayInputWeight = 0;
+        let outputWeight = 0;
+
+        // --- LÓGICA DE CÁLCULO CORREGIDA ---
+        // 1. Determinar el peso de SALIDA de la etapa actual.
+        if (salidas.length > 0 && salidas[0].name) {
+            outputWeight = parseFloat(batchData[salidas[0].name]) || 0;
+        }
+
+        // 2. Determinar el peso de ENTRADA para el CÁLCULO del rendimiento.
+        // Se prioriza el valor de entrada registrado en el lote ACTUAL.
+        if (entradas.length > 0 && entradas[0].name && batchData[entradas[0].name]) {
+            inputWeight = parseFloat(batchData[entradas[0].name]) || 0;
+        } else if (parentBatch) {
+            // Como fallback (si la plantilla no define un input), se usa la salida del padre.
+            const parentStage = state.stagesByTemplate[template.id]?.find(s => s.orden === stage.orden - 1);
+            if (parentStage && parentStage.campos_json.salidas[0]) {
+                const outputFieldOfParent = parentStage.campos_json.salidas[0].name;
+                inputWeight = parseFloat(parentBatch[outputFieldOfParent]) || 0;
             }
         }
-        if (salidas.length > 0 && salidas[0].name) outputWeight = parseFloat(batchData[salidas[0].name]) || 0;
-        if (inputWeight > 0) yieldPercent = (outputWeight / inputWeight) * 100;
+        
+        // 3. Determinar el valor a MOSTRAR como entrada.
+        // Es el mismo que el de cálculo, pero asegura que se muestre algo si es un sub-proceso.
+        displayInputWeight = inputWeight;
+        if (parentBatch && inputWeight === 0) {
+             const parentStage = state.stagesByTemplate[template.id]?.find(s => s.orden === stage.orden - 1);
+            if (parentStage && parentStage.campos_json.salidas[0]) {
+                const outputFieldOfParent = parentStage.campos_json.salidas[0].name;
+                displayInputWeight = parseFloat(parentBatch[outputFieldOfParent]) || 0;
+            }
+        }
+
+        const yieldPercent = (inputWeight > 0) ? (outputWeight / inputWeight) * 100 : 0;
         
         let variablesHtml = variables.filter(v => v.type !== 'image').map(v => `<div><dt class="text-stone-500">${v.label}:</dt><dd class="font-medium text-stone-800">${batchData[v.name] || 'N/A'}</dd></div>`).join('');
         
         let ioHtml = `<div class="flex gap-4">`;
-        if (entradas.length > 0) ioHtml += `<div class="flex-1"><p class="text-sm text-stone-500">Entrada (${entradas[0].label})</p><p class="font-bold text-lg">${inputWeight.toFixed(2)} kg</p></div>`;
+        const inputLabel = entradas[0]?.label || 'Entrada';
+        ioHtml += `<div class="flex-1"><p class="text-sm text-stone-500">${inputLabel}</p><p class="font-bold text-lg">${displayInputWeight.toFixed(2)} kg</p></div>`;
         if (salidas.length > 0) ioHtml += `<div class="flex-1"><p class="text-sm text-stone-500">Salida (${salidas[0].label})</p><p class="font-bold text-lg text-green-700">${outputWeight.toFixed(2)} kg</p></div>`;
         ioHtml += `</div>`;
         
@@ -348,19 +370,17 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     async function handleDashboardClick(e) {
-        const button = e.target.closest('button');
         const expandTrigger = e.target.closest('.expand-trigger');
-
         if (expandTrigger) {
-            const wrapper = expandTrigger.closest('.batch-card-wrapper');
-            if (wrapper) {
-                const childrenContainer = wrapper.querySelector('.children-container');
-                const icon = expandTrigger.querySelector('.expand-icon');
-                if (childrenContainer) childrenContainer.classList.toggle('hidden');
-                if (icon) icon.classList.toggle('rotate-90');
-            }
+            const wrapper = expandTrigger.closest('.bg-white.rounded-xl.shadow-md');
+            const childrenContainer = wrapper.parentElement.querySelector('.children-container');
+            const icon = expandTrigger.querySelector('.expand-icon');
+            if (childrenContainer) childrenContainer.classList.toggle('hidden');
+            if (icon) icon.classList.toggle('rotate-90');
             return;
         }
+
+        const button = e.target.closest('button');
 
         if (!button) return;
         
