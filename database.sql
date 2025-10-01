@@ -81,6 +81,7 @@ CREATE TABLE IF NOT EXISTS fincas (
     imagenes_json TEXT,
     certificaciones_json TEXT,
     premios_json TEXT,
+    foto_productor TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,

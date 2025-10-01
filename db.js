@@ -163,10 +163,10 @@ const getFincas = async (req, res) => {
 
 const createFinca = async (req, res) => {
     const userId = req.user.id;
-    const { propietario, dni_ruc, nombre_finca, pais, ciudad, altura, superficie, coordenadas, telefono, historia, imagenes_json, certificaciones_json, premios_json } = req.body;
+    const { propietario, dni_ruc, nombre_finca, pais, ciudad, altura, superficie, coordenadas, telefono, historia, imagenes_json, certificaciones_json, premios_json, foto_productor } = req.body;
     const id = require('crypto').randomUUID();
     try {
-        await run('INSERT INTO fincas (id, user_id, propietario, dni_ruc, nombre_finca, pais, ciudad, altura, superficie, coordenadas, telefono, historia, imagenes_json, certificaciones_json, premios_json) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [id, userId, propietario, dni_ruc, nombre_finca, pais, ciudad, altura, superficie, JSON.stringify(coordenadas), telefono, historia, JSON.stringify(imagenes_json || []), JSON.stringify(certificaciones_json || []), JSON.stringify(premios_json || [])]);
+        await run('INSERT INTO fincas (id, user_id, propietario, dni_ruc, nombre_finca, pais, ciudad, altura, superficie, coordenadas, telefono, historia, imagenes_json, certificaciones_json, premios_json, foto_productor) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [id, userId, propietario, dni_ruc, nombre_finca, pais, ciudad, altura, superficie, JSON.stringify(coordenadas), telefono, historia, JSON.stringify(imagenes_json || []), JSON.stringify(certificaciones_json || []), JSON.stringify(premios_json || []), foto_productor]);
         res.status(201).json({ message: "Finca creada" });
     } catch (err) { res.status(500).json({ error: err.message }); }
 };
@@ -174,10 +174,10 @@ const createFinca = async (req, res) => {
 const updateFinca = async (req, res) => {
     const userId = req.user.id;
     const { id } = req.params;
-    const { propietario, dni_ruc, nombre_finca, pais, ciudad, altura, superficie, coordenadas, telefono, historia, imagenes_json, certificaciones_json, premios_json } = req.body;
-    const sql = 'UPDATE fincas SET propietario = ?, dni_ruc = ?, nombre_finca = ?, pais = ?, ciudad = ?, altura = ?, superficie = ?, coordenadas = ?, telefono = ?, historia = ?, imagenes_json = ?, certificaciones_json = ?, premios_json = ? WHERE id = ? AND user_id = ?';
+    const { propietario, dni_ruc, nombre_finca, pais, ciudad, altura, superficie, coordenadas, telefono, historia, imagenes_json, certificaciones_json, premios_json, foto_productor } = req.body;
+    const sql = 'UPDATE fincas SET propietario = ?, dni_ruc = ?, nombre_finca = ?, pais = ?, ciudad = ?, altura = ?, superficie = ?, coordenadas = ?, telefono = ?, historia = ?, imagenes_json = ?, certificaciones_json = ?, premios_json = ?, foto_productor = ? WHERE id = ? AND user_id = ?';
     try {
-        const result = await run(sql, [propietario, dni_ruc, nombre_finca, pais, ciudad, altura, superficie, JSON.stringify(coordenadas), telefono, historia, JSON.stringify(imagenes_json || []), JSON.stringify(certificaciones_json || []), JSON.stringify(premios_json || []), id, userId]);
+        const result = await run(sql, [propietario, dni_ruc, nombre_finca, pais, ciudad, altura, superficie, JSON.stringify(coordenadas), telefono, historia, JSON.stringify(imagenes_json || []), JSON.stringify(certificaciones_json || []), JSON.stringify(premios_json || []), foto_productor, id, userId]);
         if (result.changes === 0) return res.status(404).json({ error: "Finca no encontrada o no tienes permiso." });
         res.status(200).json({ message: "Finca actualizada" });
     } catch (err) { res.status(500).json({ error: err.message }); }

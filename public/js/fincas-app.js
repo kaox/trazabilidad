@@ -19,6 +19,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const premioYearInput = document.getElementById('premio-year');
     const addPremioBtn = document.getElementById('add-premio-btn');
     const premiosListContainer = document.getElementById('premios-list');
+    const productorFotoInput = document.getElementById('productor-foto-input');
+    const productorFotoPreview = document.getElementById('productor-foto-preview');
+    const fotoProductorHiddenInput = document.getElementById('foto_productor');
+    
     
     let allPremios = [];
     let currentFincaPremios = [];
@@ -80,6 +84,7 @@ document.addEventListener('DOMContentLoaded', () => {
         locateBtn.addEventListener('click', locateUser);
         addPremioBtn.addEventListener('click', handleAddPremio);
         premiosListContainer.addEventListener('click', handlePremioAction);
+        productorFotoInput.addEventListener('change', handleProductorFotoUpload);
     }
 
     async function loadPremios() {
@@ -144,6 +149,8 @@ document.addEventListener('DOMContentLoaded', () => {
         currentImages = [];
         currentFincaCertifications = [];
         currentFincaPremios = [];
+        productorFotoPreview.src = 'https://placehold.co/100x100/e0e0e0/757575?text=Productor';
+        fotoProductorHiddenInput.value = '';
         renderImagePreviews();
         renderAddedCertifications();
         renderAddedPremios();
@@ -175,6 +182,9 @@ document.addEventListener('DOMContentLoaded', () => {
             form.coordenadas.value = JSON.stringify(finca.coordenadas);
             editIdInput.value = finca.id;
 
+            productorFotoPreview.src = finca.foto_productor || 'https://placehold.co/100x100/e0e0e0/757575?text=Productor';
+            fotoProductorHiddenInput.value = finca.foto_productor || '';
+
             currentImages = finca.imagenes_json || [];
             currentFincaCertifications = finca.certificaciones_json || [];
             currentFincaPremios = finca.premios_json || [];
@@ -194,6 +204,17 @@ document.addEventListener('DOMContentLoaded', () => {
             cancelEditBtn.classList.remove('hidden');
             window.scrollTo({ top: 0, behavior: 'smooth' });
         } catch (error) { alert('Error al cargar datos para editar.'); }
+    }
+
+    function handleProductorFotoUpload(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onloadend = () => {
+            productorFotoPreview.src = reader.result;
+            fotoProductorHiddenInput.value = reader.result;
+        };
+        reader.readAsDataURL(file);
     }
 
     // --- Lógica de Premios ---

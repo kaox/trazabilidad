@@ -29,11 +29,28 @@
         </header>
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
             <div class="bg-white p-6 rounded-2xl shadow-lg">
+                 <h2 class="text-2xl font-display text-amber-900 border-b pb-2 mb-6">Fincas Registradas</h2>
+                 <div id="fincas-list" class="space-y-4 max-h-[80vh] overflow-y-auto"></div>
+            </div>
+            <div class="bg-white p-6 rounded-2xl shadow-lg">
                 <h2 id="form-title" class="text-2xl font-display text-amber-900 border-b pb-2 mb-6">Nueva Finca</h2>
                 <form id="finca-form" class="space-y-4">
                     <input type="hidden" id="edit-id">
-                    <div><label for="propietario" class="block text-sm font-medium text-stone-700 mb-1">Propietario</label><input type="text" id="propietario" name="propietario" class="w-full p-3 border border-stone-300 rounded-xl" required></div>
-                    <div><label for="dni_ruc" class="block text-sm font-medium text-stone-700 mb-1">DNI / RUC</label><input type="text" id="dni_ruc" name="dni_ruc" class="w-full p-3 border border-stone-300 rounded-xl" required></div>
+
+                    <div class="flex items-center gap-4">
+                        <div class="flex-grow space-y-4">
+                            <div><label for="propietario" class="block text-sm font-medium text-stone-700 mb-1">Propietario</label><input type="text" id="propietario" name="propietario" class="w-full p-3 border border-stone-300 rounded-xl" required></div>
+                            <div><label for="dni_ruc" class="block text-sm font-medium text-stone-700 mb-1">DNI / RUC</label><input type="text" id="dni_ruc" name="dni_ruc" class="w-full p-3 border border-stone-300 rounded-xl" required></div>
+                        </div>
+                        <div class="flex-shrink-0 text-center">
+                            <label class="block text-sm font-medium text-stone-700 mb-1">Foto del Productor</label>
+                            <img id="productor-foto-preview" src="https://placehold.co/100x100/e0e0e0/757575?text=Productor" class="w-24 h-24 rounded-full object-cover mx-auto border-2 border-stone-200">
+                            <input type="file" id="productor-foto-input" class="hidden" accept="image/*">
+                            <input type="hidden" id="foto_productor" name="foto_productor">
+                            <button type="button" onclick="document.getElementById('productor-foto-input').click()" class="mt-2 text-xs text-sky-600 hover:underline">Cambiar foto</button>
+                        </div>
+                    </div>
+
                     <div><label for="nombre_finca" class="block text-sm font-medium text-stone-700 mb-1">Nombre Finca</label><input type="text" id="nombre_finca" name="nombre_finca" class="w-full p-3 border border-stone-300 rounded-xl" required></div>
                     
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -105,10 +122,6 @@
                         <button type="submit" class="bg-amber-800 hover:bg-amber-900 text-white font-bold py-3 px-8 rounded-xl shadow-md">Guardar Finca</button>
                     </div>
                 </form>
-            </div>
-            <div class="bg-white p-6 rounded-2xl shadow-lg">
-                 <h2 class="text-2xl font-display text-amber-900 border-b pb-2 mb-6">Fincas Registradas</h2>
-                 <div id="fincas-list" class="space-y-4 max-h-[80vh] overflow-y-auto"></div>
             </div>
         </div>
     </div>

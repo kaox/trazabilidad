@@ -1,0 +1,808 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trazabilidad del Chocolate</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&family=Playfair+Display:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <style>
+        /* --- Reset y Variables Globales --- */
+        :root {
+            --color-primary: #3E2723; /* Marrón oscuro */
+            --color-secondary: #D2B48C; /* Tan (Beige) */
+            --color-background: #F5F5F5; /* Fondo claro */
+            --color-text: #4E342E; /* Texto marrón */
+            --color-accent: #8D6E63; /* Acento */
+            --font-heading: 'Playfair Display', serif;
+            --font-body: 'Lato', sans-serif;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: var(--font-body);
+            background-color: var(--color-background);
+            color: var(--color-text);
+            line-height: 1.6;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        /* --- Encabezado --- */
+        .main-header {
+            background-color: #fff;
+            padding: 20px 0;
+            text-align: center;
+            border-bottom: 2px solid var(--color-secondary);
+        }
+
+        .main-header h1 {
+            font-family: var(--font-heading);
+            color: var(--color-primary);
+            font-size: 1.8rem;
+            margin-bottom: 15px;
+        }
+
+        /* --- NUEVO: Estilos para la Búsqueda de Lotes --- */
+        .search-container {
+            display: flex;
+            justify-content: center;
+            max-width: 400px;
+            margin: 0 auto;
+        }
+
+        #loteSearchInput {
+            width: 100%;
+            padding: 10px 15px;
+            border: 1px solid #ccc;
+            border-radius: 20px 0 0 20px;
+            font-family: var(--font-body);
+            font-size: 1rem;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        #loteSearchInput:focus {
+            border-color: var(--color-accent);
+        }
+
+        #loteSearchBtn {
+            padding: 10px 15px;
+            border: 1px solid var(--color-accent);
+            background-color: var(--color-accent);
+            color: white;
+            border-radius: 0 20px 20px 0;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background-color 0.3s;
+        }
+
+        #loteSearchBtn:hover {
+            background-color: var(--color-primary);
+            border-color: var(--color-primary);
+        }
+
+        /* --- Información del Producto --- */
+        .product-info {
+            background: #fff;
+            padding: 25px 0;
+            text-align: center;
+        }
+
+        .product-info-img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        .product-info h2 {
+            font-family: var(--font-heading);
+            font-size: 2rem;
+            color: var(--color-primary);
+        }
+
+        .product-info .batch-id {
+            background-color: var(--color-secondary);
+            color: var(--color-primary);
+            padding: 5px 15px;
+            border-radius: 20px;
+            display: inline-block;
+            margin-top: 10px;
+            margin-bottom: 20px;
+            font-weight: 700;
+            font-size: 0.9rem;
+        }
+
+        /* --- Perfil de Sabor --- */
+        .flavor-profile {
+            margin-top: 25px;
+            text-align: left;
+            padding: 0 15px;
+        }
+        .flavor-profile h4 {
+            font-family: var(--font-heading);
+            text-align: center;
+            margin-bottom: 15px;
+            color: var(--color-primary);
+        }
+        .flavor-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+            font-size: 0.9rem;
+        }
+        .flavor-item span {
+            width: 80px; /* Ancho fijo para etiquetas */
+        }
+        .flavor-bar-bg {
+            flex-grow: 1;
+            background-color: #e0e0e0;
+            border-radius: 10px;
+            height: 15px;
+            overflow: hidden;
+        }
+        .flavor-bar {
+            height: 100%;
+            background-color: var(--color-accent);
+            border-radius: 10px;
+        }
+
+        /* --- Trazabilidad (Pestañas) --- */
+        .traceability-tabs {
+            padding: 30px 0;
+        }
+
+        .trace-nav {
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 25px;
+        }
+
+        .trace-nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            cursor: pointer;
+            border: none;
+            background: none;
+            padding: 10px;
+            border-radius: 8px;
+            transition: background-color 0.3s, color 0.3s;
+            width: 80px;
+        }
+        
+        .trace-nav-item .icon {
+            font-size: 2.5rem;
+            margin-bottom: 5px;
+            color: var(--color-accent);
+        }
+        
+        .trace-nav-item span {
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: var(--color-accent);
+            text-align: center;
+        }
+
+        .trace-nav-item.active, .trace-nav-item:hover {
+            background-color: var(--color-secondary);
+        }
+        
+        .trace-nav-item.active span, .trace-nav-item:hover span,
+        .trace-nav-item.active .icon, .trace-nav-item:hover .icon {
+             color: var(--color-primary);
+        }
+
+        .trace-panel {
+            display: none;
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        }
+
+        .trace-panel.active {
+            display: block;
+        }
+
+        .trace-panel h3 {
+            font-family: var(--font-heading);
+            color: var(--color-primary);
+            margin-bottom: 15px;
+        }
+
+        /* --- Sección Línea de Tiempo --- */
+        .traceability-timeline {
+            padding: 30px 0;
+        }
+        .section-title {
+            text-align: center;
+            font-family: var(--font-heading);
+            font-size: 2rem;
+            color: var(--color-primary);
+            margin-bottom: 30px;
+        }
+        
+        .timeline {
+            position: relative;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .timeline::after {
+            content: '';
+            position: absolute;
+            width: 4px;
+            background-color: var(--color-secondary);
+            top: 0;
+            bottom: 0;
+            left: 20px;
+            margin-left: -2px;
+        }
+
+        .timeline-item {
+            padding: 10px 40px;
+            position: relative;
+            background-color: inherit;
+            width: 100%;
+            padding-left: 60px;
+        }
+
+        .timeline-item::after {
+            content: ' ';
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            right: auto;
+            background-color: #fff;
+            border: 4px solid var(--color-accent);
+            top: 22px;
+            left: 6px; /* Ajuste para centrar el círculo de 28px (20px + 2*4px borde) en la línea de 20px */
+            border-radius: 50%;
+            z-index: 1;
+        }
+        
+        .timeline-content {
+            padding: 20px;
+            background-color: #fff;
+            position: relative;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+        }
+
+        .timeline-content.is-visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        
+        .timeline-content-img {
+            width: 100%;
+            height: auto;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+        
+        .timeline-content h3 {
+            font-family: var(--font-heading);
+            color: var(--color-primary);
+            margin-bottom: 15px;
+        }
+        
+        .timeline-details {
+            list-style-type: none;
+            padding: 0;
+        }
+        
+        .timeline-details li {
+            padding: 4px 0;
+        }
+
+        .timeline-detail-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        
+        .timeline-detail-item i {
+            color: var(--color-accent);
+            margin-right: 12px;
+            width: 20px;
+            text-align: center;
+        }
+
+        /* --- Información Adicional (Acordeón) --- */
+        .additional-info {
+            padding-bottom: 30px;
+        }
+        
+        .additional-info details {
+            background: #fff;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        }
+
+        .additional-info summary {
+            padding: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            list-style: none;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .additional-info summary::-webkit-details-marker { display: none; }
+        
+        .additional-info summary::after {
+            content: '+';
+            font-size: 1.5rem;
+            color: var(--color-accent);
+        }
+        
+        .additional-info details[open] summary::after { content: '−'; }
+        
+        .details-content {
+            padding: 0 15px 15px;
+            border-top: 1px solid #eee;
+        }
+
+        /* --- Footer --- */
+        .main-footer {
+            background-color: var(--color-primary);
+            color: var(--color-background);
+            text-align: center;
+            padding: 20px 0;
+            font-size: 0.9rem;
+        }
+
+        /* --- Estilos para Galería y Modal --- */
+        .map-mockup {
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+            margin-top: 15px;
+            border: 2px solid var(--color-secondary);
+        }
+
+        .gallery {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 15px;
+        }
+
+        .gallery-thumb {
+            width: 100px;
+            height: 75px;
+            object-fit: cover;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .gallery-thumb:hover {
+            transform: scale(1.05);
+        }
+
+        .modal {
+            display: none; 
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.8);
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal.is-open {
+            display: flex;
+        }
+
+        .modal-content {
+            margin: auto;
+            display: block;
+            max-width: 80%;
+            max-height: 80%;
+            border-radius: 8px;
+        }
+
+        .close-modal {
+            position: absolute;
+            top: 15px;
+            right: 35px;
+            color: #f1f1f1;
+            font-size: 40px;
+            font-weight: bold;
+            transition: 0.3s;
+            cursor: pointer;
+        }
+
+        .close-modal:hover,
+        .close-modal:focus {
+            color: #bbb;
+        }
+
+        /* --- NUEVO: Modal de Mensajes --- */
+        .message-modal-content {
+            background-color: #fff;
+            padding: 20px 30px;
+            border-radius: 8px;
+            text-align: center;
+            position: relative;
+            max-width: 90%;
+            width: 400px;
+        }
+
+        .close-message-modal {
+            position: absolute;
+            top: 5px;
+            right: 15px;
+            font-size: 2rem;
+            cursor: pointer;
+        }
+        
+        /* --- Media Query para Tabletas y Escritorio --- */
+        @media (min-width: 768px) {
+            .main-header h1 { font-size: 2.5rem; }
+            .main-content { display: flex; gap: 30px; padding: 30px 0; }
+            .product-info { flex: 1; padding: 0; align-self: flex-start; }
+            .traceability-tabs { flex: 2; padding: 0; }
+            .timeline::after { left: 50%; }
+            .timeline-item { width: 50%; padding-left: 0; padding-right: 0; }
+            .timeline-item:nth-child(odd) { left: 0; padding-right: 40px; }
+            .timeline-item:nth-child(even) { left: 50%; padding-left: 40px; }
+            .timeline-item:nth-child(odd)::after { left: auto; right: -14px; }
+            .timeline-item:nth-child(even)::after { left: -14px; }
+        }
+    </style>
+</head>
+<body>
+
+    <header class="main-header">
+        <div class="container">
+            <h1>Trazabilidad del Chocolate Oscuro</h1>
+            <div class="search-container">
+                <input type="text" id="loteSearchInput" placeholder="Buscar por Lote...">
+                <button id="loteSearchBtn" aria-label="Buscar Lote"><i class="fas fa-search"></i></button>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <div class="container main-content">
+            <section class="product-info">
+                <img class="product-info-img" src="https://via.placeholder.com/600x400.png/3E2723/FFFFFF?text=Chocolate+Oscuro" alt="Tableta de Chocolate Oscuro">
+                <h2>Chocolate Oscuro 001</h2>
+                <p>Un viaje de sabor desde el origen hasta tus manos. Cacao 70% de origen único, con notas de frutos rojos y final suave.</p>
+                <span class="batch-id">LOTE: C4H5-2023-B7</span>
+
+                <div class="flavor-profile">
+                    <h4>Perfil de Sabor</h4>
+                    <div class="flavor-item">
+                        <span>Frutal</span>
+                        <div class="flavor-bar-bg"><div class="flavor-bar" style="width: 85%;"></div></div>
+                    </div>
+                    <div class="flavor-item">
+                        <span>Cítrico</span>
+                        <div class="flavor-bar-bg"><div class="flavor-bar" style="width: 40%;"></div></div>
+                    </div>
+                    <div class="flavor-item">
+                        <span>Nuez</span>
+                        <div class="flavor-bar-bg"><div class="flavor-bar" style="width: 60%;"></div></div>
+                    </div>
+                     <div class="flavor-item">
+                        <span>Amargor</span>
+                        <div class="flavor-bar-bg"><div class="flavor-bar" style="width: 75%;"></div></div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="traceability-tabs">
+                <nav class="trace-nav">
+                    <button class="trace-nav-item active" data-target="origen">
+                        <i class="fas fa-globe icon"></i>
+                        <span>Origen</span>
+                    </button>
+                    <button class="trace-nav-item" data-target="productor">
+                        <i class="fas fa-leaf icon"></i>
+                        <span>Productor</span>
+                    </button>
+                    <button class="trace-nav-item" data-target="proceso">
+                        <i class="fas fa-cogs icon"></i>
+                        <span>Proceso</span>
+                    </button>
+                    <button class="trace-nav-item" data-target="empaque">
+                        <i class="fas fa-box-open icon"></i>
+                        <span>Empaque</span>
+                    </button>
+                </nav>
+
+                <div class="trace-panels">
+                    <article id="origen" class="trace-panel active">
+                        <h3>Origen del Cacao</h3>
+                        <p><strong>País:</strong> Perú</p>
+                        <p><strong>Región:</strong> San Martín, conocida por su cacao de alta calidad.</p>
+                        <img src="https://via.placeholder.com/400x300.png/D2B48C/3E2723?text=Mapa+de+la+Finca" alt="Mapa de la Finca" class="map-mockup">
+                    </article>
+                    <article id="productor" class="trace-panel">
+                        <h3>Productor / Finca</h3>
+                         <p><strong>Finca:</strong> Finca Cacaoteros</p>
+                        <p><strong>Variedad Cacao:</strong> Chuncho Blanco</p>
+                        <div class="gallery">
+                            <img src="https://via.placeholder.com/150x100.png/8D6E63/FFFFFF?text=Finca+1" alt="Imagen de la finca 1" class="gallery-thumb">
+                            <img src="https://via.placeholder.com/150x100.png/8D6E63/FFFFFF?text=Productor" alt="Imagen del productor" class="gallery-thumb">
+                            <img src="https://via.placeholder.com/150x100.png/8D6E63/FFFFFF?text=Cosecha" alt="Imagen de la cosecha" class="gallery-thumb">
+                        </div>
+                    </article>
+                    <article id="proceso" class="trace-panel">
+                        <h3>Proceso de Elaboración</h3>
+                        <p>Nuestro chocolate se elabora siguiendo métodos artesanales para garantizar la máxima calidad y sabor.</p>
+                    </article>
+                    <article id="empaque" class="trace-panel">
+                        <h3>Empaque y Distribución</h3>
+                        <p>Empacado con materiales sostenibles para preservar su frescura y cuidar el planeta.</p>
+                    </article>
+                </div>
+            </section>
+        </div>
+
+        <section class="traceability-timeline container">
+             <h2 class="section-title">Línea de Tiempo del Proceso</h2>
+             <div class="timeline">
+                 <!-- Proceso: Cosecha -->
+                 <div class="timeline-item">
+                     <div class="timeline-content">
+                         <h3>Cosecha</h3>
+                         <img class="timeline-content-img" src="https://via.placeholder.com/600x300.png/8D6E63/FFFFFF?text=Cosecha+de+Cacao" alt="Cosecha de mazorcas de cacao">
+                         <ul class="timeline-details">
+                             <li class="timeline-detail-item"><i class="fas fa-calendar-alt"></i><span><strong>Fecha Cosecha:</strong> 2025-09-29</span></li>
+                             <li class="timeline-detail-item"><i class="fas fa-map-marker-alt"></i><span><strong>Finca:</strong> Finca Cacaoteros</span></li>
+                             <li><strong>Peso Mazorcas:</strong> 100 kg</li>
+                             <li><strong>Peso Granos Baba:</strong> 80 kg</li>
+                             <li><strong>Variedad Cacao:</strong> Chuncho Blanco</li>
+                         </ul>
+                     </div>
+                 </div>
+                 <!-- Proceso: Fermentado -->
+                 <div class="timeline-item">
+                     <div class="timeline-content">
+                         <h3>Fermentado</h3>
+                         <img class="timeline-content-img" src="https://via.placeholder.com/600x300.png/8D6E63/FFFFFF?text=Fermentado" alt="Granos de cacao fermentando">
+                         <ul class="timeline-details">
+                            <li class="timeline-detail-item"><i class="fas fa-calendar-alt"></i><span><strong>Fecha Inicio:</strong> 2025-09-29</span></li>
+                            <li class="timeline-detail-item"><i class="fas fa-map-marker-alt"></i><span><strong>Lugar:</strong> Finca Cacaoteros</span></li>
+                             <li><strong>Peso Entrada:</strong> 80 kg</li>
+                             <li><strong>Peso Fermentado:</strong> 60 kg</li>
+                             <li><strong>Método:</strong> N/A</li>
+                         </ul>
+                     </div>
+                 </div>
+                 <!-- Proceso: Secado -->
+                  <div class="timeline-item">
+                     <div class="timeline-content">
+                         <h3>Secado</h3>
+                         <img class="timeline-content-img" src="https://via.placeholder.com/600x300.png/8D6E63/FFFFFF?text=Secado+de+Cacao" alt="Granos de cacao secándose al sol">
+                         <ul class="timeline-details">
+                            <li class="timeline-detail-item"><i class="fas fa-calendar-alt"></i><span><strong>Fecha Inicio:</strong> 2025-09-29</span></li>
+                            <li class="timeline-detail-item"><i class="fas fa-map-marker-alt"></i><span><strong>Lugar:</strong> Finca Cacaoteros</span></li>
+                             <li><strong>Peso Entrada:</strong> 60 kg</li>
+                             <li><strong>Peso Seco:</strong> 40 kg</li>
+                             <li><strong>Humedad Final:</strong> N/A</li>
+                         </ul>
+                     </div>
+                 </div>
+                 <!-- Proceso: Tostado -->
+                 <div class="timeline-item">
+                     <div class="timeline-content">
+                         <h3>Tostado</h3>
+                         <img class="timeline-content-img" src="https://via.placeholder.com/600x300.png/8D6E63/FFFFFF?text=Tostado+de+Cacao" alt="Granos de cacao en tostadora">
+                         <ul class="timeline-details">
+                            <li class="timeline-detail-item"><i class="fas fa-calendar-alt"></i><span><strong>Fecha Tostado:</strong> 2025-09-29</span></li>
+                            <li class="timeline-detail-item"><i class="fas fa-map-marker-alt"></i><span><strong>Procesadora:</strong> Tostaduría Juanita</span></li>
+                             <li><strong>Peso Entrada:</strong> 20 kg</li>
+                             <li><strong>Peso Tostado:</strong> 10 kg</li>
+                             <li><strong>Tipo Perfil:</strong> CMP15</li>
+                         </ul>
+                     </div>
+                 </div>
+                 <!-- Proceso: Descascarillado -->
+                 <div class="timeline-item">
+                     <div class="timeline-content">
+                         <h3>Descascarillado</h3>
+                         <img class="timeline-content-img" src="https://via.placeholder.com/600x300.png/8D6E63/FFFFFF?text=Descascarillado" alt="Proceso de descascarillado">
+                        <p>En este paso se retira la cáscara del grano de cacao tostado para obtener los nibs, el corazón puro del cacao.</p>
+                        <p><em>Datos específicos de este proceso no disponibles para este lote.</em></p>
+                     </div>
+                 </div>
+             </div>
+        </section>
+
+        <section class="additional-info container">
+            <details>
+                <summary>Maridajes Sugeridos</summary>
+                <div class="details-content">
+                    <ul>
+                        <li><strong>Vino:</strong> Un vino tinto robusto como un Cabernet Sauvignon resalta las notas de frutos rojos.</li>
+                        <li><strong>Café:</strong> Un café de origen único con acidez media complementa el amargor del cacao.</li>
+                        <li><strong>Queso:</strong> Un queso curado y salado como el parmesano crea un contraste delicioso.</li>
+                    </ul>
+                </div>
+            </details>
+            <details>
+                <summary>Certificaciones</summary>
+                <div class="details-content">
+                    <ul>
+                        <li>Orgánico Certificado</li>
+                        <li>Comercio Justo (Fair Trade)</li>
+                        <li>Non-GMO</li>
+                    </ul>
+                </div>
+            </details>
+            <details>
+                <summary>Ingredientes</summary>
+                <div class="details-content">
+                    <p>Pasta de cacao, azúcar de caña, manteca de cacao, lecitina de girasol.</p>
+                </div>
+            </details>
+        </section>
+        
+    </main>
+
+    <footer class="main-footer">
+        <div class="container">
+            <p>&copy; 2024 Tu Marca de Chocolate. Todos los derechos reservados.</p>
+        </div>
+    </footer>
+
+    <!-- Modal de Imagen -->
+    <div id="imageModal" class="modal">
+        <span class="close-modal">&times;</span>
+        <img class="modal-content" id="modalImage">
+    </div>
+
+    <!-- NUEVO: Modal de Mensajes -->
+    <div id="messageModal" class="modal">
+        <div class="message-modal-content">
+            <span class="close-message-modal">&times;</span>
+            <p id="messageText"></p>
+        </div>
+    </div>
+
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // --- Lógica para las pestañas de navegación ---
+            const navItems = document.querySelectorAll('.trace-nav-item');
+            const tracePanels = document.querySelectorAll('.trace-panel');
+
+            navItems.forEach(item => {
+                item.addEventListener('click', () => {
+                    const targetId = item.getAttribute('data-target');
+                    const targetPanel = document.getElementById(targetId);
+
+                    navItems.forEach(nav => nav.classList.remove('active'));
+                    tracePanels.forEach(panel => panel.classList.remove('active'));
+
+                    item.classList.add('active');
+                    if (targetPanel) {
+                        targetPanel.classList.add('active');
+                    }
+                });
+            });
+
+            // --- Lógica para la animación al hacer scroll ---
+            const timelineItems = document.querySelectorAll('.timeline-content');
+
+            if ('IntersectionObserver' in window) {
+                const observer = new IntersectionObserver((entries, observer) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting) {
+                            entry.target.classList.add('is-visible');
+                            observer.unobserve(entry.target);
+                        }
+                    });
+                }, {
+                    threshold: 0.1
+                });
+
+                timelineItems.forEach(item => {
+                    observer.observe(item);
+                });
+            } else {
+                timelineItems.forEach(item => {
+                    item.classList.add('is-visible');
+                });
+            }
+
+            // --- Lógica para el carrusel y popup de imágenes ---
+            const imageModal = document.getElementById('imageModal');
+            const modalImg = document.getElementById('modalImage');
+            const galleryThumbs = document.querySelectorAll('.gallery-thumb');
+            const closeModal = document.querySelector('.close-modal');
+
+            galleryThumbs.forEach(thumb => {
+                thumb.addEventListener('click', function() {
+                    imageModal.classList.add('is-open');
+                    modalImg.src = this.src;
+                });
+            });
+
+            function hideImageModal() {
+                imageModal.classList.remove('is-open');
+            }
+
+            if (closeModal) {
+                closeModal.addEventListener('click', hideImageModal);
+            }
+
+            if (imageModal) {
+                imageModal.addEventListener('click', function(event) {
+                    if (event.target === imageModal) {
+                        hideImageModal();
+                    }
+                });
+            }
+
+            // --- NUEVO: Lógica para la búsqueda de lotes y modal de mensajes ---
+            const searchBtn = document.getElementById('loteSearchBtn');
+            const searchInput = document.getElementById('loteSearchInput');
+            const messageModal = document.getElementById('messageModal');
+            const messageText = document.getElementById('messageText');
+            const closeMessageModal = document.querySelector('.close-message-modal');
+
+            if(searchBtn) {
+                searchBtn.addEventListener('click', function() {
+                    const lote = searchInput.value.trim();
+                    if (lote) {
+                        messageText.textContent = `Buscando información para el lote: ${lote}...`;
+                    } else {
+                        messageText.textContent = 'Por favor, ingrese un número de lote.';
+                    }
+                    messageModal.classList.add('is-open');
+                });
+            }
+            
+            function hideMessageModal() {
+                messageModal.classList.remove('is-open');
+            }
+
+            if(closeMessageModal) {
+                closeMessageModal.addEventListener('click', hideMessageModal);
+            }
+
+            if(messageModal) {
+                messageModal.addEventListener('click', function(event) {
+                    if (event.target === messageModal) {
+                        hideMessageModal();
+                    }
+                });
+            }
+
+        });
+    </script>
+</body>
+</html>
+

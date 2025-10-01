@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trazabilidad del Producto - AgriTraza</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&family=Playfair+Display:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+    <link rel="stylesheet" href="tracking.css">
+    <style>
+        body { font-family: 'Lato', sans-serif; background-color: #F5F5F5; color: #4E342E; }
+        .font-display { font-family: 'Playfair Display', serif; }
+        .timeline::before {
+            content: ''; position: absolute; top: 0; left: 1.25rem;
+            height: 100%; width: 2px; background-color: #E0E0E0; margin-left: -1px;
+        }
+        .timeline-item { transition: opacity 0.5s, transform 0.5s; opacity: 0; transform: translateY(20px); }
+        .timeline-item.is-visible { opacity: 1; transform: translateY(0); }
+        .tab-button.active { border-color: #8D6E63; background-color: #EFEBE9; }
+    </style>
+</head>
+<body class="antialiased">
+    <header class="bg-white/80 backdrop-blur-sm sticky top-0 z-50 border-b border-stone-200">
+        <div class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <h1 class="text-2xl font-bold font-display text-amber-900">AgriTraza</h1>
+            <a href="/login.html" class="bg-amber-800 text-white font-bold py-2 px-5 rounded-lg hover:bg-amber-900 transition">Iniciar Sesión</a>
+        </div>
+    </header>
+
+    <main>
+        <section class="bg-stone-100 py-16 text-center">
+            <div class="container mx-auto px-6">
+                <h1 class="text-4xl md:text-5xl font-bold font-display text-amber-900 mb-4">Trazabilidad del Chocolate</h1>
+                <div class="mt-8 max-w-lg mx-auto">
+                    <div class="flex gap-2 p-2 rounded-xl bg-white border border-stone-200 shadow-sm">
+                        <input type="text" id="loteIdInput" placeholder="Ingresa el código del lote..." class="w-full p-3 bg-transparent border-0 rounded-lg text-stone-700 focus:ring-2 focus:ring-amber-800 transition">
+                        <button id="buscarBtn" class="bg-amber-800 hover:bg-amber-900 text-white font-bold p-3 rounded-lg shadow-md flex-shrink-0">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <div id="story-container" class="container mx-auto p-4 md:p-8">
+             <!-- El contenido dinámico se insertará aquí -->
+        </div>
+    </main>
+
+    <footer class="bg-stone-800 py-8 text-center text-stone-300 text-sm">
+        <p>&copy; 2025 AgriTraza. Todos los derechos reservados.</p>
+    </footer>
+    
+    <!-- Modales -->
+    <div id="messageModal" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center hidden">
+        <div class="bg-white p-6 rounded-lg shadow-xl text-center max-w-sm">
+            <p id="messageText"></p>
+            <button class="close-message-modal mt-4 bg-amber-800 text-white px-4 py-2 rounded-lg">Cerrar</button>
+        </div>
+    </div>
+    <div id="imageModal" class="fixed inset-0 bg-black/70 z-50 items-center justify-center hidden">
+        <div class="bg-white p-4 rounded-lg shadow-xl max-w-3xl w-11/12 relative">
+            <button class="close-image-modal absolute -top-4 -right-4 text-white text-3xl">&times;</button>
+            <img id="modalImage" src="" alt="Imagen de la finca" class="w-full h-auto max-h-[80vh] object-contain rounded-md">
+        </div>
+    </div>
+
+    <script src="/js/tracking.js"></script>
+</body>
+</html>
+

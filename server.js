@@ -103,12 +103,12 @@ app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'public', 'about.ht
 
 // Nueva ruta para trazabilidad pública con ID corto en la URL
 app.get('/:loteId([A-Z]{3}-[A-Z0-9]{8})', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'trazabilidad-publica.html'));
+    res.sendFile(path.join(__dirname, 'public', 'tracking.html'));
 });
 
 // Ruta anterior para compatibilidad o si se usa el formulario
 app.get('/qr', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'trazabilidad-publica.html'));
+    res.sendFile(path.join(__dirname, 'public', 'tracking.html'));
 });
 
 
