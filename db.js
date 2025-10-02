@@ -547,6 +547,7 @@ const getTrazabilidad = async (req, res) => {
         const history = {
             stages: [],
             fincaData: null,
+            procesadorasData: [],
             perfilSensorialData: null,
             maridajesRecomendados: {}
         };
@@ -580,6 +581,13 @@ const getTrazabilidad = async (req, res) => {
                 };
             }
         }
+
+        const procesadoras = await all('SELECT * FROM procesadoras WHERE user_id = ?', [ownerId]);
+        history.procesadorasData = procesadoras.map(p => ({
+            ...p,
+            premios_json: safeJSONParse(p.premios_json || '[]'),
+            certificaciones_json: safeJSONParse(p.certificaciones_json || '[]')
+        }));
         
         const tostadoData = history.stages.find(s => s.nombre_etapa.toLowerCase().includes('tostado'))?.data;
         if (tostadoData && tostadoData.tipoPerfil) {

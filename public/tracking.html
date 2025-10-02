@@ -69,6 +69,12 @@
             <img id="modalImage" src="" alt="Imagen de la finca" class="w-full h-auto max-h-[80vh] object-contain rounded-md">
         </div>
     </div>
+    <div id="locationModal" class="fixed inset-0 bg-black/70 z-[1050] flex items-center justify-center hidden p-4">
+        <div class="bg-white p-6 rounded-lg shadow-xl max-w-3xl w-full relative max-h-[90vh] overflow-y-auto">
+             <button class="close-location-modal absolute top-4 right-4 text-stone-600 hover:text-stone-900 text-2xl">&times;</button>
+            <div id="locationModalContent"></div>
+        </div>
+    </div>
 
     <script src="/js/tracking.js"></script>
 </body>

@@ -166,7 +166,12 @@ document.addEventListener('DOMContentLoaded', () => {
             resetForm();
             form.ruc.value = procesadora.ruc || '';
             form.razon_social.value = procesadora.razon_social || '';
-            // ... (resto de campos)
+            form.nombre_comercial.value = procesadora.nombre_comercial || '';
+            form.tipo_empresa.value = procesadora.tipo_empresa || '';
+            form.pais.value = procesadora.pais || '';
+            form.ciudad.value = procesadora.ciudad || '';
+            form.direccion.value = procesadora.direccion || '';
+            form.telefono.value = procesadora.telefono || '';
             editIdInput.value = procesadora.id;
 
             currentProcesadoraPremios = procesadora.premios_json || [];

@@ -10,19 +10,19 @@
       "id": 2,
       "nombre": "International Chocolate Awards - Oro",
       "descripcion": "Máximo galardón en la competencia de chocolatería fina más grande del mundo.",
-      "logo_url": "/images/logo-ica.png"
+      "logo_url": "/images/ica.png"
     },
     {
       "id": 3,
       "nombre": "International Chocolate Awards - Plata",
       "descripcion": "Reconocimiento de plata en la competencia de chocolatería fina más grande del mundo.",
-      "logo_url": "/images/logo-ica.png"
+      "logo_url": "/images/ica.png"
     },
     {
       "id": 4,
       "nombre": "International Chocolate Awards - Bronce",
       "descripcion": "Reconocimiento de bronce en la competencia de chocolatería fina más grande del mundo.",
-      "logo_url": "/images/logo-ica.png"
+      "logo_url": "/images/ica.png"
     }
   ]
 }

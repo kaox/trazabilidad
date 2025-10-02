@@ -9,6 +9,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const imageModal = document.getElementById('imageModal');
     const modalImage = document.getElementById('modalImage');
     const closeImageModalBtn = document.querySelector('.close-image-modal');
+    const locationModal = document.getElementById('locationModal');
+    const locationModalContent = document.getElementById('locationModalContent');
+    const closeLocationModalBtn = document.querySelector('.close-location-modal');
 
     // --- Estado Global ---
     let globalHistory = {};
@@ -192,6 +195,10 @@ document.addEventListener('DOMContentLoaded', () => {
             .map(([key, value]) => `<li><strong>${key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}:</strong> ${value || 'N/A'}</li>`)
             .join('');
 
+        const locationName = data.lugarProceso || data.finca || data.procesadora || 'N/A';
+        const locationButton = `<button class="location-btn text-sky-700 hover:underline" data-location="${locationName}">${locationName}</button>`;
+
+        
         return `
             <div class="timeline-item animate">
                 <div class="bg-white p-6 rounded-lg shadow-lg">
@@ -202,7 +209,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     ${data.imageUrl ? `<img src="${data.imageUrl}" class="w-full h-40 object-cover rounded-md my-4">` : ''}
                     <div class="text-sm text-stone-500 mb-3 flex items-center gap-4">
                         <span><i class="fas fa-calendar-alt mr-1"></i> ${details.date}</span>
-                        <span><i class="fas fa-map-marker-alt mr-1"></i> ${data.lugarProceso || data.finca || data.procesadora || 'N/A'}</span>
+                        <span><i class="fas fa-map-marker-alt mr-1"></i> ${locationButton}</span>
                     </div>
                     <ul class="text-sm text-stone-600 list-disc list-inside space-y-1">${dataPointsHtml}</ul>
                 </div>
@@ -220,19 +227,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 <h2 class="text-3xl font-display text-amber-900 mb-4">Comparte esta Historia</h2>
                 <p class="text-stone-600 max-w-xl mx-auto mb-8">Si te ha gustado el viaje de este producto, compártelo con el mundo.</p>
                 <div class="flex items-center justify-center gap-4">
-                    <button data-lote-id="${loteId}" class="share-btn bg-blue-600 hover:bg-blue-700 text-white font-bold p-4 rounded-full transition" title="Compartir en Facebook">
-                        <i class="fab fa-facebook-f fa-lg"></i>
-                    </button>
-                    <button data-lote-id="${loteId}" class="share-btn bg-black hover:bg-gray-800 text-white font-bold p-4 rounded-full transition" title="Compartir en X">
-                        <i class="fab fa-twitter fa-lg"></i>
-                    </button>
-                    <button data-lote-id="${loteId}" class="share-btn bg-green-500 hover:bg-green-600 text-white font-bold p-4 rounded-full transition" title="Compartir en WhatsApp">
-                        <i class="fab fa-whatsapp fa-lg"></i>
-                    </button>
-                    <button data-lote-id="${loteId}" class="share-btn bg-gray-500 hover:bg-gray-600 text-white font-bold p-4 rounded-full transition" title="Copiar Enlace">
-                        <i class="fas fa-link fa-lg"></i>
-                    </button>
-                </div>
+                        <button data-lote-id="${loteId}" class="share-btn bg-blue-600 hover:bg-blue-700 text-white font-bold p-3 rounded-full transition" title="Compartir en Facebook"><svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M9 8h-3v4h3v12h5v-12h3.642l.358-4h-4v-1.667c0-.955.192-1.333 1.115-1.333h2.885v-5h-3.808c-3.596 0-5.192 1.583-5.192 4.615v2.385z"/></svg></button>
+                        <button data-lote-id="${loteId}" class="share-btn bg-black hover:bg-gray-800 text-white font-bold p-3 rounded-full transition" title="Compartir en X"><svg class="w-6 h-6" fill="currentColor" viewBox="0 0 16 16"><path d="M12.6.75h2.454l-5.36 6.142L16 15.25h-4.937l-3.867-5.07-4.425 5.07H.316l5.733-6.57L0 .75h5.063l3.495 4.633L12.601.75Zm-.86 13.028h1.36L4.323 2.145H2.865z"/></svg></button>
+                        <button data-lote-id="${loteId}" class="share-btn bg-green-500 hover:bg-green-600 text-white font-bold p-3 rounded-full transition" title="Compartir en WhatsApp"><svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.371-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.5-.669-.51l-.57-.01c-.198 0-.52.074-.792.372-.272.296-.999 1.001-.999 2.448s1.024 2.845 1.173 3.044c.149.198 2.003 3.044 4.851 4.223.713.364 1.364.576 1.84.733.523.172 1.053.148 1.488.099.463-.049 1.492-.612 1.701-1.217.208-.604.208-1.115.148-1.217z"/></svg></button>
+                        <button data-lote-id="${loteId}" class="share-btn bg-gray-500 hover:bg-gray-600 text-white font-bold p-3 rounded-full transition" title="Copiar Enlace"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path></svg></button>
+                    </div>
             </section>
         `;
     }
@@ -477,6 +476,88 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    function openLocationModal(locationName) {
+        const { fincaData, procesadorasData } = globalHistory;
+        
+        const cleanName = locationName.replace('Finca: ', '').replace('Procesadora: ', '');
+
+        let contentHtml = '';
+
+        // Intenta encontrar como Finca
+        if (fincaData && fincaData.nombre_finca === cleanName) {
+            let galleryHtml = (fincaData.imagenes_json || []).map(img => `<img src="${img}" class="w-full h-32 object-cover rounded-lg">`).join('');
+            let certsHtml = (fincaData.certificaciones_json || []).map(cert => `<div class="flex items-center gap-2"><img src="${cert.logo_url}" class="h-6 w-6 rounded-full"><span class="text-sm">${cert.nombre}</span></div>`).join('');
+            let premiosHtml = (fincaData.premios_json || []).map(p => `<div class="flex items-center gap-2"><img src="${p.logo_url}" class="h-6 w-6 rounded-full"><span class="text-sm">${p.nombre} (${p.ano})</span></div>`).join('');
+            
+            contentHtml = `
+                <h2 class="text-3xl font-display text-amber-900 mb-4">${fincaData.nombre_finca}</h2>
+                <div class="space-y-6">
+                    <p><strong>Productor:</strong> ${fincaData.propietario}</p>
+                    <p class="text-sm">${fincaData.historia}</p>
+                    ${certsHtml ? `<div><h4 class="font-bold mb-2">Certificaciones</h4><div class="flex flex-wrap gap-4">${certsHtml}</div></div>` : ''}
+                    ${premiosHtml ? `<div><h4 class="font-bold mb-2">Premios</h4><div class="flex flex-wrap gap-4">${premiosHtml}</div></div>` : ''}
+                    ${galleryHtml ? `<div><h4 class="font-bold mb-2">Galería</h4><div class="grid grid-cols-3 gap-2">${galleryHtml}</div></div>` : ''}
+                    ${fincaData.coordenadas ? `<div><h4 class="font-bold mb-2">Mapa</h4><div id="location-map-modal" class="w-full h-64 rounded-lg"></div></div>` : ''}
+                </div>
+            `;
+            locationModalContent.innerHTML = contentHtml;
+            locationModal.classList.remove('hidden');
+            if (fincaData.coordenadas) {
+                setTimeout(() => initializeMap('location-map-modal', fincaData.coordenadas), 100);
+            }
+            return; // Termina la función si se encontró la finca
+        }
+
+        // Si no es la finca principal, busca en las procesadoras
+        const procesadora = procesadorasData?.find(p => p.nombre_comercial === cleanName || p.razon_social === cleanName);
+        if (procesadora) {
+            let certsHtml = (procesadora.certificaciones_json || []).map(cert => `<div class="flex items-center gap-2 p-2 rounded-md bg-stone-100"><img src="${cert.logo_url}" class="h-6 w-6 rounded-full"><span class="text-sm text-stone-600">${cert.nombre}</span></div>`).join('');
+            let premiosHtml = (procesadora.premios_json || []).map(p => `<div class="flex items-center gap-2 p-2 rounded-md bg-stone-100"><img src="${p.logo_url}" class="h-6 w-6 rounded-full"><span class="text-sm text-stone-600">${p.nombre} (${p.ano})</span></div>`).join('');
+            contentHtml = `
+                <h2 class="text-3xl font-display text-amber-900 mb-4">${procesadora.nombre_comercial || procesadora.razon_social}</h2>
+                <div class="space-y-4 text-sm">
+                    <p><strong>Ubicación:</strong> ${procesadora.ciudad}, ${procesadora.pais}</p>
+                    <p><strong>Dirección:</strong> ${procesadora.direccion}</p>
+                    ${certsHtml ? `<div><h4 class="font-bold mt-4 mb-2">Certificaciones</h4><div class="flex flex-wrap gap-4">${certsHtml}</div></div>` : ''}
+                    ${premiosHtml ? `<div><h4 class="font-bold mt-4 mb-2">Premios</h4><div class="flex flex-wrap gap-4">${premiosHtml}</div></div>` : ''}
+                </div>`;
+            locationModalContent.innerHTML = contentHtml;
+            locationModal.classList.remove('hidden');
+            return; // Termina la función si se encontró la procesadora
+        }
+
+        // Si no se encontró ni finca ni procesadora, muestra mensaje genérico
+        locationModalContent.innerHTML = `
+            <h2 class="text-3xl font-display text-amber-900 mb-4">${locationName}</h2>
+            <p>Información detallada para esta ubicación no está disponible.</p>`;
+        locationModal.classList.remove('hidden');
+    }
+
+    document.body.addEventListener('click', e => {
+        if(e.target.id === 'open-finca-modal-btn') {
+            openFincaModal();
+        }
+        const shareButton = e.target.closest('.share-btn');
+        if (shareButton) {
+            const loteId = shareButton.dataset.loteId;
+            const pageUrl = `${window.location.origin}/${loteId}`;
+            const shareText = `¡Descubre el ADN de mi producto! Lote: ${loteId}`;
+            let shareUrl;
+            if (shareButton.title.includes('Facebook')) shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(pageUrl)}`;
+            else if (shareButton.title.includes('X')) shareUrl = `https://twitter.com/intent/tweet?url=${encodeURIComponent(pageUrl)}&text=${encodeURIComponent(shareText)}`;
+            else if (shareButton.title.includes('WhatsApp')) shareUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(shareText + ' ' + pageUrl)}`;
+            if(shareUrl) window.open(shareUrl, '_blank', 'width=600,height=400');
+            else if (shareButton.title.includes('Copiar')) {
+                navigator.clipboard.writeText(pageUrl).then(() => {
+                    const originalIcon = shareButton.innerHTML;
+                    shareButton.innerHTML = `<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>`;
+                    shareButton.title = "¡Copiado!";
+                    setTimeout(() => { shareButton.innerHTML = originalIcon; shareButton.title = "Copiar Enlace"; }, 2000);
+                }).catch(err => console.error('Error al copiar:', err));
+            }
+        }
+    });
+
     function showMessageModal(text) {
         messageText.textContent = text;
         messageModal.classList.remove('hidden');
@@ -488,6 +569,18 @@ document.addEventListener('DOMContentLoaded', () => {
     messageModal.addEventListener('click', (e) => { if(e.target === messageModal) hideMessageModal(); });
     closeImageModalBtn.addEventListener('click', () => imageModal.style.display = 'none');
     imageModal.addEventListener('click', (e) => { if(e.target === imageModal) imageModal.style.display = 'none'; });
+
+    // Listener para el nuevo modal de ubicación
+    if(closeLocationModalBtn) closeLocationModalBtn.addEventListener('click', () => locationModal.classList.add('hidden'));
+    if(locationModal) locationModal.addEventListener('click', (e) => { if(e.target === locationModal) locationModal.classList.add('hidden'); });
+
+    // Delegación de eventos en el contenedor principal
+    storyContainer.addEventListener('click', e => {
+        const locationBtn = e.target.closest('.location-btn');
+        if (locationBtn) {
+            openLocationModal(locationBtn.dataset.location);
+        }
+    });
 
     buscarBtn.addEventListener('click', handleSearch);
     loteIdInput.addEventListener('keypress', e => { if (e.key === 'Enter') handleSearch(); });
