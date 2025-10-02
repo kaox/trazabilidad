@@ -37,10 +37,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function renderStory(h) {
 
-        console.log(h);
         let finalHTML = createMainContent(h);
         finalHTML += createTimelineSection(h);
         finalHTML += createAdditionalInfoSection(h);
+        finalHTML += createShareSection(h);
+
         storyContainer.innerHTML = finalHTML;
 
         // Post-renderizado de componentes visuales y eventos
@@ -52,13 +53,14 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         if (h.perfilSensorialData) {
             renderFlavorProfile(h.perfilSensorialData);
+            initializePerfilChart('sensory-profile-chart', h.perfilSensorialData);
         }
     }
 
     // --- Constructores de Secciones HTML ---
 
     function createMainContent(h) {
-        const { stages, fincaData } = h;
+        const { stages, fincaData, perfilSensorialData } = h;
         const lastStage = stages?.[stages.length - 1]?.data || {};
         const firstStage = stages?.[0]?.data || {};
         
@@ -81,8 +83,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div class="flex border-b border-stone-200 mb-4">
                         <button class="tab-button active flex-1 flex items-center justify-center gap-2 p-4 border-b-2" data-tab="terroir"><i class="fas fa-globe"></i> Terroir</button>
                         <button class="tab-button flex-1 flex items-center justify-center gap-2 p-4 border-b-2 border-transparent" data-tab="productor"><i class="fas fa-leaf"></i> Productor</button>
-                        <button class="tab-button flex-1 flex items-center justify-center gap-2 p-4 border-b-2 border-transparent" data-tab="proceso"><i class="fas fa-cogs"></i> Proceso</button>
-                        <button class="tab-button flex-1 flex items-center justify-center gap-2 p-4 border-b-2 border-transparent" data-tab="empaque"><i class="fas fa-box-open"></i> Empaque</button>
+                        ${perfilSensorialData ? `<button class="tab-button flex-1 flex items-center justify-center gap-2 p-4 border-b-2 border-transparent" data-tab="perfil"><i class="fas fa-chart-pie"></i> Perfil</button>` : ''}
                     </div>
                     <div class="bg-white p-6 rounded-lg shadow-md">
                         <div id="tab-terroir" class="tab-panel space-y-4">
@@ -99,8 +100,14 @@ document.addEventListener('DOMContentLoaded', () => {
                             ${premiosHtml ? `<div><strong class="block mb-2">Premios:</strong><div class="flex flex-wrap gap-2">${premiosHtml}</div></div>` : ''}
                             <div id="finca-gallery" class="grid grid-cols-3 gap-2 mt-4"></div>
                         </div>
-                        <div id="tab-proceso" class="tab-panel hidden"><p>Nuestro proceso sigue los más altos estándares de calidad, desde la selección manual de mazorcas hasta el conchado final, asegurando un sabor excepcional.</p></div>
-                        <div id="tab-empaque" class="tab-panel hidden"><p>Empacado con cuidado para preservar su frescura y perfil de sabor único hasta que llegue a tus manos.</p></div>
+                        ${perfilSensorialData ? `
+                        <div id="tab-perfil" class="tab-panel hidden space-y-6">
+                            <div>
+                                <h4 class="font-bold text-lg mb-2 text-center">Perfil Sensorial del Cacao</h4>
+                                <div class="w-full max-w-sm mx-auto"><canvas id="sensory-profile-chart"></canvas></div>
+                            </div>
+                        </div>
+                        ` : ''}
                     </div>
                 </div>
             </section>
@@ -166,12 +173,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     <summary class="font-bold font-display text-lg p-4 cursor-pointer">Maridajes Sugeridos</summary>
                     <div class="p-4 border-t space-y-4">${maridajesHtml}</div>
                 </details>
-                <details class="bg-white rounded-lg shadow-md">
-                    <summary class="font-bold font-display text-lg p-4 cursor-pointer">Ingredientes</summary>
-                    <div class="p-4 border-t">
-                        <p>Pasta de cacao, azúcar de caña, manteca de cacao.</p>
-                    </div>
-                </details>
             </section>
         `;
     }
@@ -208,21 +209,56 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>
         `;
     }
+
+    function createShareSection(h) {
+        const lastStage = h.stages?.[h.stages.length - 1]?.data || {};
+        const loteId = lastStage.id;
+        if (!loteId) return '';
+
+        return `
+            <section class="my-16 text-center">
+                <h2 class="text-3xl font-display text-amber-900 mb-4">Comparte esta Historia</h2>
+                <p class="text-stone-600 max-w-xl mx-auto mb-8">Si te ha gustado el viaje de este producto, compártelo con el mundo.</p>
+                <div class="flex items-center justify-center gap-4">
+                    <button data-lote-id="${loteId}" class="share-btn bg-blue-600 hover:bg-blue-700 text-white font-bold p-4 rounded-full transition" title="Compartir en Facebook">
+                        <i class="fab fa-facebook-f fa-lg"></i>
+                    </button>
+                    <button data-lote-id="${loteId}" class="share-btn bg-black hover:bg-gray-800 text-white font-bold p-4 rounded-full transition" title="Compartir en X">
+                        <i class="fab fa-twitter fa-lg"></i>
+                    </button>
+                    <button data-lote-id="${loteId}" class="share-btn bg-green-500 hover:bg-green-600 text-white font-bold p-4 rounded-full transition" title="Compartir en WhatsApp">
+                        <i class="fab fa-whatsapp fa-lg"></i>
+                    </button>
+                    <button data-lote-id="${loteId}" class="share-btn bg-gray-500 hover:bg-gray-600 text-white font-bold p-4 rounded-full transition" title="Copiar Enlace">
+                        <i class="fas fa-link fa-lg"></i>
+                    </button>
+                </div>
+            </section>
+        `;
+    }
     
     function renderFlavorProfile(perfilData) {
         const container = document.getElementById('flavor-profile-bars');
         if (!container) return;
 
-        const attributesToShow = ['frutaFresca', 'nuez', 'amargor', 'cacao'];
-        const attributeLabels = { frutaFresca: 'Frutal / Cítrico', nuez: 'Nuez', amargor: 'Amargor', cacao: 'Intensidad Cacao' };
+        const attributesToShow = {
+            cacao: 'Intensidad Cacao',
+            acidez: 'Acidez',
+            amargor: 'Amargor',
+            astringencia: 'Astringencia',
+            frutaFresca: 'Fruta Fresca',
+            frutaMarron: 'Fruta Marrón',
+            nuez: 'Nuez',
+            caramelo: 'Caramelo'
+        };
 
-        container.innerHTML = attributesToShow.map(attr => {
-            const value = perfilData[attr] || 0;
+        container.innerHTML = Object.entries(attributesToShow).map(([key, label]) => {
+            const value = perfilData[key] || 0;
             const percentage = (value / 10) * 100;
             return `
                 <div>
                     <div class="flex justify-between mb-1">
-                        <span class="text-sm font-medium text-stone-700">${attributeLabels[attr]}</span>
+                        <span class="text-sm font-medium text-stone-700">${label}</span>
                         <span class="text-sm font-medium text-amber-800">${value.toFixed(1)}</span>
                     </div>
                     <div class="w-full bg-stone-200 rounded-full h-2.5">
@@ -397,6 +433,48 @@ document.addEventListener('DOMContentLoaded', () => {
                 chartInstances[containerId] = map;
             });
         } catch(e) { console.error("Error al renderizar mapa:", e); }
+    }
+
+    function initializePerfilChart(canvasId, perfilData) {
+        const chartCanvas = document.getElementById(canvasId);
+        if (!chartCanvas || !perfilData) return;
+        
+        if (chartInstances[canvasId]) {
+            chartInstances[canvasId].destroy();
+        }
+        
+        const atributos = ['cacao', 'acidez', 'amargor', 'astringencia', 'frutaFresca', 'frutaMarron', 'vegetal', 'floral', 'madera', 'especia', 'nuez', 'caramelo'];
+        const data = atributos.map(attr => perfilData[attr] || 0);
+
+        chartInstances[canvasId] = new Chart(chartCanvas, {
+            type: 'radar',
+            data: { 
+                labels: atributos.map(a => a.charAt(0).toUpperCase() + a.slice(1)), 
+                datasets: [{ 
+                    label: 'Intensidad', 
+                    data: data, 
+                    fill: true, 
+                    backgroundColor: 'rgba(141, 110, 99, 0.2)', 
+                    borderColor: 'rgb(141, 110, 99)', 
+                    pointBackgroundColor: 'rgb(141, 110, 99)' 
+                }] 
+            },
+            options: { 
+                scales: { 
+                    r: { 
+                        angleLines: { color: 'rgba(0,0,0,0.1)'},
+                        grid: { color: 'rgba(0,0,0,0.1)'},
+                        pointLabels: { font: { size: 10, family: "'Inter', sans-serif" }, color: '#57534e' },
+                        suggestedMin: 0, 
+                        suggestedMax: 10, 
+                        ticks: { display: false, stepSize: 2 },
+                    } 
+                }, 
+                plugins: { 
+                    legend: { display: false } 
+                } 
+            }
+        });
     }
 
     function showMessageModal(text) {
