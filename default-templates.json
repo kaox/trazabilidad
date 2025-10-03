@@ -13,6 +13,7 @@
             "variables": [
                 {"label": "Finca", "name": "finca", "type": "selectFinca"},
                 {"label": "Fecha Cosecha", "name": "fecha", "type": "date"},
+                {"label": "Clasificación de Cacao", "name": "clasificacion", "type": "select", "options": ["Criollo", "Forastero", "Trinitario (Híbrido)"]},
                 {"label": "Variedad de Cacao", "name": "variedad", "type": "text"},
                 {"label": "Foto", "name": "imageUrl", "type": "image"}]
           }
@@ -42,7 +43,7 @@
             "variables": [
                 {"label": "Lugar del Proceso", "name": "lugarProceso", "type": "selectLugar"},
                 {"label": "Fecha Inicio", "name": "fecha", "type": "date"},
-                {"label": "Método", "name": "metodo", "type": "text"},
+                {"label": "Tipo de Secado", "name": "tipoSecado", "type": "select", "options": ["Patios de cemento", "Camas, Paseras o Esterillas", "Marquesinas o Túneles de Secado", "Hornos y Secadores Mecánicos"]},
                 {"label": "Duración (días)", "name": "duracion", "type": "number"},
                 {"label": "Humedad Final (%)", "name": "humedadFinal", "type": "number"},
                 {"label": "Foto", "name": "imageUrl", "type": "image"}]
@@ -168,7 +169,7 @@
             "variables": [
               {"label": "Lugar del Proceso", "name": "lugarProceso", "type": "selectLugar"},
               {"label": "Fecha Inicio", "name": "fecha", "type": "date"},
-              {"label": "Tipo de Secado", "name": "tipoSecado", "type": "select", "options": ["Camas africanas", "Patio de cemento", "Secadora mecánica"]},
+              {"label": "Tipo de Secado", "name": "tipoSecado", "type": "select", "options": ["Patios de cemento", "Camas, Paseras o Esterillas", "Marquesinas o Túneles de Secado", "Hornos y Secadores Mecánicos"]},
               {"label": "Duración (días)", "name": "duracion", "type": "number"},
               {"label": "Humedad Final (%)", "name": "humedadFinal", "type": "number"},
               {"label": "Temperatura de Secado (°C)", "name": "temperaturaSecado", "type": "number"},
@@ -258,7 +259,7 @@
             "variables": [
               {"label": "Lugar del Proceso", "name": "lugarProceso", "type": "selectLugar"},
               {"label": "Fecha Inicio", "name": "fecha", "type": "date"},
-              {"label": "Tipo de Secado", "name": "tipoSecado", "type": "select", "options": ["Camas africanas", "Patio de cemento"]},
+              {"label": "Tipo de Secado", "name": "tipoSecado", "type": "select", "options": ["Patios de cemento", "Camas, Paseras o Esterillas", "Marquesinas o Túneles de Secado", "Hornos y Secadores Mecánicos"]},
               {"label": "Duración (días)", "name": "duracion", "type": "number"},
               {"label": "Frecuencia de Removido", "name": "frecuenciaRemovido", "type": "text"},
               {"label": "Humedad Final (%)", "name": "humedadFinal", "type": "number"},
@@ -332,7 +333,7 @@
           "campos_json": {
             "entradas": [{"label": "Peso Cereza Seleccionada (kg)", "name": "pesoCerezaSeleccionada", "type": "number"}],
             "salidas": [{"label": "Peso Cereza Seca (kg)", "name": "pesoCerezaSeca", "type": "number"}],
-            "variables": [{"label": "Lugar del Proceso", "name": "lugarProceso", "type": "selectLugar"}, {"label": "Fecha Inicio", "name": "fecha", "type": "date"}, {"label": "Tipo de Secado", "name": "tipoSecado", "type": "select", "options": ["Camas africanas", "Patio de cemento"]}, {"label": "Duración (días)", "name": "duracion", "type": "number"}, {"label": "Frecuencia de Removido", "name": "frecuenciaRemovido", "type": "text"}, {"label": "Humedad Final (%)", "name": "humedadFinal", "type": "number"}, {"label": "Temperatura de Secado (°C)", "name": "temperaturaSecado", "type": "number"}, {"label": "Foto", "name": "imageUrl", "type": "image"}]
+            "variables": [{"label": "Lugar del Proceso", "name": "lugarProceso", "type": "selectLugar"}, {"label": "Fecha Inicio", "name": "fecha", "type": "date"}, {"label": "Tipo de Secado", "name": "tipoSecado", "type": "select", "options": ["Patios de cemento", "Camas, Paseras o Esterillas", "Marquesinas o Túneles de Secado", "Hornos y Secadores Mecánicos"]}, {"label": "Duración (días)", "name": "duracion", "type": "number"}, {"label": "Frecuencia de Removido", "name": "frecuenciaRemovido", "type": "text"}, {"label": "Humedad Final (%)", "name": "humedadFinal", "type": "number"}, {"label": "Temperatura de Secado (°C)", "name": "temperaturaSecado", "type": "number"}, {"label": "Foto", "name": "imageUrl", "type": "image"}]
           }
         },
         {
