@@ -111,7 +111,6 @@
                 {"label": "Finca", "name": "finca", "type": "selectFinca"},
                 {"label": "Fecha Cosecha", "name": "fecha", "type": "date"},
                 {"label": "Variedad", "name": "variedad", "type": "text"},
-                {"label": "Altura (msnm)", "name": "altura", "type": "number"},
                 {"label": "Foto", "name": "imageUrl", "type": "image"}]
           }
         },
@@ -124,7 +123,7 @@
             "variables": [
                 {"label": "Lugar del Proceso", "name": "lugarProceso", "type": "selectLugar"},
                 {"label": "Fecha Despulpado", "name": "fecha", "type": "date"},
-                {"label": "Tipo de Despulpadora", "name": "tipoDespulpadora", "type": "text"},
+                {"label": "Manejo de la Pulpa", "name": "manejoPulpa", "type": "text", "description": "Ej: Compostaje, vertido directo"},
                 {"label": "Foto", "name": "imageUrl", "type": "image"}]
           }
         },
@@ -156,6 +155,7 @@
               {"label": "Fecha Lavado", "name": "fecha", "type": "date"},
               {"label": "Método de Lavado", "name": "metodoLavado", "type": "text"},
               {"label": "Agua Utilizada (litros)", "name": "aguaUtilizada", "type": "number"},
+              {"label": "Tratamiento de Aguas Mieles", "name": "tratamientoAguas", "type": "text", "description": "Ej: Fosas de oxidación, vertido a río, reutilización"},
               {"label": "Foto", "name": "imageUrl", "type": "image"}]
           }
         },
@@ -232,7 +232,6 @@
               {"label": "Finca", "name": "finca", "type": "selectFinca"}, 
               {"label": "Fecha Cosecha", "name": "fecha", "type": "date"}, 
               {"label": "Variedad", "name": "variedad", "type": "text"}, 
-              {"label": "Altura (msnm)", "name": "altura", "type": "number"}, 
               {"label": "Foto", "name": "imageUrl", "type": "image"}]
           }
         },
@@ -323,7 +322,7 @@
               {"label": "Finca", "name": "finca", "type": "selectFinca"}, 
               {"label": "Fecha Cosecha", "name": "fecha", "type": "date"}, 
               {"label": "Variedad", "name": "variedad", "type": "text"}, 
-              {"label": "Altura (msnm)", "name": "altura", "type": "number"}, 
+              {"label": "Nivel de Madurez (Grados Brix)", "name": "gradosBrix", "type": "number"},
               {"label": "Método de Selección", "name": "metodoSeleccion", "type": "text", "description": "Flotación en agua, selección manual, etc."}, {"label": "Foto", "name": "imageUrl", "type": "image"}]
           }
         },
