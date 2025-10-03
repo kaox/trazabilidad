@@ -265,12 +265,13 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function createFieldHTML(field, value) {
-        const { label, name, type } = field;
+        const { label, name, type, options } = field;
         switch(type) {
             case 'date': return createInput(name, label, 'date', '', value);
             case 'number': return createInput(name, label, 'number', '', value);
             case 'image': return createImageInputHTML(name, label, value);
             case 'textarea': return createTextArea(name, label, '...', value);
+            case 'select': return await createSelectHTML(name, label, options, value);
             case 'selectFinca': return await createFincaSelectHTML(name, label, value);
             case 'selectProcesadora': return await createProcesadoraSelectHTML(name, label, value);
             case 'selectPerfil': return await createPerfilSelectHTML(name, label, value);
@@ -284,6 +285,13 @@ document.addEventListener('DOMContentLoaded', () => {
     function createSelect(id, l, o, s) { const opts = o.map(opt => `<option value="${opt}" ${opt===s?'selected':''}>${opt}</option>`).join(''); return `<div><label for="${id}" class="block text-sm font-medium text-stone-700 mb-1">${l}</label><select id="${id}" name="${id}" class="w-full p-3 border border-stone-300 rounded-xl"><option value="">Seleccionar...</option>${opts}</select></div>`; }
     function createImageInputHTML(id, l, v) { return `<div class="pt-4 border-t"><label class="block text-sm font-medium text-stone-700 mb-1">${l}</label><div class="mt-1 flex items-center gap-4"><img src="${v||'https://placehold.co/100x100/e7e5e4/a8a29e?text=Foto'}" alt="Previsualización" class="h-24 w-24 rounded-lg object-cover"><div class="w-full"><input type="file" class="image-upload-input block w-full text-sm text-stone-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:font-semibold file:bg-amber-50 file:text-amber-700 hover:file:bg-amber-100" accept="image/*"><input type="hidden" name="${id}" value="${v||''}"><p class="text-xs text-stone-500 mt-2">Sube una imagen.</p></div></div></div>`; }
     function createTextArea(name, label, placeholder, value) { return `<div><label for="${name}" class="block text-sm font-medium text-stone-700 mb-1">${label}</label><textarea id="${name}" name="${name}" placeholder="${placeholder}" class="w-full p-3 border border-stone-300 rounded-xl" rows="3">${value || ''}</textarea></div>`; }
+    
+    async function createSelectHTML(name, label, options, selectedValue = '') {
+        try {
+            return createSelect(name, label, options, selectedValue);
+        } catch (error) { return `<div class="text-red-500">Error al cargar ${label} .</div>`; }
+    }
+
     async function createFincaSelectHTML(name, label, selectedValue = '') {
         try {
             const fincas = await api('/api/fincas');

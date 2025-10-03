@@ -28,6 +28,7 @@
                 {"label": "Fecha Inicio", "name": "fecha", "type": "date"},
                 {"label": "Método de Fermentación", "name": "metodoFermentacion", "type": "select", "options": ["Cajón de madera", "Sacos de yute", "Montones"]},
                 {"label": "Duración (días)", "name": "duracion", "type": "number"},
+                {"label": "Frecuencia de Volteos", "name": "frecuenciaVolteos", "type": "text", "description": "Ej: Cada 24 horas, 2 veces al día"},
                 {"label": "Temperatura Máxima (°C)", "name": "temperaturaMaxima", "type": "number"},
                 {"label": "Foto", "name": "imageUrl", "type": "image"}]
           }
@@ -81,15 +82,15 @@
           "orden": 6,
           "campos_json": {
             "entradas": [{"label": "Peso Entrada (kg)", "name": "pesoEntrada", "type": "number"}],
-            "salidas": [
-              {"label": "Peso Producto Final (gr)", "name": "pesoProductoFinal", "type": "number"}],
+            "salidas": [{"label": "Número de Unidades", "name": "unidades", "type": "number"}],
             "variables": [
               {"label": "Procesadora", "name": "procesadora", "type": "selectProcesadora"},
               {"label": "Fecha", "name": "fecha", "type": "date"},
+              {"label": "Tiempo de Conchado (horas)", "name": "tiempoConchado", "type": "number"},
+              {"label": "Temperatura de Templado (°C)", "name": "temperaturaTemplado", "type": "number"},
               {"label": "Porcentaje de Cacao (%)", "name": "porcentajeCacao", "type": "number"},
               {"label": "Endulzante", "name": "endulzante", "type": "text"},
               {"label": "Ingredientes Adicionales", "name": "ingredientesAdicionales", "type": "textarea"},
-              {"label": "Producto Final", "name": "productoFinal", "type": "text", "description":"Ej: Barras, Pasta de Cacao, Grageas, etc"},
               {"label": "Foto del Producto", "name": "imageUrl", "type": "image"}
             ]
           }
