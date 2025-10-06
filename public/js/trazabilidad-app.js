@@ -59,54 +59,56 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function createBatchCard(batchData, template, stage, parentBatch = null) {
         const card = document.createElement('div');
-        card.className = 'batch-card-wrapper';
+        card.className = 'batch-card-wrapper mb-4';
         
         const nextStage = state.stagesByTemplate[template.id]?.find(s => s.orden === stage.orden + 1);
         const childrenKey = nextStage ? nextStage.nombre_etapa.toLowerCase().replace(/ & /g, '_and_') : null;
-        const hasChildren = childrenKey && batchData[childrenKey] && Array.isArray(batchData[childrenKey]) && batchData[childrenKey].length > 0;
+        const hasChildren = childrenKey && batchData.children && Array.isArray(batchData.children) && batchData.children.length > 0;
         
+        const processData = batchData.data || batchData; // Compatibilidad con estructura antigua y nueva
+
         const entradas = stage.campos_json.entradas || [];
         const salidas = stage.campos_json.salidas || [];
         const variables = stage.campos_json.variables || [];
         const imageUrlField = variables.find(v => v.type === 'image');
 
+        // Función auxiliar para obtener el valor de un campo
+        const getFieldValue = (data, fieldName) => {
+            const field = data[fieldName];
+            return (typeof field === 'object' && field !== null) ? field.value : field;
+        };
+        
         let inputWeight = 0;
         let displayInputWeight = 0;
         let outputWeight = 0;
 
-        // --- LÓGICA DE CÁLCULO CORREGIDA ---
-        // 1. Determinar el peso de SALIDA de la etapa actual.
         if (salidas.length > 0 && salidas[0].name) {
-            outputWeight = parseFloat(batchData[salidas[0].name]) || 0;
+            outputWeight = parseFloat(getFieldValue(processData, salidas[0].name)) || 0;
         }
 
-        // 2. Determinar el peso de ENTRADA para el CÁLCULO del rendimiento.
-        // Se prioriza el valor de entrada registrado en el lote ACTUAL.
-        if (entradas.length > 0 && entradas[0].name && batchData[entradas[0].name]) {
-            inputWeight = parseFloat(batchData[entradas[0].name]) || 0;
+        const inputField = entradas[0]?.name;
+        if (inputField && processData[inputField]) {
+            inputWeight = parseFloat(getFieldValue(processData, inputField)) || 0;
         } else if (parentBatch) {
-            // Como fallback (si la plantilla no define un input), se usa la salida del padre.
             const parentStage = state.stagesByTemplate[template.id]?.find(s => s.orden === stage.orden - 1);
-            if (parentStage && parentStage.campos_json.salidas[0]) {
+            if (parentStage?.campos_json.salidas[0]) {
                 const outputFieldOfParent = parentStage.campos_json.salidas[0].name;
-                inputWeight = parseFloat(parentBatch[outputFieldOfParent]) || 0;
+                inputWeight = parseFloat(getFieldValue(parentBatch.data || parentBatch, outputFieldOfParent)) || 0;
             }
         }
         
-        // 3. Determinar el valor a MOSTRAR como entrada.
-        // Es el mismo que el de cálculo, pero asegura que se muestre algo si es un sub-proceso.
         displayInputWeight = inputWeight;
         if (parentBatch && inputWeight === 0) {
              const parentStage = state.stagesByTemplate[template.id]?.find(s => s.orden === stage.orden - 1);
-            if (parentStage && parentStage.campos_json.salidas[0]) {
+            if (parentStage?.campos_json.salidas[0]) {
                 const outputFieldOfParent = parentStage.campos_json.salidas[0].name;
-                displayInputWeight = parseFloat(parentBatch[outputFieldOfParent]) || 0;
+                displayInputWeight = parseFloat(getFieldValue(parentBatch.data || parentBatch, outputFieldOfParent)) || 0;
             }
         }
 
         const yieldPercent = (inputWeight > 0) ? (outputWeight / inputWeight) * 100 : 0;
         
-        let variablesHtml = variables.filter(v => v.type !== 'image').map(v => `<div><dt class="text-stone-500">${v.label}:</dt><dd class="font-medium text-stone-800">${batchData[v.name] || 'N/A'}</dd></div>`).join('');
+        let variablesHtml = variables.filter(v => v.type !== 'image').map(v => `<div><dt class="text-stone-500">${v.label}:</dt><dd class="font-medium text-stone-800">${getFieldValue(processData, v.name) || 'N/A'}</dd></div>`).join('');
         
         let ioHtml = `<div class="flex gap-4">`;
         const inputLabel = entradas[0]?.label || 'Entrada';
@@ -115,7 +117,8 @@ document.addEventListener('DOMContentLoaded', () => {
         ioHtml += `</div>`;
         
         const fechaKey = variables.find(v => v.type === 'date')?.name;
-        const fecha = fechaKey ? batchData[fechaKey] : 'Sin fecha';
+        const fecha = fechaKey ? (getFieldValue(processData, fechaKey) || 'Sin fecha') : 'Sin fecha';
+        const imageUrl = imageUrlField ? getFieldValue(processData, imageUrlField.name) : null;
         
         const cardContent = document.createElement('div');
         cardContent.className = 'bg-white rounded-xl shadow-md';
@@ -143,7 +146,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>
                 </div>
                 <div class="pl-7 mt-4 flex flex-col sm:flex-row gap-4">
-                    ${imageUrlField && batchData[imageUrlField.name] ? `<img src="${batchData[imageUrlField.name]}" class="w-24 h-24 rounded-lg object-cover flex-shrink-0">` : ''}
+                    ${imageUrl ? `<img src="${imageUrl}" class="w-24 h-24 rounded-lg object-cover flex-shrink-0">` : ''}
                     <div class="flex-grow space-y-4">
                         <div class="pt-4 border-t sm:border-t-0"><dl class="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1 text-sm">${variablesHtml}</dl></div>
                         <div class="pt-4 border-t">${ioHtml}</div>
@@ -160,7 +163,7 @@ document.addEventListener('DOMContentLoaded', () => {
         childrenContainer.className = 'children-container hidden pl-5 border-l-2 border-dashed border-stone-300 md:ml-6 md:pl-4 md:border-l-solid md:border-stone-200';
 
         if (hasChildren) {
-            batchData[childrenKey].forEach(childBatch => {
+            batchData.children.forEach(childBatch => {
                 childrenContainer.appendChild(createBatchCard(childBatch, template, nextStage, batchData));
             });
         }
@@ -224,7 +227,17 @@ document.addEventListener('DOMContentLoaded', () => {
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
             const formData = new FormData(form);
-            const newData = Object.fromEntries(formData.entries());
+            const rawData = Object.fromEntries(formData.entries());
+            
+            const newData = {};
+            for (const key in rawData) {
+                if (!key.startsWith('visible_')) {
+                    newData[key] = {
+                        value: rawData[key],
+                        visible: formData.has(`visible_${key}`)
+                    };
+                }
+            }
             try {
                 if (mode === 'create') {
                     await api('/api/batches', { method: 'POST', body: JSON.stringify({ 
@@ -264,56 +277,78 @@ document.addEventListener('DOMContentLoaded', () => {
         return `<form id="batch-form"><h2 class="text-2xl font-display text-amber-900 border-b pb-2 mb-4">${mode === 'create' ? 'Crear' : 'Editar'} ${stage.nombre_etapa}</h2><div class="space-y-4 max-h-[60vh] overflow-y-auto p-1">${formFields}</div><div class="flex justify-end gap-4 mt-6"><button type="button" id="cancel-btn" class="bg-stone-300 hover:bg-stone-400 font-bold py-2 px-6 rounded-xl">Cancelar</button><button type="submit" class="bg-amber-800 hover:bg-amber-900 text-white font-bold py-2 px-6 rounded-xl">Guardar</button></div></form>`;
     }
 
-    async function createFieldHTML(field, value) {
+    async function createFieldHTML(field, fieldData) {
         const { label, name, type, options } = field;
-        switch(type) {
-            case 'date': return createInput(name, label, 'date', '', value);
-            case 'number': return createInput(name, label, 'number', '', value);
-            case 'image': return createImageInputHTML(name, label, value);
-            case 'textarea': return createTextArea(name, label, '...', value);
-            case 'select': return await createSelectHTML(name, label, options, value);
-            case 'selectFinca': return await createFincaSelectHTML(name, label, value);
-            case 'selectProcesadora': return await createProcesadoraSelectHTML(name, label, value);
-            case 'selectPerfil': return await createPerfilSelectHTML(name, label, value);
-            case 'selectLugar': return await createLugarProcesoSelectHTML(name, label, value);
-            default:
-                return createInput(name, label, 'text', '', value);
-        }
-    }
-    
-    function createInput(id, l, t, p, v) { return `<div><label for="${id}" class="block text-sm font-medium text-stone-700 mb-1">${l}</label><input type="${t}" id="${id}" name="${id}" value="${v||''}" placeholder="${p}" class="w-full p-3 border border-stone-300 rounded-xl" step="0.01"></div>`; }
-    function createSelect(id, l, o, s) { const opts = o.map(opt => `<option value="${opt}" ${opt===s?'selected':''}>${opt}</option>`).join(''); return `<div><label for="${id}" class="block text-sm font-medium text-stone-700 mb-1">${l}</label><select id="${id}" name="${id}" class="w-full p-3 border border-stone-300 rounded-xl"><option value="">Seleccionar...</option>${opts}</select></div>`; }
-    function createImageInputHTML(id, l, v) { return `<div class="pt-4 border-t"><label class="block text-sm font-medium text-stone-700 mb-1">${l}</label><div class="mt-1 flex items-center gap-4"><img src="${v||'https://placehold.co/100x100/e7e5e4/a8a29e?text=Foto'}" alt="Previsualización" class="h-24 w-24 rounded-lg object-cover"><div class="w-full"><input type="file" class="image-upload-input block w-full text-sm text-stone-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:font-semibold file:bg-amber-50 file:text-amber-700 hover:file:bg-amber-100" accept="image/*"><input type="hidden" name="${id}" value="${v||''}"><p class="text-xs text-stone-500 mt-2">Sube una imagen.</p></div></div></div>`; }
-    function createTextArea(name, label, placeholder, value) { return `<div><label for="${name}" class="block text-sm font-medium text-stone-700 mb-1">${label}</label><textarea id="${name}" name="${name}" placeholder="${placeholder}" class="w-full p-3 border border-stone-300 rounded-xl" rows="3">${value || ''}</textarea></div>`; }
-    
-    async function createSelectHTML(name, label, options, selectedValue = '') {
-        try {
-            return createSelect(name, label, options, selectedValue);
-        } catch (error) { return `<div class="text-red-500">Error al cargar ${label} .</div>`; }
-    }
+        const value = (typeof fieldData === 'object' && fieldData !== null) ? fieldData.value : fieldData;
+        const isVisible = (typeof fieldData === 'object' && fieldData !== null) ? fieldData.visible : true;
+        const checkedAttr = isVisible ? 'checked' : '';
 
-    async function createFincaSelectHTML(name, label, selectedValue = '') {
+        let inputHtml = '';
+        switch(type) {
+            case 'date': inputHtml = createInputHTML(name, 'date', value); break;
+            case 'number': inputHtml = createInputHTML(name, 'number', value); break;
+            case 'image': inputHtml = createImageInputHTML(name, value); break;
+            case 'textarea': inputHtml = createTextAreaHTML(name, value); break;
+            case 'select': inputHtml = createSelectHTML(name, options, value); break;
+            case 'selectFinca': inputHtml = await createFincaSelectHTML(name, value); break;
+            case 'selectProcesadora': inputHtml = await createProcesadoraSelectHTML(name, value); break;
+            case 'selectPerfil': inputHtml = await createPerfilSelectHTML(name, value); break;
+            case 'selectLugar': inputHtml = await createLugarProcesoSelectHTML(name, value); break;
+            default: inputHtml = createInputHTML(name, 'text', value);
+        }
+        
+        return `
+            <div>
+                <label for="${name}" class="block text-sm font-medium text-stone-700 mb-1">${label}</label>
+                <div class="flex items-center gap-3">
+                    <div class="flex-grow">${inputHtml}</div>
+                    <div class="flex items-center space-x-2" title="Controla la visibilidad de este campo en la página pública">
+                        <input type="checkbox" id="visible_${name}" name="visible_${name}" ${checkedAttr} class="h-4 w-4 rounded border-gray-300 text-amber-600 focus:ring-amber-500">
+                        <label for="visible_${name}" class="text-xs text-stone-500">Visible</label>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+    
+    function createInputHTML(name, type, value) {
+        return `<input type="${type}" id="${name}" name="${name}" value="${value||''}" class="w-full p-3 border border-stone-300 rounded-xl" step="0.01">`;
+    }
+    
+    function createSelectHTML(name, options, selectedValue) {
+        const opts = options.map(opt => `<option value="${opt}" ${opt === selectedValue ? 'selected':''}>${opt}</option>`).join('');
+        return `<select id="${name}" name="${name}" class="w-full p-3 border border-stone-300 rounded-xl bg-white"><option value="">Seleccionar...</option>${opts}</select>`;
+    }
+    function createTextAreaHTML(name, value) {
+        return `<textarea id="${name}" name="${name}" class="w-full p-3 border border-stone-300 rounded-xl" rows="3">${value || ''}</textarea>`;
+    }
+    
+    function createImageInputHTML(name, value) {
+        return `<div class="pt-4 border-t"><div class="mt-1 flex items-center gap-4"><img src="${value||'https://placehold.co/100x100/e7e5e4/a8a29e?text=Foto'}" alt="Previsualización" class="h-24 w-24 rounded-lg object-cover"><div class="w-full"><input type="file" class="image-upload-input block w-full text-sm text-stone-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:font-semibold file:bg-amber-50 file:text-amber-700 hover:file:bg-amber-100" accept="image/*"><input type="hidden" name="${name}" value="${value||''}"><p class="text-xs text-stone-500 mt-2">Sube una imagen.</p></div></div></div>`;
+    }
+    async function createFincaSelectHTML(name, selectedValue) {
         try {
             const fincas = await api('/api/fincas');
-            if (fincas.length === 0) return `<div><label class="block text-sm font-medium text-stone-700 mb-1">${label}</label><div class="p-3 border rounded-xl bg-stone-50 text-stone-500">No hay fincas. <a href="/app/fincas" class="text-sky-600 hover:underline">Registra una</a>.</div><input type="hidden" name="${name}" value=""></div>`;
-            return createSelect(name, label, fincas.map(f => f.nombre_finca), selectedValue);
+            if (fincas.length === 0) return `<div><div class="p-3 border rounded-xl bg-stone-50 text-stone-500">No hay fincas. <a href="/app/fincas" class="text-sky-600 hover:underline">Registra una</a>.</div><input type="hidden" name="${name}" value=""></div>`;
+            return createSelectHTML(name, fincas.map(f => f.nombre_finca), selectedValue);
         } catch (error) { return `<div class="text-red-500">Error al cargar fincas.</div>`; }
     }
-    async function createPerfilSelectHTML(name, label, selectedValue = '') {
-        try {
-            const perfiles = await api('/api/perfiles');
-            let optionsHTML = perfiles.map(p => `<option value="${p.nombre}" ${p.nombre === selectedValue ? 'selected' : ''}>${p.nombre}</option>`).join('');
-            return `<div><label for="${name}" class="block text-sm font-medium text-stone-700 mb-1">${label}</label><div class="flex items-center gap-2"><select id="${name}" name="${name}" class="w-full p-3 border border-stone-300 rounded-xl"><option value="">Seleccionar perfil...</option>${optionsHTML}</select><a href="/app/perfiles" target="_blank" class="flex-shrink-0 bg-sky-600 hover:bg-sky-700 text-white font-bold p-3 rounded-xl" title="Añadir Nuevo Perfil">+</a></div></div>`;
-        } catch (error) { return `<div class="text-red-500">Error al cargar perfiles. <a href="/app/perfiles" class="text-sky-600 hover:underline">Ir a Perfiles</a>.</div>`; }
-    }
-    async function createProcesadoraSelectHTML(name, label, selectedValue = '') {
+
+    async function createProcesadoraSelectHTML(name, selectedValue) {
         try {
             const procesadoras = await api('/api/procesadoras');
-            if (procesadoras.length === 0) return `<div><label class="block text-sm font-medium text-stone-700 mb-1">${label}</label><div class="p-3 border rounded-xl bg-stone-50 text-stone-500">No hay procesadoras. <a href="/app/procesadoras" class="text-sky-600 hover:underline">Registra una</a>.</div><input type="hidden" name="${name}" value=""></div>`;
-            return createSelect(name, label, procesadoras.map(p => p.nombre_comercial || p.razon_social), selectedValue);
+            if (procesadoras.length === 0) return `...`;
+            return createSelectHTML(name, procesadoras.map(p => p.nombre_comercial || p.razon_social), selectedValue);
         } catch (error) { return `<div class="text-red-500">Error al cargar procesadoras.</div>`; }
     }
-    async function createLugarProcesoSelectHTML(name, label, selectedValue = '') {
+
+    async function createPerfilSelectHTML(name, selectedValue) {
+        try {
+            const perfiles = await api('/api/perfiles');
+            return createSelectHTML(name, perfiles.map(p => p.nombre), selectedValue);
+        } catch (error) { return `<div class="text-red-500">Error al cargar perfiles.</div>`; }
+    }
+    async function createLugarProcesoSelectHTML(name, selectedValue) {
         try {
             const [fincas, procesadoras] = await Promise.all([api('/api/fincas'), api('/api/procesadoras')]);
             let optionsHTML = '<option value="">Seleccionar lugar...</option>';
@@ -323,7 +358,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if(procesadoras.length > 0) {
                 optionsHTML += `<optgroup label="Procesadoras">${procesadoras.map(p => `<option value="Procesadora: ${p.nombre_comercial || p.razon_social}" ${`Procesadora: ${p.nombre_comercial || p.razon_social}` === selectedValue ? 'selected' : ''}>${p.nombre_comercial || p.razon_social}</option>`).join('')}</optgroup>`;
             }
-            return `<div><label for="${name}" class="block text-sm font-medium text-stone-700 mb-1">${label}</label><select id="${name}" name="${name}" class="w-full p-3 border border-stone-300 rounded-xl">${optionsHTML}</select></div>`;
+            return `<select id="${name}" name="${name}" class="w-full p-3 border border-stone-300 rounded-xl">${optionsHTML}</select>`;
         } catch (error) {
             return `<div class="text-red-500">Error al cargar lugares.</div>`;
         }
@@ -380,11 +415,13 @@ document.addEventListener('DOMContentLoaded', () => {
     async function handleDashboardClick(e) {
         const expandTrigger = e.target.closest('.expand-trigger');
         if (expandTrigger) {
-            const wrapper = expandTrigger.closest('.bg-white.rounded-xl.shadow-md');
-            const childrenContainer = wrapper.parentElement.querySelector('.children-container');
-            const icon = expandTrigger.querySelector('.expand-icon');
-            if (childrenContainer) childrenContainer.classList.toggle('hidden');
-            if (icon) icon.classList.toggle('rotate-90');
+            const wrapper = expandTrigger.closest('.batch-card-wrapper');
+            if (wrapper) {
+                const childrenContainer = wrapper.querySelector('.children-container');
+                const icon = expandTrigger.querySelector('.expand-icon');
+                if (childrenContainer) childrenContainer.classList.toggle('hidden');
+                if (icon) icon.classList.toggle('rotate-90');
+            }
             return;
         }
 

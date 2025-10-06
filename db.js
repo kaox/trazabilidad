@@ -570,7 +570,7 @@ const getTrazabilidad = async (req, res) => {
 
         const cosechaData = history.stages[0]?.data;
         if (cosechaData && cosechaData.finca) {
-            const finca = await get('SELECT * FROM fincas WHERE nombre_finca = ? AND user_id = ?', [cosechaData.finca, ownerId]);
+            const finca = await get('SELECT * FROM fincas WHERE nombre_finca = ? AND user_id = ?', [cosechaData.finca.value, ownerId]);
             if (finca) {
                 history.fincaData = { 
                     ...finca, 
@@ -581,7 +581,6 @@ const getTrazabilidad = async (req, res) => {
                 };
             }
         }
-
         const procesadoras = await all('SELECT * FROM procesadoras WHERE user_id = ?', [ownerId]);
         history.procesadorasData = procesadoras.map(p => ({
             ...p,

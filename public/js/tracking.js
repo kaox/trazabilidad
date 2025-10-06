@@ -66,7 +66,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const { stages, fincaData, perfilSensorialData } = h;
         const lastStage = stages?.[stages.length - 1]?.data || {};
         const firstStage = stages?.[0]?.data || {};
-        
+
+        const getFieldValue = (field) => (typeof field === 'object' && field !== null) ? field.value : field;
+
         let certsHtml = (fincaData?.certificaciones_json || []).map(cert => `<div class="flex items-center gap-2 p-2 rounded-md bg-stone-100"><img src="${cert.logo_url}" class="h-6 w-6 rounded-full"><span class="text-sm text-stone-600">${cert.nombre}</span></div>`).join('');
 
         let premiosHtml = (fincaData?.premios_json || []).map(premio => `<div class="flex items-center gap-2 p-2 rounded-md bg-stone-100"><img src="${premio.logo_url}" class="h-6 w-6 rounded-full"><span class="text-sm text-stone-600">${premio.nombre} (${premio.ano})</span></div>`).join('');
@@ -93,7 +95,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             <div><strong>País:</strong> ${fincaData?.pais || 'N/A'}</div>
                             <div><strong>Ciudad:</strong> ${fincaData?.ciudad || 'N/A'}</div>
                             <div><strong>Altura:</strong> ${fincaData?.altura || 'N/A'} msnm</div>
-                            <div><strong>Variedad de Cacao:</strong> ${firstStage.variedad || 'N/A'}</div>
+                            <div><strong>Variedad de Cacao:</strong> ${getFieldValue(firstStage.variedad) || 'N/A'}</div>
                             <div id="finca-map-container" class="w-full h-48 rounded-md border mt-4"></div>
                         </div>
                         <div id="tab-productor" class="tab-panel hidden space-y-4">
@@ -190,15 +192,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function createTimelineItem(stageName, data) {
         const details = getChapterDetails(stageName, data);
-        const dataPointsHtml = Object.entries(data)
-            .filter(([key]) => !['id', 'imageUrl', 'finca', 'lugarProceso', 'procesadora'].includes(key) && !key.toLowerCase().includes('fecha'))
-            .map(([key, value]) => `<li><strong>${key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}:</strong> ${value || 'N/A'}</li>`)
-            .join('');
-
-        const locationName = data.lugarProceso || data.finca || data.procesadora || 'N/A';
-        const locationButton = `<button class="location-btn text-sky-700 hover:underline" data-location="${locationName}">${locationName}</button>`;
-
         
+        const getFieldValue = (field) => (typeof field === 'object' && field !== null) ? field.value : field;
+        const isFieldVisible = (field) => (typeof field === 'object' && field !== null) ? field.visible : true;
+
+        const dataPointsHtml = Object.entries(data)
+            .filter(([key, fieldData]) => isFieldVisible(fieldData) && !['id', 'imageUrl', 'finca', 'lugarProceso'].includes(key) && !key.toLowerCase().includes('fecha'))
+            .map(([key, fieldData]) => `<li><strong>${key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}:</strong> ${getFieldValue(fieldData) || 'N/A'}</li>`)
+            .join('');
+            
+        const imageUrl = getFieldValue(data.imageUrl);
+        const isImageVisible = isFieldVisible(data.imageUrl);
+        const locationName = getFieldValue(data.lugarProceso) || getFieldValue(data.finca) || 'N/A';
+
         return `
             <div class="timeline-item animate">
                 <div class="bg-white p-6 rounded-lg shadow-lg">
@@ -206,10 +212,10 @@ document.addEventListener('DOMContentLoaded', () => {
                          <i class="fas ${details.icon} text-amber-800 text-2xl w-8 text-center"></i>
                          <h3 class="font-bold text-amber-900 font-display text-xl">${details.title}</h3>
                     </div>
-                    ${data.imageUrl ? `<img src="${data.imageUrl}" class="w-full h-40 object-cover rounded-md my-4">` : ''}
+                    ${imageUrl && isImageVisible ? `<img src="${imageUrl}" class="w-full h-40 object-cover rounded-md my-4">` : ''}
                     <div class="text-sm text-stone-500 mb-3 flex items-center gap-4">
                         <span><i class="fas fa-calendar-alt mr-1"></i> ${details.date}</span>
-                        <span><i class="fas fa-map-marker-alt mr-1"></i> ${locationButton}</span>
+                        <span><i class="fas fa-map-marker-alt mr-1"></i> ${locationName}</span>
                     </div>
                     <ul class="text-sm text-stone-600 list-disc list-inside space-y-1">${dataPointsHtml}</ul>
                 </div>
@@ -317,18 +323,20 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function getChapterDetails(stageName, data) {
+        const getFieldValue = (field) => (typeof field === 'object' && field !== null) ? field.value : field;
+
         const details = {
             title: stageName,
-            date: formatDate(data.fecha || data.fechaCosecha || data.fechaInicio),
+            date: formatDate(getFieldValue(data.fecha) || getFieldValue(data.fechaCosecha) || getFieldValue(data.fechaInicio)),
             icon: 'fa-cog',
             narrative: 'Se completó una etapa clave del proceso.',
         };
         const lowerCaseStageName = stageName.toLowerCase();
-        if (lowerCaseStageName.includes('cosecha')) { details.icon = 'fa-leaf'; details.narrative = `Cosechado en la Finca <strong>${data.finca}</strong>.`; }
-        else if (lowerCaseStageName.includes('fermenta')) { details.icon = 'fa-hourglass-half'; details.narrative = `Fermentado durante <strong>${data.duracion || data.horas} ${data.duracion ? 'días' : 'horas'}</strong>.`; }
-        else if (lowerCaseStageName.includes('secado')) { details.icon = 'fa-sun'; details.narrative = `Secado por <strong>${data.duracion || data.dias} días</strong>.`; }
-        else if (lowerCaseStageName.includes('tostado')) { details.icon = 'fa-fire'; details.narrative = `Tostado a <strong>${data.tempMaxima}°C</strong>, revelando un perfil de <strong>${data.tipoPerfil}</strong>.`; }
-        else if (lowerCaseStageName.includes('molienda')) { details.icon = 'fa-mortar-pestle'; details.narrative = `Molienda finalizada, resultando en <strong>${data.pesoProductoFinal} kg</strong> de <strong>${data.productoFinal}</strong>.`; }
+        if (lowerCaseStageName.includes('cosecha')) { details.icon = 'fa-leaf'; details.narrative = `Cosechado en la Finca <strong>${getFieldValue(data.finca)}</strong>.`; }
+        else if (lowerCaseStageName.includes('fermenta')) { details.icon = 'fa-hourglass-half'; details.narrative = `Fermentado durante <strong>${getFieldValue(data.duracion) || getFieldValue(data.horas)} ${getFieldValue(data.duracion) ? 'días' : 'horas'}</strong>.`; }
+        else if (lowerCaseStageName.includes('secado')) { details.icon = 'fa-sun'; details.narrative = `Secado por <strong>${getFieldValue(data.duracion) || getFieldValue(data.dias)} días</strong>.`; }
+        else if (lowerCaseStageName.includes('tostado')) { details.icon = 'fa-fire'; details.narrative = `Tostado a <strong>${getFieldValue(data.tempMaxima)}°C</strong>, revelando un perfil de <strong>${getFieldValue(data.tipoPerfil)}</strong>.`; }
+        else if (lowerCaseStageName.includes('molienda')) { details.icon = 'fa-mortar-pestle'; details.narrative = `Molienda finalizada, resultando en <strong>${getFieldValue(data.pesoProductoFinal)} kg</strong> de <strong>${getFieldValue(data.productoFinal)}</strong>.`; }
         
         return details;
     }
