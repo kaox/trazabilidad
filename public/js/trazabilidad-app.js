@@ -63,19 +63,22 @@ document.addEventListener('DOMContentLoaded', () => {
         
         const nextStage = state.stagesByTemplate[template.id]?.find(s => s.orden === stage.orden + 1);
         const childrenKey = nextStage ? nextStage.nombre_etapa.toLowerCase().replace(/ & /g, '_and_') : null;
-        const hasChildren = childrenKey && batchData.children && Array.isArray(batchData.children) && batchData.children.length > 0;
-        
-        const processData = batchData.data || batchData; // Compatibilidad con estructura antigua y nueva
+        const hasChildren = childrenKey && batchData[childrenKey] && Array.isArray(batchData[childrenKey]) && batchData[childrenKey].length > 0;
+
+        const processData = batchData.data || batchData;
 
         const entradas = stage.campos_json.entradas || [];
         const salidas = stage.campos_json.salidas || [];
         const variables = stage.campos_json.variables || [];
         const imageUrlField = variables.find(v => v.type === 'image');
 
-        // Función auxiliar para obtener el valor de un campo
         const getFieldValue = (data, fieldName) => {
+            if (!data || !fieldName) return null;
             const field = data[fieldName];
-            return (typeof field === 'object' && field !== null) ? field.value : field;
+            if (typeof field === 'object' && field !== null && field.hasOwnProperty('value')) {
+                return field.value;
+            }
+            return field;
         };
         
         let inputWeight = 0;
@@ -163,7 +166,7 @@ document.addEventListener('DOMContentLoaded', () => {
         childrenContainer.className = 'children-container hidden pl-5 border-l-2 border-dashed border-stone-300 md:ml-6 md:pl-4 md:border-l-solid md:border-stone-200';
 
         if (hasChildren) {
-            batchData.children.forEach(childBatch => {
+            batchData[childrenKey].forEach(childBatch => {
                 childrenContainer.appendChild(createBatchCard(childBatch, template, nextStage, batchData));
             });
         }
@@ -174,7 +177,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return card;
     }
 
-    // --- Lógica de Modales ---
+    // --- Lógica de Modales y Formularios ---
     function openTemplateSelectorModal() {
         if (state.templates.length === 0) {
             alert("No hay plantillas de proceso. Crea una en Gestión -> Plantillas.");
@@ -205,7 +208,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     async function openFormModal(mode, template, stage, parentBatch = null, batchData = {}) {
-        modalContent.innerHTML = await generateFormHTML(mode, template, stage, parentBatch, batchData);
+        modalContent.innerHTML = await generateFormHTML(mode, template, stage, parentBatch, batchData.data);
         formModal.showModal();
         
         modalContent.querySelectorAll('.image-upload-input').forEach(imageInput => {
@@ -238,6 +241,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     };
                 }
             }
+            
             try {
                 if (mode === 'create') {
                     await api('/api/batches', { method: 'POST', body: JSON.stringify({ 
@@ -262,7 +266,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function generateFormHTML(mode, template, stage, parentBatch, data = {}) {
         let formFields = '';
-        if (mode === 'edit') formFields += `<div><label class="block text-sm font-medium text-stone-700">ID Lote</label><p class="w-full p-3 bg-stone-100 rounded-xl font-mono text-sm">${data.id}</p></div>`;
+        if (mode === 'edit') formFields += `<div><label class="block text-sm font-medium text-stone-700">ID Lote</label><p class="w-full p-3 bg-stone-100 rounded-xl font-mono text-sm">${(data.id?.value || data.id)}</p></div>`;
         
         const allFields = [
             ...(stage.campos_json.entradas || []),
@@ -310,7 +314,7 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>
         `;
     }
-    
+
     function createInputHTML(name, type, value) {
         return `<input type="${type}" id="${name}" name="${name}" value="${value||''}" class="w-full p-3 border border-stone-300 rounded-xl" step="0.01">`;
     }
@@ -319,6 +323,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const opts = options.map(opt => `<option value="${opt}" ${opt === selectedValue ? 'selected':''}>${opt}</option>`).join('');
         return `<select id="${name}" name="${name}" class="w-full p-3 border border-stone-300 rounded-xl bg-white"><option value="">Seleccionar...</option>${opts}</select>`;
     }
+    
     function createTextAreaHTML(name, value) {
         return `<textarea id="${name}" name="${name}" class="w-full p-3 border border-stone-300 rounded-xl" rows="3">${value || ''}</textarea>`;
     }
@@ -326,6 +331,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function createImageInputHTML(name, value) {
         return `<div class="pt-4 border-t"><div class="mt-1 flex items-center gap-4"><img src="${value||'https://placehold.co/100x100/e7e5e4/a8a29e?text=Foto'}" alt="Previsualización" class="h-24 w-24 rounded-lg object-cover"><div class="w-full"><input type="file" class="image-upload-input block w-full text-sm text-stone-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:font-semibold file:bg-amber-50 file:text-amber-700 hover:file:bg-amber-100" accept="image/*"><input type="hidden" name="${name}" value="${value||''}"><p class="text-xs text-stone-500 mt-2">Sube una imagen.</p></div></div></div>`;
     }
+
     async function createFincaSelectHTML(name, selectedValue) {
         try {
             const fincas = await api('/api/fincas');
@@ -333,11 +339,11 @@ document.addEventListener('DOMContentLoaded', () => {
             return createSelectHTML(name, fincas.map(f => f.nombre_finca), selectedValue);
         } catch (error) { return `<div class="text-red-500">Error al cargar fincas.</div>`; }
     }
-
+    
     async function createProcesadoraSelectHTML(name, selectedValue) {
         try {
             const procesadoras = await api('/api/procesadoras');
-            if (procesadoras.length === 0) return `...`;
+            if (procesadoras.length === 0) return `<div><div class="p-3 border rounded-xl bg-stone-50 text-stone-500">No hay procesadoras. <a href="/app/procesadoras" class="text-sky-600 hover:underline">Registra una</a>.</div><input type="hidden" name="${name}" value=""></div>`;
             return createSelectHTML(name, procesadoras.map(p => p.nombre_comercial || p.razon_social), selectedValue);
         } catch (error) { return `<div class="text-red-500">Error al cargar procesadoras.</div>`; }
     }
@@ -348,6 +354,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return createSelectHTML(name, perfiles.map(p => p.nombre), selectedValue);
         } catch (error) { return `<div class="text-red-500">Error al cargar perfiles.</div>`; }
     }
+    
     async function createLugarProcesoSelectHTML(name, selectedValue) {
         try {
             const [fincas, procesadoras] = await Promise.all([api('/api/fincas'), api('/api/procesadoras')]);
@@ -363,20 +370,13 @@ document.addEventListener('DOMContentLoaded', () => {
             return `<div class="text-red-500">Error al cargar lugares.</div>`;
         }
     }
-
+    
     function findBatchById(lotes, id) {
         for (const lote of lotes) {
             if (lote.id === id) return lote;
-            const template = state.templates.find(t => t.id === lote.plantilla_id);
-            if(template) {
-                const stages = state.stagesByTemplate[template.id] || [];
-                for(const stage of stages) {
-                     const childrenKey = stage.nombre_etapa.toLowerCase().replace(/ & /g, '_and_');
-                     if (lote[childrenKey] && Array.isArray(lote[childrenKey])) {
-                        const found = findBatchById(lote[childrenKey], id);
-                        if (found) return found;
-                     }
-                }
+            if (lote.children && lote.children.length > 0) {
+                const found = findBatchById(lote.children, id);
+                if (found) return found;
             }
         }
         return null;
@@ -385,16 +385,9 @@ document.addEventListener('DOMContentLoaded', () => {
     function findParentBatch(lotes, childId, parent = null) {
         for (const lote of lotes) {
             if (lote.id === childId) return parent;
-            const template = state.templates.find(t => t.id === lote.plantilla_id);
-            if(template) {
-                const stages = state.stagesByTemplate[template.id] || [];
-                for(const stage of stages) {
-                    const childrenKey = stage.nombre_etapa.toLowerCase().replace(/ & /g, '_and_');
-                     if (lote[childrenKey] && Array.isArray(lote[childrenKey])) {
-                        const found = findParentBatch(lote[childrenKey], childId, lote);
-                        if (found) return found;
-                     }
-                }
+            if (lote.children && lote.children.length > 0) {
+                const found = findParentBatch(lote.children, childId, lote);
+                if (found) return found;
             }
         }
         return null;
@@ -426,7 +419,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         const button = e.target.closest('button');
-
         if (!button) return;
         
         if (button.classList.contains('add-sub-btn')) {
@@ -457,7 +449,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         
         if (button.classList.contains('qr-btn')) {
-            const url = `${window.location.origin}/${button.dataset.id}`;
+            const url = `${window.location.origin}/tracking/${button.dataset.id}`; // Apuntar a la nueva página
             const qr = qrcode(0, 'L');
             qr.addData(url);
             qr.make();
@@ -470,3 +462,4 @@ document.addEventListener('DOMContentLoaded', () => {
 
     init();
 });
+

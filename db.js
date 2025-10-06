@@ -429,14 +429,14 @@ const getBatchesTree = async (req, res) => {
             }
             return loteData;
         };
-        
+
         const [templates, allStages] = await Promise.all([
             all('SELECT * FROM plantillas_proceso WHERE user_id = ?', [userId]),
             all('SELECT * FROM etapas_plantilla WHERE plantilla_id IN (SELECT id FROM plantillas_proceso WHERE user_id = ?)', [userId]),
         ]);
 
         const finalTree = roots.map(rootNode => buildClientTree(rootNode, allStages, templates));
-        
+
         res.status(200).json(finalTree);
     } catch (error) {
         console.error("Error en getBatchesTree:", error);
