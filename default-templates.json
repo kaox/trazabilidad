@@ -373,6 +373,54 @@
           }
         }
       ]
+    },
+    {
+      "nombre_producto": "Miel de Abeja",
+      "descripcion": "Plantilla estándar para el proceso de trazabilidad de la miel de abeja, desde la cosecha hasta el envasado.",
+      "etapas": [
+        {
+          "nombre_etapa": "Cosecha en Apiario",
+          "orden": 1,
+          "campos_json": {
+            "entradas": [{"label": "Número de Alzas a Cosechar", "name": "numAlzas", "type": "number"}],
+            "salidas": [{"label": "Peso de Panales con Miel (kg)", "name": "pesoPanales", "type": "number"}],
+            "variables": [
+              {"label": "Finca", "name": "finca", "type": "selectFinca"}, 
+              {"label": "Fecha Cosecha", "name": "fecha", "type": "date"},
+              {"label": "Porcentaje operculación (%)", "name": "porcentajeOperculacion", "type": "number"},
+              {"label": "Tipo de Flora Predominante", "name": "tipoFlora", "type": "text", "description": "Ej: Eucalipto, Azahar, Multifloral."}
+            ]
+          }
+        },
+        {
+          "nombre_etapa": "Desoperculado y Extracción",
+          "orden": 2,
+          "campos_json": {
+            "entradas": [{"label": "Peso de Panales con Miel (kg)", "name": "pesoPanalesEntrada", "type": "number"}],
+            "salidas": [{"label": "Peso de Miel cruda (kg)", "name": "pesoMielCruda", "type": "number"}],
+            "variables":[
+              {"label": "Lugar del Proceso", "name": "lugarProceso", "type": "selectLugar"},
+              {"label": "Fecha", "name": "fecha", "type": "date"},
+              {"label": "Tipo de Extracción", "name": "tipoExtraccion", "type": "select", "options": ["Manual", "Electrico"]}
+            ]
+          }
+        },
+        {
+          "nombre_etapa": "Filtrado y Decantación",
+          "orden": 3,
+          "campos_json": {
+            "entradas": [{"label": "Peso de Miel cruda (kg)", "name": "pesoMielCruda", "type": "number"}],
+            "salidas": [{"label": "Peso de Miel madura (kg)", "name": "pesoMielMadura", "type": "number"}],
+            "variables":[
+              {"label": "Lugar del Proceso", "name": "lugarProceso", "type": "selectLugar"},
+              {"label": "Fecha", "name": "fecha", "type": "date"},
+              {"label": "Tipo de Filtrado", "name": "tipoFiltrado", "type": "text", "description": "Ej: Malla de acero inoxidable, decantación natural."},
+              {"label": "Temperatura de la Sala (°C)", "name": "temperaturaSala", "type": "number"},
+              {"label": "Tiempo de madurez (días)", "name": "tiempoMadurez", "type": "number"}
+            ]
+          }
+        }
+      ]
     }
   ]
 }
