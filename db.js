@@ -199,7 +199,8 @@ const getProcesadoras = async (req, res) => {
         const procesadoras = rows.map(p => ({ 
             ...p, 
             premios_json: safeJSONParse(p.premios_json || '[]'),
-            certificaciones_json: safeJSONParse(p.certificaciones_json || '[]')
+            certificaciones_json: safeJSONParse(p.certificaciones_json || '[]'),
+            coordenadas: safeJSONParse(p.coordenadas || 'null')
         }));
         res.status(200).json(procesadoras);
     } catch (err) { res.status(500).json({ error: err.message }); }
@@ -207,11 +208,11 @@ const getProcesadoras = async (req, res) => {
 
 const createProcesadora = async (req, res) => {
     const userId = req.user.id;
-    const { ruc, razon_social, nombre_comercial, tipo_empresa, pais, ciudad, direccion, telefono, premios_json, certificaciones_json } = req.body;
+    const { ruc, razon_social, nombre_comercial, tipo_empresa, pais, ciudad, direccion, telefono, premios_json, certificaciones_json, coordenadas } = req.body;
     const id = require('crypto').randomUUID();
-    const sql = 'INSERT INTO procesadoras (id, user_id, ruc, razon_social, nombre_comercial, tipo_empresa, pais, ciudad, direccion, telefono, premios_json, certificaciones_json) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
+    const sql = 'INSERT INTO procesadoras (id, user_id, ruc, razon_social, nombre_comercial, tipo_empresa, pais, ciudad, direccion, telefono, premios_json, certificaciones_json, coordenadas) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
     try {
-        await run(sql, [id, userId, ruc, razon_social, nombre_comercial, tipo_empresa, pais, ciudad, direccion, telefono, JSON.stringify(premios_json || []), JSON.stringify(certificaciones_json || [])]);
+        await run(sql, [id, userId, ruc, razon_social, nombre_comercial, tipo_empresa, pais, ciudad, direccion, telefono, JSON.stringify(premios_json || []), JSON.stringify(certificaciones_json || []), coordenadas]);
         res.status(201).json({ message: "Procesadora creada" });
     } catch (err) { res.status(500).json({ error: err.message }); }
 };
@@ -219,14 +220,15 @@ const createProcesadora = async (req, res) => {
 const updateProcesadora = async (req, res) => {
     const userId = req.user.id;
     const { id } = req.params;
-    const { ruc, razon_social, nombre_comercial, tipo_empresa, pais, ciudad, direccion, telefono, premios_json, certificaciones_json } = req.body;
-    const sql = 'UPDATE procesadoras SET ruc = ?, razon_social = ?, nombre_comercial = ?, tipo_empresa = ?, pais = ?, ciudad = ?, direccion = ?, telefono = ?, premios_json = ?, certificaciones_json = ? WHERE id = ? AND user_id = ?';
+    const { ruc, razon_social, nombre_comercial, tipo_empresa, pais, ciudad, direccion, telefono, premios_json, certificaciones_json, coordenadas } = req.body;
+    const sql = 'UPDATE procesadoras SET ruc = ?, razon_social = ?, nombre_comercial = ?, tipo_empresa = ?, pais = ?, ciudad = ?, direccion = ?, telefono = ?, premios_json = ?, certificaciones_json = ?, coordenadas = ? WHERE id = ? AND user_id = ?';
     try {
-        const result = await run(sql, [ruc, razon_social, nombre_comercial, tipo_empresa, pais, ciudad, direccion, telefono, JSON.stringify(premios_json || []), JSON.stringify(certificaciones_json || []), id, userId]);
+        const result = await run(sql, [ruc, razon_social, nombre_comercial, tipo_empresa, pais, ciudad, direccion, telefono, JSON.stringify(premios_json || []), JSON.stringify(certificaciones_json || []), coordenadas, id, userId]);
         if (result.changes === 0) return res.status(404).json({ error: "Procesadora no encontrada o no tienes permiso." });
         res.status(200).json({ message: "Procesadora actualizada" });
     } catch (err) { res.status(500).json({ error: err.message }); }
 };
+
 const deleteProcesadora = async (req, res) => {
     const userId = req.user.id;
     const { id } = req.params;

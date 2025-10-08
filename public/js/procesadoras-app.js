@@ -15,14 +15,19 @@ document.addEventListener('DOMContentLoaded', () => {
     const certExpiryInput = document.getElementById('certification-expiry');
     const addCertBtn = document.getElementById('add-certification-btn');
     const certsListContainer = document.getElementById('certifications-list');
+    const searchInput = document.getElementById('location-search');
+    const searchBtn = document.getElementById('search-btn');
 
     // Estado de la aplicación
     let allPremios = [];
     let currentProcesadoraPremios = [];
     let allCertifications = [];
     let currentProcesadoraCerts = [];
+    let map;
+    let marker = null;
 
     async function init() {
+        initializeMap();
         await Promise.all([
             loadCountries(),
             loadPremios(),
@@ -30,6 +35,43 @@ document.addEventListener('DOMContentLoaded', () => {
             loadProcesadoras()
         ]);
         setupEventListeners();
+    }
+
+    function initializeMap() {
+        map = L.map('map').setView([-12.046374, -77.042793], 5); // Vista inicial en Perú
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
+        map.on('click', (e) => {
+            placeMarker(e.latlng);
+        });
+    }
+
+    function placeMarker(latlng) {
+        if (marker) {
+            marker.setLatLng(latlng);
+        } else {
+            marker = L.marker(latlng, { draggable: true }).addTo(map);
+            marker.on('dragend', (e) => {
+                document.getElementById('coordenadas').value = JSON.stringify(e.target.getLatLng());
+            });
+        }
+        document.getElementById('coordenadas').value = JSON.stringify(latlng);
+        map.panTo(latlng);
+    }
+
+    async function searchLocation() {
+        const query = searchInput.value;
+        if (!query) return;
+        const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${query}`);
+        const data = await response.json();
+        if (data && data.length > 0) {
+            const { lat, lon } = data[0];
+            const latlng = { lat: parseFloat(lat), lng: parseFloat(lon) };
+            map.setView(latlng, 15);
+            placeMarker(latlng);
+        } else {
+            alert('Ubicación no encontrada.');
+        }
     }
 
     function setupEventListeners() {
@@ -40,6 +82,7 @@ document.addEventListener('DOMContentLoaded', () => {
         premiosListContainer.addEventListener('click', handlePremioAction);
         addCertBtn.addEventListener('click', handleAddCertification);
         certsListContainer.addEventListener('click', handleCertificationAction);
+        searchBtn.addEventListener('click', searchLocation);
     }
 
     // --- Carga de Datos ---
@@ -149,6 +192,12 @@ document.addEventListener('DOMContentLoaded', () => {
         editIdInput.value = '';
         currentProcesadoraPremios = [];
         currentProcesadoraCerts = [];
+        if (marker) {
+            marker.remove();
+            marker = null;
+        }
+        document.getElementById('coordenadas').value = '';
+        map.setView([-12.046374, -77.042793], 5);
         renderAddedPremios();
         renderAddedCertifications();
         formTitle.textContent = 'Nueva Procesadora';
@@ -173,6 +222,11 @@ document.addEventListener('DOMContentLoaded', () => {
             form.direccion.value = procesadora.direccion || '';
             form.telefono.value = procesadora.telefono || '';
             editIdInput.value = procesadora.id;
+
+            if (procesadora.coordenadas) {
+                placeMarker(procesadora.coordenadas);
+                map.setView(procesadora.coordenadas, 15);
+            }
 
             currentProcesadoraPremios = procesadora.premios_json || [];
             currentProcesadoraCerts = procesadora.certificaciones_json || [];

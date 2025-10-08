@@ -77,6 +77,7 @@ async function initializeDatabase() {
                     ciudad TEXT,
                     direccion TEXT,
                     telefono TEXT,
+                    coordenadas JSONB,
                     premios_json TEXT,
                     certificaciones_json TEXT,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
