@@ -20,13 +20,59 @@ document.addEventListener('DOMContentLoaded', () => {
             scanText: 'Encuentre el recorrido de su café',
             securityImage: 'https://images.unsplash.com/photo-1559493233-13233a992329?q=80&w=2574&auto=format&fit=crop',
             process: [
-                { icon: 'fa-leaf', title: 'Cosecha de Cerezas', description: 'Registro de la recolección manual de cerezas en su punto óptimo de maduración.', fields: ['Finca', 'Variedad', 'Altitud', 'Fecha de Cosecha'] },
-                { icon: 'fa-water', title: 'Beneficio Húmedo', description: 'Control del proceso de despulpado, fermentación y lavado que define el perfil de acidez y limpieza en taza.', fields: ['Método de Beneficio', 'Horas de Fermentación', 'Tipo de Agua'] },
-                { icon: 'fa-sun', title: 'Secado en Camas Africanas', description: 'Monitorización del secado lento y uniforme para preservar los delicados atributos del grano.', fields: ['Tipo de Secado', 'Días de Secado', 'Humedad Final (%)'] },
+                { icon: 'fa-leaf', title: 'Cosecha de Cerezas', description: 'Registro de la recolección manual de cerezas en su punto óptimo de maduración.', fields: ['Finca de Origen', 'Variedad', 'Altitud', 'Fecha de Cosecha'] },
+                { icon: 'fa-water', title: 'Beneficio Húmedo', description: 'Control del proceso de despulpado, fermentación y lavado que define el perfil de acidez y limpieza en taza.', fields: ['Método de Beneficio', 'Horas de Fermentación', 'pH Inicial/Final'] },
+                { icon: 'fa-sun', title: 'Secado', description: 'Monitorización del secado lento y uniforme para preservar los delicados atributos del grano.', fields: ['Tipo de Secado', 'Días de Secado', 'Humedad Final (%)','Temperatura de Secado (°C)'] },
                 { icon: 'fa-fire', title: 'Tueste por Perfil', description: 'Registro de la curva de tueste, temperatura y tiempo para desarrollar las notas de sabor deseadas.', fields: ['Perfil de Tueste', 'Máquina Tostadora', 'Tiempo de Desarrollo', 'Notas de Cata'] },
             ]
         },
-        // ... (otros casos de uso se pueden añadir aquí con la misma estructura)
+        pina: {
+            title: 'Trazabilidad de la Piña Deshidratada',
+            description: 'La transparencia es clave para los productos saludables. Muestra el origen de tu fruta, el proceso de deshidratación sin aditivos y garantiza la calidad de tu snack a los consumidores conscientes.',
+            scanText: 'Encuentre el recorrido de su piña',
+            securityImage: 'https://images.unsplash.com/photo-1550258987-190a2d41a8ba?q=80&w=2574&auto=format&fit=crop',
+            process: [
+                { icon: 'fa-leaf', title: 'Cosecha de Piña Orgánica', description: 'Registro del origen y la fecha de cosecha para garantizar la máxima frescura.', fields: ['Finca de Origen', 'Fecha de Cosecha', 'Calibre de la Fruta'] },
+                { icon: 'fa-kitchen-set', title: 'Pelado y Rebanado', description: 'Control del grosor de las rodajas para un secado uniforme y una textura perfecta.', fields: ['Grosor de Rebanada (mm)', 'Fecha de Procesamiento'] },
+                { icon: 'fa-wind', title: 'Deshidratación a Baja Temperatura', description: 'Monitorización del tiempo y la temperatura para preservar los nutrientes y el sabor natural de la fruta.', fields: ['Temperatura (°C)', 'Tiempo de Secado (horas)', 'Humedad Final (%)'] },
+                { icon: 'fa-box-archive', title: 'Empaque al Vacío', description: 'Aseguramiento de la calidad final y la vida útil del producto mediante un empaque adecuado.', fields: ['Tipo de Empaque', 'Peso Neto (g)', 'Fecha de Empaque'] }
+            ]
+        },
+        naranja: {
+            title: 'Trazabilidad de Naranjas para Jugo',
+            description: 'Desde el campo hasta el vaso. Registra la variedad, el punto de maduración y el proceso de prensado en frío para asegurar a tus clientes un jugo fresco, puro y de origen conocido.',
+            scanText: 'Encuentre el recorrido de su naranja',
+            securityImage: 'https://images.unsplash.com/photo-1611080626919-775a4048c231?q=80&w=2574&auto=format&fit=crop',
+            process: [
+                { icon: 'fa-tree', title: 'Recolección Manual', description: 'Registro del huerto y la fecha de recolección para garantizar el punto exacto de madurez.', fields: ['Huerto de Origen', 'Variedad', 'Fecha de Recolección'] },
+                { icon: 'fa-arrows-left-right-to-line', title: 'Selección y Calibrado', description: 'Clasificación de la fruta por tamaño y calidad para asegurar un producto homogéneo.', fields: ['Calibre', 'Nivel de Brix (Dulzura)'] },
+                { icon: 'fa-shower', title: 'Lavado y Cepillado', description: 'Proceso de limpieza para garantizar la inocuidad del producto antes del prensado.', fields: ['Método de Lavado', 'Fecha de Procesamiento'] },
+                { icon: 'fa-compress', title: 'Prensado en Frío', description: 'Control de la temperatura y la presión para extraer un jugo puro que conserva todas sus vitaminas y sabor.', fields: ['Temperatura de Prensado', 'Rendimiento (Litros/kg)', 'Fecha de Prensado'] }
+            ]
+        },
+        miel: {
+            title: 'Trazabilidad de la Miel de Abeja',
+            description: 'Desde la colmena hasta el frasco. Demuestra la pureza, el origen floral y las prácticas de apicultura sostenible detrás de tu miel.',
+            scanText: 'Encuentre el recorrido de su miel',
+            securityImage: 'https://images.unsplash.com/photo-1587049352851-d481b315a206?q=80&w=2574&auto=format&fit=crop',
+            process: [
+                { icon: 'fa-box-archive', title: 'Cosecha en Apiario', description: 'Registro de la recolección de las alzas, certificando la ubicación y la salud de las colmenas.', fields: ['Ubicación del Apiario', 'Fecha de Cosecha', 'Nº de Alzas', 'Flora Predominante'] },
+                { icon: 'fa-cogs', title: 'Desoperculado y Extracción', description: 'Control del método de extracción para garantizar la pureza y la conservación de las propiedades de la miel.', fields: ['Método de Extracción', 'Fecha', 'Peso de Panales (kg)', 'Peso Miel Cruda (kg)'] },
+                { icon: 'fa-filter', title: 'Filtrado y Decantación', description: 'Seguimiento del proceso de limpieza y maduración, donde la miel alcanza su textura y claridad final.', fields: ['Tipo de Filtrado', 'Tiempo de Madurez (días)', 'Temperatura de Sala', 'Peso Miel Madura (kg)'] },
+            ]
+        },
+        queso: {
+            title: 'Trazabilidad del Queso Artesanal',
+            description: 'Cuenta la historia de tu queso, desde el pasto y la leche hasta la cava de maduración. Justifica su valor único registrando cada detalle del proceso.',
+            scanText: 'Encuentre el recorrido de su queso',
+            securityImage: 'https://images.unsplash.com/photo-1626966554245-483321cf7335?q=80&w=2574&auto=format&fit=crop',
+            process: [
+                { icon: 'fa-cow', title: 'Ordeño y Recolección', description: 'Registro de la calidad de la leche cruda, la base fundamental para un queso excepcional.', fields: ['Tipo de Ganado', 'Alimentación', 'Fecha de Ordeño', 'Volumen de Leche (L)'] },
+                { icon: 'fa-temperature-three-quarters', title: 'Cuajado y Corte', description: 'Control preciso del tipo de cuajo, temperatura y tamaño del corte para definir la textura del queso.', fields: ['Tipo de Cuajo', 'Temperatura de Cuajado', 'Tiempo de Coagulación'] },
+                { icon: 'fa-cubes', title: 'Moldeado y Prensado', description: 'Formación de la pieza y control de la presión para asegurar la correcta expulsión del suero.', fields: ['Tipo de Molde', 'Tiempo de Prensado', 'Presión Aplicada'] },
+                { icon: 'fa-calendar-alt', title: 'Maduración en Cava', description: 'Seguimiento del tiempo, temperatura y humedad en la cava, donde el queso desarrolla su sabor y aroma final.', fields: ['Fecha de Entrada a Cava', 'Condiciones de Humedad', 'Frecuencia de Volteos', 'Tiempo de Maduración'] }
+            ]
+        }
     };
 
     const params = new URLSearchParams(window.location.search);
