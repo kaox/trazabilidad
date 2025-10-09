@@ -575,7 +575,7 @@ const getTrazabilidad = async (req, res) => {
         
         const tostadoData = history.stages.find(s => s.nombre_etapa.toLowerCase().includes('tostado'))?.data;
         if (tostadoData && tostadoData.tipoPerfil) {
-            const perfilCacao = await get('SELECT * FROM perfiles_cacao WHERE nombre = ? AND user_id = ?', [tostadoData.tipoPerfil, ownerId]);
+            const perfilCacao = await get('SELECT * FROM perfiles_cacao WHERE nombre = ? AND user_id = ?', [tostadoData.tipoPerfil.value, ownerId]);
             if (perfilCacao) {
                 perfilCacao.perfil_data = safeJSONParse(perfilCacao.perfil_data);
                 history.perfilSensorialData = perfilCacao.perfil_data;
