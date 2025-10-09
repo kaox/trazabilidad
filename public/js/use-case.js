@@ -4,9 +4,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const useCases = {
         cacao: {
             title: 'Trazabilidad del Cacao Fino de Aroma',
-            description: 'Desde la mazorca hasta la tableta, AgriTraza te permite capturar cada detalle del proceso que hace único a tu chocolate. Comunica el origen, el perfil sensorial y la historia de tu productor para justificar tu valor premium.',
+            description: 'Desde la mazorca hasta la tableta, RuruLab te permite capturar cada detalle del proceso que hace único a tu chocolate. Comunica el origen, el perfil sensorial y la historia de tu productor para justificar tu valor premium.',
             scanText: 'Encuentre el recorrido de su cacao',
-            securityImage: 'https://images.unsplash.com/photo-1611094435543-0c111304c431?q=80&w=2574&auto=format&fit=crop',
+            securityImage: 'images/cacao.jpeg',
             process: [
                 { icon: 'fa-leaf', title: 'Cosecha Selectiva', description: 'Registro del origen, la variedad y el punto exacto de maduración de cada mazorca.', fields: ['Finca de Origen', 'Variedad de Cacao', 'Fecha de Cosecha', 'Peso de Mazorcas (kg)'] },
                 { icon: 'fa-hourglass-half', title: 'Fermentación Controlada', description: 'Monitorización de los días, método y temperatura para desarrollar perfiles de sabor complejos y consistentes.', fields: ['Método de Fermentación', 'Duración (días)', 'Frecuencia de Volteos', 'Temperatura Máxima (°C)'] },
@@ -18,7 +18,7 @@ document.addEventListener('DOMContentLoaded', () => {
             title: 'Trazabilidad del Café de Especialidad',
             description: 'Demuestra la calidad de tu café de origen único. Registra la altitud, el método de beneficio y el perfil de tueste para que tus clientes puedan saborear la historia detrás de cada taza.',
             scanText: 'Encuentre el recorrido de su café',
-            securityImage: 'https://images.unsplash.com/photo-1559493233-13233a992329?q=80&w=2574&auto=format&fit=crop',
+            securityImage: 'images/cafe.jpg',
             process: [
                 { icon: 'fa-leaf', title: 'Cosecha de Cerezas', description: 'Registro de la recolección manual de cerezas en su punto óptimo de maduración.', fields: ['Finca de Origen', 'Variedad', 'Altitud', 'Fecha de Cosecha'] },
                 { icon: 'fa-water', title: 'Beneficio Húmedo', description: 'Control del proceso de despulpado, fermentación y lavado que define el perfil de acidez y limpieza en taza.', fields: ['Método de Beneficio', 'Horas de Fermentación', 'pH Inicial/Final'] },
@@ -30,7 +30,7 @@ document.addEventListener('DOMContentLoaded', () => {
             title: 'Trazabilidad de la Piña Deshidratada',
             description: 'La transparencia es clave para los productos saludables. Muestra el origen de tu fruta, el proceso de deshidratación sin aditivos y garantiza la calidad de tu snack a los consumidores conscientes.',
             scanText: 'Encuentre el recorrido de su piña',
-            securityImage: 'https://images.unsplash.com/photo-1550258987-190a2d41a8ba?q=80&w=2574&auto=format&fit=crop',
+            securityImage: 'images/miel.jpg',
             process: [
                 { icon: 'fa-leaf', title: 'Cosecha de Piña Orgánica', description: 'Registro del origen y la fecha de cosecha para garantizar la máxima frescura.', fields: ['Finca de Origen', 'Fecha de Cosecha', 'Calibre de la Fruta'] },
                 { icon: 'fa-kitchen-set', title: 'Pelado y Rebanado', description: 'Control del grosor de las rodajas para un secado uniforme y una textura perfecta.', fields: ['Grosor de Rebanada (mm)', 'Fecha de Procesamiento'] },
@@ -54,7 +54,7 @@ document.addEventListener('DOMContentLoaded', () => {
             title: 'Trazabilidad de la Miel de Abeja',
             description: 'Desde la colmena hasta el frasco. Demuestra la pureza, el origen floral y las prácticas de apicultura sostenible detrás de tu miel.',
             scanText: 'Encuentre el recorrido de su miel',
-            securityImage: 'https://images.unsplash.com/photo-1587049352851-d481b315a206?q=80&w=2574&auto=format&fit=crop',
+            securityImage: 'images/miel.jpg',
             process: [
                 { icon: 'fa-box-archive', title: 'Cosecha en Apiario', description: 'Registro de la recolección de las alzas, certificando la ubicación y la salud de las colmenas.', fields: ['Ubicación del Apiario', 'Fecha de Cosecha', 'Nº de Alzas', 'Flora Predominante'] },
                 { icon: 'fa-cogs', title: 'Desoperculado y Extracción', description: 'Control del método de extracción para garantizar la pureza y la conservación de las propiedades de la miel.', fields: ['Método de Extracción', 'Fecha', 'Peso de Panales (kg)', 'Peso Miel Cruda (kg)'] },
@@ -143,7 +143,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         </details>
                         <details class="bg-white p-4 rounded-lg shadow-sm">
                             <summary class="font-semibold cursor-pointer flex justify-between items-center">¿Puedo personalizar las etapas de mi proceso?<i class="fas fa-plus plus-icon"></i><i class="fas fa-minus minus-icon"></i></summary>
-                            <p class="mt-4 text-stone-600">¡Sí! AgriTraza es completamente flexible. Con nuestro gestor de plantillas, puedes crear y personalizar las etapas y los campos de datos que son específicos para tu producto y método de producción.</p>
+                            <p class="mt-4 text-stone-600">¡Sí! RuruLab es completamente flexible. Con nuestro gestor de plantillas, puedes crear y personalizar las etapas y los campos de datos que son específicos para tu producto y método de producción.</p>
                         </details>
                     </div>
                 </section>
