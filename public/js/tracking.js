@@ -203,7 +203,11 @@ document.addEventListener('DOMContentLoaded', () => {
             
         const imageUrl = getFieldValue(data.imageUrl);
         const isImageVisible = isFieldVisible(data.imageUrl);
-        const locationName = getFieldValue(data.lugarProceso) || getFieldValue(data.finca) || 'N/A';
+        const locationName = getFieldValue(data.lugarProceso) || getFieldValue(data.finca) || getFieldValue(data.procesadora) || 'N/A';
+
+        console.log(data);
+
+        const locationButton = `<button class="location-btn text-sky-700 hover:underline" data-location="${locationName}">${locationName}</button>`;
 
         return `
             <div class="timeline-item animate">
@@ -215,7 +219,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     ${imageUrl && isImageVisible ? `<img src="${imageUrl}" class="w-full h-40 object-cover rounded-md my-4">` : ''}
                     <div class="text-sm text-stone-500 mb-3 flex items-center gap-4">
                         <span><i class="fas fa-calendar-alt mr-1"></i> ${details.date}</span>
-                        <span><i class="fas fa-map-marker-alt mr-1"></i> ${locationName}</span>
+                        <span><i class="fas fa-map-marker-alt mr-1"></i> ${locationButton}</span>
                     </div>
                     <ul class="text-sm text-stone-600 list-disc list-inside space-y-1">${dataPointsHtml}</ul>
                 </div>
