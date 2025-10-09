@@ -359,7 +359,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const [fincas, procesadoras] = await Promise.all([api('/api/fincas'), api('/api/procesadoras')]);
             let optionsHTML = '<option value="">Seleccionar lugar...</option>';
             if(fincas.length > 0) {
-                optionsHTML += `<optgroup label="Fincas">${fincas.map(f => `<option value="Finca: ${f.nombre_finca}" ${`Finca: ${f.nombre_finca}` === selectedValue ? 'selected' : ''}>${f.nombre_finca}</option>`).join('')}</optgroup>`;
+                optionsHTML += `<optgroup label="Fincas">${fincas.map(f => `<option value="${f.nombre_finca}" ${`${f.nombre_finca}` === selectedValue ? 'selected' : ''}>${f.nombre_finca}</option>`).join('')}</optgroup>`;
             }
             if(procesadoras.length > 0) {
                 optionsHTML += `<optgroup label="Procesadoras">${procesadoras.map(p => `<option value="Procesadora: ${p.nombre_comercial || p.razon_social}" ${`Procesadora: ${p.nombre_comercial || p.razon_social}` === selectedValue ? 'selected' : ''}>${p.nombre_comercial || p.razon_social}</option>`).join('')}</optgroup>`;

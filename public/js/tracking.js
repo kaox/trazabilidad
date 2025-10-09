@@ -47,8 +47,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
         storyContainer.innerHTML = finalHTML;
 
+        const routePoints = getRoutePoints(h);
+
         // Post-renderizado de componentes visuales y eventos
-        setupTabs();
+        setupTabs(routePoints.length >= 1);
         setupGallery();
         setupIntersectionObserver();
         if (h.fincaData?.coordenadas) {
@@ -57,6 +59,10 @@ document.addEventListener('DOMContentLoaded', () => {
         if (h.perfilSensorialData) {
             renderFlavorProfile(h.perfilSensorialData);
             initializePerfilChart('sensory-profile-chart', h.perfilSensorialData);
+        }
+        if (routePoints.length >= 1) {
+            // Esperar un breve momento para que la pestaña se active si es necesario
+            setTimeout(() => initializeRouteMap('route-map-container', routePoints), 500);
         }
     }
 
@@ -72,6 +78,8 @@ document.addEventListener('DOMContentLoaded', () => {
         let certsHtml = (fincaData?.certificaciones_json || []).map(cert => `<div class="flex items-center gap-2 p-2 rounded-md bg-stone-100"><img src="${cert.logo_url}" class="h-6 w-6 rounded-full"><span class="text-sm text-stone-600">${cert.nombre}</span></div>`).join('');
 
         let premiosHtml = (fincaData?.premios_json || []).map(premio => `<div class="flex items-center gap-2 p-2 rounded-md bg-stone-100"><img src="${premio.logo_url}" class="h-6 w-6 rounded-full"><span class="text-sm text-stone-600">${premio.nombre} (${premio.ano})</span></div>`).join('');
+
+        const routePoints = getRoutePoints(h);
 
         return `
             <section class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-16">
@@ -89,6 +97,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         <button class="tab-button active flex-1 flex items-center justify-center gap-2 p-4 border-b-2" data-tab="terroir"><i class="fas fa-globe"></i> Terroir</button>
                         <button class="tab-button flex-1 flex items-center justify-center gap-2 p-4 border-b-2 border-transparent" data-tab="productor"><i class="fas fa-leaf"></i> Productor</button>
                         ${perfilSensorialData ? `<button class="tab-button flex-1 flex items-center justify-center gap-2 p-4 border-b-2 border-transparent" data-tab="perfil"><i class="fas fa-chart-pie"></i> Perfil</button>` : ''}
+                        ${routePoints.length >= 1 ? `<button class="tab-button flex-1 flex items-center justify-center gap-2 p-4 border-b-2 border-transparent" data-tab="ruta"><i class="fas fa-route"></i> Ruta</button>` : ''}
                     </div>
                     <div class="bg-white p-6 rounded-lg shadow-md">
                         <div id="tab-terroir" class="tab-panel space-y-4">
@@ -113,6 +122,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             </div>
                         </div>
                         ` : ''}
+                        ${routePoints.length >= 1 ? `<div id="tab-ruta" class="tab-panel hidden"><div id="route-map-container" class="w-full h-96 rounded-md border"></div></div>` : ''}
                     </div>
                 </div>
             </section>
@@ -204,8 +214,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const imageUrl = getFieldValue(data.imageUrl);
         const isImageVisible = isFieldVisible(data.imageUrl);
         const locationName = getFieldValue(data.lugarProceso) || getFieldValue(data.finca) || getFieldValue(data.procesadora) || 'N/A';
-
-        console.log(data);
 
         const locationButton = `<button class="location-btn text-sky-700 hover:underline" data-location="${locationName}">${locationName}</button>`;
 
@@ -543,6 +551,161 @@ document.addEventListener('DOMContentLoaded', () => {
             <h2 class="text-3xl font-display text-amber-900 mb-4">${locationName}</h2>
             <p>Información detallada para esta ubicación no está disponible.</p>`;
         locationModal.classList.remove('hidden');
+    }
+
+    function getRoutePoints(h) {
+        if (!h.stages) return [];
+
+        const points = [];
+        const addedLocations = new Set();
+        
+        const getFieldValue = (field) => (typeof field === 'object' && field !== null) ? field.value : field;
+
+        h.stages.forEach(stage => {
+            const locationName = getFieldValue(stage.data.lugarProceso) || getFieldValue(stage.data.finca)  || getFieldValue(stage.data.procesadora);
+
+            if (locationName && !addedLocations.has(locationName)) {
+                let locationData = null;
+                
+                if (h.fincaData && h.fincaData.nombre_finca === locationName) {
+                    locationData = h.fincaData;
+                } else if (h.procesadorasData) {
+                    locationData = h.procesadorasData.find(p => p.nombre_comercial === locationName || p.razon_social === locationName);
+                }
+
+                if (locationData && locationData.coordenadas) {
+                    let pointLatLng;
+                    // Si es un polígono (array de arrays), calcular el centroide
+                    if (Array.isArray(locationData.coordenadas) && Array.isArray(locationData.coordenadas[0])) {
+                        let lat = 0, lng = 0;
+                        locationData.coordenadas.forEach(p => { lat += p[0]; lng += p[1]; });
+                        pointLatLng = [lat / locationData.coordenadas.length, lng / locationData.coordenadas.length];
+                    } 
+                    // Si es un punto (objeto con lat/lng)
+                    else if (typeof locationData.coordenadas.lat === 'number' && typeof locationData.coordenadas.lng === 'number') {
+                        pointLatLng = [locationData.coordenadas.lat, locationData.coordenadas.lng];
+                    }
+
+                    if (pointLatLng) {
+                        points.push({
+                            latlng: pointLatLng,
+                            name: locationName,
+                            stageName: stage.nombre_etapa,
+                            date: formatDate(getFieldValue(stage.data.fecha) || getFieldValue(stage.data.fechaCosecha) || getFieldValue(stage.data.fechaInicio))
+                        });
+                        addedLocations.add(locationName);
+                    }
+                }
+            }
+        });
+        return points;
+    }
+
+    // Nueva función refactorizada que renderiza el mapa y sus elementos
+    function initializeRouteMap(containerId, routePoints) {
+        let routeLayers = L.layerGroup();
+        console.log(routePoints);
+
+        const coordinates = routePoints.map(point => point.latlng);
+
+        // Crea la instancia del mapa
+        map = L.map(containerId).setView(coordinates[0], 13);
+        
+        // Añade la capa de tiles (el fondo del mapa)
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+
+        console.log(coordinates);
+
+        // Ajusta el zoom para que todos los puntos sean visibles
+        map.fitBounds(coordinates, { padding: [50, 50] });
+        
+        // Añade los marcadores estáticos con tooltips permanentes
+        routePoints.forEach(point => {
+            const marker = L.marker(point.latlng);
+            
+            // El tooltip se mostrará permanentemente para que la información sea visible al inicio
+            marker.bindTooltip(`<b>${point.stageName}</b><br>${point.date}<br>${point.name}`, {
+                permanent: true,
+                direction: 'top',
+                className: 'my-leaflet-tooltip' // Clase CSS personalizada
+            });
+            
+            // El popup tradicional seguirá disponible al hacer clic para ver más detalles como la fecha
+            marker.bindPopup(`<b>${point.stageName}</b><br>${point.name}<br>Fecha: ${point.date}`);
+
+            routeLayers.addLayer(marker);
+        });
+
+        map.addLayer(routeLayers);
+        
+        // Inicia la animación de la ruta
+        animateRoute(coordinates, routeLayers);
+    }
+    
+    // 4. Animación de la Ruta
+    function animateRoute(coordinates, routeLayers) {
+        let currentAnimation;
+
+        // Detiene cualquier animación en curso antes de empezar una nueva
+        if (currentAnimation) {
+            cancelAnimationFrame(currentAnimation);
+        }
+
+        // Limpia cualquier trazo o marcador animado anterior
+        routeLayers.eachLayer(layer => {
+            if (layer instanceof L.Polyline || (layer.options.icon && layer.options.icon.options.className === 'moving-icon')) {
+                routeLayers.removeLayer(layer);
+            }
+        });
+
+        let polyline = L.polyline([], { color: 'blue', weight: 5, opacity: 0.8 }).addTo(routeLayers);
+        let animatedMarker = L.marker(coordinates[0], {
+            icon: L.divIcon({
+                className: 'moving-icon',
+                html: '<div class="w-4 h-4 bg-blue-500 rounded-full border-2 border-white shadow-lg"></div>',
+                iconSize: [16, 16],
+                iconAnchor: [8, 8]
+            })
+        }).addTo(routeLayers);
+
+        let i = 0;
+        let j = 0;
+        const totalSteps = 100; // Pasos entre cada punto para una animación más suave
+        
+        function move() {
+            if (i >= coordinates.length - 1) { // Animación completada
+                cancelAnimationFrame(currentAnimation);
+                return;
+            }
+
+            const start = L.latLng(coordinates[i]);
+            const end = L.latLng(coordinates[i+1]);
+            
+            // Añadir el punto actual a la polilínea
+            polyline.addLatLng(start);
+            
+            // Mover el marcador animado
+            const lat = start.lat + (end.lat - start.lat) * (j / totalSteps);
+            const lng = start.lng + (end.lng - start.lng) * (j / totalSteps);
+            animatedMarker.setLatLng([lat, lng]);
+
+            j++;
+            if (j > totalSteps) {
+                j = 0;
+                i++;
+                if (i === coordinates.length - 1) {
+                    // Asegurarse de que termine en el punto final exacto
+                    polyline.addLatLng(coordinates[i]);
+                    animatedMarker.setLatLng(coordinates[i]);
+                }
+            }
+            
+            currentAnimation = requestAnimationFrame(move);
+        }
+        
+        move();
     }
 
     document.body.addEventListener('click', e => {
