@@ -6,8 +6,10 @@
     <title>Trazabilidad del Producto - Ruru Lab</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <!-- Leaflet.js para el mapa interactivo -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&family=Playfair+Display:wght@400;700&display=swap" rel="stylesheet">
@@ -24,6 +26,28 @@
         .timeline-item { transition: opacity 0.5s, transform 0.5s; opacity: 0; transform: translateY(20px); }
         .timeline-item.is-visible { opacity: 1; transform: translateY(0); }
         .tab-button.active { border-color: #8D6E63; background-color: #EFEBE9; }
+        /* Estilos para los tooltips permanentes del mapa */
+        .my-leaflet-tooltip {
+            background-color: rgba(255, 255, 255, 0.9);
+            border: 1px solid #999;
+            border-radius: 4px;
+            padding: 6px 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+            white-space: nowrap;
+            font-weight: bold;
+            color: #333;
+        }
+        /* Animación de la línea de ruta en el mapa */
+        .route-path-animation {
+            stroke-dasharray: 1000;
+            stroke-dashoffset: 1000;
+            animation: dash 5s linear forwards;
+        }
+        @keyframes dash {
+            to {
+                stroke-dashoffset: 0;
+            }
+        }
     </style>
 </head>
 <body class="antialiased">

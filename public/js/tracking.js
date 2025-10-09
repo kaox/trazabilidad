@@ -60,10 +60,6 @@ document.addEventListener('DOMContentLoaded', () => {
             renderFlavorProfile(h.perfilSensorialData);
             initializePerfilChart('sensory-profile-chart', h.perfilSensorialData);
         }
-        if (routePoints.length >= 1) {
-            // Esperar un breve momento para que la pestaña se active si es necesario
-            setTimeout(() => initializeRouteMap('route-map-container', routePoints), 500);
-        }
     }
 
     // --- Constructores de Secciones HTML ---
@@ -295,6 +291,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 button.classList.add('active');
                 tabPanels.forEach(panel => panel.classList.add('hidden'));
                 document.getElementById(`tab-${button.dataset.tab}`).classList.remove('hidden');
+
+                if (button.dataset.tab === 'ruta' && !chartInstances['route-map-container']) {
+                    const routePoints = getRoutePoints(globalHistory);
+                    initializeRouteMap('route-map-container', routePoints);
+                }
             });
         });
     }
@@ -603,45 +604,62 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Nueva función refactorizada que renderiza el mapa y sus elementos
     function initializeRouteMap(containerId, routePoints) {
-        let routeLayers = L.layerGroup();
-        console.log(routePoints);
+        const mapContainer = document.getElementById(containerId);
+        if (!mapContainer || !routePoints || routePoints.length < 2) return;
+        console.log(chartInstances[containerId]);
+        // Si el mapa ya existe, solo refresca su tamaño y vista.
+        if (chartInstances[containerId]) { 
+            console.log("Refrescando mapa...");
+            setTimeout(() => {
+                chartInstances[containerId].invalidateSize();
+                chartInstances[containerId].fitBounds(routePoints.map(p => p.latlng), { padding: [50, 50] });
+            }, 100);
+            return;
+        }
 
-        const coordinates = routePoints.map(point => point.latlng);
-
-        // Crea la instancia del mapa
-        map = L.map(containerId).setView(coordinates[0], 13);
+        try {
         
-        // Añade la capa de tiles (el fondo del mapa)
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-        }).addTo(map);
+            let routeLayers = L.layerGroup();
+            console.log(routePoints);
 
-        console.log(coordinates);
+            const coordinates = routePoints.map(point => point.latlng);
 
-        // Ajusta el zoom para que todos los puntos sean visibles
-        map.fitBounds(coordinates, { padding: [50, 50] });
-        
-        // Añade los marcadores estáticos con tooltips permanentes
-        routePoints.forEach(point => {
-            const marker = L.marker(point.latlng);
+            // Crea la instancia del mapa
+            map = L.map(containerId).setView(coordinates[0], 13);
             
-            // El tooltip se mostrará permanentemente para que la información sea visible al inicio
-            marker.bindTooltip(`<b>${point.stageName}</b><br>${point.date}<br>${point.name}`, {
-                permanent: true,
-                direction: 'top',
-                className: 'my-leaflet-tooltip' // Clase CSS personalizada
+            // Añade la capa de tiles (el fondo del mapa)
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
+            console.log(coordinates);
+
+            // Ajusta el zoom para que todos los puntos sean visibles
+            map.fitBounds(coordinates, { padding: [50, 50] });
+            
+            // Añade los marcadores estáticos con tooltips permanentes
+            routePoints.forEach(point => {
+                const marker = L.marker(point.latlng);
+                
+                // El tooltip se mostrará permanentemente para que la información sea visible al inicio
+                marker.bindTooltip(`<b>${point.stageName}</b><br>${point.date}<br>${point.name}`, {
+                    permanent: true,
+                    direction: 'top',
+                    className: 'my-leaflet-tooltip' // Clase CSS personalizada
+                });
+                
+                // El popup tradicional seguirá disponible al hacer clic para ver más detalles como la fecha
+                marker.bindPopup(`<b>${point.stageName}</b><br>${point.name}<br>Fecha: ${point.date}`);
+
+                routeLayers.addLayer(marker);
             });
+
+            map.addLayer(routeLayers);
             
-            // El popup tradicional seguirá disponible al hacer clic para ver más detalles como la fecha
-            marker.bindPopup(`<b>${point.stageName}</b><br>${point.name}<br>Fecha: ${point.date}`);
+            // Inicia la animación de la ruta
+            animateRoute(coordinates, routeLayers);
 
-            routeLayers.addLayer(marker);
-        });
+            chartInstances[containerId] = map;
 
-        map.addLayer(routeLayers);
-        
-        // Inicia la animación de la ruta
-        animateRoute(coordinates, routeLayers);
+        } catch(e) { console.error("Error al renderizar mapa de ruta:", e); }
     }
     
     // 4. Animación de la Ruta
