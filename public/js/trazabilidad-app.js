@@ -62,8 +62,7 @@ document.addEventListener('DOMContentLoaded', () => {
         card.className = 'batch-card-wrapper mb-4';
         
         const nextStage = state.stagesByTemplate[template.id]?.find(s => s.orden === stage.orden + 1);
-        const childrenKey = nextStage ? nextStage.nombre_etapa.toLowerCase().replace(/ & /g, '_and_') : null;
-        const hasChildren = childrenKey && batchData[childrenKey] && Array.isArray(batchData[childrenKey]) && batchData[childrenKey].length > 0;
+        const hasChildren = batchData.children && Array.isArray(batchData.children) && batchData.children.length > 0;
 
         const processData = batchData.data || batchData;
 
@@ -166,7 +165,7 @@ document.addEventListener('DOMContentLoaded', () => {
         childrenContainer.className = 'children-container hidden pl-5 border-l-2 border-dashed border-stone-300 md:ml-6 md:pl-4 md:border-l-solid md:border-stone-200';
 
         if (hasChildren) {
-            batchData[childrenKey].forEach(childBatch => {
+            batchData.children.forEach(childBatch => {
                 childrenContainer.appendChild(createBatchCard(childBatch, template, nextStage, batchData));
             });
         }

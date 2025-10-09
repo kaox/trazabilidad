@@ -391,57 +391,40 @@ const deleteStage = async (req, res) => {
 const getBatchesTree = async (req, res) => {
     const userId = req.user.id;
     try {
-        const allLotes = await all(`
-            SELECT l.id, l.parent_id, l.data, l.plantilla_id, l.etapa_id
-            FROM lotes l
-            WHERE l.user_id = ? OR l.id IN (
-                WITH RECURSIVE descendents AS (
-                    SELECT id FROM lotes WHERE user_id = ?
-                    UNION ALL
-                    SELECT l.id FROM lotes l JOIN descendents d ON l.parent_id = d.id
-                )
-                SELECT id FROM descendents WHERE user_id IS NULL
-            )
-        `, [userId, userId]);
+        // 1. Obtener todos los lotes para construir el árbol completo
+        const allLotes = await all('SELECT * FROM lotes', []);
 
-        const lotes = allLotes.map(lote => ({...lote, data: safeJSONParse(lote.data), children: []}));
-        const lotesById = lotes.reduce((acc, lote) => { acc[lote.id] = lote; return acc; }, {});
+        // 2. Parsear la data JSON y preparar la estructura de nodos
+        const lotesProcesados = allLotes.map(lote => ({
+            ...lote,
+            data: safeJSONParse(lote.data),
+            children: [] // Inicializar array para los hijos
+        }));
 
-        const roots = [];
-        lotes.forEach(lote => {
-            if (lote.parent_id && lotesById[lote.parent_id]) {
-                lotesById[lote.parent_id].children.push(lote);
+        // 3. Crear un mapa para acceso rápido a cada lote por su ID
+        const loteMap = {};
+        lotesProcesados.forEach(lote => {
+            loteMap[lote.id] = lote;
+        });
+
+        // 4. Construir el árbol: conectar hijos con padres
+        const allRoots = [];
+        lotesProcesados.forEach(lote => {
+            if (lote.parent_id && loteMap[lote.parent_id]) {
+                // Si tiene un padre válido, añadirlo al array 'children' de ese padre
+                loteMap[lote.parent_id].children.push(lote);
             } else {
-                roots.push(lote);
+                // Si no tiene padre, es un lote raíz potencial
+                allRoots.push(lote);
             }
         });
+
+        // 5. Filtrar para devolver solo los árboles que pertenecen al usuario actual
+        const userRoots = allRoots.filter(root => root.user_id === userId);
         
-        const buildClientTree = (loteNode, allStages, allTemplates) => {
-            const template = allTemplates.find(t => t.id === loteNode.plantilla_id);
-            const stage = allStages.find(s => s.id === loteNode.etapa_id);
-            const loteData = { ...loteNode.data, plantilla_id: loteNode.plantilla_id, etapa_id: loteNode.etapa_id };
-
-            if (loteNode.children.length > 0 && template) {
-                const nextStageOrder = stage.orden + 1;
-                const nextStage = allStages.find(s => s.plantilla_id === template.id && s.orden === nextStageOrder);
-                if (nextStage) {
-                    const childKey = nextStage.nombre_etapa.toLowerCase().replace(/ & /g, '_and_');
-                    loteData[childKey] = loteNode.children.map(childNode => buildClientTree(childNode, allStages, allTemplates));
-                }
-            }
-            return loteData;
-        };
-
-        const [templates, allStages] = await Promise.all([
-            all('SELECT * FROM plantillas_proceso WHERE user_id = ?', [userId]),
-            all('SELECT * FROM etapas_plantilla WHERE plantilla_id IN (SELECT id FROM plantillas_proceso WHERE user_id = ?)', [userId]),
-        ]);
-
-        const finalTree = roots.map(rootNode => buildClientTree(rootNode, allStages, templates));
-
-        res.status(200).json(finalTree);
-    } catch (error) {
-        console.error("Error en getBatchesTree:", error);
+        res.status(200).json(userRoots);
+    } catch (err) {
+        console.error("Error en getBatchesTree:", err);
         res.status(500).json({ error: "Error interno del servidor al construir el árbol de lotes." });
     }
 };
