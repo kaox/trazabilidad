@@ -7,6 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
             description: 'Desde la mazorca hasta la tableta, RuruLab te permite capturar cada detalle del proceso que hace único a tu chocolate. Comunica el origen, el perfil sensorial y la historia de tu productor para justificar tu valor premium.',
             scanText: 'Encuentre el recorrido de su cacao',
             securityImage: 'images/cacao.jpeg',
+            qrImage: 'images/qr_cacao.png',
             process: [
                 { icon: 'fa-leaf', title: 'Cosecha Selectiva', description: 'Registro del origen, la variedad y el punto exacto de maduración de cada mazorca.', fields: ['Finca de Origen', 'Variedad de Cacao', 'Fecha de Cosecha', 'Peso de Mazorcas (kg)'] },
                 { icon: 'fa-hourglass-half', title: 'Fermentación Controlada', description: 'Monitorización de los días, método y temperatura para desarrollar perfiles de sabor complejos y consistentes.', fields: ['Método de Fermentación', 'Duración (días)', 'Frecuencia de Volteos', 'Temperatura Máxima (°C)'] },
@@ -130,7 +131,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <h2 class="text-3xl font-display text-amber-900 mb-4">${data.scanText}</h2>
                     <p class="text-stone-600 max-w-2xl mx-auto mb-6">Un simple escaneo del código QR en el empaque abre una puerta a una experiencia interactiva, conectando al consumidor directamente con la finca, el productor y cada etapa del proceso.</p>
                     <div class="flex justify-center">
-                        <i class="fas fa-qrcode text-9xl text-stone-300"></i>
+                        <a href="/CHO-J678K94Z" target="_blank"><img src="${data.qrImage}" alt="qr code" ></a>
                     </div>
                 </section>
 

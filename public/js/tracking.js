@@ -606,7 +606,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function initializeRouteMap(containerId, routePoints) {
         const mapContainer = document.getElementById(containerId);
         if (!mapContainer || !routePoints || routePoints.length < 2) return;
-        console.log(chartInstances[containerId]);
+
         // Si el mapa ya existe, solo refresca su tamaño y vista.
         if (chartInstances[containerId]) { 
             console.log("Refrescando mapa...");
@@ -620,7 +620,6 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
         
             let routeLayers = L.layerGroup();
-            console.log(routePoints);
 
             const coordinates = routePoints.map(point => point.latlng);
 
@@ -629,8 +628,6 @@ document.addEventListener('DOMContentLoaded', () => {
             
             // Añade la capa de tiles (el fondo del mapa)
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-
-            console.log(coordinates);
 
             // Ajusta el zoom para que todos los puntos sean visibles
             map.fitBounds(coordinates, { padding: [50, 50] });
