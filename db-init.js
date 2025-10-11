@@ -34,6 +34,7 @@ async function initializeDatabase() {
                     usuario TEXT NOT NULL UNIQUE,
                     password TEXT NOT NULL,
                     nombre TEXT, apellido TEXT, dni TEXT, ruc TEXT, empresa TEXT, celular TEXT, correo TEXT,
+                    role TEXT DEFAULT 'user',
                     subscription_tier TEXT DEFAULT 'artesano',
                     trial_ends_at TIMESTAMP,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP

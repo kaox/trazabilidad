@@ -92,7 +92,7 @@ const loginUser = async (req, res) => {
         
         const match = await bcrypt.compare(password, user.password);
         if (match) {
-            const tokenPayload = { id: user.id, username: user.usuario };
+            const tokenPayload = { id: user.id, username: user.usuario, role: user.role };
             const token = jwt.sign(tokenPayload, process.env.JWT_SECRET || 'supersecretkey', { expiresIn: '1h' });
             res.cookie('token', token, { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', path: '/' });
             res.status(200).json({ message: "Inicio de sesión exitoso.", token });
@@ -108,7 +108,7 @@ const logoutUser = (req, res) => {
 const getUserProfile = async (req, res) => {
     const userId = req.user.id;
     try {
-        let user = await get('SELECT id, usuario, nombre, apellido, dni, ruc, empresa, celular, correo, subscription_tier, trial_ends_at FROM users WHERE id = ?', [userId]);
+        let user = await get('SELECT id, usuario, nombre, apellido, dni, ruc, empresa, celular, correo, role, subscription_tier, trial_ends_at FROM users WHERE id = ?', [userId]);
         if (!user) return res.status(404).json({ error: "Usuario no encontrado." });
 
         // Si el usuario no tiene fecha de prueba (cuenta antigua), se le asigna una.
@@ -849,6 +849,38 @@ const getUserSubscriptionStatus = async (userId) => {
     return await get('SELECT subscription_tier, trial_ends_at FROM users WHERE id = ?', [userId]);
 };
 
+const getAdminDashboardData = async (req, res) => {
+    try {
+        const users = await all('SELECT id, usuario, correo, created_at, subscription_tier, trial_ends_at FROM users');
+        
+        const dashboardData = await Promise.all(users.map(async (user) => {
+            const [fincaCount, procesadoraCount, processes] = await Promise.all([
+                get('SELECT COUNT(*) as count FROM fincas WHERE user_id = ?', [user.id]),
+                get('SELECT COUNT(*) as count FROM procesadoras WHERE user_id = ?', [user.id]),
+                all(`
+                    SELECT DISTINCT pt.nombre_producto
+                    FROM lotes l
+                    JOIN plantillas_proceso pt ON l.plantilla_id = pt.id
+                    WHERE l.user_id = ? AND l.parent_id IS NULL
+                `, [user.id])
+            ]);
+
+            return {
+                ...user,
+                finca_count: fincaCount.count,
+                procesadora_count: procesadoraCount.count,
+                process_count: processes.length,
+                process_types: processes.map(p => p.nombre_producto)
+            };
+        }));
+        
+        res.status(200).json(dashboardData);
+    } catch (error) {
+        console.error("Error en getAdminDashboardData:", error);
+        res.status(500).json({ error: 'Error interno del servidor.' });
+    }
+};
+
 module.exports = {
     registerUser, loginUser, logoutUser,
     getFincas, createFinca, updateFinca, deleteFinca,
@@ -863,6 +895,7 @@ module.exports = {
     getRuedasSabores, createRuedaSabores, updateRuedaSabores, deleteRuedaSabores,
     getBlends, createBlend, deleteBlend,
     getRecetas, createReceta, deleteReceta, updateReceta,
-    getUserSubscriptionStatus, // Exportar la nueva función
+    getUserSubscriptionStatus,
+    getAdminDashboardData
 };
 

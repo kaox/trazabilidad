@@ -1,3 +1,9 @@
+function getCookie(name) {
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) return parts.pop().split(';').shift();
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     const navPlaceholder = document.getElementById('nav-placeholder');
     if (navPlaceholder) {
@@ -5,6 +11,25 @@ document.addEventListener('DOMContentLoaded', () => {
             .then(response => response.ok ? response.text() : Promise.reject('Error loading navigation'))
             .then(data => {
                 navPlaceholder.innerHTML = data;
+                
+                document.getElementById('nav-placeholder').innerHTML = data;
+
+        // Lógica para mostrar/ocultar el enlace de admin
+        const adminLink = document.getElementById('admin-dashboard-link');
+        const token = localStorage.getItem('token');
+
+        if (adminLink && token) {
+            try {
+                const payload = JSON.parse(atob(token.split('.')[1]));
+                console.log(payload);
+                if (payload.role === 'admin') {
+                    adminLink.classList.remove('hidden');
+                }
+            } catch (e) {
+                console.error('Error al decodificar el token:', e);
+            }
+        }
+
                 initializeNav();
             })
             .catch(error => console.error('Failed to load nav:', error));

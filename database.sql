@@ -30,6 +30,7 @@ CREATE TABLE IF NOT EXISTS users (
     empresa TEXT,
     celular TEXT,
     correo TEXT,
+    role TEXT DEFAULT 'user',
     subscription_tier TEXT DEFAULT 'artesano',
     trial_ends_at TIMESTAMP,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP

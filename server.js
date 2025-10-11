@@ -81,6 +81,20 @@ const checkSubscription = (requiredTier) => async (req, res, next) => {
     }
 };
 
+// --- Middleware de Control de Acceso por Rol ---
+const checkAdmin = (req, res, next) => {
+    if (req.user && req.user.role === 'admin') {
+        next();
+    } else {
+        // Para páginas, redirigir a una página de no autorizado o al inicio
+        if (req.accepts('html')) {
+            return res.status(403).send('<h1>403 Forbidden: Acceso denegado</h1><p>No tienes permisos para ver esta página.</p><a href="/app/dashboard">Volver al Dashboard</a>');
+        }
+        // Para API, devolver JSON
+        res.status(403).json({ error: 'Acceso denegado. Se requiere rol de administrador.' });
+    }
+};
+
 // --- Rutas Públicas (API) ---
 app.post('/api/register', db.registerUser);
 app.post('/api/login', db.loginUser);
@@ -125,6 +139,8 @@ app.get('/app/maridaje', authenticatePage, (req, res) => res.sendFile(path.join(
 app.get('/app/blends', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'blends.html'))); // <-- Nueva ruta
 app.get('/app/recetas-chocolate', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'formulador.html'))); // <-- Nueva ruta
 app.get('/app/pricing', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'pricing.html'))); // Nueva ruta
+app.get('/app/admin-dashboard', authenticatePage, checkAdmin, (req, res) => res.sendFile(path.join(__dirname, 'views', 'admin-dashboard.html')));
+
 
 // --- Rutas Protegidas de la API ---
 // Fincas
@@ -192,6 +208,10 @@ app.get('/api/recetas-chocolate', authenticateApi, checkSubscription('profesiona
 app.post('/api/recetas-chocolate', authenticateApi, checkSubscription('profesional'), db.createReceta);
 app.delete('/api/recetas-chocolate/:id', authenticateApi, checkSubscription('profesional'), db.deleteReceta);
 app.put('/api/recetas-chocolate/:id', authenticateApi, checkSubscription('profesional'), db.updateReceta);
+
+// Nueva ruta para datos del dashboard administrativo
+app.get('/api/admin/dashboard-data', authenticateApi, checkAdmin, db.getAdminDashboardData);
+
 
 // Iniciar Servidor
 app.listen(PORT, () => {
