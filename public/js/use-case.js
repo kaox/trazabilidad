@@ -119,7 +119,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         <h2 class="text-3xl font-display font-bold text-amber-900 mb-4">Información de seguimiento</h2>
                         <p class="text-stone-600 mb-4">En RuruLab, te conectamos directamente con el origen de tu producto. Documentamos cada etapa de la cadena de suministro para garantizar una calidad y responsabilidad absolutas. Con nuestra plataforma, puedes seguir el viaje completo de tu producto y verificar su historia</p>
                     </div>
-                    <img src="images/ruta.png" alt="Seguridad del producto" class="w-full h-64 object-cover rounded-md">
+                    <img src="images/use-case-ruta.png" alt="Informacion de seguimiento" class="w-full h-64 object-cover rounded-md">
                 </section>
 
                 <section class="my-16 bg-white p-8 rounded-lg shadow-md grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
@@ -127,7 +127,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         <h2 class="text-3xl font-display font-bold text-amber-900 mb-4">Perfil sensorial</h2>
                         <p class="text-stone-600 mb-4">Traduce la complejidad de tus evaluaciones de cata a un lenguaje visual que tus clientes entiendan. Nuestro gráfico de radar de perfil sensorial convierte los datos de expertos en una "huella sensorial" fácil de entender, permitiéndote mostrar de forma transparente y verificable el sabor excepcional de tu producto.</p>
                     </div>
-                    <img src="images/perfil.png" alt="Seguridad del producto" class="w-full h-64 object-cover rounded-md">
+                    <img src="images/use-case-perfil.png" alt="Perfil Sensorial" class="w-full h-64 object-cover rounded-md">
                 </section>
 
                 <section class="my-16 bg-white p-8 rounded-lg shadow-md grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
