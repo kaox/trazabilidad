@@ -160,7 +160,19 @@ document.addEventListener('DOMContentLoaded', () => {
                         </details>
                         <details class="bg-white p-4 rounded-lg shadow-sm">
                             <summary class="font-semibold cursor-pointer flex justify-between items-center">¿Puedo personalizar las etapas de mi proceso?<i class="fas fa-plus plus-icon"></i><i class="fas fa-minus minus-icon"></i></summary>
-                            <p class="mt-4 text-stone-600">¡Sí! RuruLab es completamente flexible. Con nuestro gestor de plantillas, puedes crear y personalizar las etapas y los campos de datos que son específicos para tu producto y método de producción.</p>
+                            <p class="mt-4 text-stone-600">¡Sí! RuruLab es completamente flexible. Con nuestro gestor de plantillas, puedes crear y personalizar las etapas y los campos de datos que son específicos para tu producto y método de producción, incluso puedes decidir que campos se mostraran al cliente.</p>
+                        </details>
+                        <details class="bg-white p-4 rounded-lg shadow-sm">
+                            <summary class="font-semibold cursor-pointer flex justify-between items-center">¿Qué es un pasaporte digital de producto y cómo funciona con los códigos QR?<i class="fas fa-plus plus-icon"></i><i class="fas fa-minus minus-icon"></i></summary>
+                            <p class="mt-4 text-stone-600">Un pasaporte digital de producto es, en esencia, el "gemelo digital" de tu producto físico. Es un registro electrónico que recopila y comparte información clave a lo largo de todo su ciclo de vida, desde el origen de las materias primas hasta su fabricación y distribución. El código QR que imprimes y pegas en tu empaque actúa como una puerta de enlace: cuando un consumidor lo escanea con su teléfono, se conecta instantáneamente a este pasaporte digital, permitiéndole ver la historia completa y verificable del producto que tiene en sus manos.   </p>
+                        </details>
+                        <details class="bg-white p-4 rounded-lg shadow-sm">
+                            <summary class="font-semibold cursor-pointer flex justify-between items-center">¿Por qué debería usar códigos QR para mostrar la trazabilidad de mis productos?<i class="fas fa-plus plus-icon"></i><i class="fas fa-minus minus-icon"></i></summary>
+                            <p class="mt-4 text-stone-600">La razón principal es construir y fortalecer la confianza del consumidor. Los consumidores modernos están cada vez más preocupados por la seguridad, la calidad, la sostenibilidad y el origen de lo que compran. Al ofrecerles acceso directo a esta información, no solo respondes a sus inquietudes, sino que también demuestras un compromiso con la transparencia que fomenta la lealtad a la marca. Un código QR es una herramienta de bajo costo que te permite iniciar esta conversación con tu cliente en el momento más crucial: cuando está en la tienda, evaluando tu producto.</p>
+                        </details>
+                        <details class="bg-white p-4 rounded-lg shadow-sm">
+                            <summary class="font-semibold cursor-pointer flex justify-between items-center">¿Cómo genero e imprimo los códigos QR para mis productos?<i class="fas fa-plus plus-icon"></i><i class="fas fa-minus minus-icon"></i></summary>
+                            <p class="mt-4 text-stone-600">El propio aplicativo de trazabilidad se encarga de generar un código QR único para cada lote de producción que registras en el sistema. Una vez que has completado los datos de un lote (por ejemplo, después de procesar una cosecha de cacao o extraer un lote de miel), la plataforma te proporcionará el código QR. Luego, puedes imprimir estos códigos en etiquetas para adherirlas a tu empaque final.</p>
                         </details>
                     </div>
                 </section>

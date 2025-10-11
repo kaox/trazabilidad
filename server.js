@@ -100,6 +100,8 @@ app.post('/api/register', db.registerUser);
 app.post('/api/login', db.loginUser);
 app.post('/api/logout', db.logoutUser);
 app.get('/api/trazabilidad/:id', db.getTrazabilidad);
+app.get('/use-case.html', (req, res) => res.sendFile(path.join(__dirname, 'public', 'use-case.html')));
+app.get('/pricing-public.html', (req, res) => res.sendFile(path.join(__dirname, 'public', 'pricing-public.html')));
 
 // Nueva ruta para servir los parciales de HTML
 app.get('/partials/:partialName', (req, res) => {
