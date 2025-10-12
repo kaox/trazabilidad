@@ -5,6 +5,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const formModal = document.getElementById('form-modal');
     const modalContent = document.getElementById('modal-content');
 
+    // Configurar Dexie.js para la cola de sincronización
+    const db = new Dexie('sync-queue');
+    db.version(1).stores({
+        pendingRequests: '++id,url,method,body'
+    });
+
     // --- Lógica de Datos ---
     function generateId(prefix = 'LOTE') {
         const now = new Date();
@@ -242,27 +248,68 @@ document.addEventListener('DOMContentLoaded', () => {
                     };
                 }
             }
-            
-            try {
-                if (mode === 'create') {
-                    await api('/api/batches', { method: 'POST', body: JSON.stringify({ 
-                        plantilla_id: template.id, 
-                        etapa_id: stage.id, 
-                        parent_id: parentBatch ? parentBatch.id : null, 
-                        data: newData 
-                    }) });
-                } else {
-                    newData.id = batchData.id;
-                    await api(`/api/batches/${batchData.id}`, { method: 'PUT', body: JSON.stringify({ data: newData }) });
+
+            const requestBody = { 
+                plantilla_id: template.id, 
+                etapa_id: stage.id, 
+                parent_id: parentBatch ? parentBatch.id : null, 
+                data: newData 
+            };
+
+            // Lógica Offline-First
+            if (navigator.onLine) {
+                try {
+                    if (mode === 'create') {
+                        await api('/api/batches', { method: 'POST', body: JSON.stringify({ 
+                            plantilla_id: template.id, 
+                            etapa_id: stage.id, 
+                            parent_id: parentBatch ? parentBatch.id : null, 
+                            data: newData 
+                        }) });
+                    } else {
+                        newData.id = batchData.id;
+                        await api(`/api/batches/${batchData.id}`, { method: 'PUT', body: JSON.stringify({ data: newData }) });
+                    }
+                    formModal.close();
+                    await loadBatches();
+                } catch (error) {
+                    // Si el servidor falla pero hay conexión, guardar para sincronizar
+                    console.warn("El servidor falló, guardando para sincronización en segundo plano.");
+                    saveForLaterAndSync(requestBody);
+                    formModal.close();
+                    // Opcional: mostrar un estado "pendiente" en la UI
                 }
+            } else {
+                // Si no hay conexión, guardar para sincronizar
+                console.log("Offline. Guardando para sincronización en segundo plano.");
+                saveForLaterAndSync(requestBody);
                 formModal.close();
-                await loadBatches();
-            } catch (error) {
-                console.error('Error al guardar:', error);
-                alert('No se pudo guardar el lote: ' + error.message);
+                alert("Estás sin conexión. Tu registro se ha guardado y se sincronizará automáticamente cuando vuelvas a tener internet.");
             }
         });
         document.getElementById('cancel-btn').addEventListener('click', () => formModal.close());
+    }
+
+    /**
+     * Guarda la petición en IndexedDB y registra un evento de sincronización.
+     * @param {object} requestBody - El cuerpo de la petición a guardar.
+     */
+    async function saveForLaterAndSync(requestBody) {
+        try {
+            await db.pendingRequests.add({
+                url: '/api/batches',
+                method: 'POST',
+                body: JSON.stringify(requestBody)
+            });
+            
+            if ('serviceWorker' in navigator && 'SyncManager' in window) {
+                const registration = await navigator.serviceWorker.ready;
+                await registration.sync.register('sync-new-batch');
+                console.log('Sincronización en segundo plano registrada.');
+            }
+        } catch (error) {
+            console.error('No se pudo guardar la petición para sincronización:', error);
+        }
     }
 
     async function generateFormHTML(mode, template, stage, parentBatch, data = {}) {

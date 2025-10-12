@@ -1,0 +1,21 @@
+{
+  "name": "AgriTraza Trazabilidad",
+  "short_name": "AgriTraza",
+  "description": "Plataforma de trazabilidad de productos agrícolas con funcionalidad offline.",
+  "start_url": "/app/trazabilidad",
+  "display": "standalone",
+  "background_color": "#fdfaf6",
+  "theme_color": "#854d0e",
+  "icons": [
+    {
+      "src": "https://placehold.co/192x192/854d0e/FFFFFF?text=AT",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "https://placehold.co/512x512/854d0e/FFFFFF?text=AT",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

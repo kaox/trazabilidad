@@ -45,8 +45,24 @@
     </dialog>
     <div id="qr-code-container" style="display: none;"></div>
 
+    <!-- Cargar Dexie.js para la interacción con IndexedDB -->
+    <script src="/js/dexie.js"></script>
     <script src="/js/trazabilidad-app.js"></script>
     <script src="/js/nav-loader.js" defer></script>
+    <script>
+        // --- Registro del Service Worker ---
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/service-worker.js')
+                    .then(registration => {
+                        console.log('Service Worker registrado con éxito:', registration.scope);
+                    })
+                    .catch(error => {
+                        console.log('Fallo en el registro del Service Worker:', error);
+                    });
+            });
+        }
+    </script>
 </body>
 </html>
 
