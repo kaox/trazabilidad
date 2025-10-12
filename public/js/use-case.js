@@ -107,13 +107,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     <p class="text-lg text-stone-600">${data.description}</p>
                 </header>
 
-                <section class="mb-16">
-                    <h2 class="text-3xl font-display font-bold text-center mb-8">Etapas de Seguimiento</h2>
-                    <div class="space-y-8">
-                        ${processHtml}
-                    </div>
-                </section>
-
                 <section class="my-16 bg-white p-8 rounded-lg shadow-md grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
                     <div>
                         <h2 class="text-3xl font-display font-bold text-amber-900 mb-4">Información de seguimiento</h2>
@@ -128,6 +121,13 @@ document.addEventListener('DOMContentLoaded', () => {
                         <p class="text-stone-600 mb-4">Traduce la complejidad de tus evaluaciones de cata a un lenguaje visual que tus clientes entiendan. Nuestro gráfico de radar de perfil sensorial convierte los datos de expertos en una "huella sensorial" fácil de entender, permitiéndote mostrar de forma transparente y verificable el sabor excepcional de tu producto.</p>
                     </div>
                     <img src="images/use-case-perfil.png" alt="Perfil Sensorial" class="w-full h-64 object-cover rounded-md">
+                </section>
+
+                <section class="mb-16">
+                    <h2 class="text-3xl font-display font-bold text-center mb-8">Etapas de Seguimiento</h2>
+                    <div class="space-y-8">
+                        ${processHtml}
+                    </div>
                 </section>
 
                 <section class="my-16 bg-white p-8 rounded-lg shadow-md grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
