@@ -62,7 +62,7 @@ const safeJSONParse = (data) => typeof data === 'string' ? JSON.parse(data) : da
 
 // --- Lógica de la API (usa las funciones adaptadoras) ---
 const registerUser = async (req, res) => {
-    const { usuario, password, nombre, apellido, dni, ruc, empresa, celular, correo } = req.body;
+    const { usuario, password, nombre, apellido, dni, ruc, empresa, company_logo, celular, correo } = req.body;
     if (!usuario || !password) return res.status(400).json({ error: "Usuario y contraseña son requeridos." });
     try {
         const hashedPassword = await bcrypt.hash(password, 10);
@@ -71,8 +71,8 @@ const registerUser = async (req, res) => {
         trialEndDate.setDate(trialEndDate.getDate() + 30);
         
         await run(
-            'INSERT INTO users (usuario, password, nombre, apellido, dni, ruc, empresa, celular, correo, subscription_tier, trial_ends_at) VALUES (?,?,?,?,?,?,?,?,?,?,?)', 
-            [usuario, hashedPassword, nombre, apellido, dni, ruc, empresa, celular, correo, 'artesano', trialEndDate.toISOString()]
+            'INSERT INTO users (usuario, password, nombre, apellido, dni, ruc, empresa, company_logo, celular, correo, subscription_tier, trial_ends_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)', 
+            [usuario, hashedPassword, nombre, apellido, dni, ruc, empresa, company_logo, celular, correo, 'artesano', trialEndDate.toISOString()]
         );
         res.status(201).json({ message: "Usuario registrado exitosamente." });
     } catch (err) {
@@ -108,7 +108,7 @@ const logoutUser = (req, res) => {
 const getUserProfile = async (req, res) => {
     const userId = req.user.id;
     try {
-        let user = await get('SELECT id, usuario, nombre, apellido, dni, ruc, empresa, celular, correo, role, subscription_tier, trial_ends_at FROM users WHERE id = ?', [userId]);
+        let user = await get('SELECT id, usuario, nombre, apellido, dni, ruc, empresa, company_logo, celular, correo, role, subscription_tier, trial_ends_at FROM users WHERE id = ?', [userId]);
         if (!user) return res.status(404).json({ error: "Usuario no encontrado." });
 
         // Si el usuario no tiene fecha de prueba (cuenta antigua), se le asigna una.
@@ -125,9 +125,9 @@ const getUserProfile = async (req, res) => {
 };
 const updateUserProfile = async (req, res) => {
     const userId = req.user.id;
-    const { nombre, apellido, dni, ruc, empresa, celular, correo } = req.body;
+    const { nombre, apellido, dni, ruc, empresa, company_logo, celular, correo } = req.body;
     try {
-        await run('UPDATE users SET nombre = ?, apellido = ?, dni = ?, ruc = ?, empresa = ?, celular = ?, correo = ? WHERE id = ?', [nombre, apellido, dni, ruc, empresa, celular, correo, userId]);
+        await run('UPDATE users SET nombre = ?, apellido = ?, dni = ?, ruc = ?, empresa = ?, company_logo = ?, celular = ?, correo = ? WHERE id = ?', [nombre, apellido, dni, ruc, empresa, company_logo, celular, correo, userId]);
         res.status(200).json({ message: "Perfil actualizado." });
     } catch (err) { res.status(500).json({ error: err.message }); }
 };
@@ -200,7 +200,8 @@ const getProcesadoras = async (req, res) => {
             ...p, 
             premios_json: safeJSONParse(p.premios_json || '[]'),
             certificaciones_json: safeJSONParse(p.certificaciones_json || '[]'),
-            coordenadas: safeJSONParse(p.coordenadas || 'null')
+            coordenadas: safeJSONParse(p.coordenadas || 'null'),
+            imagenes_json: safeJSONParse(p.imagenes_json || '[]')
         }));
         res.status(200).json(procesadoras);
     } catch (err) { res.status(500).json({ error: err.message }); }
@@ -208,11 +209,11 @@ const getProcesadoras = async (req, res) => {
 
 const createProcesadora = async (req, res) => {
     const userId = req.user.id;
-    const { ruc, razon_social, nombre_comercial, tipo_empresa, pais, ciudad, direccion, telefono, premios_json, certificaciones_json, coordenadas } = req.body;
+    const { ruc, razon_social, nombre_comercial, tipo_empresa, pais, ciudad, direccion, telefono, premios_json, certificaciones_json, coordenadas, imagenes_json } = req.body;
     const id = require('crypto').randomUUID();
-    const sql = 'INSERT INTO procesadoras (id, user_id, ruc, razon_social, nombre_comercial, tipo_empresa, pais, ciudad, direccion, telefono, premios_json, certificaciones_json, coordenadas) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
+    const sql = 'INSERT INTO procesadoras (id, user_id, ruc, razon_social, nombre_comercial, tipo_empresa, pais, ciudad, direccion, telefono, premios_json, certificaciones_json, coordenadas, imagenes_json) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
     try {
-        await run(sql, [id, userId, ruc, razon_social, nombre_comercial, tipo_empresa, pais, ciudad, direccion, telefono, JSON.stringify(premios_json || []), JSON.stringify(certificaciones_json || []), coordenadas]);
+        await run(sql, [id, userId, ruc, razon_social, nombre_comercial, tipo_empresa, pais, ciudad, direccion, telefono, JSON.stringify(premios_json || []), JSON.stringify(certificaciones_json || []), coordenadas, JSON.stringify(imagenes_json || [])]);
         res.status(201).json({ message: "Procesadora creada" });
     } catch (err) { res.status(500).json({ error: err.message }); }
 };
@@ -220,10 +221,10 @@ const createProcesadora = async (req, res) => {
 const updateProcesadora = async (req, res) => {
     const userId = req.user.id;
     const { id } = req.params;
-    const { ruc, razon_social, nombre_comercial, tipo_empresa, pais, ciudad, direccion, telefono, premios_json, certificaciones_json, coordenadas } = req.body;
-    const sql = 'UPDATE procesadoras SET ruc = ?, razon_social = ?, nombre_comercial = ?, tipo_empresa = ?, pais = ?, ciudad = ?, direccion = ?, telefono = ?, premios_json = ?, certificaciones_json = ?, coordenadas = ? WHERE id = ? AND user_id = ?';
+    const { ruc, razon_social, nombre_comercial, tipo_empresa, pais, ciudad, direccion, telefono, premios_json, certificaciones_json, coordenadas, imagenes_json } = req.body;
+    const sql = 'UPDATE procesadoras SET ruc = ?, razon_social = ?, nombre_comercial = ?, tipo_empresa = ?, pais = ?, ciudad = ?, direccion = ?, telefono = ?, premios_json = ?, certificaciones_json = ?, coordenadas = ?, imagenes_json = ? WHERE id = ? AND user_id = ?';
     try {
-        const result = await run(sql, [ruc, razon_social, nombre_comercial, tipo_empresa, pais, ciudad, direccion, telefono, JSON.stringify(premios_json || []), JSON.stringify(certificaciones_json || []), coordenadas, id, userId]);
+        const result = await run(sql, [ruc, razon_social, nombre_comercial, tipo_empresa, pais, ciudad, direccion, telefono, JSON.stringify(premios_json || []), JSON.stringify(certificaciones_json || []), coordenadas, JSON.stringify(imagenes_json || []), id, userId]);
         if (result.changes === 0) return res.status(404).json({ error: "Procesadora no encontrada o no tienes permiso." });
         res.status(200).json({ message: "Procesadora actualizada" });
     } catch (err) { res.status(500).json({ error: err.message }); }
@@ -428,6 +429,7 @@ const getBatchesTree = async (req, res) => {
         res.status(500).json({ error: "Error interno del servidor al construir el árbol de lotes." });
     }
 };
+
 const checkBatchOwnership = async (batchId, userId) => {
     const owner = await get(`
         WITH RECURSIVE ancestry AS (
@@ -528,8 +530,10 @@ const getTrazabilidad = async (req, res) => {
         const plantillaId = loteRaiz.plantilla_id;
 
         const allStages = await all('SELECT id, nombre_etapa, orden FROM etapas_plantilla WHERE plantilla_id = ? ORDER BY orden', [plantillaId]);
-        
+        const ownerInfo = await get('SELECT empresa, company_logo, subscription_tier, trial_ends_at FROM users WHERE id = ?', [ownerId]);
+
         const history = {
+            ownerInfo,
             stages: [],
             fincaData: null,
             procesadorasData: [],
@@ -567,7 +571,6 @@ const getTrazabilidad = async (req, res) => {
             }
         }
         const procesadoras = await all('SELECT * FROM procesadoras WHERE user_id = ?', [ownerId]);
-        console.log(procesadoras);
         history.procesadorasData = procesadoras.map(p => ({
             ...p,
             coordenadas: safeJSONParse(p.coordenadas || 'null'),
@@ -881,6 +884,99 @@ const getAdminDashboardData = async (req, res) => {
     }
 };
 
+const getLoteCosts = async (req, res) => {
+    const { lote_id } = req.params;
+    try {
+        const costs = await get('SELECT cost_data FROM lote_costs WHERE lote_id = ?', [lote_id]);
+        if (!costs) return res.status(404).json({ message: "No se encontraron costos para este lote." });
+        res.status(200).json(safeJSONParse(costs.cost_data));
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};
+
+const saveLoteCosts = async (req, res) => {
+    const { lote_id } = req.params;
+    const { cost_data } = req.body;
+    try {
+        const existing = await get('SELECT lote_id FROM lote_costs WHERE lote_id = ?', [lote_id]);
+        if (existing) {
+            await run('UPDATE lote_costs SET cost_data = ? WHERE lote_id = ?', [JSON.stringify(cost_data), lote_id]);
+        } else {
+            await run('INSERT INTO lote_costs (lote_id, user_id, cost_data) VALUES (?, ?, ?)', [lote_id, req.user.id, JSON.stringify(cost_data)]);
+        }
+        res.status(200).json({ message: "Costos guardados exitosamente." });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};
+
+const getDashboardData = async (req, res) => {
+    const userId = req.user.id;
+    try {
+        // Ejecutar todas las consultas en paralelo para mayor eficiencia
+        const [
+            allLotes,
+            templates,
+            allStagesRaw,
+            fincas,
+            procesadoras,
+            costs
+        ] = await Promise.all([
+            all('SELECT * FROM lotes WHERE user_id = ?', [userId]),
+            all('SELECT * FROM plantillas_proceso WHERE user_id = ?', [userId]),
+            all('SELECT * FROM etapas_plantilla WHERE plantilla_id IN (SELECT id FROM plantillas_proceso WHERE user_id = ?)', [userId]),
+            all('SELECT * FROM fincas WHERE user_id = ?', [userId]),
+            all('SELECT * FROM procesadoras WHERE user_id = ?', [userId]),
+            all('SELECT * FROM lote_costs WHERE user_id = ?', [userId])
+        ]);
+
+        // Construir el árbol de lotes
+        const lotesProcesados = allLotes.map(lote => ({
+            ...lote,
+            data: safeJSONParse(lote.data),
+            children: []
+        }));
+        console.log(lotesProcesados);
+        const loteMap = {};
+        lotesProcesados.forEach(lote => { loteMap[lote.id] = lote; });
+        const batchTrees = [];
+        lotesProcesados.forEach(lote => {
+            if (lote.parent_id && loteMap[lote.parent_id]) {
+                loteMap[lote.parent_id].children.push(lote);
+            } else {
+                batchTrees.push(lote);
+            }
+        });
+
+        // Organizar etapas por plantilla
+        const stages = allStagesRaw.reduce((acc, stage) => {
+            if (!acc[stage.plantilla_id]) {
+                acc[stage.plantilla_id] = [];
+            }
+            acc[stage.plantilla_id].push({
+                ...stage,
+                campos_json: safeJSONParse(stage.campos_json) // <-- CORRECCIÓN
+            });
+            return acc;
+        }, {});
+
+        // Enviar todos los datos consolidados
+        res.status(200).json({
+            batchTrees,
+            templates,
+            stages,
+            fincas,
+            procesadoras,
+            costs: costs.map(c => ({...c, cost_data: safeJSONParse(c.cost_data)}))
+        });
+
+    } catch (err) {
+        console.error("Error en getDashboardData:", err);
+        res.status(500).json({ error: "Error interno del servidor al obtener los datos del dashboard." });
+    }
+};
+
 module.exports = {
     registerUser, loginUser, logoutUser,
     getFincas, createFinca, updateFinca, deleteFinca,
@@ -896,6 +992,8 @@ module.exports = {
     getBlends, createBlend, deleteBlend,
     getRecetas, createReceta, deleteReceta, updateReceta,
     getUserSubscriptionStatus,
-    getAdminDashboardData
+    getAdminDashboardData,
+    getLoteCosts, saveLoteCosts,
+    getDashboardData
 };
 

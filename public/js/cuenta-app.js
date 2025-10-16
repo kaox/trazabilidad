@@ -8,6 +8,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const trialInfoEl = document.getElementById('trial-info');
     const trialDaysLeftEl = document.getElementById('trial-days-left');
 
+    const companyLogoInput = document.getElementById('company-logo-input');
+    const companyLogoPreview = document.getElementById('company-logo-preview');
+    const companyLogoHiddenInput = document.getElementById('company_logo');
+
     async function init() {
         await loadProfile();
         setupEventListeners();
@@ -26,6 +30,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 profileForm.empresa.value = user.empresa || '';
                 profileForm.celular.value = user.celular || '';
                 profileForm.correo.value = user.correo || '';
+
+                if (user.company_logo) {
+                    companyLogoPreview.src = user.company_logo;
+                    companyLogoHiddenInput.value = user.company_logo;
+                }
             }
             
             // Lógica de Suscripción
@@ -62,6 +71,20 @@ document.addEventListener('DOMContentLoaded', () => {
         if (passwordForm) {
             passwordForm.addEventListener('submit', handlePasswordChange);
         }
+        if (companyLogoInput) {
+            companyLogoInput.addEventListener('change', handleLogoUpload);
+        }
+    }
+
+    function handleLogoUpload(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onloadend = () => {
+            companyLogoPreview.src = reader.result;
+            companyLogoHiddenInput.value = reader.result;
+        };
+        reader.readAsDataURL(file);
     }
 
     async function handleProfileUpdate(e) {

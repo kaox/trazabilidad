@@ -267,6 +267,13 @@ document.addEventListener('DOMContentLoaded', () => {
     
     function handleImageUpload(e) {
         const files = Array.from(e.target.files);
+        if (!files) return;
+
+        if (currentImages.length + files.length > 5) {
+            alert('Puedes subir un máximo de 5 fotos.');
+            return;
+        }
+        
         files.forEach(file => {
             const reader = new FileReader();
             reader.onloadend = () => {

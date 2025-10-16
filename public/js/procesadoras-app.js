@@ -17,12 +17,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const certsListContainer = document.getElementById('certifications-list');
     const searchInput = document.getElementById('location-search');
     const searchBtn = document.getElementById('search-btn');
+    const fotosInput = document.getElementById('fotos-input');
+    const fotosPreviewContainer = document.getElementById('fotos-preview-container');
 
     // Estado de la aplicación
     let allPremios = [];
     let currentProcesadoraPremios = [];
     let allCertifications = [];
     let currentProcesadoraCerts = [];
+    let currentImages = [];
     let map;
     let marker = null;
 
@@ -83,6 +86,8 @@ document.addEventListener('DOMContentLoaded', () => {
         addCertBtn.addEventListener('click', handleAddCertification);
         certsListContainer.addEventListener('click', handleCertificationAction);
         searchBtn.addEventListener('click', searchLocation);
+        fotosInput.addEventListener('change', handleImageUpload);
+        fotosPreviewContainer.addEventListener('click', handleImageDelete);
     }
 
     // --- Carga de Datos ---
@@ -190,6 +195,8 @@ document.addEventListener('DOMContentLoaded', () => {
     function resetForm() {
         form.reset();
         editIdInput.value = '';
+        currentImages = [];
+        renderImagePreviews();
         currentProcesadoraPremios = [];
         currentProcesadoraCerts = [];
         if (marker) {
@@ -223,6 +230,9 @@ document.addEventListener('DOMContentLoaded', () => {
             form.telefono.value = procesadora.telefono || '';
             editIdInput.value = procesadora.id;
 
+            currentImages = procesadora.imagenes_json || [];
+            renderImagePreviews();
+
             if (procesadora.coordenadas) {
                 placeMarker(procesadora.coordenadas);
                 map.setView(procesadora.coordenadas, 15);
@@ -243,11 +253,49 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // --- Lógica de Galería de Fotos ---
+    function handleImageUpload(e) {
+        const files = e.target.files;
+        if (!files) return;
+
+        if (currentImages.length + files.length > 5) {
+            alert('Puedes subir un máximo de 5 fotos.');
+            return;
+        }
+
+        for (const file of files) {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                currentImages.push(reader.result);
+                renderImagePreviews();
+            };
+            reader.readAsDataURL(file);
+        }
+    }
+
+    function handleImageDelete(e) {
+        if (e.target.classList.contains('delete-img-btn')) {
+            const index = parseInt(e.target.dataset.index, 10);
+            currentImages.splice(index, 1);
+            renderImagePreviews();
+        }
+    }
+
+    function renderImagePreviews() {
+        fotosPreviewContainer.innerHTML = currentImages.map((imgSrc, index) => `
+            <div class="relative">
+                <img src="${imgSrc}" class="w-full h-24 object-cover rounded-md">
+                <button type="button" data-index="${index}" class="delete-img-btn absolute top-1 right-1 bg-red-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">&times;</button>
+            </div>
+        `).join('');
+    }
+
     // --- Gestores de Eventos ---
     async function handleFormSubmit(e) {
         e.preventDefault();
         const formData = new FormData(form);
         const data = Object.fromEntries(formData.entries());
+        data.imagenes_json = currentImages;
         data.premios_json = currentProcesadoraPremios;
         data.certificaciones_json = currentProcesadoraCerts;
 

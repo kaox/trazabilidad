@@ -1,10 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
     let state = {
-        batches: [],
-        templates: [],
-        stagesByTemplate: {},
-        fincas: [],
-        procesadoras: []
+        fullData: null // Almacenará todos los datos del dashboard
     };
     let charts = {};
 
@@ -14,87 +10,90 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function init() {
         try {
-            [state.batches, state.templates, state.fincas, state.procesadoras] = await Promise.all([
-                api('/api/batches/tree'),
-                api('/api/templates'),
-                api('/api/fincas'),
-                api('/api/procesadoras')
-            ]);
-
-            for (const t of state.templates) {
-                state.stagesByTemplate[t.id] = await api(`/api/templates/${t.id}/stages`);
-            }
+            state.fullData = await api('/api/dashboard/data');
 
             populateTemplateFilter();
-            populateBatchFilter(); // Carga inicial con todos los lotes
+            populateBatchFilter();
             
-            templateFilter.addEventListener('change', handleTemplateFilterChange);
-            batchFilter.addEventListener('change', handleBatchFilterChange);
+            templateFilter.addEventListener('change', handleFilterChange);
+            batchFilter.addEventListener('change', handleFilterChange);
             
-            processAndRenderDashboard(state.batches); // Render inicial con todos los datos
+            processAndRenderDashboard(state.fullData.batchTrees);
         } catch (error) {
             console.error("Error al cargar datos para el dashboard:", error);
-            kpiContainer.innerHTML = `<p class="text-red-600 col-span-full">Error al cargar los datos del dashboard.</p>`;
+            kpiContainer.innerHTML = `<p class="text-red-500 col-span-full text-center">${error.message}</p>`;
         }
     }
     
     function populateTemplateFilter() {
         let optionsHtml = '<option value="all">Todos los Procesos</option>';
-        optionsHtml += state.templates.map(t => `<option value="${t.id}">${t.nombre_producto}</option>`).join('');
+        optionsHtml += state.fullData.templates.map(t => `<option value="${t.id}">${t.nombre_producto}</option>`).join('');
         templateFilter.innerHTML = optionsHtml;
     }
 
     function populateBatchFilter(templateId = 'all') {
-        let batchesToShow = state.batches;
+        let batchesToShow = state.fullData.batchTrees;
         if (templateId !== 'all') {
-            batchesToShow = state.batches.filter(b => b.plantilla_id == templateId);
+            batchesToShow = state.fullData.batchTrees.filter(b => b.plantilla_id == templateId);
         }
 
         let optionsHtml = '<option value="all">Todos los Lotes</option>';
         optionsHtml += batchesToShow.map(batch => {
-            const dateField = Object.keys(batch).find(key => key.toLowerCase().includes('fecha'));
-            const date = dateField ? batch[dateField] : 'Sin fecha';
+            const date = batch.data.fecha?.value || batch.data.fechaCosecha?.value || 'N/A';
             return `<option value="${batch.id}">${batch.id} [${date}]</option>`;
         }).join('');
         batchFilter.innerHTML = optionsHtml;
     }
-
-    function handleTemplateFilterChange() {
+    
+    function handleFilterChange() {
         const selectedTemplateId = templateFilter.value;
-        populateBatchFilter(selectedTemplateId); // Actualizar el filtro de lotes
-        
-        const batchesToProcess = selectedTemplateId === 'all'
-            ? state.batches
-            : state.batches.filter(b => b.plantilla_id == selectedTemplateId);
-        
-        processAndRenderDashboard(batchesToProcess);
-    }
-
-    function handleBatchFilterChange() {
         const selectedBatchId = batchFilter.value;
-        const selectedTemplateId = templateFilter.value;
 
-        if (selectedBatchId === 'all') {
-            handleTemplateFilterChange(); // Vuelve a la lógica del filtro de plantilla
+        // Si cambia el filtro de plantilla, se resetea el de lote
+        if (event.target.id === 'template-filter') {
+            populateBatchFilter(selectedTemplateId);
+             // After repopulating, the batch filter is reset to 'all', so we should process based on that
+            processBasedOnFilters(selectedTemplateId, 'all');
             return;
         }
-
-        const selectedBatch = state.batches.find(b => b.id === selectedBatchId);
-        processAndRenderDashboard(selectedBatch ? [selectedBatch] : []);
+        
+        processBasedOnFilters(selectedTemplateId, selectedBatchId);
     }
+
+    function processBasedOnFilters(templateId, batchId) {
+        let filteredBatches = state.fullData.batchTrees;
+
+        if (templateId !== 'all') {
+            filteredBatches = filteredBatches.filter(b => b.plantilla_id == templateId);
+        }
+        if (batchId !== 'all') {
+            filteredBatches = filteredBatches.filter(b => b.id === batchId);
+        }
+        
+        processAndRenderDashboard(filteredBatches);
+    }
+
 
     function processAndRenderDashboard(filteredBatches) {
         const { stageYields, totalYields } = calculateStageYields(filteredBatches);
         const fincaProduction = calculateFincaProduction(filteredBatches);
+        const { costKPIs, costByStage } = calculateCostMetrics(filteredBatches);
 
-        renderKPIs(filteredBatches, totalYields);
+        renderKPIs(filteredBatches, totalYields, costKPIs);
         renderRendimientoChart(stageYields);
         renderProduccionChart(fincaProduction);
+        renderCostoPorEtapaChart(costByStage);
     }
-
+    
     function calculateStageYields(batches) {
         const stageYields = {};
         const totalYields = [];
+
+        const getFieldValue = (data, fieldName) => {
+            if (!data || !fieldName) return null;
+            const field = data[fieldName];
+            return (typeof field === 'object' && field !== null) ? parseFloat(field.value) : parseFloat(field);
+        };
 
         function traverse(batchData, template, stage, parentBatch = null) {
             let inputWeight = 0;
@@ -103,17 +102,17 @@ document.addEventListener('DOMContentLoaded', () => {
             const salidas = stage.campos_json.salidas || [];
 
             if (salidas.length > 0 && salidas[0].name) {
-                outputWeight = parseFloat(batchData[salidas[0].name]) || 0;
+                outputWeight = getFieldValue(batchData.data, salidas[0].name) || 0;
             }
 
             const inputField = entradas[0]?.name;
-            if (inputField && batchData[inputField]) {
-                inputWeight = parseFloat(batchData[inputField]) || 0;
+            if (inputField && batchData.data[inputField]) {
+                inputWeight = getFieldValue(batchData.data, inputField) || 0;
             } else if (parentBatch) {
-                const parentStage = state.stagesByTemplate[template.id]?.find(s => s.orden === stage.orden - 1);
+                const parentStage = state.fullData.stages[template.id]?.find(s => s.orden === stage.orden - 1);
                 if (parentStage?.campos_json.salidas[0]) {
                     const outputFieldOfParent = parentStage.campos_json.salidas[0].name;
-                    inputWeight = parseFloat(parentBatch[outputFieldOfParent]) || 0;
+                    inputWeight = getFieldValue(parentBatch.data, outputFieldOfParent) || 0;
                 }
             }
 
@@ -124,22 +123,23 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
                 stageYields[stage.nombre_etapa].total += yieldPercent;
                 stageYields[stage.nombre_etapa].count++;
-                totalYields.push(yieldPercent);
+                if (!parentBatch) { // Only count total yield for root processes
+                    totalYields.push(yieldPercent);
+                }
             }
 
-            const nextStage = state.stagesByTemplate[template.id]?.find(s => s.orden === stage.orden + 1);
-            if (nextStage) {
-                const childKey = nextStage.nombre_etapa.toLowerCase().replace(/ & /g, '_and_');
-                if (batchData[childKey] && Array.isArray(batchData[childKey])) {
-                    batchData[childKey].forEach(child => traverse(child, template, nextStage, batchData));
+            if (batchData.children && batchData.children.length > 0) {
+                const nextStage = state.fullData.stages[template.id]?.find(s => s.orden === stage.orden + 1);
+                if (nextStage) {
+                    batchData.children.forEach(child => traverse(child, template, nextStage, batchData));
                 }
             }
         }
 
         batches.forEach(rootBatch => {
-            const template = state.templates.find(t => t.id === rootBatch.plantilla_id);
-            if (template && state.stagesByTemplate[template.id]?.length > 0) {
-                const firstStage = state.stagesByTemplate[template.id][0];
+            const template = state.fullData.templates.find(t => t.id === rootBatch.plantilla_id);
+            if (template && state.fullData.stages[template.id]?.length > 0) {
+                const firstStage = state.fullData.stages[template.id][0];
                 traverse(rootBatch, template, firstStage);
             }
         });
@@ -147,17 +147,24 @@ document.addEventListener('DOMContentLoaded', () => {
         return { stageYields, totalYields };
     }
 
+
     function calculateFincaProduction(batches) {
         const productionByFinca = {};
+        const getFieldValue = (data, fieldName) => {
+            if (!data || !fieldName) return null;
+            const field = data[fieldName];
+            return (typeof field === 'object' && field !== null) ? field.value : field;
+        };
+
         batches.forEach(rootBatch => {
-            const finca = rootBatch.finca;
+            const finca = getFieldValue(rootBatch.data, 'finca');
             if (finca) {
-                const template = state.templates.find(t => t.id === rootBatch.plantilla_id);
-                if (template && state.stagesByTemplate[template.id]?.length > 0) {
-                    const firstStage = state.stagesByTemplate[template.id][0];
+                const template = state.fullData.templates.find(t => t.id === rootBatch.plantilla_id);
+                if (template && state.fullData.stages[template.id]?.length > 0) {
+                    const firstStage = state.fullData.stages[template.id][0];
                     const inputField = firstStage.campos_json.entradas[0]?.name;
                     if (inputField) {
-                        const weight = parseFloat(rootBatch[inputField]) || 0;
+                        const weight = parseFloat(getFieldValue(rootBatch.data, inputField)) || 0;
                         if (!productionByFinca[finca]) {
                             productionByFinca[finca] = 0;
                         }
@@ -169,14 +176,76 @@ document.addEventListener('DOMContentLoaded', () => {
         return productionByFinca;
     }
 
-    function renderKPIs(filteredBatches, totalYields) {
-        const avgYield = totalYields.length > 0 ? totalYields.reduce((a, b) => a + b, 0) / totalYields.length : 0;
+    function calculateCostMetrics(batches) {
+        const costData = state.fullData.costs;
+        let totalInvertido = 0;
+        let totalFinalKg = 0;
+        const costByStage = {};
 
+        const getFieldValue = (data, fieldName) => {
+            if (!data || !fieldName) return null;
+            const field = data[fieldName];
+            return (typeof field === 'object' && field !== null) ? parseFloat(field.value) : parseFloat(field);
+        };
+
+        const calculateTreeCosts = (batchNode, parentCostInfo = null) => {
+            const loteCosts = costData.find(c => c.lote_id === batchNode.id)?.cost_data || {};
+            const stageCosts = loteCosts[batchNode.id] || {};
+            
+            const stage = state.fullData.stages[batchNode.plantilla_id]?.find(s => s.id === batchNode.etapa_id);
+            if (!stage) return { accumulatedCost: 0, costPerKg: 0, outputWeight: 0 };
+            
+            const processCosts = (stageCosts.costoAdquisicion || 0) + (stageCosts.costoManoDeObra || 0) + (stageCosts.costoInsumos || 0) + (stageCosts.costoOperativos || 0);
+
+            let inheritedCost = 0;
+            const inputField = stage.campos_json.entradas[0]?.name;
+            const outputField = stage.campos_json.salidas[0]?.name;
+            const inputWeight = getFieldValue(batchNode.data, inputField) || (parentCostInfo?.outputWeight || 0);
+            const outputWeight = getFieldValue(batchNode.data, outputField) || 0;
+            
+            if (parentCostInfo && inputWeight > 0) {
+                inheritedCost = parentCostInfo.costPerKg * inputWeight;
+            }
+            
+            const accumulatedCost = inheritedCost + processCosts;
+            const costPerKg = outputWeight > 0 ? accumulatedCost / outputWeight : 0;
+            
+            const currentCostInfo = { accumulatedCost, costPerKg, outputWeight };
+
+            if (!costByStage[stage.nombre_etapa]) {
+                costByStage[stage.nombre_etapa] = { totalCostPerKg: 0, count: 0, order: stage.orden };
+            }
+            costByStage[stage.nombre_etapa].totalCostPerKg += costPerKg;
+            costByStage[stage.nombre_etapa].count++;
+
+            if (batchNode.children && batchNode.children.length > 0) {
+                batchNode.children.forEach(child => calculateTreeCosts(child, currentCostInfo));
+            } else { // Es una hoja final del árbol
+                totalInvertido += accumulatedCost;
+                totalFinalKg += outputWeight;
+            }
+        };
+
+        batches.forEach(tree => calculateTreeCosts(tree));
+        
+        const costKPIs = {
+            costoTotalInvertido: totalInvertido,
+            costoPromedioPorLote: batches.length > 0 ? totalInvertido / batches.length : 0,
+            costoPromedioFinalKg: totalFinalKg > 0 ? totalInvertido / totalFinalKg : 0
+        };
+        
+        return { costKPIs, costByStage };
+    }
+
+    function renderKPIs(filteredBatches, totalYields, costKPIs) {
+        const avgYield = totalYields.length > 0 ? totalYields.reduce((a, b) => a + b, 0) / totalYields.length : 0;
+        const { fincas, procesadoras } = state.fullData;
+        
         const kpis = [
-            { label: 'Lotes Analizados', value: filteredBatches.length, icon: `<svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2a4 4 0 00-4-4H3V7a4 4 0 014-4h4a4 4 0 014 4v4m-6 6h6m-3 3v-3" /></svg>`, color: 'text-sky-700 bg-sky-100' },
-            { label: 'Rendimiento Promedio', value: `${avgYield.toFixed(1)}%`, icon: `<svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>`, color: 'text-green-700 bg-green-100' },
-            { label: 'Fincas Registradas', value: state.fincas.length, icon: `<svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" viewBox="0 0 24 24" fill="currentColor"><path d="M12.71,2.58C12.32,2.2,11.69,2.2,11.3,2.58L4.31,9.54C3.93,9.93,4.23,10.58,4.76,10.58H7V18C7,18.55,7.45,19,8,19H16C16.55,19,17,18.55,17,18V10.58H19.24C19.77,10.58,20.07,9.93,19.7,9.54L12.71,2.58Z" /></svg>`, color: 'text-amber-800 bg-amber-100' },
-            { label: 'Procesadoras', value: state.procesadoras.length, icon: `<svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" viewBox="0 0 24 24" fill="currentColor"><path d="M18 17H22V15H18V17M18 13H22V11H18V13M18 9H22V7H18V9M16 19H6V21H16V19M16 3H6C4.9 3 4 3.9 4 5V17H2V5C2 2.79 3.79 1 6 1H16V3Z" /></svg>`, color: 'text-indigo-700 bg-indigo-100' }
+            { label: 'Costo Total Invertido', value: `$${costKPIs.costoTotalInvertido.toFixed(2)}`, icon: `<i class="fas fa-dollar-sign text-2xl"></i>`, color: 'text-teal-700 bg-teal-100' },
+            { label: 'Costo Promedio / Lote', value: `$${costKPIs.costoPromedioPorLote.toFixed(2)}`, icon: `<i class="fas fa-box text-2xl"></i>`, color: 'text-teal-700 bg-teal-100' },
+            { label: 'Costo Final / Kg', value: `$${costKPIs.costoPromedioFinalKg.toFixed(2)}`, icon: `<i class="fas fa-weight-hanging text-2xl"></i>`, color: 'text-teal-700 bg-teal-100' },
+            { label: 'Rendimiento Promedio', value: `${avgYield.toFixed(1)}%`, icon: `<i class="fas fa-chart-line text-2xl"></i>`, color: 'text-green-700 bg-green-100' },
         ];
 
         kpiContainer.innerHTML = kpis.map(kpi => `
@@ -189,7 +258,7 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>
         `).join('');
     }
-
+    
     function renderRendimientoChart(stageYields) {
         const sortedStages = Object.entries(stageYields).sort(([, a], [, b]) => a.order - b.order);
         const labels = sortedStages.map(([label]) => label);
@@ -235,6 +304,33 @@ document.addEventListener('DOMContentLoaded', () => {
             },
             options: {
                 plugins: { legend: { position: 'bottom' } }
+            }
+        });
+    }
+
+    function renderCostoPorEtapaChart(costByStage) {
+        const sortedStages = Object.entries(costByStage).sort(([, a], [, b]) => a.order - b.order);
+        const labels = sortedStages.map(([label]) => label);
+        const data = sortedStages.map(([, values]) => values.totalCostPerKg / values.count);
+        
+        if (charts.costoEtapa) charts.costoEtapa.destroy();
+
+        charts.costoEtapa = new Chart(document.getElementById('costo-etapa-chart'), {
+            type: 'bar',
+            data: {
+                labels,
+                datasets: [{
+                    label: 'Costo Promedio ($/kg)',
+                    data,
+                    backgroundColor: 'rgba(20, 83, 45, 0.7)',
+                    borderColor: 'rgb(20, 83, 45)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                scales: { x: { beginAtZero: true } },
+                plugins: { legend: { display: false } }
             }
         });
     }

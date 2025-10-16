@@ -22,7 +22,7 @@
     <div class="container mx-auto p-4 md:p-8">
         <header class="text-center mb-10 mt-4">
             <h1 class="text-4xl md:text-5xl font-bold text-amber-900 mb-2">Dashboard Analítico</h1>
-            <p class="text-stone-600">Una vista general del rendimiento de tus procesos y producción.</p>
+            <p class="text-stone-600">Una vista general del rendimiento y la rentabilidad de tu producción.</p>
         </header>
 
         <!-- Filtros -->
@@ -48,6 +48,12 @@
                 <h2 class="text-2xl font-display text-amber-900 mb-4">Rendimiento Promedio por Etapa</h2>
                 <div>
                     <canvas id="rendimiento-chart"></canvas>
+                </div>
+            </div>
+            <div class="bg-white p-6 rounded-2xl shadow-lg">
+                <h2 class="text-2xl font-display text-amber-900 mb-4">Costo Acumulado por Etapa ($/kg)</h2>
+                <div>
+                    <canvas id="costo-etapa-chart"></canvas>
                 </div>
             </div>
             <div class="lg:col-span-2 bg-white p-6 rounded-2xl shadow-lg">

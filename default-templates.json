@@ -95,6 +95,23 @@
               {"label": "Foto del Producto", "name": "imageUrl", "type": "image"}
             ]
           }
+        },
+        {
+          "nombre_etapa": "Envasado",
+          "orden": 7,
+          "campos_json": {
+            "entradas": [{"label": "Número de Unidades", "name": "pesoEntrada", "type": "number"}],
+            "salidas": [{"label": "Número de Unidades", "name": "unidades", "type": "number"}],
+            "variables": [
+              {"label": "Procesadora", "name": "procesadora", "type": "selectProcesadora"},
+              {"label": "Fecha Empaque", "name": "fecha", "type": "date"},
+              {"label": "Numero de Lote", "name": "numeroLote", "type": "text"},
+              {"label": "Fecha Vencimiento", "name": "fechaVencimineto", "type": "date"},
+              {"label": "Tamaño (g)", "name": "tamaño", "type": "number"},
+              {"label": "Link Producto", "name": "link", "type": "text"},
+              {"label": "Foto del Producto", "name": "imageUrl", "type": "image"}
+            ]
+          }
         }
       ]
     },

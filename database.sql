@@ -28,6 +28,7 @@ CREATE TABLE IF NOT EXISTS users (
     dni TEXT,
     ruc TEXT,
     empresa TEXT,
+    company_logo TEXT,
     celular TEXT,
     correo TEXT,
     role TEXT DEFAULT 'user',
@@ -103,6 +104,7 @@ CREATE TABLE IF NOT EXISTS procesadoras (
     coordenadas JSONB,
     premios_json TEXT,
     certificaciones_json TEXT,
+    imagenes_json TEXT,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(user_id, ruc)
@@ -158,4 +160,12 @@ CREATE TABLE IF NOT EXISTS recetas_chocolate (
     perfil_final_json JSONB NOT NULL,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(user_id, nombre_receta)
+);
+
+-- Nueva Tabla para Almacenar Costos de Lotes
+CREATE TABLE IF NOT EXISTS lote_costs (
+    lote_id TEXT PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    cost_data JSONB NOT NULL,
+    FOREIGN KEY (lote_id) REFERENCES lotes(id) ON DELETE CASCADE
 );

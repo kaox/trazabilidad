@@ -141,6 +141,7 @@ app.get('/app/maridaje', authenticatePage, (req, res) => res.sendFile(path.join(
 app.get('/app/blends', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'blends.html'))); // <-- Nueva ruta
 app.get('/app/recetas-chocolate', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'formulador.html'))); // <-- Nueva ruta
 app.get('/app/pricing', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'pricing.html'))); // Nueva ruta
+app.get('/app/costos', authenticatePage, checkSubscription('profesional'), (req, res) => res.sendFile(path.join(__dirname, 'views', 'costos.html'))); // Nueva ruta
 app.get('/app/admin-dashboard', authenticatePage, checkAdmin, (req, res) => res.sendFile(path.join(__dirname, 'views', 'admin-dashboard.html')));
 
 
@@ -214,6 +215,12 @@ app.put('/api/recetas-chocolate/:id', authenticateApi, checkSubscription('profes
 // Nueva ruta para datos del dashboard administrativo
 app.get('/api/admin/dashboard-data', authenticateApi, checkAdmin, db.getAdminDashboardData);
 
+// Nuevas rutas para el Módulo de Costos
+app.get('/api/costs/:lote_id', authenticateApi, checkSubscription('profesional'), db.getLoteCosts);
+app.post('/api/costs/:lote_id', authenticateApi, checkSubscription('profesional'), db.saveLoteCosts);
+
+// Nueva ruta para consolidar los datos del dashboard
+app.get('/api/dashboard/data', authenticateApi, checkSubscription('profesional'), db.getDashboardData);
 
 // Iniciar Servidor
 app.listen(PORT, () => {

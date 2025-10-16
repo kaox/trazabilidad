@@ -33,7 +33,7 @@ async function initializeDatabase() {
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     usuario TEXT NOT NULL UNIQUE,
                     password TEXT NOT NULL,
-                    nombre TEXT, apellido TEXT, dni TEXT, ruc TEXT, empresa TEXT, celular TEXT, correo TEXT,
+                    nombre TEXT, apellido TEXT, dni TEXT, ruc TEXT, empresa TEXT, company_logo TEXT, celular TEXT, correo TEXT,
                     role TEXT DEFAULT 'user',
                     subscription_tier TEXT DEFAULT 'artesano',
                     trial_ends_at TIMESTAMP,
@@ -81,6 +81,7 @@ async function initializeDatabase() {
                     coordenadas JSONB,
                     premios_json TEXT,
                     certificaciones_json TEXT,
+                    imagenes_json TEXT,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
@@ -187,6 +188,15 @@ async function initializeDatabase() {
                     UNIQUE(user_id, nombre_receta)
                 )`);
             console.log("Tabla 'recetas_chocolate' lista.");
+
+            await runQuery(db, `
+                CREATE TABLE IF NOT EXISTS lote_costs (
+                    lote_id TEXT PRIMARY KEY,
+                    user_id INTEGER NOT NULL,
+                    cost_data JSONB NOT NULL,
+                    FOREIGN KEY (lote_id) REFERENCES lotes(id) ON DELETE CASCADE
+                )`);
+            console.log("Tabla 'lote_costs' lista.");
 
             console.log('Esquema de base de datos listo.');
 

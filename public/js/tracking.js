@@ -40,12 +40,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function renderStory(h) {
 
-        let finalHTML = createMainContent(h);
+        let finalHTML = renderLogoCompany(h.ownerInfo);
+        finalHTML += createMainContent(h);
         finalHTML += createTimelineSection(h);
         finalHTML += createAdditionalInfoSection(h);
         finalHTML += createShareSection(h);
 
         storyContainer.innerHTML = finalHTML;
+
+        // Renderizar el encabezado personalizado
+        //renderLogoCompany(h.ownerInfo);
 
         const routePoints = getRoutePoints(h);
 
@@ -59,6 +63,28 @@ document.addEventListener('DOMContentLoaded', () => {
         if (h.perfilSensorialData) {
             renderFlavorProfile(h.perfilSensorialData);
             initializePerfilChart('sensory-profile-chart', h.perfilSensorialData);
+        }
+    }
+
+    function renderLogoCompany(ownerInfo) {
+        const headerContainer = document.getElementById('header-container');
+        if (!ownerInfo) return '';
+
+        const hasActiveTrial = ownerInfo.trial_ends_at && new Date(ownerInfo.trial_ends_at) > new Date();
+        const isProfesional = ownerInfo.subscription_tier === 'profesional';
+
+        if (isProfesional || hasActiveTrial) {
+            return `
+                <section class="my-16 text-center">
+                <!-- Columna Izquierda: Info Productor -->
+                <div class="flex justify-center">
+                    ${ownerInfo.company_logo ? `<img src="${ownerInfo.company_logo}" alt="Logo de ${ownerInfo.empresa}" class="h-10 object-contain">` : ''}
+                </div>
+                <div>
+                    <h2 class="text-3xl font-display text-amber-900 mb-4">${ownerInfo.empresa || 'RuruLab'}</h2>
+                </div>
+                </section>
+            `;
         }
     }
 
