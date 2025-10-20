@@ -45,6 +45,9 @@
             stroke-dasharray: 1;
             stroke-dashoffset: 1;
         }
+        #mobile-menu {
+            transition: transform 0.3s ease-in-out;
+        }
     </style>
 </head>
 <body class="text-stone-800 antialiased">
@@ -63,20 +66,36 @@
 
     <!-- Contenido Principal -->
     <div class="relative z-20 bg-[#fdfdfb]">
-        <!-- Header -->
-        <header class="absolute top-0 left-0 right-0 z-30 text-white">
+        <header class="bg-white/80 backdrop-blur-sm sticky top-0 z-50 border-b border-stone-200">
             <div class="container mx-auto px-6 py-4 flex justify-between items-center">
-                <h1 class="text-2xl font-bold font-display"><i class="fa-solid fa-fingerprint mr-2"></i>Ruru Lab</h1>
+                <a href="/" class="text-2xl font-bold font-display text-amber-900"><i class="fa-solid fa-fingerprint mr-2"></i>Ruru Lab</a>
+
                 <nav class="hidden md:flex space-x-8 items-center">
-                    <!--a href="#features" class="hover:text-amber-200 transition">Funcionalidades</a-->
-                    <!--a href="#testimonials" class="hover:text-amber-200 transition">Testimonios</a-->
-                    <a href="/pricing-public.html" class="bg-white text-amber-900 font-bold py-2 px-5 rounded-lg hover:bg-stone-200 transition">Planes</a>
-                    <a href="/qr" class="bg-white text-amber-900 font-bold py-2 px-5 rounded-lg hover:bg-stone-200 transition">Descubrir Lote</a>
+                    <a href="/qr" class="hover:text-amber-800 transition">Descubrir Lote</a>
+                    <a href="/pricing-public.html" class="hover:text-amber-800 transition">Planes</a>
+                    <a href="/register.html" class="bg-amber-800 text-white font-bold py-2 px-5 rounded-lg hover:bg-amber-900 transition">Pruébalo gratis</a>
                 </nav>
-                <a href="/pricing-public.html" class="md:hidden bg-white text-amber-900 font-bold py-2 px-5 rounded-lg hover:bg-stone-200 transition">Planes</a>
-                <!--a href="/qr" class="md:hidden bg-white text-amber-900 font-bold py-2 px-5 rounded-lg hover:bg-stone-200 transition">Descubrir Lote</a-->
+                <!-- Botón de Menú Móvil -->
+                <div class="md:hidden">
+                    <button id="menu-button" class="focus:outline-none">
+                        <i class="fas fa-bars fa-lg"></i>
+                    </button>
+                    <button id="close-menu-button" class="hidden focus:outline-none">
+                        <i class="fas fa-times fa-2x"></i>
+                    </button>
+                </div>
             </div>
         </header>
+
+        <!-- Menú Móvil -->
+        <div id="mobile-menu" class="fixed top-0 left-0 w-full h-full bg-stone-900/95 backdrop-blur-sm z-40 transform -translate-x-full md:hidden">
+            <nav class="flex flex-col items-center justify-center h-full -mt-16 space-y-8 text-xl">
+                <a href="/qr" class="text-white hover:text-amber-300 transition">Descubrir Lote</a>
+                <a href="/pricing-public.html" class="text-white hover:text-amber-300 transition">Planes</a>
+                <a href="/login.html" class="text-white hover:text-amber-300 transition">Iniciar Sesión</a>
+                <a href="/register.html" class="bg-amber-400 text-amber-900 font-bold py-3 px-8 rounded-lg">Pruébalo gratis</a>
+            </nav>
+        </div>
 
         <!-- Sección Hero -->
         <section class="hero-section relative text-white min-h-screen flex items-center">
@@ -86,8 +105,8 @@
                     <h1 class="text-4xl md:text-6xl font-bold font-display leading-tight mb-4">Trazabilidad! La Historia que Vende tu Producto.</h1>
                     <p class="text-lg md:text-xl max-w-2xl text-amber-50">Conecta con tus consumidores, valida tu cadena de suministro y demuestra tu compromiso con la sostenibilidad a través de nuestra plataforma de trazabilidad.</p>
                     <div class="mt-8">
-                        <a href="/login.html" class="inline-block bg-amber-800 hover:bg-amber-900 text-white font-bold py-4 px-10 rounded-xl shadow-lg transition transform hover:-translate-y-1 text-lg">
-                            Iniciar Sesión
+                        <a href="https://www.rurulab.com/CHO-J678K94Z" class="inline-block bg-amber-800 hover:bg-amber-900 text-white font-bold py-4 px-10 rounded-xl shadow-lg transition transform hover:-translate-y-1 text-lg">
+                            Descubre Cómo
                         </a>
                     </div>
                 </div>
@@ -137,36 +156,6 @@
                         </div>
                         <h3 class="text-xl font-display font-bold mb-2 text-center">La Ineficiencia Oculta</h3>
                         <p class="text-stone-600">Gestionar la calidad a través de múltiples productores y lotes es un desafío logístico complejo, lleno de hojas de cálculo y datos dispersos que no generan valor.</p>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- "Para Quién es" Section -->
-        <section id="audience" class="py-12 md:py-16 bg-white">
-            <div class="container mx-auto px-6 max-w-5xl text-center">
-                <h2 class="text-3xl md:text-4xl font-display text-amber-900 mb-12">¿Para Quién es Rurulab?</h2>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-12">
-                    <div class="text-center">
-                        <div class="flex items-center justify-center h-20 w-20 rounded-full bg-amber-100 text-amber-800 mx-auto mb-4">
-                            <i class="fas fa-gem text-3xl"></i>
-                        </div>
-                        <h3 class="text-xl font-display font-bold mb-2">Marcas y Productores</h3>
-                        <p class="text-stone-600">Diferénciate en el mercado, justifica tu precio premium y construye una comunidad de clientes leales.</p>
-                    </div>
-                    <div class="text-center">
-                        <div class="flex items-center justify-center h-20 w-20 rounded-full bg-teal-100 text-teal-800 mx-auto mb-4">
-                            <i class="fas fa-handshake text-3xl"></i>
-                        </div>
-                        <h3 class="text-xl font-display font-bold mb-2">Cooperativas y Asociaciones</h3>
-                        <p class="text-stone-600">Unifica la información de tus miembros, garantiza la calidad y accede a nuevos mercados que exigen transparencia.</p>
-                    </div>
-                    <div class="text-center">
-                         <div class="flex items-center justify-center h-20 w-20 rounded-full bg-sky-100 text-sky-800 mx-auto mb-4">
-                            <i class="fas fa-leaf text-3xl"></i>
-                        </div>
-                        <h3 class="text-xl font-display font-bold mb-2">Para el Consumidor Final</h3>
-                        <p class="text-stone-600">Ofrece al consumidor la certeza y la historia que busca, convirtiendo una simple compra en una experiencia memorable.</p>
                     </div>
                 </div>
             </div>
@@ -228,6 +217,38 @@
                 </div>
             </div>
         </section>
+
+        <!-- "Para Quién es" Section -->
+        <section id="audience" class="py-12 md:py-16 bg-white">
+            <div class="container mx-auto px-6 max-w-5xl text-center">
+                <h2 class="text-3xl md:text-4xl font-display text-amber-900 mb-12">¿Para Quién es Rurulab?</h2>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-12">
+                    <div class="text-center">
+                        <div class="flex items-center justify-center h-20 w-20 rounded-full bg-amber-100 text-amber-800 mx-auto mb-4">
+                            <i class="fas fa-gem text-3xl"></i>
+                        </div>
+                        <h3 class="text-xl font-display font-bold mb-2">Marcas y Productores</h3>
+                        <p class="text-stone-600">Diferénciate en el mercado, justifica tu precio premium y construye una comunidad de clientes leales.</p>
+                    </div>
+                    <div class="text-center">
+                        <div class="flex items-center justify-center h-20 w-20 rounded-full bg-teal-100 text-teal-800 mx-auto mb-4">
+                            <i class="fas fa-handshake text-3xl"></i>
+                        </div>
+                        <h3 class="text-xl font-display font-bold mb-2">Cooperativas y Asociaciones</h3>
+                        <p class="text-stone-600">Unifica la información de tus miembros, garantiza la calidad y accede a nuevos mercados que exigen transparencia.</p>
+                    </div>
+                    <div class="text-center">
+                         <div class="flex items-center justify-center h-20 w-20 rounded-full bg-sky-100 text-sky-800 mx-auto mb-4">
+                            <i class="fas fa-leaf text-3xl"></i>
+                        </div>
+                        <h3 class="text-xl font-display font-bold mb-2">Para el Consumidor Final</h3>
+                        <p class="text-stone-600">Ofrece al consumidor la certeza y la historia que busca, convirtiendo una simple compra en una experiencia memorable.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        
 
         <!-- Sección de Funcionalidades 
         <section id="features" class="py-12 md:py-16">
@@ -334,117 +355,28 @@
 
         // CORRECCIÓN: Se usa 'DOMContentLoaded' para asegurar que el DOM está listo antes de ejecutar el script.
         document.addEventListener('DOMContentLoaded', () => {
-            gsap.registerPlugin(ScrollTrigger, MotionPathPlugin);
+            const menuButton = document.getElementById('menu-button');
+            const closeMenuButton = document.getElementById('close-menu-button');
+            const mobileMenu = document.getElementById('mobile-menu');
+            const menuLinks = mobileMenu.querySelectorAll('a');
 
-            const path = document.getElementById("trace-path");
-            const leaf = document.getElementById("leaf");
-            const qrContainer = document.getElementById("qr-container");
-            const footprint = document.getElementById("footprint");
-            
-            let mainTimeline;
-
-            function setupAnimation() {
-                if (!footprint || !qrContainer) {
-                    console.error("No se encontraron los elementos de la huella o del contenedor QR para la animación.");
-                    return;
-                }
-
-                // Limpia animaciones anteriores para evitar conflictos al redimensionar la ventana.
-                if (mainTimeline) {
-                    mainTimeline.kill();
-                    ScrollTrigger.getAll().forEach(trigger => trigger.kill());
-                }
-                
-                // 1. Calcular la posición INICIAL (centro de la huella).
-                const footprintRect = footprint.getBoundingClientRect();
-                const startX = footprintRect.left + footprintRect.width / 2;
-                const startY = footprintRect.top + footprintRect.height / 2;
-                
-                // 2. Calcular la posición FINAL.
-                // CORRECCIÓN: El punto final es el centro de la ventana, porque ahí es donde ScrollTrigger detendrá la animación.
-                const endX = window.innerWidth / 2;
-                const endY = window.innerHeight / 2;
-
-                // 3. Crear una ruta SVG dinámica (una curva suave).
-                // Se ajustan los puntos de control para una curva más natural.
-                const controlX = startX > endX ? startX * 0.8 : startX * 1.2;
-                const controlY = startY * 0.5 + endY * 0.5;
-                const pathData = `M ${startX} ${startY} Q ${controlX} ${controlY} ${endX} ${endY}`;
-                
-                // 4. Aplicar la ruta dinámica al elemento SVG.
-                path.setAttribute("d", pathData);
-                
-                // 5. Preparar la animación del trazado de la ruta.
-                const pathLength = path.getTotalLength();
-                gsap.set(path, {
-                    strokeDasharray: pathLength,
-                    strokeDashoffset: pathLength,
-                    opacity: 0.5
-                });
-                
-                // 6. Establecer el estado inicial de la hoja.
-                gsap.set(leaf, { 
-                    x: startX, 
-                    y: startY,
-                    opacity: 1, // La hacemos visible para el inicio de la animación
-                    scale: 0.5,
-                    transformOrigin: "center center"
-                });
-
-                // 7. Crear la línea de tiempo principal de GSAP.
-                mainTimeline = gsap.timeline({
-                    scrollTrigger: {
-                        trigger: "body",
-                        start: "top top",
-                        endTrigger: "#cta-final", // El trigger final es la sección del QR
-                        end: "center center", // La animación termina cuando el centro de la sección llega al centro de la pantalla
-                        scrub: 1.5, // Suaviza el efecto de scroll
-                    }
-                });
-
-                // Añadir las animaciones a la línea de tiempo.
-                mainTimeline
-                    .to(leaf, {
-                        scale: 1.2, // La hoja crece al inicio
-                        duration: 0.2
-                    }, 0)
-                    .to(path, {
-                        strokeDashoffset: 0, // Dibuja la ruta
-                        ease: "power1.inOut"
-                    }, 0)
-                    .to(leaf, {
-                        motionPath: {
-                            path: path,
-                            align: path,
-                            alignOrigin: [0.5, 0.5],
-                            autoRotate: true,
-                        },
-                        ease: "power1.inOut"
-                    }, 0)
-                    .to([leaf, path], {
-                        opacity: 0, // Oculta la hoja y la ruta al final
-                        duration: 0.1,
-                        ease: "power1.inOut"
-                    });
+            function openMenu() {
+                mobileMenu.classList.remove('-translate-x-full');
+                closeMenuButton.classList.remove('hidden');
+                menuButton.classList.add('hidden');
             }
 
-            // Función para evitar ejecuciones múltiples y seguidas al redimensionar.
-            function debounce(func, wait) {
-                let timeout;
-                return function executedFunction(...args) {
-                    const later = () => {
-                        clearTimeout(timeout);
-                        func(...args);
-                    };
-                    clearTimeout(timeout);
-                    timeout = setTimeout(later, wait);
-                };
-            };
-            
-            // Configuración inicial.
-            setupAnimation();
-            // Vuelve a calcular la ruta si la ventana cambia de tamaño.
-            window.addEventListener('resize', debounce(setupAnimation, 150));
+            function closeMenu() {
+                mobileMenu.classList.add('-translate-x-full');
+                closeMenuButton.classList.add('hidden');
+                menuButton.classList.remove('hidden');
+            }
+
+            menuButton.addEventListener('click', openMenu);
+            closeMenuButton.addEventListener('click', closeMenu);
+            menuLinks.forEach(link => {
+                link.addEventListener('click', closeMenu);
+            });
         });
     </script>
 </body>

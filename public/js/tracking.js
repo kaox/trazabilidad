@@ -78,7 +78,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <section class="my-16 text-center">
                 <!-- Columna Izquierda: Info Productor -->
                 <div class="flex justify-center">
-                    ${ownerInfo.company_logo ? `<img src="${ownerInfo.company_logo}" alt="Logo de ${ownerInfo.empresa}" class="h-10 object-contain">` : ''}
+                    ${ownerInfo.company_logo ? `<img src="${ownerInfo.company_logo}" alt="Logo de ${ownerInfo.empresa}" class="h-40 object-contain">` : ''}
                 </div>
                 <div>
                     <h2 class="text-3xl font-display text-amber-900 mb-4">${ownerInfo.empresa || 'RuruLab'}</h2>
