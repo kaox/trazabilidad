@@ -51,18 +51,6 @@
     </style>
 </head>
 <body class="text-stone-800 antialiased">
-    
-    <!-- Contenedor para los elementos de la animación (SVG y Hoja) -->
-    <div id="animation-container" class="fixed top-0 left-0 w-full h-full pointer-events-none z-10">
-        <svg id="trace-svg" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg" class="overflow-visible">
-            <!-- Esta ruta se generará dinámicamente con JavaScript -->
-            <path id="trace-path" fill="none" stroke="#22c55e" stroke-width="2.5" stroke-linecap="round" style="opacity: 0.5;"></path>
-        </svg>
-
-        <div id="leaf" class="absolute text-green-500 text-3xl shadow-lg" style="transform: translate(-50%, -50%); opacity: 0;">
-            <i class="fa-solid fa-leaf"></i>
-        </div>
-    </div>
 
     <!-- Contenido Principal -->
     <div class="relative z-20 bg-[#fdfdfb]">
@@ -339,7 +327,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/MotionPathPlugin.min.js"></script>
     
-    <!-- Script de Animación Corregido -->
     <script>
         // Genera el código QR cuando la ventana se carga.
         window.onload = function() {

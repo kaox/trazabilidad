@@ -48,14 +48,42 @@
                 stroke-dashoffset: 0;
             }
         }
+        #mobile-menu {
+            transition: transform 0.3s ease-in-out;
+        }
     </style>
 </head>
 <body class="antialiased">
     <header class="bg-white/80 backdrop-blur-sm sticky top-0 z-50 border-b border-stone-200">
         <div class="container mx-auto px-6 py-4 flex justify-between items-center">
-            <h1 class="text-2xl font-bold font-display text-amber-900"><a href="/"><i class="fa-solid fa-fingerprint mr-2"></i> Ruru Lab</a></h1>
+            <a href="/" class="text-2xl font-bold font-display text-amber-900"><i class="fa-solid fa-fingerprint mr-2"></i>Ruru Lab</a>
+
+            <nav class="hidden md:flex space-x-8 items-center">
+                <a href="/qr" class="hover:text-amber-800 transition">Descubrir Lote</a>
+                <a href="/pricing-public.html" class="hover:text-amber-800 transition">Planes</a>
+                <a href="/register.html" class="bg-amber-800 text-white font-bold py-2 px-5 rounded-lg hover:bg-amber-900 transition">Pruébalo gratis</a>
+            </nav>
+            <!-- Botón de Menú Móvil -->
+            <div class="md:hidden">
+                <button id="menu-button" class="focus:outline-none">
+                    <i class="fas fa-bars fa-lg"></i>
+                </button>
+                <button id="close-menu-button" class="hidden focus:outline-none">
+                    <i class="fas fa-times fa-2x"></i>
+                </button>
+            </div>
         </div>
     </header>
+
+    <!-- Menú Móvil -->
+    <div id="mobile-menu" class="fixed top-0 left-0 w-full h-full bg-stone-900/95 backdrop-blur-sm z-40 transform -translate-x-full md:hidden">
+        <nav class="flex flex-col items-center justify-center h-full -mt-16 space-y-8 text-xl">
+            <a href="/qr" class="text-white hover:text-amber-300 transition">Descubrir Lote</a>
+            <a href="/pricing-public.html" class="text-white hover:text-amber-300 transition">Planes</a>
+            <a href="/login.html" class="text-white hover:text-amber-300 transition">Iniciar Sesión</a>
+            <a href="/register.html" class="bg-amber-400 text-amber-900 font-bold py-3 px-8 rounded-lg">Pruébalo gratis</a>
+        </nav>
+    </div>
 
     <main>
         <section class="bg-stone-100 py-16 text-center">
@@ -109,6 +137,33 @@
     </div>
 
     <script src="/js/tracking.js"></script>
+    <script>
+        // CORRECCIÓN: Se usa 'DOMContentLoaded' para asegurar que el DOM está listo antes de ejecutar el script.
+        document.addEventListener('DOMContentLoaded', () => {
+            const menuButton = document.getElementById('menu-button');
+            const closeMenuButton = document.getElementById('close-menu-button');
+            const mobileMenu = document.getElementById('mobile-menu');
+            const menuLinks = mobileMenu.querySelectorAll('a');
+
+            function openMenu() {
+                mobileMenu.classList.remove('-translate-x-full');
+                closeMenuButton.classList.remove('hidden');
+                menuButton.classList.add('hidden');
+            }
+
+            function closeMenu() {
+                mobileMenu.classList.add('-translate-x-full');
+                closeMenuButton.classList.add('hidden');
+                menuButton.classList.remove('hidden');
+            }
+
+            menuButton.addEventListener('click', openMenu);
+            closeMenuButton.addEventListener('click', closeMenu);
+            menuLinks.forEach(link => {
+                link.addEventListener('click', closeMenu);
+            });
+        });
+    </script>
 </body>
 </html>
 
