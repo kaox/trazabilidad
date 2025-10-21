@@ -38,6 +38,32 @@
                     </button>
                 </div>
             </form>
+
+            <div class="relative my-6">
+                <div class="absolute inset-0 flex items-center">
+                    <div class="w-full border-t border-stone-300"></div>
+                </div>
+                <div class="relative flex justify-center text-sm">
+                    <span class="bg-white px-2 text-stone-500">O continúa con</span>
+                </div>
+            </div>
+
+            <div>
+                <div id="g_id_onload"
+                    data-client_id="1064687511845-vjel6sbn1cg4nbmgf2228s0u821gvua4.apps.googleusercontent.com"
+                    data-callback="handleCredentialResponse"
+                    data-context="signin">
+                </div>
+                <div class="g_id_signin"
+                    data-type="standard"
+                    data-shape="rectangular"
+                    data-theme="outline"
+                    data-text="signin_with"
+                    data-size="large"
+                    data-logo_alignment="left">
+                </div>
+            </div>
+
             <div class="text-center mt-6">
                 <p class="text-sm text-stone-600">
                     ¿No tienes una cuenta?
@@ -46,41 +72,8 @@
             </div>
         </div>
     </div>
-    <script>
-        document.getElementById('login-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const errorMessage = document.getElementById('error-message');
-            errorMessage.classList.add('hidden');
-            const data = Object.fromEntries(new FormData(e.target).entries());
-
-            try {
-                const response = await fetch('/api/login', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(data)
-                });
-
-                const result = await response.json();
-
-                if (!response.ok) {
-                    throw new Error(result.error || 'Credenciales inválidas.');
-                }
-                
-                // Guarda el token en localStorage como respaldo
-                if (result.token) {
-                    localStorage.setItem('token', result.token);
-                }
-                
-                const params = new URLSearchParams(window.location.search);
-                const redirectUrl = params.get('redirect') || '/app/trazabilidad';
-                window.location.href = redirectUrl;
-
-            } catch (error) {
-                errorMessage.textContent = error.message;
-                errorMessage.classList.remove('hidden');
-            }
-        });
-    </script>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <script src="/js/login.js"></script>
 </body>
 </html>
 

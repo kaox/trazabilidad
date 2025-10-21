@@ -98,6 +98,7 @@ const checkAdmin = (req, res, next) => {
 // --- Rutas Públicas (API) ---
 app.post('/api/register', db.registerUser);
 app.post('/api/login', db.loginUser);
+app.post('/api/login/google', db.handleGoogleLogin);
 app.post('/api/logout', db.logoutUser);
 app.get('/api/trazabilidad/:id', db.getTrazabilidad);
 app.get('/use-case.html', (req, res) => res.sendFile(path.join(__dirname, 'public', 'use-case.html')));

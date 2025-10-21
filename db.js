@@ -4,6 +4,12 @@ const jwt = require('jsonwebtoken');
 const fs = require('fs');
 const path = require('path');
 
+const { OAuth2Client } = require('google-auth-library');
+const crypto = require('crypto');
+
+const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
+const client = new OAuth2Client(GOOGLE_CLIENT_ID);
+
 const defaultProfilesData = JSON.parse(fs.readFileSync(path.join(__dirname, 'default-profiles.json'), 'utf8'));
 const maridajesVinoData = JSON.parse(fs.readFileSync(path.join(__dirname, 'public', 'data', 'maridajes_vino.json'), 'utf8'));
 const maridajesQuesoData = JSON.parse(fs.readFileSync(path.join(__dirname, 'public', 'data', 'maridajes_quesos.json'), 'utf8'));
@@ -101,6 +107,48 @@ const loginUser = async (req, res) => {
         }
     } catch (err) { console.error(err); res.status(500).json({ error: err.message }); }
 };
+
+const handleGoogleLogin = async (req, res) => {
+    const { token } = req.body;
+    try {
+        const ticket = await client.verifyIdToken({
+            idToken: token,
+            audience: GOOGLE_CLIENT_ID,
+        });
+        const payload = ticket.getPayload();
+        const { email, given_name, family_name } = payload;
+
+        let user = await get('SELECT * FROM users WHERE correo = ?', [email]);
+
+        if (!user) {
+            // Si el usuario no existe, lo creamos
+            const randomPassword = crypto.randomBytes(16).toString('hex');
+            const hashedPassword = await bcrypt.hash(randomPassword, 10);
+            const username = email.split('@')[0];
+
+            const trialEndDate = new Date();
+            trialEndDate.setDate(trialEndDate.getDate() + 30);
+
+            await run(
+                'INSERT INTO users (usuario, password, nombre, apellido, correo, subscription_tier, trial_ends_at, role) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+                [username, hashedPassword, given_name, family_name, email, 'artesano', trialEndDate.toISOString(), 'user']
+            );
+            user = await get('SELECT * FROM users WHERE correo = ?', [email]);
+        }
+
+        // Generar token de nuestra aplicación y enviar cookie
+        const appTokenPayload = { id: user.id, username: user.usuario, role: user.role };
+        const appToken = jwt.sign(appTokenPayload, process.env.JWT_SECRET || 'supersecretkey', { expiresIn: '1h' });
+        
+        res.cookie('token', appToken, { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', path: '/' });
+        res.status(200).json({ message: "Inicio de sesión con Google exitoso." });
+
+    } catch (error) {
+        console.error("Error en la autenticación con Google:", error);
+        res.status(400).json({ error: "Token de Google inválido." });
+    }
+};
+
 const logoutUser = (req, res) => {
     res.clearCookie('token', { path: '/' });
     res.status(200).json({ message: 'Cierre de sesión exitoso.' });
@@ -978,7 +1026,7 @@ const getDashboardData = async (req, res) => {
 };
 
 module.exports = {
-    registerUser, loginUser, logoutUser,
+    registerUser, loginUser, logoutUser, handleGoogleLogin,
     getFincas, createFinca, updateFinca, deleteFinca,
     getProcesadoras, createProcesadora, updateProcesadora, deleteProcesadora,
     getPerfiles, createPerfil, updatePerfil, deletePerfil,
