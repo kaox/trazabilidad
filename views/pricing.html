@@ -6,6 +6,7 @@
     <title>Planes y Precios - RuruLab</title>
     <script src="/auth.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://sdk.mercadopago.com/js/v2"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet">
@@ -44,20 +45,38 @@
                 <span class="absolute top-0 -translate-y-1/2 bg-amber-800 text-white text-xs font-bold px-3 py-1 rounded-full">RECOMENDADO</span>
                 <h2 class="text-2xl font-display text-amber-900">Profesional</h2>
                 <p class="text-stone-500 mb-6">La suite completa para innovar y crecer.</p>
-                <p class="text-5xl font-bold font-display mb-4">$15<span class="text-lg font-normal text-stone-500">/mes</span></p>
+                <p class="text-5xl font-bold font-display mb-4">$19<span class="text-lg font-normal text-stone-500">/mes</span></p>
                 <ul class="space-y-3 text-stone-600 mb-8 flex-grow">
-                    <li class="flex items-center gap-3"><svg class="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>Todo lo de Artesano, **sin límites**</li>
-                    <li class="flex items-center gap-3"><svg class="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>Dashboard Analítico</li>
-                    <li class="flex items-center gap-3"><svg class="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>Laboratorio I+D: Maridaje y Blends</li>
-                    <li class="flex items-center gap-3"><svg class="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>Laboratorio I+D: Formulador de Chocolate</li>
-                    <li class="flex items-center gap-3"><svg class="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>Múltiples Usuarios</li>
-                    <li class="flex items-center gap-3"><svg class="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>Soporte Prioritario</li>
+                    <li class="flex items-start gap-3"><i class="fas fa-star text-amber-500 mt-1"></i><span>Todo lo de Artesano, **sin límites**.</span></li>
+                    <li class="flex items-start gap-3"><i class="fas fa-check-circle text-green-500 mt-1"></i><span><strong>Dashboard Analítico</strong> con KPIs de rendimiento.</span></li>
+                    <li class="flex items-start gap-3"><i class="fas fa-check-circle text-green-500 mt-1"></i><span><strong>Laboratorio de Maridaje</strong> (IA).</span></li>
+                    <li class="flex items-start gap-3"><i class="fas fa-check-circle text-green-500 mt-1"></i><span><strong>Laboratorio de Blends</strong>.</span></li>
+                    <!--li class="flex items-start gap-3"><i class="fas fa-check-circle text-green-500 mt-1"></i><span><strong>Formulador de Chocolate</strong> predictivo.</span></li-->
+                    <!--li class="flex items-start gap-3"><i class="fas fa-check-circle text-green-500 mt-1"></i><span>Gestión de <strong>múltiples usuarios</strong>.</span></li-->
+                    <li class="flex items-start gap-3"><i class="fas fa-check-circle text-green-500 mt-1"></i><span><strong>Soporte Prioritario</strong>.</span></li>
                 </ul>
-                <button class="w-full bg-amber-800 hover:bg-amber-900 text-white font-bold py-3 px-6 rounded-xl">Iniciar Prueba Gratuita de 1 Mes</button>
+                <!-- Opciones de Pago -->
+                <div class="space-y-4">
+                    <div>
+                        <label class="font-semibold text-sm mb-2 block">Método de Pago</label>
+                        <div class="p-4 border-2 border-amber-800 rounded-lg bg-amber-50 flex items-center justify-between">
+                            <img src="https://raw.githubusercontent.com/mercadopago/assets/main/full-logo-mp/SVG/horizontal_-short-primary.svg" alt="Mercado Pago" class="h-6">
+                            <i class="fas fa-check-circle text-amber-800"></i>
+                        </div>
+                    </div>
+                    
+                    <button id="upgrade-btn" class="w-full text-center bg-amber-800 hover:bg-amber-900 text-white font-bold py-3 px-6 rounded-xl transition-all flex items-center justify-center">
+                        <span id="upgrade-btn-text">Actualizar a Profesional</span>
+                        <svg id="upgrade-loader" class="animate-spin -ml-1 mr-3 h-5 w-5 text-white hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                    </button>
+                </div>
             </div>
         </div>
     </div>
-    
+    <script src="/js/pricing-app.js"></script>
     <script src="/js/nav-loader.js" defer></script>
 </body>
 </html>

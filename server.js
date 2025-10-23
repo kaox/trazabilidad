@@ -144,6 +144,11 @@ app.get('/app/recetas-chocolate', authenticatePage, (req, res) => res.sendFile(p
 app.get('/app/pricing', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'pricing.html'))); // Nueva ruta
 app.get('/app/costos', authenticatePage, checkSubscription('profesional'), (req, res) => res.sendFile(path.join(__dirname, 'views', 'costos.html'))); // Nueva ruta
 app.get('/app/admin-dashboard', authenticatePage, checkAdmin, (req, res) => res.sendFile(path.join(__dirname, 'views', 'admin-dashboard.html')));
+app.get('/app/costos', authenticatePage, checkSubscription('profesional'), (req, res) => res.sendFile(path.join(__dirname, 'views', 'costos.html')));
+
+// Nuevas rutas para el flujo de pago
+app.get('/app/payment-success', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'payment-success.html')));
+app.get('/app/payment-failure', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'payment-failure.html')));
 
 
 // --- Rutas Protegidas de la API ---
@@ -219,6 +224,10 @@ app.get('/api/admin/dashboard-data', authenticateApi, checkAdmin, db.getAdminDas
 // Nuevas rutas para el Módulo de Costos
 app.get('/api/costs/:lote_id', authenticateApi, checkSubscription('profesional'), db.getLoteCosts);
 app.post('/api/costs/:lote_id', authenticateApi, checkSubscription('profesional'), db.saveLoteCosts);
+
+// Nuevas rutas para Pagos con Mercado Pago
+app.post('/api/payments/create-preference', authenticateApi, db.createPaymentPreference);
+app.post('/api/payments/webhook', express.raw({type: 'application/json'}), db.handlePaymentWebhook);
 
 // Nueva ruta para consolidar los datos del dashboard
 app.get('/api/dashboard/data', authenticateApi, checkSubscription('profesional'), db.getDashboardData);

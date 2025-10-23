@@ -3,6 +3,15 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const fs = require('fs');
 const path = require('path');
+// Importar las clases necesarias del SDK v3 de Mercado Pago
+const { MercadoPagoConfig, Preference, Payment } = require('mercadopago');
+
+// Configurar el cliente de Mercado Pago
+// Asegúrate de que MP_ACCESS_TOKEN esté en tu .env o en las variables de Vercel
+const mpClient = new MercadoPagoConfig({
+    access_token: process.env.MP_ACCESS_TOKEN,
+    options: { timeout: 5000 }
+});
 
 const { OAuth2Client } = require('google-auth-library');
 const crypto = require('crypto');
@@ -985,7 +994,6 @@ const getDashboardData = async (req, res) => {
             data: safeJSONParse(lote.data),
             children: []
         }));
-        console.log(lotesProcesados);
         const loteMap = {};
         lotesProcesados.forEach(lote => { loteMap[lote.id] = lote; });
         const batchTrees = [];
@@ -1025,6 +1033,81 @@ const getDashboardData = async (req, res) => {
     }
 };
 
+const createPaymentPreference = async (req, res, client) => {
+    const userId = req.user.id;
+    const host = req.get('host'); 
+    const protocol = req.protocol; 
+
+    const preferenceData = {
+        items: [
+            {
+                title: 'Suscripción Rurulab - Plan Profesional',
+                description: 'Acceso completo a todos los módulos de I+D y trazabilidad ilimitada.',
+                quantity: 1,
+                unit_price: 19.00,
+                currency_id: 'USD' // Asegúrate de que tu cuenta de MP acepte USD
+            }
+        ],
+        back_urls: {
+            success: `${protocol}://${host}/app/payment-success`,
+            failure: `${protocol}://${host}/app/payment-failure`,
+            pending: `${protocol}://${host}/app/payment-failure`
+        },
+        auto_return: 'approved',
+        notification_url: `${protocol}://${host}/api/payments/webhook?userId=${userId}`,
+        external_reference: userId.toString()
+    };
+
+    try {
+        const preference = new Preference(mpClient);
+        const response = await preference.create({ body: preferenceData });
+        
+        res.json({ 
+            id: response.id, 
+            init_point: response.init_point 
+        });
+    } catch (error) {
+        console.error("Error al crear preferencia de Mercado Pago:", error);
+        res.status(500).json({ error: 'No se pudo generar el enlace de pago.' });
+    }
+};
+
+const handlePaymentWebhook = async (req, res) => {
+    // Usar req.body (que es raw) para seguridad, aunque query también funciona
+    const { query } = req;
+    const body = JSON.parse(req.body.toString()); // Parsear el raw body
+
+    const topic = query.type || body.type;
+    
+    if (topic === 'payment') {
+        const paymentId = query['data.id'] || body.data?.id;
+        if (!paymentId) return res.sendStatus(400);
+
+        try {
+            const payment = new Payment(mpClient);
+            const paymentInfo = await payment.get({ id: Number(paymentId) });
+            
+            if (paymentInfo && paymentInfo.status === 'approved') {
+                const userId = paymentInfo.external_reference;
+                if (userId) {
+                    // Pago aprobado, actualizar al usuario a "profesional"
+                    await run(
+                        "UPDATE users SET subscription_tier = 'profesional', trial_ends_at = NULL WHERE id = ?",
+                        [userId]
+                    );
+                    console.log(`Usuario ${userId} actualizado a Profesional.`);
+                }
+            }
+            res.sendStatus(200);
+        } catch (error) {
+            console.error('Error en webhook de Mercado Pago:', error);
+            res.sendStatus(500);
+        }
+    } else {
+        res.sendStatus(200);
+    }
+};
+
 module.exports = {
     registerUser, loginUser, logoutUser, handleGoogleLogin,
     getFincas, createFinca, updateFinca, deleteFinca,
@@ -1042,6 +1125,6 @@ module.exports = {
     getUserSubscriptionStatus,
     getAdminDashboardData,
     getLoteCosts, saveLoteCosts,
-    getDashboardData
+    getDashboardData,
+    createPaymentPreference, handlePaymentWebhook
 };
-
