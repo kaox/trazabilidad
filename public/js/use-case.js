@@ -8,6 +8,7 @@ document.addEventListener('DOMContentLoaded', () => {
             scanText: 'Encuentre el recorrido de su cacao',
             securityImage: 'images/cacao.jpeg',
             qrImage: 'images/qr_cacao.png',
+            qrLink: 'CHO-J678K94Z',
             process: [
                 { icon: 'fa-leaf', title: 'Cosecha Selectiva', description: 'Registro del origen, la variedad y el punto exacto de maduración de cada mazorca.', fields: ['Finca de Origen', 'Variedad de Cacao', 'Fecha de Cosecha', 'Peso de Mazorcas (kg)'] },
                 { icon: 'fa-hourglass-half', title: 'Fermentación Controlada', description: 'Monitorización de los días, método y temperatura para desarrollar perfiles de sabor complejos y consistentes.', fields: ['Método de Fermentación', 'Duración (días)', 'Frecuencia de Volteos', 'Temperatura Máxima (°C)'] },
@@ -56,6 +57,8 @@ document.addEventListener('DOMContentLoaded', () => {
             description: 'Desde la colmena hasta el frasco. Demuestra la pureza, el origen floral y las prácticas de apicultura sostenible detrás de tu miel.',
             scanText: 'Encuentre el recorrido de su miel',
             securityImage: 'images/miel.jpg',
+            qrImage: 'images/qr_miel.png',
+            qrLink: 'FIL-7VIEERIB',
             process: [
                 { icon: 'fa-box-archive', title: 'Cosecha en Apiario', description: 'Registro de la recolección de las alzas, certificando la ubicación y la salud de las colmenas.', fields: ['Ubicación del Apiario', 'Fecha de Cosecha', 'Nº de Alzas', 'Flora Predominante'] },
                 { icon: 'fa-cogs', title: 'Desoperculado y Extracción', description: 'Control del método de extracción para garantizar la pureza y la conservación de las propiedades de la miel.', fields: ['Método de Extracción', 'Fecha', 'Peso de Panales (kg)', 'Peso Miel Cruda (kg)'] },
@@ -147,7 +150,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <h2 class="text-3xl font-display text-amber-900 mb-4">${data.scanText}</h2>
                     <p class="text-stone-600 max-w-2xl mx-auto mb-6">Un simple escaneo del código QR en el empaque abre una puerta a una experiencia interactiva, conectando al consumidor directamente con la finca, el productor y cada etapa del proceso.</p>
                     <div class="flex justify-center">
-                        <a href="/CHO-J678K94Z" target="_blank"><img src="${data.qrImage}" alt="qr code" ></a>
+                        <a href="/${data.qrLink}" target="_blank"><img src="${data.qrImage}" alt="qr code" ></a>
                     </div>
                 </section>
 
