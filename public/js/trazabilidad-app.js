@@ -450,7 +450,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         
         if (button.classList.contains('qr-btn')) {
-            const url = `${window.location.origin}/tracking/${button.dataset.id}`; // Apuntar a la nueva página
+            const url = `${window.location.origin}/${button.dataset.id}`; // Apuntar a la nueva página
             const qr = qrcode(0, 'L');
             qr.addData(url);
             qr.make();
