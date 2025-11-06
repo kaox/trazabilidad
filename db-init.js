@@ -106,6 +106,7 @@ async function initializeDatabase() {
                     plantilla_id INTEGER NOT NULL,
                     nombre_etapa TEXT NOT NULL,
                     orden INTEGER NOT NULL,
+                    descripcion TEXT,
                     campos_json TEXT NOT NULL,
                     FOREIGN KEY (plantilla_id) REFERENCES plantillas_proceso(id) ON DELETE CASCADE
                 )`);

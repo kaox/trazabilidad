@@ -6,6 +6,7 @@
       "etapas": [
         {
           "nombre_etapa": "Cosecha",
+          "descripcion": "Todo nace en el campo. Nuestros aliados agricultores seleccionan a mano solo las vainas en su punto exacto de madurez. Cada corte es un gesto de respeto al árbol, un arte que protege la cosecha del mañana.",
           "orden": 1,
           "campos_json": {
             "entradas": [{"label": "Peso Mazorcas (kg)", "name": "pesoMazorcas", "type": "number"}],
@@ -20,6 +21,7 @@
         },
         {
           "nombre_etapa": "Fermentación",
+          "descripcion": "Aquí ocurre la magia. Las habas frescas reposan cubiertas durante días. Este paso crucial es pura alquimia: transforma los azúcares y despierta las complejas notas de sabor únicas de este cacao.",
           "orden": 2,
           "campos_json": {
             "entradas": [{"label": "Peso Granos en Baba (kg)", "name": "pesoEntrada", "type": "number"}],
@@ -36,6 +38,7 @@
         },
         {
           "nombre_etapa": "Secado",
+          "descripcion": "Bajo el sol tropical, las habas se extienden para secarse lentamente. Las removemos con paciencia, dejando que el calor selle los sabores desarrollados en la fermentación y preserve la calidad de cada grano.",
           "orden": 3,
           "campos_json": {
             "entradas": [{"label": "Peso Granos Fermentados (kg)", "name": "pesoEntrada", "type": "number"}],
@@ -51,6 +54,7 @@
         },
         {
           "nombre_etapa": "Tostado",
+          "descripcion": "El fuego es nuestro pincel: un tostado preciso despierta el alma del cacao. Aquí se revela el aroma profundo y se define la personalidad única de tu chocolate.",
           "orden": 4,
           "campos_json": {
             "entradas": [{"label": "Peso Cacao Seco (kg)", "name": "pesoEntrada", "type": "number"}],
@@ -68,6 +72,7 @@
         },
         {
           "nombre_etapa": "Descascarillado & Molienda",
+          "descripcion": "Partimos las habas tostadas para liberar su corazón: los nibs. Al molerlos, la fricción los transforma mágicamente en el alma líquida del cacao: un intenso licor que es la base de todo.",
           "orden": 5,
           "campos_json": {
             "entradas": [{"label": "Peso Entrada (kg)", "name": "pesoEntrada", "type": "number"}],
@@ -80,6 +85,7 @@
         },
         {
           "nombre_etapa": "Chocolate",
+          "descripcion": "El licor se transforma. Añadimos ingredientes selectos y refinamos la mezcla pacientemente (conchado) hasta alcanzar la textura sedosa y aterciopelada que se derrite en tu boca.",
           "orden": 6,
           "campos_json": {
             "entradas": [{"label": "Peso Entrada (kg)", "name": "pesoEntrada", "type": "number"}],
@@ -98,6 +104,7 @@
         },
         {
           "nombre_etapa": "Envasado",
+          "descripcion": "Moldeamos y enfriamos el chocolate, preservando su brillo. Envolvemos cada tableta con cuidado para proteger su aroma y frescura. Este empaque es el guardián de la historia que acabas de leer, listo para llegar a tus manos.",
           "orden": 7,
           "campos_json": {
             "entradas": [{"label": "Número de Unidades", "name": "pesoEntrada", "type": "number"}],

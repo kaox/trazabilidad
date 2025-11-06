@@ -157,7 +157,7 @@ document.addEventListener('DOMContentLoaded', () => {
             <section class="my-16 traceability-timeline">
                 <h2 class="text-3xl md:text-4xl font-display text-amber-900 mb-12 text-center">Línea de Tiempo del Proceso</h2>
                 <div class="relative timeline max-w-3xl mx-auto">
-                    ${h.stages.map(stage => createTimelineItem(stage.nombre_etapa, stage.data)).join('')}
+                    ${h.stages.map(stage => createTimelineItem(stage)).join('')}
                 </div>
             </section>
         `;
@@ -222,7 +222,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>`;
     }
 
-    function createTimelineItem(stageName, data) {
+    function createTimelineItem(stage) {
+        const stageName = stage.nombre_etapa;
+        const data = stage.data;
+        
+        console.log(stage);
         const details = getChapterDetails(stageName, data);
         
         const getFieldValue = (field) => (typeof field === 'object' && field !== null) ? field.value : field;
@@ -246,6 +250,7 @@ document.addEventListener('DOMContentLoaded', () => {
                          <i class="fas ${details.icon} text-amber-800 text-2xl w-8 text-center"></i>
                          <h3 class="font-bold text-amber-900 font-display text-xl">${details.title}</h3>
                     </div>
+                    <p class="text-sm text-stone-500 mb-3 italic">${stage.descripcion || ''}</p>
                     ${imageUrl && isImageVisible ? `<img src="${imageUrl}" class="w-full h-40 object-cover rounded-md my-4">` : ''}
                     <div class="text-sm text-stone-500 mb-3 flex items-center gap-4">
                         <span><i class="fas fa-calendar-alt mr-1"></i> ${details.date}</span>

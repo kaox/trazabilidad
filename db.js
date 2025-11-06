@@ -358,7 +358,7 @@ const getTemplates = async (req, res) => {
                 const templateResult = await run('INSERT INTO plantillas_proceso (user_id, nombre_producto, descripcion) VALUES (?, ?, ?)', [userId, template.nombre_producto, template.descripcion]);
                 const templateId = templateResult.lastID;
                 for (const stage of template.etapas) {
-                    await run('INSERT INTO etapas_plantilla (plantilla_id, nombre_etapa, orden, campos_json) VALUES (?, ?, ?, ?)', [templateId, stage.nombre_etapa, stage.orden, JSON.stringify(stage.campos_json)]);
+                    await run('INSERT INTO etapas_plantilla (plantilla_id, nombre_etapa, descripcion, orden, campos_json) VALUES (?, ?, ?, ?, ?)', [templateId, stage.nombre_etapa, stage.descripcion, stage.orden, JSON.stringify(stage.campos_json)]);
                 }
             }
             templates = await all('SELECT * FROM plantillas_proceso WHERE user_id = ? ORDER BY nombre_producto', [userId]);
@@ -412,11 +412,14 @@ const getStagesForTemplate = async (req, res) => {
 };
 const createStage = async (req, res) => {
     const { templateId } = req.params;
-    const { nombre_etapa, campos_json } = req.body;
+    const { nombre_etapa,  descripcion, campos_json } = req.body;
+    console.log(nombre_etapa);
+    console.log(descripcion);
+    console.log(campos_json);
     try {
         const lastOrderResult = await get('SELECT MAX(orden) as max_orden FROM etapas_plantilla WHERE plantilla_id = ?', [templateId]);
         const newOrder = (lastOrderResult.max_orden || 0) + 1;
-        await run('INSERT INTO etapas_plantilla (plantilla_id, nombre_etapa, orden, campos_json) VALUES (?, ?, ?, ?)', [templateId, nombre_etapa, newOrder, JSON.stringify(campos_json)]);
+        await run('INSERT INTO etapas_plantilla (plantilla_id, nombre_etapa, orden, descripcion, campos_json) VALUES (?, ?, ?, ?, ?)', [templateId, nombre_etapa, newOrder, descripcion, JSON.stringify(campos_json)]);
         res.status(201).json({ message: "Etapa creada" });
     } catch (err) { res.status(500).json({ error: err.message }); }
 };
@@ -586,7 +589,7 @@ const getTrazabilidad = async (req, res) => {
         const ownerId = loteRaiz.user_id;
         const plantillaId = loteRaiz.plantilla_id;
 
-        const allStages = await all('SELECT id, nombre_etapa, orden FROM etapas_plantilla WHERE plantilla_id = ? ORDER BY orden', [plantillaId]);
+        const allStages = await all('SELECT id, nombre_etapa, descripcion, orden FROM etapas_plantilla WHERE plantilla_id = ? ORDER BY orden', [plantillaId]);
         const ownerInfo = await get('SELECT empresa, company_logo, subscription_tier, trial_ends_at FROM users WHERE id = ?', [ownerId]);
 
         const history = {
@@ -607,8 +610,10 @@ const getTrazabilidad = async (req, res) => {
         sortedRows.forEach(row => {
             const stageInfo = allStages.find(s => s.id === row.etapa_id);
             if(stageInfo) {
+                console.log(stageInfo);
                 history.stages.push({
                     nombre_etapa: stageInfo.nombre_etapa,
+                    descripcion: stageInfo.descripcion,
                     data: safeJSONParse(row.data)
                 });
             }

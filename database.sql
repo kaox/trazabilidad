@@ -52,6 +52,7 @@ CREATE TABLE IF NOT EXISTS etapas_plantilla (
     plantilla_id INTEGER NOT NULL REFERENCES plantillas_proceso(id) ON DELETE CASCADE,
     nombre_etapa TEXT NOT NULL,
     orden INTEGER NOT NULL,
+    descripcion TEXT,
     campos_json JSONB NOT NULL
 );
 
