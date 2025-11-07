@@ -12,6 +12,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const locationModal = document.getElementById('locationModal');
     const locationModalContent = document.getElementById('locationModalContent');
     const closeLocationModalBtn = document.querySelector('.close-location-modal');
+    const highlightsContainer = document.getElementById('highlights-container');
 
     // --- Estado Global ---
     let globalHistory = {};
@@ -34,6 +35,7 @@ document.addEventListener('DOMContentLoaded', () => {
             hideMessageModal();
         } catch (error) {
             storyContainer.innerHTML = '';
+            highlightsContainer.innerHTML = '';
             messageText.textContent = 'Lote no encontrado. Verifica el código e inténtalo de nuevo.';
         }
     }
@@ -52,8 +54,10 @@ document.addEventListener('DOMContentLoaded', () => {
         //renderLogoCompany(h.ownerInfo);
 
         const routePoints = getRoutePoints(h);
+        const highlights = calculateHighlights(h);
 
         // Post-renderizado de componentes visuales y eventos
+        renderHighlightsSection(highlights);
         setupTabs(routePoints.length >= 1);
         setupGallery();
         setupIntersectionObserver();
@@ -64,6 +68,55 @@ document.addEventListener('DOMContentLoaded', () => {
             renderFlavorProfile(h.perfilSensorialData);
             initializePerfilChart('sensory-profile-chart', h.perfilSensorialData);
         }
+    }
+
+    function calculateHighlights(h) {
+        const getFieldValue = (field) => (typeof field === 'object' && field !== null) ? field.value : field;
+        const locations = new Set();
+        let totalWorkers = 0;
+
+        // 1. Recolectar todas las ubicaciones únicas del proceso
+        if (h.fincaData) {
+            locations.add(h.fincaData.nombre_finca);
+        }
+        h.stages.forEach(stage => {
+            const locationName = getFieldValue(stage.data.procesadora) || getFieldValue(stage.data.finca);
+            if (locationName) {
+                locations.add(locationName.replace('Finca: ', '').replace('Procesadora: ', ''));
+            }
+        });
+        
+
+        // 2. Sumar trabajadores de cada ubicación única
+        locations.forEach(name => {
+            if (h.fincaData && h.fincaData.nombre_finca === name) {
+                totalWorkers += (h.fincaData.numero_trabajadores || 0);
+            } else if (h.procesadorasData) {
+                const p = h.procesadorasData.find(proc => proc.nombre_comercial === name || proc.razon_social === name);
+                if (p) totalWorkers += (p.numero_trabajadores || 0);
+            }
+        });
+
+        return { totalWorkers };
+    }
+
+    function renderHighlightsSection(highlights) {
+        if (highlights.totalWorkers <= 0) {
+            highlightsContainer.innerHTML = '';
+            return;
+        }
+
+        highlightsContainer.innerHTML = `
+            <div class="container mx-auto px-4 md:px-8 -mt-8 mb-16 relative z-10">
+                <div class="max-w-xs mx-auto">
+                    <div class="bg-white p-6 rounded-lg shadow-md text-center">
+                        <i class="fas fa-users text-3xl text-amber-800 mb-2"></i>
+                        <p class="text-4xl font-bold font-display text-amber-900">${highlights.totalWorkers}</p>
+                        <p class="text-sm text-stone-500">Personas Beneficiadas en el Proceso</p>
+                    </div>
+                </div>
+            </div>
+        `;
     }
 
     function renderLogoCompany(ownerInfo) {
@@ -226,7 +279,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const stageName = stage.nombre_etapa;
         const data = stage.data;
         
-        console.log(stage);
         const details = getChapterDetails(stageName, data);
         
         const getFieldValue = (field) => (typeof field === 'object' && field !== null) ? field.value : field;

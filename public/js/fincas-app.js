@@ -178,6 +178,7 @@ document.addEventListener('DOMContentLoaded', () => {
             form.altura.value = finca.altura || '';
             form.superficie.value = finca.superficie || '';
             form.telefono.value = finca.telefono || '';
+            form.numero_trabajadores.value = finca.numero_trabajadores || '';
             form.historia.value = finca.historia || '';
             form.coordenadas.value = JSON.stringify(finca.coordenadas);
             editIdInput.value = finca.id;

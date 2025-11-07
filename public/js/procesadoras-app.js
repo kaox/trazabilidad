@@ -228,6 +228,7 @@ document.addEventListener('DOMContentLoaded', () => {
             form.ciudad.value = procesadora.ciudad || '';
             form.direccion.value = procesadora.direccion || '';
             form.telefono.value = procesadora.telefono || '';
+            form.numero_trabajadores.value = procesadora.numero_trabajadores || '';
             editIdInput.value = procesadora.id;
 
             currentImages = procesadora.imagenes_json || [];
