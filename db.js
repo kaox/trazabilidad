@@ -1113,6 +1113,64 @@ const handlePaymentWebhook = async (req, res) => {
     }
 };
 
+const getReviews = async (req, res) => {
+    const { lote_id } = req.params;
+    try {
+        const reviews = await all(
+            'SELECT * FROM product_reviews WHERE lote_id = ? ORDER BY created_at DESC',
+            [lote_id]
+        );
+        res.status(200).json(reviews);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};
+
+const submitReview = async (req, res) => {
+    const { idToken, lote_id, rating, comment } = req.body;
+
+    if (!idToken || !lote_id || !rating) {
+        return res.status(400).json({ error: 'Faltan datos requeridos (token, lote, rating).' });
+    }
+
+    let user_email;
+    try {
+        // 1. Verificar el token de Google para obtener el email
+        const ticket = await client.verifyIdToken({
+            idToken: idToken,
+            audience: GOOGLE_CLIENT_ID,
+        });
+        const payload = ticket.getPayload();
+        user_email = payload.email;
+
+        if (!user_email) {
+            throw new Error('No se pudo obtener el email de Google.');
+        }
+
+    } catch (error) {
+        console.error("Error en la verificación del token de Google:", error);
+        return res.status(401).json({ error: "Token de Google inválido o caducado." });
+    }
+
+    try {
+        // 2. Insertar la reseña en la base de datos
+        await run(
+            'INSERT INTO product_reviews (lote_id, user_email, rating, comment) VALUES (?, ?, ?, ?)',
+            [lote_id, user_email, rating, comment]
+        );
+        res.status(201).json({ message: 'Reseña guardada con éxito.' });
+    
+    } catch (err) {
+        if (err.message.includes('UNIQUE') || (err.code && err.code.includes('23505'))) {
+            // Error de constraint único (ya reseñó este lote)
+            res.status(409).json({ error: 'Ya has enviado una reseña para este producto.' });
+        } else {
+            console.error("Error al guardar la reseña:", err);
+            res.status(500).json({ error: 'Error interno al guardar la reseña.' });
+        }
+    }
+};
+
 module.exports = {
     registerUser, loginUser, logoutUser, handleGoogleLogin,
     getFincas, createFinca, updateFinca, deleteFinca,
@@ -1131,5 +1189,6 @@ module.exports = {
     getAdminDashboardData,
     getLoteCosts, saveLoteCosts,
     getDashboardData,
-    createPaymentPreference, handlePaymentWebhook
+    createPaymentPreference, handlePaymentWebhook,
+    getReviews, submitReview
 };

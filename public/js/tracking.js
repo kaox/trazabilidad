@@ -13,10 +13,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const locationModalContent = document.getElementById('locationModalContent');
     const closeLocationModalBtn = document.querySelector('.close-location-modal');
     const highlightsContainer = document.getElementById('highlights-container');
+    const reviewsContainer = document.getElementById('reviews-container');
 
     // --- Estado Global ---
     let globalHistory = {};
     let chartInstances = {};
+    let currentRating = 0;
 
     // --- Lógica Principal ---
 
@@ -30,17 +32,24 @@ document.addEventListener('DOMContentLoaded', () => {
         showMessageModal(`Buscando información para el lote: ${loteId}...`);
 
         try {
-            globalHistory = await fetch(`/api/trazabilidad/${loteId}`).then(res => res.ok ? res.json() : Promise.reject(res));
-            renderStory(globalHistory);
+            // Buscar trazabilidad y reseñas en paralelo
+            const [history, reviews] = await Promise.all([
+                fetch(`/api/trazabilidad/${loteId}`).then(res => res.ok ? res.json() : Promise.reject(res)),
+                fetch(`/api/reviews/${loteId}`).then(res => res.ok ? res.json() : Promise.reject(res))
+            ]);
+
+            globalHistory = history;
+            renderStory(history, reviews); // Pasar reseñas al renderizador
             hideMessageModal();
         } catch (error) {
             storyContainer.innerHTML = '';
             highlightsContainer.innerHTML = '';
+            reviewsContainer.innerHTML = '';
             messageText.textContent = 'Lote no encontrado. Verifica el código e inténtalo de nuevo.';
         }
     }
 
-    function renderStory(h) {
+    function renderStory(h, reviews) {
 
         let finalHTML = renderLogoCompany(h.ownerInfo);
         finalHTML += createMainContent(h);
@@ -58,6 +67,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Post-renderizado de componentes visuales y eventos
         renderHighlightsSection(highlights);
+        renderReviewsSection(reviews);
+
         setupTabs(routePoints.length >= 1);
         setupGallery();
         setupIntersectionObserver();
@@ -804,6 +815,167 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         
         move();
+    }
+
+    function renderReviewsSection(reviews) {
+        const totalReviews = reviews.length;
+        const avgRating = totalReviews > 0 ? (reviews.reduce((sum, r) => sum + r.rating, 0) / totalReviews) : 0;
+        
+        let existingReviewsHtml = '';
+        if (totalReviews > 0) {
+            existingReviewsHtml = reviews.map(review => {
+                const stars = Array(5).fill(0).map((_, i) => 
+                    i < review.rating ? '<i class="fas fa-star text-amber-500"></i>' : '<i class="fas fa-star text-stone-300"></i>'
+                ).join('');
+                const reviewerName = review.user_email.split('@')[0];
+                return `
+                    <div class="bg-white p-4 rounded-lg shadow-sm border">
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="font-semibold text-sm">${reviewerName}</span>
+                            <span class="text-xs text-stone-500">${new Date(review.created_at).toLocaleDateString()}</span>
+                        </div>
+                        <div class="flex gap-1">${stars}</div>
+                        ${review.comment ? `<p class="text-stone-600 mt-2 text-sm italic">"${review.comment}"</p>` : ''}
+                    </div>
+                `;
+            }).join('');
+        } else {
+            existingReviewsHtml = '<p class="text-sm text-stone-500 text-center">Aún no hay reseñas para este producto. ¡Sé el primero!</p>';
+        }
+
+        reviewsContainer.innerHTML = `
+            <section class="max-w-3xl mx-auto my-16">
+                <h2 class="text-3xl md:text-4xl font-display text-amber-900 mb-8 text-center">Reseñas del Producto</h2>
+                
+                <div class="bg-white p-6 rounded-lg shadow-md mb-8">
+                    <h3 class="text-xl font-bold font-display text-amber-900">Deja tu Opinión</h3>
+                    <p class="text-stone-600 text-sm mb-4">Valora este producto para ayudar a otros consumidores y al productor.</p>
+                    
+                    <div id="review-form-container">
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium text-stone-700 mb-2">Tu Valoración (1-5 estrellas)</label>
+                            <div id="star-rating" class="star-rating text-3xl text-stone-300">
+                                <i class="fas fa-star" data-value="1"></i>
+                                <i class="fas fa-star" data-value="2"></i>
+                                <i class="fas fa-star" data-value="3"></i>
+                                <i class="fas fa-star" data-value="4"></i>
+                                <i class="fas fa-star" data-value="5"></i>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label for="review-comment" class="block text-sm font-medium text-stone-700 mb-2">Comentario (Opcional)</label>
+                            <textarea id="review-comment" rows="3" class="w-full p-3 border border-stone-300 rounded-xl" placeholder="¿Qué te pareció este producto?"></textarea>
+                        </div>
+
+                        <div id="g_id_onload"
+                            data-client_id="REEMPLAZA_CON_TU_GOOGLE_CLIENT_ID.apps.googleusercontent.com"
+                            data-callback="handleCredentialResponse"
+                            data-context="use">
+                        </div>
+                        <div class="g_id_signin"
+                            data-type="standard"
+                            data-shape="rectangular"
+                            data-theme="outline"
+                            data-text="continue_with"
+                            data-size="large"
+                            data-logo_alignment="left">
+                        </div>
+                        <p id="review-error" class="text-red-600 text-sm mt-2 hidden"></p>
+                    </div>
+                    <div id="review-thanks" class="text-center p-8 hidden">
+                        <h3 class="text-2xl font-display text-green-700">¡Gracias por tu reseña!</h3>
+                        <p class="text-stone-600">Tu opinión ha sido registrada.</p>
+                    </div>
+                </div>
+
+                <div class="space-y-4">
+                    <h3 class="text-xl font-bold font-display text-amber-900">Opiniones de la Comunidad (${totalReviews})</h3>
+                    ${existingReviewsHtml}
+                </div>
+            </section>
+        `;
+
+        setupStarRating();
+    }
+
+    function setupStarRating() {
+        const stars = document.querySelectorAll('#star-rating i');
+        const ratingContainer = document.getElementById('star-rating');
+        
+        if (!ratingContainer) return;
+
+        const setRating = (value) => {
+            currentRating = value;
+            stars.forEach(star => {
+                if (star.dataset.value <= value) {
+                    star.classList.add('selected');
+                } else {
+                    star.classList.remove('selected');
+                }
+            });
+        };
+
+        ratingContainer.addEventListener('click', e => {
+            if (e.target.classList.contains('fa-star')) {
+                setRating(parseInt(e.target.dataset.value));
+            }
+        });
+
+        ratingContainer.addEventListener('mouseover', e => {
+            if (e.target.classList.contains('fa-star')) {
+                const hoverValue = parseInt(e.target.dataset.value);
+                stars.forEach(star => {
+                    star.classList.toggle('selected', star.dataset.value <= hoverValue);
+                });
+            }
+        });
+
+        ratingContainer.addEventListener('mouseout', () => {
+            setRating(currentRating); // Volver a la selección actual
+        });
+    }
+
+    // --- CALLBACK GLOBAL PARA GOOGLE SIGN-IN ---
+    window.handleCredentialResponse = async function(response) {
+        const loteId = globalHistory.stages[globalHistory.stages.length - 1].data.id.value;
+        const comment = document.getElementById('review-comment').value;
+        const errorEl = document.getElementById('review-error');
+
+        if (currentRating === 0) {
+            errorEl.textContent = 'Por favor, selecciona de 1 a 5 estrellas.';
+            errorEl.classList.remove('hidden');
+            return;
+        }
+        errorEl.classList.add('hidden');
+
+        try {
+            const res = await fetch('/api/reviews/submit', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    idToken: response.credential,
+                    lote_id: loteId,
+                    rating: currentRating,
+                    comment: comment
+                })
+            });
+
+            if (res.ok) {
+                document.getElementById('review-form-container').classList.add('hidden');
+                document.getElementById('review-thanks').classList.remove('hidden');
+                // Recargar las reseñas para mostrar la nueva
+                const reviews = await fetch(`/api/reviews/${loteId}`).then(res => res.json());
+                renderReviewsSection(reviews);
+            } else {
+                const error = await res.json();
+                errorEl.textContent = error.error;
+                errorEl.classList.remove('hidden');
+            }
+        } catch (err) {
+            errorEl.textContent = 'Error de red. Por favor, inténtalo de nuevo.';
+            errorEl.classList.remove('hidden');
+        }
     }
 
     document.body.addEventListener('click', e => {
