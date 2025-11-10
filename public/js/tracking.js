@@ -869,7 +869,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         </div>
 
                         <div id="g_id_onload"
-                            data-client_id="REEMPLAZA_CON_TU_GOOGLE_CLIENT_ID.apps.googleusercontent.com"
+                            data-client_id="1064687511845-vjel6sbn1cg4nbmgf2228s0u821gvua4.apps.googleusercontent.com"
                             data-callback="handleCredentialResponse"
                             data-context="use">
                         </div>

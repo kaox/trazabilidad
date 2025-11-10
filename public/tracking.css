@@ -466,3 +466,12 @@ body {
     .timeline-item:nth-child(odd)::after { left: auto; right: -14px; }
     .timeline-item:nth-child(even)::after { left: -14px; }
 }
+
+@keyframes dash {
+            to {
+                stroke-dashoffset: 0;
+            }
+        }
+
+.star-rating i { cursor: pointer; color: #e0e0e0; transition: color 0.2s; }
+.star-rating i.selected, .star-rating i:hover { color: #f59e0b; }
