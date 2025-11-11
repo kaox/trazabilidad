@@ -868,13 +868,6 @@ document.addEventListener('DOMContentLoaded', () => {
                             <textarea id="review-comment" rows="3" class="w-full p-3 border border-stone-300 rounded-xl" placeholder="¿Qué te pareció este producto?"></textarea>
                         </div>
 
-                        <!-- 1. Div de configuración de Google (necesario) -->
-                        <div id="g_id_onload"
-                            data-client_id="1064687511845-vjel6sbn1cg4nbmgf2228s0u821gvua4.apps.googleusercontent.com"
-                            data-callback="handleCredentialResponse"
-                            data-context="use">
-                        </div>
-
                         <!-- 2. Contenedor vacío donde renderizaremos el botón -->
                         <div id="google-signin-button-container" class="flex justify-center"></div>
 
@@ -896,6 +889,16 @@ document.addEventListener('DOMContentLoaded', () => {
         // 3. Renderizar el botón de Google explícitamente
         try {
             if (typeof google !== 'undefined' && google.accounts) {
+
+                // 1. Inicializar el cliente de Google con la configuración.
+                google.accounts.id.initialize({
+                    // IMPORTANTE: Asegúrate de que tu Client ID esté aquí
+                    client_id: "1064687511845-vjel6sbn1cg4nbmgf2228s0u821gvua4.apps.googleusercontent.com",
+                    callback: handleCredentialResponse,
+                    context: "use"
+                });
+
+                console.log("1");
                 google.accounts.id.renderButton(
                     document.getElementById('google-signin-button-container'),
                     {
@@ -907,6 +910,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         logo_alignment: "left"
                     }
                 );
+                console.log("2");
             } else {
                 console.error("La biblioteca de Google Sign-In no se ha cargado.");
             }
