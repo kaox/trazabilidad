@@ -958,7 +958,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- CALLBACK GLOBAL PARA GOOGLE SIGN-IN ---
     window.handleCredentialResponse = async function(response) {
-        const loteId = globalHistory.stages[globalHistory.stages.length - 1].data.id.value;
+        const loteId = globalHistory.stages[globalHistory.stages.length - 1].data.id;
         const comment = document.getElementById('review-comment').value;
         const errorEl = document.getElementById('review-error');
 

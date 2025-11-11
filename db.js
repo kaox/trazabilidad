@@ -413,9 +413,6 @@ const getStagesForTemplate = async (req, res) => {
 const createStage = async (req, res) => {
     const { templateId } = req.params;
     const { nombre_etapa,  descripcion, campos_json } = req.body;
-    console.log(nombre_etapa);
-    console.log(descripcion);
-    console.log(campos_json);
     try {
         const lastOrderResult = await get('SELECT MAX(orden) as max_orden FROM etapas_plantilla WHERE plantilla_id = ?', [templateId]);
         const newOrder = (lastOrderResult.max_orden || 0) + 1;
@@ -610,7 +607,6 @@ const getTrazabilidad = async (req, res) => {
         sortedRows.forEach(row => {
             const stageInfo = allStages.find(s => s.id === row.etapa_id);
             if(stageInfo) {
-                console.log(stageInfo);
                 history.stages.push({
                     nombre_etapa: stageInfo.nombre_etapa,
                     descripcion: stageInfo.descripcion,
