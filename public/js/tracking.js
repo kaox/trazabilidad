@@ -898,7 +898,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     context: "use"
                 });
 
-                console.log("1");
                 google.accounts.id.renderButton(
                     document.getElementById('google-signin-button-container'),
                     {
@@ -910,7 +909,6 @@ document.addEventListener('DOMContentLoaded', () => {
                         logo_alignment: "left"
                     }
                 );
-                console.log("2");
             } else {
                 console.error("La biblioteca de Google Sign-In no se ha cargado.");
             }
