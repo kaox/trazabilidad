@@ -868,19 +868,16 @@ document.addEventListener('DOMContentLoaded', () => {
                             <textarea id="review-comment" rows="3" class="w-full p-3 border border-stone-300 rounded-xl" placeholder="¿Qué te pareció este producto?"></textarea>
                         </div>
 
+                        <!-- 1. Div de configuración de Google (necesario) -->
                         <div id="g_id_onload"
                             data-client_id="1064687511845-vjel6sbn1cg4nbmgf2228s0u821gvua4.apps.googleusercontent.com"
                             data-callback="handleCredentialResponse"
                             data-context="use">
                         </div>
-                        <div class="g_id_signin"
-                            data-type="standard"
-                            data-shape="rectangular"
-                            data-theme="outline"
-                            data-text="continue_with"
-                            data-size="large"
-                            data-logo_alignment="left">
-                        </div>
+
+                        <!-- 2. Contenedor vacío donde renderizaremos el botón -->
+                        <div id="google-signin-button-container" class="flex justify-center"></div>
+
                         <p id="review-error" class="text-red-600 text-sm mt-2 hidden"></p>
                     </div>
                     <div id="review-thanks" class="text-center p-8 hidden">
@@ -895,6 +892,27 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
             </section>
         `;
+
+        // 3. Renderizar el botón de Google explícitamente
+        try {
+            if (typeof google !== 'undefined' && google.accounts) {
+                google.accounts.id.renderButton(
+                    document.getElementById('google-signin-button-container'),
+                    {
+                        theme: "outline",
+                        size: "large",
+                        type: "standard",
+                        shape: "rectangular",
+                        text: "continue_with",
+                        logo_alignment: "left"
+                    }
+                );
+            } else {
+                console.error("La biblioteca de Google Sign-In no se ha cargado.");
+            }
+        } catch (e) {
+            console.error("Error al renderizar el botón de Google:", e);
+        }
 
         setupStarRating();
     }
