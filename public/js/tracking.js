@@ -314,7 +314,7 @@ document.addEventListener('DOMContentLoaded', () => {
             
         const imageUrl = data.imageUrl?.value;
         const isImageVisible = data.imageUrl?.visible;
-        const locationName = data.lugarProceso?.value || data.finca?.value || 'N/A';
+        const locationName = data.lugarProceso?.value || data.finca?.value || data.procesadora?.value || 'N/A';
         const locationButton = `<button class="location-btn text-sky-700 hover:underline" data-location="${locationName}">${locationName}</button>`;
 
         return `
