@@ -238,7 +238,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (!key.startsWith('visible_')) {
                     newData[key] = {
                         value: rawData[key],
-                        visible: formData.has(`visible_${key}`)
+                        visible: formData.has(`visible_${key}`),
+                        nombre: rawData[key]
                     };
                 }
             }

@@ -30,7 +30,7 @@
                 {"label": "Lugar del Proceso", "name": "lugarProceso", "type": "selectLugar"},
                 {"label": "Fecha Inicio", "name": "fecha", "type": "date"},
                 {"label": "Método de Fermentación", "name": "metodoFermentacion", "type": "select", "options": ["Cajón de madera", "Sacos de yute", "Montones"]},
-                {"label": "Duración (días)", "name": "duracion", "type": "number"},
+                {"label": "Duración (días)", "name": "duracionDias", "type": "number"},
                 {"label": "Frecuencia de Volteos", "name": "frecuenciaVolteos", "type": "text", "description": "Ej: Cada 24 horas, 2 veces al día"},
                 {"label": "Temperatura Máxima (°C)", "name": "temperaturaMaxima", "type": "number"},
                 {"label": "Foto", "name": "imageUrl", "type": "image"}]
@@ -47,8 +47,10 @@
                 {"label": "Lugar del Proceso", "name": "lugarProceso", "type": "selectLugar"},
                 {"label": "Fecha Inicio", "name": "fecha", "type": "date"},
                 {"label": "Tipo de Secado", "name": "tipoSecado", "type": "select", "options": ["Patios de cemento", "Camas, Paseras o Esterillas", "Marquesinas o Túneles de Secado", "Hornos y Secadores Mecánicos"]},
-                {"label": "Duración (días)", "name": "duracion", "type": "number"},
+                {"label": "Duración (días)", "name": "duracionDias", "type": "number"},
                 {"label": "Humedad Final (%)", "name": "humedadFinal", "type": "number"},
+                {"label": "Porcentaje granos fermentados (%)", "name": "granosFermentados", "type": "number"},
+                {"label": "Porcentaje granos violetas (%)", "name": "granosVioletas", "type": "number"},
                 {"label": "Foto", "name": "imageUrl", "type": "image"}]
           }
         },
@@ -65,7 +67,8 @@
                 {"label": "Perfil Sensorial", "name": "tipoPerfil", "type": "selectPerfil"},
                 {"label": "Temperatura de Carga (°C)", "name": "temperaturaCarga", "type": "number"},
                 {"label": "Temperatura Final (°C)", "name": "temperaturaFinal", "type": "number"},
-                {"label": "Tiempo Tueste (min)", "name": "duracion", "type": "number"},
+                {"label": "Tiempo Tueste (min)", "name": "tiempoTueste", "type": "number"},
+                {"label": "Humedad Residual del Grano (%)", "name": "humedadGrano", "type": "number"},
                 {"label": "Notas de Aroma y Sabor", "name": "perfilAroma", "type": "textarea"},
                 {"label": "Foto", "name": "imageUrl", "type": "image"}]
           }
@@ -113,7 +116,7 @@
               {"label": "Procesadora", "name": "procesadora", "type": "selectProcesadora"},
               {"label": "Fecha Empaque", "name": "fecha", "type": "date"},
               {"label": "Numero de Lote", "name": "numeroLote", "type": "text"},
-              {"label": "Fecha Vencimiento", "name": "fechaVencimineto", "type": "date"},
+              {"label": "Fecha Vencimiento", "name": "vencimiento", "type": "date"},
               {"label": "Tamaño (g)", "name": "tamaño", "type": "number"},
               {"label": "Link Producto", "name": "link", "type": "text"},
               {"label": "Foto del Producto", "name": "imageUrl", "type": "image"}

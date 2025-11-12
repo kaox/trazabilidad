@@ -603,7 +603,7 @@ const getTrazabilidad = async (req, res) => {
             const stageB = allStages.find(s => s.id === b.etapa_id)?.orden || 0;
             return stageA - stageB;
         });
-
+        
         sortedRows.forEach(row => {
             const stageInfo = allStages.find(s => s.id === row.etapa_id);
             if(stageInfo) {
@@ -613,7 +613,9 @@ const getTrazabilidad = async (req, res) => {
                     data: safeJSONParse(row.data)
                 });
             }
+            console.log(row.data);
         });
+        console.log(history.stages[0].data);
 
         const cosechaData = history.stages[0]?.data;
         if (cosechaData && cosechaData.finca) {

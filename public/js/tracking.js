@@ -299,7 +299,6 @@ document.addEventListener('DOMContentLoaded', () => {
             .filter(([key, fieldData]) => isFieldVisible(fieldData) && !['id', 'imageUrl', 'finca', 'lugarProceso'].includes(key) && !key.toLowerCase().includes('fecha'))
             .map(([key, fieldData]) => `<li><strong>${key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}:</strong> ${getFieldValue(fieldData) || 'N/A'}</li>`)
             .join('');
-            
         const imageUrl = getFieldValue(data.imageUrl);
         const isImageVisible = isFieldVisible(data.imageUrl);
         const locationName = getFieldValue(data.lugarProceso) || getFieldValue(data.finca) || getFieldValue(data.procesadora) || 'N/A';
