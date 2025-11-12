@@ -287,22 +287,34 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function createTimelineItem(stage) {
-        const stageName = stage.nombre_etapa;
-        const data = stage.data;
+        const { nombre_etapa, descripcion, data, campos_json } = stage;
+        const details = getChapterDetails(nombre_etapa, data);
         
-        const details = getChapterDetails(stageName, data);
-        
-        const getFieldValue = (field) => (typeof field === 'object' && field !== null) ? field.value : field;
-        const isFieldVisible = (field) => (typeof field === 'object' && field !== null) ? field.visible : true;
+        // --- INICIO DE LA CORRECCIÓN ---
 
+        // 1. Crear un mapa de búsqueda para los labels de la plantilla
+        const allFields = [
+            ...(campos_json.entradas || []),
+            ...(campos_json.salidas || []),
+            ...(campos_json.variables || [])
+        ];
+        const fieldMap = new Map();
+        allFields.forEach(f => fieldMap.set(f.name, f.label));
+
+        // 2. Usar el mapa de búsqueda para obtener el label
         const dataPointsHtml = Object.entries(data)
-            .filter(([key, fieldData]) => isFieldVisible(fieldData) && !['id', 'imageUrl', 'finca', 'lugarProceso'].includes(key) && !key.toLowerCase().includes('fecha'))
-            .map(([key, fieldData]) => `<li><strong>${key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}:</strong> ${getFieldValue(fieldData) || 'N/A'}</li>`)
+            .filter(([key, fieldData]) => fieldData?.visible && !['id', 'imageUrl', 'finca', 'lugarProceso'].includes(key) && !key.toLowerCase().includes('fecha'))
+            .map(([key, fieldData]) => {
+                const label = fieldMap.get(key) || key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase()); // Usa el label, o vuelve al método anterior como fallback
+                return `<li><strong>${label}:</strong> ${fieldData.value || 'N/A'}</li>`;
+            })
             .join('');
-        const imageUrl = getFieldValue(data.imageUrl);
-        const isImageVisible = isFieldVisible(data.imageUrl);
-        const locationName = getFieldValue(data.lugarProceso) || getFieldValue(data.finca) || getFieldValue(data.procesadora) || 'N/A';
-
+        
+        // --- FIN DE LA CORRECCIÓN ---
+            
+        const imageUrl = data.imageUrl?.value;
+        const isImageVisible = data.imageUrl?.visible;
+        const locationName = data.lugarProceso?.value || data.finca?.value || 'N/A';
         const locationButton = `<button class="location-btn text-sky-700 hover:underline" data-location="${locationName}">${locationName}</button>`;
 
         return `
@@ -312,8 +324,11 @@ document.addEventListener('DOMContentLoaded', () => {
                          <i class="fas ${details.icon} text-amber-800 text-2xl w-8 text-center"></i>
                          <h3 class="font-bold text-amber-900 font-display text-xl">${details.title}</h3>
                     </div>
-                    <p class="text-sm text-stone-500 mb-3 italic">${stage.descripcion || ''}</p>
+                    
+                    <p class="text-sm text-stone-500 mb-3 italic">${descripcion || ''}</p>
+                    
                     ${imageUrl && isImageVisible ? `<img src="${imageUrl}" class="w-full h-40 object-cover rounded-md my-4">` : ''}
+                    
                     <div class="text-sm text-stone-500 mb-3 flex items-center gap-4">
                         <span><i class="fas fa-calendar-alt mr-1"></i> ${details.date}</span>
                         <span><i class="fas fa-map-marker-alt mr-1"></i> ${locationButton}</span>

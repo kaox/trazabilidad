@@ -586,7 +586,7 @@ const getTrazabilidad = async (req, res) => {
         const ownerId = loteRaiz.user_id;
         const plantillaId = loteRaiz.plantilla_id;
 
-        const allStages = await all('SELECT id, nombre_etapa, descripcion, orden FROM etapas_plantilla WHERE plantilla_id = ? ORDER BY orden', [plantillaId]);
+        const allStages = await all('SELECT id, nombre_etapa, descripcion, orden, campos_json FROM etapas_plantilla WHERE plantilla_id = ? ORDER BY orden', [plantillaId]);
         const ownerInfo = await get('SELECT empresa, company_logo, subscription_tier, trial_ends_at FROM users WHERE id = ?', [ownerId]);
 
         const history = {
@@ -610,12 +610,11 @@ const getTrazabilidad = async (req, res) => {
                 history.stages.push({
                     nombre_etapa: stageInfo.nombre_etapa,
                     descripcion: stageInfo.descripcion,
+                    campos_json: safeJSONParse(stageInfo.campos_json),
                     data: safeJSONParse(row.data)
                 });
             }
-            console.log(row.data);
         });
-        console.log(history.stages[0].data);
 
         const cosechaData = history.stages[0]?.data;
         if (cosechaData && cosechaData.finca) {
