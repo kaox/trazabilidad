@@ -549,18 +549,65 @@ document.addEventListener('DOMContentLoaded', () => {
     function initializeMap(containerId, coords) {
         const mapContainer = document.getElementById(containerId);
         if (!mapContainer) return;
-        if (chartInstances[containerId]) { chartInstances[containerId].remove(); }
+
+        // Limpia instancias previas del mapa en este contenedor
+        if (chartInstances && chartInstances[containerId]) {
+            chartInstances[containerId].remove();
+        }
+
         try {
-            if (!Array.isArray(coords) || coords.length === 0) throw new Error("Coordenadas inválidas");
+            // --- Detección de tipo de coordenada ---
+            const isPoint = coords && typeof coords.lat === 'number' && typeof coords.lng === 'number';
+            const isPolygon = Array.isArray(coords) && coords.length > 0;
+
+            if (!isPoint && !isPolygon) {
+                throw new Error("Coordenadas inválidas. Deben ser un {lat, lng} o un array de [lat, lng].");
+            }
+
             requestAnimationFrame(() => {
-                const map = L.map(mapContainer).setView(coords[0], 15);
-                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-                const polygon = L.polygon(coords, { color: '#8D6E63' }).addTo(map);
-                map.fitBounds(polygon.getBounds());
+                let map;
+
+                // --- Lógica para un PUNTO ---
+                if (isPoint) {
+                    const latLngArray = [coords.lat, coords.lng];
+                    
+                    // 1. Crea el mapa y lo centra en el punto con un zoom fijo
+                    map = L.map(mapContainer).setView(latLngArray, 15);
+                    
+                    // 2. Añade la capa de tiles
+                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+                    
+                    // 3. Añade un MARCADOR en lugar de un polígono
+                    L.marker(latLngArray).addTo(map);
+                }
+                // --- Lógica para un POLÍGONO (la original) ---
+                else if (isPolygon) {
+                    // 1. Crea el mapa centrado temporalmente en el primer punto
+                    map = L.map(mapContainer).setView(coords[0], 15);
+                    
+                    // 2. Añade la capa de tiles
+                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+                    
+                    // 3. Añade el POLÍGONO
+                    const polygon = L.polygon(coords, { color: '#8D6E63' }).addTo(map);
+                    
+                    // 4. Ajusta el zoom para que el polígono quepa en la vista
+                    map.fitBounds(polygon.getBounds());
+                }
+
+                // --- Lógica común ---
+                
+                // Refresca el tamaño del mapa (útil si está en un contenedor oculto)
                 setTimeout(() => map.invalidateSize(), 100);
-                chartInstances[containerId] = map;
+                
+                // Guarda la instancia del mapa
+                if (chartInstances) {
+                    chartInstances[containerId] = map;
+                }
             });
-        } catch(e) { console.error("Error al renderizar mapa:", e); }
+        } catch (e) {
+            console.error("Error al renderizar mapa:", e);
+        }
     }
 
     function initializePerfilChart(canvasId, perfilData) {
@@ -612,6 +659,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         let contentHtml = '';
 
+        console.log(fincaData);
         // Intenta encontrar como Finca
         if (fincaData && fincaData.nombre_finca === cleanName) {
             let galleryHtml = (fincaData.imagenes_json || []).map(img => `<img src="${img}" class="w-full h-32 object-cover rounded-lg">`).join('');
@@ -639,7 +687,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Si no es la finca principal, busca en las procesadoras
         const procesadora = procesadorasData?.find(p => p.nombre_comercial === cleanName || p.razon_social === cleanName);
+        console.log(procesadora);
         if (procesadora) {
+            let galleryHtml = (procesadora.imagenes_json || []).map(img => `<img src="${img}" class="w-full h-32 object-cover rounded-lg">`).join('');
             let certsHtml = (procesadora.certificaciones_json || []).map(cert => `<div class="flex items-center gap-2 p-2 rounded-md bg-stone-100"><img src="${cert.logo_url}" class="h-6 w-6 rounded-full"><span class="text-sm text-stone-600">${cert.nombre}</span></div>`).join('');
             let premiosHtml = (procesadora.premios_json || []).map(p => `<div class="flex items-center gap-2 p-2 rounded-md bg-stone-100"><img src="${p.logo_url}" class="h-6 w-6 rounded-full"><span class="text-sm text-stone-600">${p.nombre} (${p.ano})</span></div>`).join('');
             contentHtml = `
@@ -649,9 +699,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     <p><strong>Dirección:</strong> ${procesadora.direccion}</p>
                     ${certsHtml ? `<div><h4 class="font-bold mt-4 mb-2">Certificaciones</h4><div class="flex flex-wrap gap-4">${certsHtml}</div></div>` : ''}
                     ${premiosHtml ? `<div><h4 class="font-bold mt-4 mb-2">Premios</h4><div class="flex flex-wrap gap-4">${premiosHtml}</div></div>` : ''}
+                    ${galleryHtml ? `<div><h4 class="font-bold mb-2">Galería</h4><div class="grid grid-cols-3 gap-2">${galleryHtml}</div></div>` : ''}
+                    ${procesadora.coordenadas ? `<div><h4 class="font-bold mb-2">Mapa</h4><div id="location-map-modal" class="w-full h-64 rounded-lg"></div></div>` : ''}
                 </div>`;
             locationModalContent.innerHTML = contentHtml;
             locationModal.classList.remove('hidden');
+            if (procesadora.coordenadas) {
+                setTimeout(() => initializeMap('location-map-modal', procesadora.coordenadas), 100);
+            }
             return; // Termina la función si se encontró la procesadora
         }
 

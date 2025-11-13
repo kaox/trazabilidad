@@ -633,7 +633,7 @@ const getTrazabilidad = async (req, res) => {
         history.procesadorasData = procesadoras.map(p => ({
             ...p,
             coordenadas: safeJSONParse(p.coordenadas || 'null'),
-            //imagenes_json: safeJSONParse(p.imagenes_json || '[]'),
+            imagenes_json: safeJSONParse(p.imagenes_json || '[]'),
             premios_json: safeJSONParse(p.premios_json || '[]'),
             certificaciones_json: safeJSONParse(p.certificaciones_json || '[]')
         }));
