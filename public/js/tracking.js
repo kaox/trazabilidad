@@ -76,6 +76,7 @@ document.addEventListener('DOMContentLoaded', () => {
             initializeMap('finca-map-container', h.fincaData.coordenadas);
         }
         if (h.perfilSensorialData) {
+            console.log(h);
             renderFlavorProfile(h.perfilSensorialData);
             initializePerfilChart('sensory-profile-chart', h.perfilSensorialData);
         }
@@ -180,24 +181,24 @@ document.addEventListener('DOMContentLoaded', () => {
                 <!-- Columna Derecha: Pestañas de Trazabilidad -->
                 <div class="traceability-tabs">
                     <div class="flex border-b border-stone-200 mb-4">
-                        <button class="tab-button active flex-1 flex items-center justify-center gap-2 p-4 border-b-2" data-tab="terroir"><i class="fas fa-globe"></i> Terroir</button>
+                        <button class="tab-button active flex-1 flex items-center justify-center gap-2 p-4 border-b-2" data-tab="terroir"><i class="fa-solid fa-cloud-sun"></i> Terroir</button>
                         <button class="tab-button flex-1 flex items-center justify-center gap-2 p-4 border-b-2 border-transparent" data-tab="productor"><i class="fas fa-leaf"></i> Productor</button>
                         ${perfilSensorialData ? `<button class="tab-button flex-1 flex items-center justify-center gap-2 p-4 border-b-2 border-transparent" data-tab="perfil"><i class="fas fa-chart-pie"></i> Perfil</button>` : ''}
                         ${routePoints.length >= 1 ? `<button class="tab-button flex-1 flex items-center justify-center gap-2 p-4 border-b-2 border-transparent" data-tab="ruta"><i class="fas fa-route"></i> Ruta</button>` : ''}
                     </div>
                     <div class="bg-white p-6 rounded-lg shadow-md">
                         <div id="tab-terroir" class="tab-panel space-y-4">
-                            <div><strong>País:</strong> ${fincaData?.pais || 'N/A'}</div>
-                            <div><strong>Ciudad:</strong> ${fincaData?.ciudad || 'N/A'}</div>
-                            <div><strong>Altura:</strong> ${fincaData?.altura || 'N/A'} msnm</div>
-                            <div><strong>Variedad de Cacao:</strong> ${getFieldValue(firstStage.variedad) || 'N/A'}</div>
+                            <div><i class="fa-solid fa-globe"></i> <strong>País:</strong> ${fincaData?.pais || 'N/A'}</div>
+                            <div><i class="fa-solid fa-location-dot"></i> <strong>Ciudad:</strong> ${fincaData?.ciudad || 'N/A'}</div>
+                            <div><i class="fa-solid fa-mountain"></i> <strong>Altura:</strong> ${fincaData?.altura || 'N/A'} msnm</div>
+                            <div><i class="fa-solid fa-tag"></i> <strong>Variedad de Cacao:</strong> ${getFieldValue(firstStage.variedad) || 'N/A'}</div>
                             <div id="finca-map-container" class="w-full h-48 rounded-md border mt-4"></div>
                         </div>
                         <div id="tab-productor" class="tab-panel hidden space-y-4">
-                            <div><strong>Nombre Finca:</strong> ${fincaData?.nombre_finca || 'N/A'}</div>
-                            <div><strong>Productor:</strong> ${fincaData?.propietario || 'N/A'}</div>
-                            ${certsHtml ? `<div><strong class="block mb-2">Certificaciones:</strong><div class="flex flex-wrap gap-2">${certsHtml}</div></div>` : ''}
-                            ${premiosHtml ? `<div><strong class="block mb-2">Premios:</strong><div class="flex flex-wrap gap-2">${premiosHtml}</div></div>` : ''}
+                            <div><i class="fa-solid fa-sign-hanging"></i> <strong>Nombre Finca:</strong> ${fincaData?.nombre_finca || 'N/A'}</div>
+                            <div><i class="fa-solid fa-user"></i> <strong>Productor:</strong> ${fincaData?.propietario || 'N/A'}</div>
+                            ${certsHtml ? `<div><strong class="block mb-2"><i class="fa-solid fa-certificate"></i> Certificaciones:</strong><div class="flex flex-wrap gap-2">${certsHtml}</div></div>` : ''}
+                            ${premiosHtml ? `<div><strong class="block mb-2"><i class="fa-solid fa-trophy"></i> Premios:</strong><div class="flex flex-wrap gap-2">${premiosHtml}</div></div>` : ''}
                             <div id="finca-gallery" class="grid grid-cols-3 gap-2 mt-4"></div>
                         </div>
                         ${perfilSensorialData ? `
@@ -416,10 +417,15 @@ document.addEventListener('DOMContentLoaded', () => {
             ).join('');
 
             galleryContainer.addEventListener('click', (e) => {
-                const img = e.target.closest('img');
-                if (img) {
-                    modalImage.src = img.src;
-                    imageModal.style.display = 'flex';
+                const thumbnailContainer = e.target.closest('.relative');
+                if (thumbnailContainer) {
+                    const img = thumbnailContainer.querySelector('img');
+                    
+                    if (img) {
+                        console.log(img);
+                        modalImage.src = img.src;
+                        imageModal.style.display = 'flex';
+                    }
                 }
             });
         }
@@ -659,7 +665,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         let contentHtml = '';
 
-        console.log(fincaData);
         // Intenta encontrar como Finca
         if (fincaData && fincaData.nombre_finca === cleanName) {
             let galleryHtml = (fincaData.imagenes_json || []).map(img => `<img src="${img}" class="w-full h-32 object-cover rounded-lg">`).join('');
@@ -687,7 +692,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Si no es la finca principal, busca en las procesadoras
         const procesadora = procesadorasData?.find(p => p.nombre_comercial === cleanName || p.razon_social === cleanName);
-        console.log(procesadora);
         if (procesadora) {
             let galleryHtml = (procesadora.imagenes_json || []).map(img => `<img src="${img}" class="w-full h-32 object-cover rounded-lg">`).join('');
             let certsHtml = (procesadora.certificaciones_json || []).map(cert => `<div class="flex items-center gap-2 p-2 rounded-md bg-stone-100"><img src="${cert.logo_url}" class="h-6 w-6 rounded-full"><span class="text-sm text-stone-600">${cert.nombre}</span></div>`).join('');
@@ -772,7 +776,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Si el mapa ya existe, solo refresca su tamaño y vista.
         if (chartInstances[containerId]) { 
-            console.log("Refrescando mapa...");
             setTimeout(() => {
                 chartInstances[containerId].invalidateSize();
                 chartInstances[containerId].fitBounds(routePoints.map(p => p.latlng), { padding: [50, 50] });
