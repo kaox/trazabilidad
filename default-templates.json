@@ -410,6 +410,7 @@
       "etapas": [
         {
           "nombre_etapa": "Cosecha en Apiario",
+          "descripcion": "Registro de la recolección de los panales (alzas) maduros directamente de las colmenas.",
           "orden": 1,
           "campos_json": {
             "entradas": [{"label": "Número de Alzas a Cosechar", "name": "numAlzas", "type": "number"}],
@@ -425,6 +426,7 @@
         },
         {
           "nombre_etapa": "Desoperculado y Extracción",
+          "descripcion": "Proceso de retirar la capa de cera (opérculo) de los panales y extraer la miel cruda mediante centrifugado (manual o eléctrico).",
           "orden": 2,
           "campos_json": {
             "entradas": [{"label": "Peso de Panales con Miel (kg)", "name": "pesoPanalesEntrada", "type": "number"}],
@@ -439,6 +441,7 @@
         },
         {
           "nombre_etapa": "Filtrado y Decantación",
+          "descripcion": "Purificación de la miel cruda. Se cuela para eliminar impurezas (cera, etc.) y se deja reposar (decantar) para que las burbujas y partículas finas suban, obteniendo miel madura y limpia.",
           "orden": 3,
           "campos_json": {
             "entradas": [{"label": "Peso de Miel cruda (kg)", "name": "pesoMielCruda", "type": "number"}],
@@ -450,6 +453,24 @@
               {"label": "Temperatura de la Sala (°C)", "name": "temperaturaSala", "type": "number"},
               {"label": "Tiempo de madurez (días)", "name": "tiempoMadurez", "type": "number"},
               {"label": "Foto", "name": "imageUrl", "type": "image"}
+            ]
+          }
+        },
+        {
+          "nombre_etapa": "Envasado",
+          "descripcion": "Etapa final donde la miel madura se dosifica en los recipientes de venta, se asigna un número de lote y se definen las fechas de empaque y vencimiento.",
+          "orden": 4,
+          "campos_json": {
+            "entradas": [{"label": "Número de Unidades", "name": "pesoEntrada", "type": "number"}],
+            "salidas": [{"label": "Número de Unidades", "name": "unidades", "type": "number"}],
+            "variables": [
+              {"label": "Lugar del Proceso", "name": "lugarProceso", "type": "selectLugar"},
+              {"label": "Fecha Empaque", "name": "fecha", "type": "date"},
+              {"label": "Numero de Lote", "name": "numeroLote", "type": "text"},
+              {"label": "Fecha Vencimiento", "name": "vencimiento", "type": "date"},
+              {"label": "Tamaño (g)", "name": "tamaño", "type": "number"},
+              {"label": "Link Producto", "name": "link", "type": "text"},
+              {"label": "Foto del Producto", "name": "imageUrl", "type": "image"}
             ]
           }
         }
