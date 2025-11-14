@@ -191,7 +191,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             <div><i class="fa-solid fa-globe"></i> <strong>País:</strong> ${fincaData?.pais || 'N/A'}</div>
                             <div><i class="fa-solid fa-location-dot"></i> <strong>Ciudad:</strong> ${fincaData?.ciudad || 'N/A'}</div>
                             <div><i class="fa-solid fa-mountain"></i> <strong>Altura:</strong> ${fincaData?.altura || 'N/A'} msnm</div>
-                            <div><i class="fa-solid fa-tag"></i> <strong>Variedad de Cacao:</strong> ${getFieldValue(firstStage.variedad) || 'N/A'}</div>
+                            <div><i class="fa-solid fa-tag"></i> <strong>Variedad:</strong> ${getFieldValue(firstStage.variedad) || 'N/A'}</div>
                             <div id="finca-map-container" class="w-full h-48 rounded-md border mt-4"></div>
                         </div>
                         <div id="tab-productor" class="tab-panel hidden space-y-4">
@@ -772,44 +772,64 @@ document.addEventListener('DOMContentLoaded', () => {
     // Nueva función refactorizada que renderiza el mapa y sus elementos
     function initializeRouteMap(containerId, routePoints) {
         const mapContainer = document.getElementById(containerId);
-        if (!mapContainer || !routePoints || routePoints.length < 2) return;
+        
+        // 1. Validar el contenedor y los datos de entrada
+        if (!mapContainer || !routePoints) return;
 
-        // Si el mapa ya existe, solo refresca su tamaño y vista.
-        if (chartInstances[containerId]) { 
+        // 2. --> NORMALIZACIÓN: Asegurar que 'pointsArray' sea siempre un array
+        //    Si routePoints NO es un array (es un solo objeto), lo envuelve en uno.
+        const pointsArray = Array.isArray(routePoints) ? routePoints : [routePoints];
+
+        // 3. Validar que el array (ya normalizado) no esté vacío
+        if (pointsArray.length === 0) return;
+
+        // Extraer las coordenadas [lat, lng]
+        const coordinates = pointsArray.map(p => p.latlng);
+
+        // 4. Si el mapa ya existe (refresco/resize)
+        if (chartInstances[containerId]) {
+            const map = chartInstances[containerId]; // Usar 'map' para claridad
             setTimeout(() => {
-                chartInstances[containerId].invalidateSize();
-                chartInstances[containerId].fitBounds(routePoints.map(p => p.latlng), { padding: [50, 50] });
+                map.invalidateSize();
+                
+                // --> Lógica condicional para el refresco
+                if (coordinates.length > 1) {
+                    map.fitBounds(coordinates, { padding: [50, 50] });
+                } else if (coordinates.length === 1) {
+                    map.setView(coordinates[0], 13); // Centrar en el único punto
+                }
             }, 100);
             return;
         }
 
+        // 5. Si es un mapa nuevo (creación)
         try {
-        
             let routeLayers = L.layerGroup();
+            let map; // Declarar 'map'
 
-            const coordinates = routePoints.map(point => point.latlng);
-
-            // Crea la instancia del mapa
-            map = L.map(containerId).setView(coordinates[0], 13);
-            
-            // Añade la capa de tiles (el fondo del mapa)
+            // 5.1. Crea la instancia del mapa y añade la capa de tiles
+            map = L.map(containerId);
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
-            // Ajusta el zoom para que todos los puntos sean visibles
-            map.fitBounds(coordinates, { padding: [50, 50] });
+            // 5.2. --> Ajusta la vista (Bounds si es ruta, View si es punto único)
+            if (coordinates.length > 1) {
+                map.fitBounds(coordinates, { padding: [50, 50] });
+            } else {
+                // El 'setView' original que tenías se mueve aquí, para el caso de 1 solo punto
+                map.setView(coordinates[0], 13); 
+            }
             
-            // Añade los marcadores estáticos con tooltips permanentes
-            routePoints.forEach(point => {
+            // 5.3. Añade los marcadores (Esto funciona igual para 1 o N puntos)
+            //    Usamos 'pointsArray' que sabemos que siempre es un array.
+            pointsArray.forEach(point => {
                 const marker = L.marker(point.latlng);
                 
-                // El tooltip se mostrará permanentemente para que la información sea visible al inicio
                 marker.bindTooltip(`<b>${point.stageName}</b><br>${point.date}<br>${point.name}`, {
                     permanent: true,
                     direction: 'top',
-                    className: 'my-leaflet-tooltip' // Clase CSS personalizada
+                    className: 'my-leaflet-tooltip'
                 });
                 
-                // El popup tradicional seguirá disponible al hacer clic para ver más detalles como la fecha
                 marker.bindPopup(`<b>${point.stageName}</b><br>${point.name}<br>Fecha: ${point.date}`);
 
                 routeLayers.addLayer(marker);
@@ -817,9 +837,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
             map.addLayer(routeLayers);
             
-            // Inicia la animación de la ruta
-            animateRoute(coordinates, routeLayers);
+            // 5.4. --> Inicia la animación SÓLO SI hay más de un punto
+            if (coordinates.length > 1) {
+                // Asumiendo que 'animateRoute' existe en el scope
+                animateRoute(coordinates, routeLayers); 
+            }
 
+            // Almacena la instancia
             chartInstances[containerId] = map;
 
         } catch(e) { console.error("Error al renderizar mapa de ruta:", e); }

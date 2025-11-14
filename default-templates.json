@@ -419,7 +419,7 @@
               {"label": "Finca", "name": "finca", "type": "selectFinca"}, 
               {"label": "Fecha Cosecha", "name": "fecha", "type": "date"},
               {"label": "Porcentaje operculación (%)", "name": "porcentajeOperculacion", "type": "number"},
-              {"label": "Tipo de Flora Predominante", "name": "tipoFlora", "type": "text", "description": "Ej: Eucalipto, Azahar, Multifloral."},
+              {"label": "Tipo de Flora Predominante", "name": "variedad", "type": "text", "description": "Ej: Eucalipto, Azahar, Multifloral."},
               {"label": "Foto", "name": "imageUrl", "type": "image"}
             ]
           }
