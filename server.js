@@ -120,7 +120,7 @@ app.get('/partials/:partialName', (req, res) => {
 });
 
 // --- Rutas Públicas (Páginas) ---
-app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'public', 'about.html')));
+app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
 
 // Nueva ruta para trazabilidad pública con ID corto en la URL
 app.get('/:loteId([A-Z]{3}-[A-Z0-9]{8})', (req, res) => {
