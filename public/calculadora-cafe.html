@@ -14,79 +14,79 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
     <style>
         input[type="range"] {
-        @apply w-full h-2 bg-stone-200 rounded-lg appearance-none cursor-pointer;
-    }
-    /* Estilo del "thumb" (agarre) para Chrome/Safari */
-    input[type="range"]::-webkit-slider-thumb {
-        -webkit-appearance: none;
-        appearance: none;
-        width: 20px;
-        height: 20px;
-        background: #8D6E63; /* Color Acento: Marrón Medio */
-        cursor: pointer;
-        border-radius: 50%;
-        border: 2px solid white;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-    }
-    /* Estilo del "thumb" (agarre) para Firefox */
-    input[type="range"]::-moz-range-thumb {
-        width: 20px;
-        height: 20px;
-        background: #8D6E63;
-        cursor: pointer;
-        border-radius: 50%;
-        border: 2px solid white;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-    }
+            @apply w-full h-2 bg-stone-200 rounded-lg appearance-none cursor-pointer;
+        }
+        /* Estilo del "thumb" (agarre) para Chrome/Safari */
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            background: #8D6E63; /* Color Acento: Marrón Medio */
+            cursor: pointer;
+            border-radius: 50%;
+            border: 2px solid white;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        /* Estilo del "thumb" (agarre) para Firefox */
+        input[type="range"]::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            background: #8D6E63;
+            cursor: pointer;
+            border-radius: 50%;
+            border: 2px solid white;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
 
-    /* --- Estilos Personalizados para Tooltips --- */
-    [data-tooltip] {
-        position: relative;
-        cursor: help;
-    }
-    [data-tooltip]::after {
-        content: attr(data-tooltip);
-        position: absolute;
-        bottom: 125%; /* Aparece arriba del icono */
-        left: 50%;
-        transform: translateX(-50%);
-        background-color: #3E2723; /* Color Primario: Marrón Oscuro */
-        color: white;
-        padding: 0.5rem 1rem;
-        border-radius: 8px;
-        font-size: 0.875rem;
-        font-family: 'Inter', sans-serif;
-        font-weight: 400;
-        white-space: normal; /* Permite que el texto se divida */
-        width: 280px; /* Ancho fijo */
-        opacity: 0;
-        visibility: hidden;
-        transition: opacity 0.2s ease-in-out, visibility 0.2s ease-in-out;
-        pointer-events: none;
-        z-index: 10;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-    }
-    /* Flecha del tooltip */
-    [data-tooltip]::before {
-        content: '';
-        position: absolute;
-        bottom: 100%;
-        left: 50%;
-        transform: translateX(-50%);
-        border-width: 6px;
-        border-style: solid;
-        border-color: #3E2723 transparent transparent transparent;
-        opacity: 0;
-        visibility: hidden;
-        transition: opacity 0.2s ease-in-out, visibility 0.2s ease-in-out;
-        pointer-events: none;
-        z-index: 10;
-    }
-    [data-tooltip]:hover::after,
-    [data-tooltip]:hover::before {
-        opacity: 1;
-        visibility: visible;
-    }
+        /* --- Estilos Personalizados para Tooltips --- */
+        [data-tooltip] {
+            position: relative;
+            cursor: help;
+        }
+        [data-tooltip]::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: 125%; /* Aparece arriba del icono */
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #3E2723; /* Color Primario: Marrón Oscuro */
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            font-family: 'Inter', sans-serif;
+            font-weight: 400;
+            white-space: normal; /* Permite que el texto se divida */
+            width: 280px; /* Ancho fijo */
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.2s ease-in-out, visibility 0.2s ease-in-out;
+            pointer-events: none;
+            z-index: 10;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        /* Flecha del tooltip */
+        [data-tooltip]::before {
+            content: '';
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            border-width: 6px;
+            border-style: solid;
+            border-color: #3E2723 transparent transparent transparent;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.2s ease-in-out, visibility 0.2s ease-in-out;
+            pointer-events: none;
+            z-index: 10;
+        }
+        [data-tooltip]:hover::after,
+        [data-tooltip]:hover::before {
+            opacity: 1;
+            visibility: visible;
+        }
     </style>
 </head>
 <body class="text-[#4E342E] antialiased bg-[#F5F5F5]">
@@ -103,6 +103,10 @@
                         <div class="py-1">
                             <span class="block px-4 py-2 text-xs text-stone-400 uppercase">Café</span>
                             <a href="/calculadora-cafe.html" class="block px-4 py-2 text-sm text-stone-700 bg-stone-100 font-medium">Calculadora de Catación SCA</a>
+                        </div>
+                        <div class="py-1 border-t border-stone-100">
+                            <span class="block px-4 py-2 text-xs text-stone-400 uppercase">Cacao</span>
+                            <a href="/calculadora-cacao.html" class="block px-4 py-2 text-sm text-stone-700 bg-stone-100 font-medium">Evaluador Sensorial CoEx</a>
                         </div>
                     </div>
                 </div>
@@ -127,6 +131,7 @@
     <div id="mobile-menu" class="fixed top-0 left-0 w-full h-full bg-stone-900/95 backdrop-blur-sm z-40 transform -translate-x-full md:hidden">
         <nav class="flex flex-col items-center justify-center h-full -mt-16 space-y-8 text-xl">
             <a href="/calculadora-cafe.html" class="text-white hover:text-amber-300 transition">Café - Calculadora de Catación SCA</a>
+            <a href="/calculadora-cacao.html" class="text-white hover:text-amber-300 transition">Cacao - Evaluador Sensorial CoEx</a>
             <a href="/qr" class="text-white hover:text-amber-300 transition">Descubrir Lote</a>
             <a href="/pricing-public.html" class="text-white hover:text-amber-300 transition">Planes</a>
             <a href="/login.html" class="bg-amber-400 text-amber-900 font-bold py-3 px-8 rounded-lg">Pruébalo gratis</a>
