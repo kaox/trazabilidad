@@ -2,7 +2,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- CONSTANTES Y ESTADO ---
     const DEFAULT_VALUE = '7.5';
     const MAIN_ATTRIBUTES = [
-        { id: 'cacao', label: 'Cacao', icon: 'fa-chocolate', tooltip: 'Sabor fundamental y típico de granos de cacao tostados que fueron bien fermentados, secados y están libres de defectos.' },
+        { id: 'cacao', label: 'Cacao', icon: 'fa-sun-plant-wilt', tooltip: 'Sabor fundamental y típico de granos de cacao tostados que fueron bien fermentados, secados y están libres de defectos.' },
         { id: 'acidez', label: 'Acidez', icon: 'fa-lemon', tooltip: 'Atributo de gestión que refleja la fermentación. Se desglosa en componentes químicos como Frutas (cítrico), Acético (vinagre), Láctico (yogur), Mineral y Butírico. Debe estar balanceado.' },
         { id: 'amargor', label: 'Amargor', icon: 'fa-seedling', tooltip: 'Sabor básico inherente al cacao, típicamente percibido en cafeína o nuez de cola. La evaluación mide su intensidad e integración.' },
         { id: 'astringencia', label: 'Astringencia', icon: 'fa-hand-dots', tooltip: 'Sensación táctil definitoria (taninos). Evalúa su calidad: puede ser un "fuerte efecto secante" (agudo, como piel de plátano verde) o una "sensación aterciopelada".' },
