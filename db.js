@@ -595,6 +595,7 @@ const getTrazabilidad = async (req, res) => {
             fincaData: null,
             procesadorasData: [],
             perfilSensorialData: null,
+            ruedaSaborData: null,
             maridajesRecomendados: {}
         };
         
@@ -665,6 +666,24 @@ const getTrazabilidad = async (req, res) => {
                 })).sort((a, b) => b.puntuacion - a.puntuacion);
                 
                 history.maridajesRecomendados = { cafe: recCafe, vino: recVino, queso: recQueso };
+            }
+        }
+
+        const ruedaData = history.stages.find(s => 
+            s.nombre_etapa.toLowerCase().includes('chocolate')
+        )?.data;
+        console.log(history.stages);
+        if (ruedaData) {
+            // 2. Obtener Rueda de Sabor (Notas de Cata)
+            const ruedaSaborId = ruedaData.tipoRuedaSabor?.value;
+            if (ruedaSaborId) {
+                const rueda = await get('SELECT * FROM ruedas_sabores WHERE id = ? AND user_id = ?', [ruedaSaborId, ownerId]);
+                if (rueda) {
+                    history.ruedaSaborData = {
+                        ...rueda,
+                        notas_json: safeJSONParse(rueda.notas_json)
+                    };
+                }
             }
         }
         
@@ -770,9 +789,9 @@ const getRuedasSabores = async (req, res) => {
 };
 const createRuedaSabores = async (req, res) => {
     const userId = req.user.id;
-    const { nombre_rueda, notas_json } = req.body;
+    const { nombre_rueda, notas_json, tipo } = req.body;
     try {
-        const result = await run('INSERT INTO ruedas_sabores (user_id, nombre_rueda, notas_json) VALUES (?, ?, ?)', [userId, nombre_rueda, JSON.stringify(notas_json)]);
+        const result = await run('INSERT INTO ruedas_sabores (user_id, nombre_rueda, notas_json, tipo) VALUES (?, ?, ?, ?)', [userId, nombre_rueda, JSON.stringify(notas_json), tipo]);
         res.status(201).json({ id: result.lastID, user_id: userId, nombre_rueda, notas_json });
     } catch (err) {
         if (err.message.includes('UNIQUE')) return res.status(409).json({ error: 'Ya existe una rueda con ese nombre.' });
@@ -782,9 +801,9 @@ const createRuedaSabores = async (req, res) => {
 const updateRuedaSabores = async (req, res) => {
     const userId = req.user.id;
     const { id } = req.params;
-    const { nombre_rueda, notas_json } = req.body;
+    const { nombre_rueda, notas_json, tipo } = req.body;
     try {
-        const result = await run('UPDATE ruedas_sabores SET nombre_rueda = ?, notas_json = ? WHERE id = ? AND user_id = ?', [nombre_rueda, JSON.stringify(notas_json), id, userId]);
+        const result = await run('UPDATE ruedas_sabores SET nombre_rueda = ?, notas_json = ?, tipo = ? WHERE id = ? AND user_id = ?', [nombre_rueda, JSON.stringify(notas_json), tipo, id, userId]);
         if (result.changes === 0) return res.status(404).json({ error: 'Rueda no encontrada o sin permiso.' });
         res.status(200).json({ message: 'Rueda actualizada.' });
     } catch (err) {

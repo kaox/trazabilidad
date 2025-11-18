@@ -137,6 +137,7 @@ CREATE TABLE IF NOT EXISTS ruedas_sabores (
     id SERIAL PRIMARY KEY,
     user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     nombre_rueda TEXT NOT NULL,
+    tipo TEXT NOT NULL,
     notas_json JSONB NOT NULL,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(user_id, nombre_rueda)

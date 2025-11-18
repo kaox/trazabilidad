@@ -1,4 +1,37 @@
 document.addEventListener('DOMContentLoaded', () => {
+    // --- CONSTANTES DE SABOR ---
+    const SCAA_FLAVORS_ES = {
+        'Floral': { 'icon': 'fa-solid fa-fan', 'color': '#ec4899', 'children': [ { 'name': 'Té Negro', 'icon': 'fa-solid fa-mug-hot' }, { 'name': 'Floral', 'icon': 'fa-solid fa-flower' } ] },
+        'Frutal': { 'icon': 'fa-solid fa-apple-whole', 'color': '#ef4444', 'children': [ { 'name': 'Bayas', 'icon': 'fa-solid fa-gem' }, { 'name': 'Frutas Secas', 'icon': 'fa-solid fa-sun' }, { 'name': 'Otras Frutas', 'icon': 'fa-solid fa-bell-concierge' }, { 'name': 'Cítricos', 'icon': 'fa-solid fa-lemon' } ] },
+        'Agrio/Fermentado': { 'icon': 'fa-solid fa-vial-circle-check', 'color': '#a855f7', 'children': [ { 'name': 'Aromas Agrios', 'icon': 'fa-solid fa-smog' }, { 'name': 'Alcohol/Fermentado', 'icon': 'fa-solid fa-wine-bottle' } ] },
+        'Verde/Vegetal': { 'icon': 'fa-solid fa-leaf', 'color': '#22c55e', 'children': [ { 'name': 'Aceite de Oliva', 'icon': 'fa-solid fa-oil-can' }, { 'name': 'Crudo', 'icon': 'fa-solid fa-seedling' }, { 'name': 'Verde/Vegetal', 'icon': 'fa-solid fa-hashtag' }, { 'name': 'Frijol', 'icon': 'fa-solid fa-dot-circle' } ] },
+        'Otro': { 'icon': 'fa-solid fa-ban', 'color': '#6b7280', 'children': [ { 'name': 'Papel/Moho', 'icon': 'fa-solid fa-boxes-stacked' }, { 'name': 'Químico', 'icon': 'fa-solid fa-flask' } ] },
+        'Tostado': { 'icon': 'fa-solid fa-fire', 'color': '#0d9488', 'children': [ { 'name': 'Tabaco de Pipa', 'icon': 'fa-solid fa-smoking' }, { 'name': 'Tabaco', 'icon': 'fa-solid fa-leaf' }, { 'name': 'Quemado', 'icon': 'fa-solid fa-skull-crossbones' }, { 'name': 'Cereal', 'icon': 'fa-solid fa-wheat-awn' } ] },
+        'Especias': { 'icon': 'fa-solid fa-mortar-pestle', 'color': '#d97706', 'children': [ { 'name': 'Picante', 'icon': 'fa-solid fa-pepper-hot' }, { 'name': 'Pimienta', 'icon': 'fa-solid fa-ring' }, { 'name': 'Especias Dulces', 'icon': 'fa-solid fa-cookie-bite' } ] },
+        'Nuez/Cacao': { 'icon': 'fa-solid fa-stroopwafel', 'color': '#78350f', 'children': [ { 'name': 'Nueces', 'icon': 'fa-solid fa-seedling' }, { 'name': 'Cacao', 'icon': 'fa-solid fa-cookie-bite' } ] },
+        'Dulce': { 'icon': 'fa-solid fa-candy-cane', 'color': '#f59e0b', 'children': [ { 'name': 'Azúcar Moreno', 'icon': 'fa-solid fa-cube' }, { 'name': 'Vainilla', 'icon': 'fa-solid fa-star' }, { 'name': 'Dulce General', 'icon': 'fa-solid fa-cookie-bite' }, { 'name': 'Aromas Dulces', 'icon': 'fa-solid fa-droplet' } ] }
+    };
+    
+    const COEX_FLAVORS_ES = {
+        "Fruta Fresca": { "icon": "fa-solid fa-apple-whole", "color": "#ef4444", "children": [ { "name": "Bayas / Frutos Rojos", "icon": "fa-solid fa-gem" }, { "name": "Cítricos", "icon": "fa-solid fa-lemon" }, { "name": "Oscura (Cereza, Ciruela)", "icon": "fa-solid fa-cloud-moon" }, { "name": "Pulpa Amarilla / Naranja / Blanca", "icon": "fa-solid fa-sun" }, { "name": "Tropical (Maracuyá, Piña)", "icon": "fa-solid fa-fan" } ] },
+        "Fruta Marrón": { "icon": "fa-solid fa-box-archive", "color": "#92400e", "children": [ { "name": "Seca (Pasa, Higo)", "icon": "fa-solid fa-sun" }, { "name": "Marrón (Dátil, Ciruela Pasa)", "icon": "fa-solid fa-box" }, { "name": "Sobre Madura", "icon": "fa-solid fa-hourglass-end" } ] },
+        "Vegetal": { "icon": "fa-solid fa-leaf", "color": "#22c55e", "children": [ { "name": "Pasto / Vegetal verde / Hierba", "icon": "fa-solid fa-hashtag" }, { "name": "Terroso / Hongo / Musgo / Bosque", "icon": "fa-solid fa-mountain" } ] },
+        "Floral": { "icon": "fa-solid fa-fan", "color": "#ec4899", "children": [ { "name": "Flor de Azahar", "icon": "fa-solid fa-sun" }, { "name": "Flores (Jazmín, Rosa, Lirio)", "icon": "fa-solid fa-flower" } ] },
+        "Madera": { "icon": "fa-solid fa-tree", "color": "#6b46c1", "children": [ { "name": "Madera Clara", "icon": "fa-solid fa-tree-city" }, { "name": "Madera Oscura", "icon": "fa-solid fa-bed" }, { "name": "Resina", "icon": "fa-solid fa-flask" } ] },
+        "Especia": { "icon": "fa-solid fa-mortar-pestle", "color": "#f59e0b", "children": [ { "name": "Especias (Canela, Vainilla)", "icon": "fa-solid fa-cookie-bite" }, { "name": "Tabaco (Hojas Secas)", "icon": "fa-solid fa-leaf" }, { "name": "Sazonado/Umami", "icon": "fa-solid fa-fish" } ] },
+        "Nuez": { "icon": "fa-solid fa-stroopwafel", "color": "#964b00", "children": [ { "name": "Nuez - Parte Interna (Avellana, Almendra)", "icon": "fa-solid fa-seedling" }, { "name": "Nuez - Piel (Cáscaras Tostadas)", "icon": "fa-solid fa-ring" } ] },
+        "Caramelo / Panela": { "icon": "fa-solid fa-candy-cane", "color": "#f97316", "children": [ { "name": "Caramelo / Panela (Azúcar Moreno)", "icon": "fa-solid fa-cube" } ] }
+    };
+
+    // --- ESTADO ---
+    let state = {
+        ruedas: [],
+        selectedRuedaId: null,
+        currentType: 'cafe' // 'cafe' o 'cacao'
+    };
+    let charts = {};
+
+    // --- SELECTORES DEL DOM ---
     const form = document.getElementById('rueda-form');
     const listContainer = document.getElementById('ruedas-list');
     const editIdInput = document.getElementById('edit-id');
@@ -8,53 +41,58 @@ document.addEventListener('DOMContentLoaded', () => {
     const chartTitle = document.getElementById('chart-title');
     const interactiveWheelContainer = document.getElementById('interactive-wheel');
     const legendContainer = document.getElementById('chart-legend');
-    
-    let charts = {};
-    let ruedas = [];
-    let selectedRuedaId = null;
+    const ruedaTypeSelector = document.getElementById('rueda-type-selector');
     
     Chart.register(ChartDataLabels);
 
-    const SCAA_FLAVORS_ES = {
-        'Floral': { color: '#ec4899', children: ['Té Negro', 'Floral'] },
-        'Frutal': { color: '#ef4444', children: ['Bayas', 'Frutas Secas', 'Otras Frutas', 'Cítricos'] },
-        'Agrio/Fermentado': { color: '#a855f7', children: ['Aromas Agrios', 'Alcohol/Fermentado'] },
-        'Verde/Vegetal': { color: '#22c55e', children: ['Aceite de Oliva', 'Crudo', 'Verde/Vegetal', 'Frijol'] },
-        'Otro': { color: '#6b7280', children: ['Papel/Moho', 'Químico'] },
-        'Tostado': { color: '#0d9488', children: ['Tabaco de Pipa', 'Tabaco', 'Quemado', 'Cereal'] },
-        'Especias': { color: '#d97706', children: ['Picante', 'Pimienta', 'Especias Dulces'] },
-        'Nuez/Cacao': { color: '#78350f', children: ['Nueces', 'Cacao'] },
-        'Dulce': { color: '#f59e0b', children: ['Azúcar Moreno', 'Vainilla', 'Dulce General', 'Aromas Dulces'] }
-    };
-
     async function init() {
-        renderInteractiveWheel();
         await loadRuedas();
+        setupEventListeners();
+        renderInteractiveWheel(); // Render inicial
+        renderRuedas(); // Render inicial
+        
+        if (state.ruedas.filter(r => r.tipo === state.currentType).length > 0) {
+            selectRueda(state.ruedas.filter(r => r.tipo === state.currentType)[0].id);
+        } else {
+            updateChart(null);
+        }
+    }
+
+    function setupEventListeners() {
         form.addEventListener('submit', handleFormSubmit);
         listContainer.addEventListener('click', handleListClick);
         cancelEditBtn.addEventListener('click', resetForm);
         interactiveWheelContainer.addEventListener('click', handleWheelClick);
+        ruedaTypeSelector.addEventListener('change', handleTypeChange);
     }
 
     async function loadRuedas() {
         try {
-            ruedas = await api('/api/ruedas-sabores');
-            renderRuedas();
-            if (ruedas.length > 0 && !selectedRuedaId) {
-                selectRueda(ruedas[0].id);
-            } else if (ruedas.length > 0 && selectedRuedaId) {
-                selectRueda(selectedRuedaId);
-            } else {
-                updateChart(null);
-            }
+            state.ruedas = await api('/api/ruedas-sabores');
         } catch (error) {
             console.error("Error al cargar las ruedas de sabores:", error);
         }
     }
 
+    function handleTypeChange() {
+        state.currentType = ruedaTypeSelector.value;
+        state.selectedRuedaId = null;
+        resetForm();
+        renderInteractiveWheel();
+        renderRuedas();
+        
+        const firstRuedaOfType = state.ruedas.find(r => r.tipo === state.currentType);
+        if (firstRuedaOfType) {
+            selectRueda(firstRuedaOfType.id);
+        } else {
+            updateChart(null);
+        }
+    }
+
     function renderRuedas() {
-        listContainer.innerHTML = ruedas.map(r => `
-            <div class="p-3 border rounded-xl cursor-pointer hover:bg-amber-50 ${r.id === selectedRuedaId ? 'bg-amber-100 border-amber-800' : ''}" data-id="${r.id}">
+        const filteredRuedas = state.ruedas.filter(r => r.tipo === state.currentType);
+        listContainer.innerHTML = filteredRuedas.map(r => `
+            <div class="p-3 border rounded-xl cursor-pointer hover:bg-amber-50 ${r.id === state.selectedRuedaId ? 'bg-amber-100 border-amber-800' : ''}" data-id="${r.id}">
                 <div class="flex justify-between items-center">
                     <span class="font-semibold flex-grow">${r.nombre_rueda}</span>
                     <div class="flex items-center flex-shrink-0">
@@ -64,11 +102,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
             </div>
         `).join('');
+        
+        if(state.ruedas.length === 0) {
+            listContainer.innerHTML = `<p class="text-stone-500 text-center">No hay ruedas de sabor para ${state.currentType}.</p>`;
+        }
     }
     
     function selectRueda(id) {
-        selectedRuedaId = id;
-        const rueda = ruedas.find(r => r.id === id);
+        state.selectedRuedaId = id;
+        const rueda = state.ruedas.find(r => r.id === id);
         if (rueda) {
             updateChart(rueda);
             renderRuedas();
@@ -76,13 +118,16 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function renderInteractiveWheel() {
-        interactiveWheelContainer.innerHTML = Object.entries(SCAA_FLAVORS_ES).map(([category, data]) => `
+        const FLAVOR_DATA = state.currentType === 'cafe' ? SCAA_FLAVORS_ES : COEX_FLAVORS_ES;
+        interactiveWheelContainer.innerHTML = Object.entries(FLAVOR_DATA).map(([category, data]) => `
             <div>
-                <h4 class="font-semibold text-stone-700" style="color: ${data.color}">${category}</h4>
+                <h4 class="font-semibold text-stone-700" style="color: ${data.color}">
+                    <i class="fas ${data.icon} w-5"></i> ${category}
+                </h4>
                 <div class="flex flex-wrap gap-2 mt-2">
                     ${data.children.map(note => `
-                        <button type="button" class="flavor-tag bg-stone-200 text-stone-700 text-sm font-medium px-3 py-1 rounded-full" data-category="${category}" data-note="${note}" data-color="${data.color}">
-                            ${note}
+                        <button type="button" class="flavor-tag bg-stone-200 text-stone-700 text-sm font-medium px-3 py-1 rounded-full" data-category="${category}" data-note="${note.name}" data-color="${data.color}">
+                            <i class="fas ${note.icon} w-4"></i> ${note.name}
                         </button>
                     `).join('')}
                 </div>
@@ -93,36 +138,29 @@ document.addEventListener('DOMContentLoaded', () => {
     function updateChart(rueda) {
         const title = rueda ? rueda.nombre_rueda : 'Selecciona o crea un perfil';
         const notes = rueda ? rueda.notas_json : [];
+        const FLAVOR_DATA = state.currentType === 'cafe' ? SCAA_FLAVORS_ES : COEX_FLAVORS_ES;
 
         ['l1', 'l2'].forEach(l => { if (charts[l]) charts[l].destroy(); });
 
-        const chartOptions = {
-            responsive: true,
-            maintainAspectRatio: true,
-            plugins: {
-                legend: { display: false },
-                tooltip: { enabled: false },
-                datalabels: { display: false }
-            }
-        };
+        const chartOptions = { responsive: true, maintainAspectRatio: true, plugins: { legend: { display: false }, tooltip: { enabled: true }, datalabels: { display: false } } };
         
         const selectedCategories = {};
         notes.forEach(note => {
             if (!selectedCategories[note.category]) {
-                selectedCategories[note.category] = { color: SCAA_FLAVORS_ES[note.category].color, children: [] };
+                selectedCategories[note.category] = { color: FLAVOR_DATA[note.category].color, children: [] };
             }
             selectedCategories[note.category].children.push(note.subnote);
         });
 
-        const level1_labels = Object.keys(SCAA_FLAVORS_ES);
-        const level1_data = level1_labels.map(cat => SCAA_FLAVORS_ES[cat].children.length);
-        const level1_colors = level1_labels.map(l => selectedCategories[l] ? SCAA_FLAVORS_ES[l].color : '#E5E7EB');
+        const level1_labels = Object.keys(FLAVOR_DATA);
+        const level1_data = level1_labels.map(cat => FLAVOR_DATA[cat].children.length);
+        const level1_colors = level1_labels.map(l => selectedCategories[l] ? FLAVOR_DATA[l].color : '#E5E7EB');
 
-        const level2_labels = Object.values(SCAA_FLAVORS_ES).flatMap(d => d.children);
+        const level2_labels = Object.values(FLAVOR_DATA).flatMap(d => d.children.map(c => c.name));
         const level2_data = Array(level2_labels.length).fill(1);
         const level2_colors = level2_labels.map(label => {
             const note = notes.find(n => n.subnote === label);
-            return note ? SCAA_FLAVORS_ES[note.category].color : '#E5E7EB';
+            return note ? FLAVOR_DATA[note.category].color : '#E5E7EB';
         });
 
         charts.l1 = new Chart(document.getElementById('flavor-wheel-chart-l1'), { 
@@ -137,7 +175,9 @@ document.addEventListener('DOMContentLoaded', () => {
             options: {...chartOptions, cutout: '65%'} 
         });
         
-        document.getElementById('chart-title').textContent = title;
+        if(chartTitle) {
+            chartTitle.textContent = title;
+        }
         renderCustomLegend(selectedCategories);
     }
     
@@ -147,14 +187,19 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
+        const FLAVOR_DATA = state.currentType === 'cafe' ? SCAA_FLAVORS_ES : COEX_FLAVORS_ES;
         const legendHtml = Object.entries(selectedCategories).map(([category, data]) => `
             <div class="mb-3">
                 <h4 class="font-semibold text-sm flex items-center gap-2">
                     <span class="w-3 h-3 rounded-full" style="background-color: ${data.color}"></span>
+                    <i class="fas ${FLAVOR_DATA[category].icon} w-4"></i>
                     ${category}
                 </h4>
-                <ul class="list-disc list-inside text-stone-600 pl-5 text-sm mt-1">
-                    ${data.children.map(note => `<li>${note}</li>`).join('')}
+                <ul class="list-disc list-inside text-stone-600 pl-5 text-sm mt-1 space-y-1">
+                    ${data.children.map(note => {
+                        const noteIcon = FLAVOR_DATA[category].children.find(c => c.name === note)?.icon || 'fa-circle-dot';
+                        return `<li><i class="fas ${noteIcon} w-4 text-stone-500 mr-1"></i>${note}</li>`;
+                    }).join('')}
                 </ul>
             </div>
         `).join('');
@@ -203,12 +248,18 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
+        const data = {
+            nombre_rueda,
+            notas_json,
+            tipo: state.currentType // <-- AÑADIR TIPO
+        };
+
         const editId = editIdInput.value;
         try {
             if (editId) {
-                await api(`/api/ruedas-sabores/${editId}`, { method: 'PUT', body: JSON.stringify({ nombre_rueda, notas_json }) });
+                await api(`/api/ruedas-sabores/${editId}`, { method: 'PUT', body: JSON.stringify(data) });
             } else {
-                await api('/api/ruedas-sabores', { method: 'POST', body: JSON.stringify({ nombre_rueda, notas_json }) });
+                await api('/api/ruedas-sabores', { method: 'POST', body: JSON.stringify(data) });
             }
             resetForm();
             await loadRuedas();
@@ -227,7 +278,7 @@ document.addEventListener('DOMContentLoaded', () => {
             e.stopPropagation();
             if (confirm('¿Seguro que quieres eliminar esta rueda de sabor?')) {
                 api(`/api/ruedas-sabores/${id}`, { method: 'DELETE' }).then(() => {
-                    selectedRuedaId = null;
+                    state.selectedRuedaId = null;
                     resetForm();
                     loadRuedas();
                 });
@@ -242,10 +293,16 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     function populateFormForEdit(id) {
-        const rueda = ruedas.find(r => r.id === id);
+        const rueda = state.ruedas.find(r => r.id === id);
         if (!rueda) return;
 
         resetForm();
+        
+        // Asegurarse que el tipo es correcto ANTES de renderizar
+        state.currentType = rueda.tipo;
+        ruedaTypeSelector.value = rueda.tipo;
+        renderInteractiveWheel(); // Re-renderizar la rueda correcta
+
         editIdInput.value = id;
         form.nombre_rueda.value = rueda.nombre_rueda;
         
@@ -269,6 +326,9 @@ document.addEventListener('DOMContentLoaded', () => {
     function resetForm() {
         form.reset();
         editIdInput.value = '';
+        // No resetear el type selector, mantener el actual
+        ruedaTypeSelector.value = state.currentType;
+        
         interactiveWheelContainer.querySelectorAll('.flavor-tag.active').forEach(tag => {
             tag.classList.remove('active', 'text-white');
             tag.classList.add('bg-stone-200', 'text-stone-700');
@@ -278,9 +338,10 @@ document.addEventListener('DOMContentLoaded', () => {
         formTitle.textContent = 'Crear Nueva Rueda';
         submitButton.textContent = 'Guardar';
         cancelEditBtn.classList.add('hidden');
-        if(ruedas.length > 0) {
-            const firstId = ruedas[0].id;
-            selectRueda(firstId);
+        
+        const firstRuedaOfType = state.ruedas.find(r => r.tipo === state.currentType);
+        if(firstRuedaOfType) {
+            selectRueda(firstRuedaOfType.id);
         } else {
             updateChart(null);
         }
@@ -288,4 +349,3 @@ document.addEventListener('DOMContentLoaded', () => {
 
     init();
 });
-

@@ -96,6 +96,7 @@
             "variables": [
               {"label": "Procesadora", "name": "procesadora", "type": "selectProcesadora"},
               {"label": "Fecha", "name": "fecha", "type": "date"},
+              {"label": "Rueda de Sabor", "name": "tipoRuedaSabor", "type": "selectRuedaSabor"},
               {"label": "Tiempo de Conchado (horas)", "name": "tiempoConchado", "type": "number"},
               {"label": "Temperatura de Templado (°C)", "name": "temperaturaTemplado", "type": "number"},
               {"label": "Porcentaje de Cacao (%)", "name": "porcentajeCacao", "type": "number"},

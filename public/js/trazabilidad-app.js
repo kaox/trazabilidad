@@ -277,13 +277,13 @@ document.addEventListener('DOMContentLoaded', () => {
         ];
         
         for (const field of allFields) {
-            formFields += await createFieldHTML(field, data[field.name]);
+            formFields += await createFieldHTML(field, data[field.name], template);
         }
         
         return `<form id="batch-form"><h2 class="text-2xl font-display text-amber-900 border-b pb-2 mb-4">${mode === 'create' ? 'Crear' : 'Editar'} ${stage.nombre_etapa}</h2><div class="space-y-4 max-h-[60vh] overflow-y-auto p-1">${formFields}</div><div class="flex justify-end gap-4 mt-6"><button type="button" id="cancel-btn" class="bg-stone-300 hover:bg-stone-400 font-bold py-2 px-6 rounded-xl">Cancelar</button><button type="submit" class="bg-amber-800 hover:bg-amber-900 text-white font-bold py-2 px-6 rounded-xl">Guardar</button></div></form>`;
     }
 
-    async function createFieldHTML(field, fieldData) {
+    async function createFieldHTML(field, fieldData, template) {
         const { label, name, type, options } = field;
         const value = (typeof fieldData === 'object' && fieldData !== null) ? fieldData.value : fieldData;
         const isVisible = (typeof fieldData === 'object' && fieldData !== null) ? fieldData.visible : true;
@@ -299,6 +299,11 @@ document.addEventListener('DOMContentLoaded', () => {
             case 'selectFinca': inputHtml = await createFincaSelectHTML(name, value); break;
             case 'selectProcesadora': inputHtml = await createProcesadoraSelectHTML(name, value); break;
             case 'selectPerfil': inputHtml = await createPerfilSelectHTML(name, value); break;
+            case 'selectRuedaSabor':
+                // Determinar el tipo ('cafe' o 'cacao') basado en el nombre de la plantilla
+                const tipoProducto = template.nombre_producto.toLowerCase().includes('cacao') ? 'cacao' : 'cafe';
+                inputHtml = await createRuedaSaborSelectHTML(name, value, tipoProducto);
+                break;
             case 'selectLugar': inputHtml = await createLugarProcesoSelectHTML(name, value); break;
             default: inputHtml = createInputHTML(name, 'text', value);
         }
@@ -355,6 +360,33 @@ document.addEventListener('DOMContentLoaded', () => {
             const perfiles = await api('/api/perfiles');
             return createSelectHTML(name, perfiles.map(p => p.nombre), selectedValue);
         } catch (error) { return `<div class="text-red-500">Error al cargar perfiles.</div>`; }
+    }
+
+    async function createRuedaSaborSelectHTML(name, selectedValue, tipoProducto) {
+        if (!state.ruedasSabor) {
+            await loadRuedasSabor(); // Cargar si aún no están
+        }
+        
+        try {
+            const ruedasFiltradas = state.ruedasSabor.filter(r => r.tipo === tipoProducto);
+            if (ruedasFiltradas.length === 0) {
+                return `<div><div class="p-3 border rounded-xl bg-stone-50 text-stone-500">No hay ruedas de sabor de tipo "${tipoProducto}". <a href="/app/ruedas-sabores" class="text-sky-600 hover:underline">Crea una</a>.</div><input type="hidden" name="${name}" value=""></div>`;
+            }
+            // El 'value' que guardamos es el ID de la rueda, pero mostramos el nombre
+            const options = ruedasFiltradas.map(r => `<option value="${r.id}" ${r.id == selectedValue ? 'selected' : ''}>${r.nombre_rueda}</option>`).join('');
+            return `<select id="${name}" name="${name}" class="w-full p-3 border border-stone-300 rounded-xl bg-white"><option value="">Seleccionar rueda...</option>${options}</select>`;
+        } catch (error) {
+            return `<div class="text-red-500">Error al cargar ruedas de sabor.</div>`;
+        }
+    }
+
+    async function loadRuedasSabor() {
+        try {
+            state.ruedasSabor = await api('/api/ruedas-sabores');
+        } catch (error) {
+            console.error("Error al cargar ruedas de sabor:", error);
+            state.ruedasSabor = [];
+        }
     }
     
     async function createLugarProcesoSelectHTML(name, selectedValue) {
