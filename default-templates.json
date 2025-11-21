@@ -64,12 +64,13 @@
             "variables": [
                 {"label": "Procesadora", "name": "procesadora", "type": "selectProcesadora"},
                 {"label": "Fecha Tostado", "name": "fecha", "type": "date"},
+                {"label": "Tostador", "name": "tostador", "type": "text"},
                 {"label": "Perfil Sensorial", "name": "tipoPerfil", "type": "selectPerfil"},
                 {"label": "Temperatura de Carga (°C)", "name": "temperaturaCarga", "type": "number"},
                 {"label": "Temperatura Final (°C)", "name": "temperaturaFinal", "type": "number"},
                 {"label": "Tiempo Tueste (min)", "name": "tiempoTueste", "type": "number"},
                 {"label": "Humedad Residual del Grano (%)", "name": "humedadGrano", "type": "number"},
-                {"label": "Notas de Aroma y Sabor", "name": "perfilAroma", "type": "textarea"},
+                {"label": "Anotaciones", "name": "anotaciones", "type": "textarea"},
                 {"label": "Foto", "name": "imageUrl", "type": "image"}]
           }
         },
@@ -228,6 +229,7 @@
                 {"label": "Temperatura de Carga (°C)", "name": "temperaturaCarga", "type": "number"},
                 {"label": "Temperatura Final (°C)", "name": "temperaturaFinal", "type": "number"},
                 {"label": "Notas de Cata", "name": "notasCata", "type": "textarea"},
+                {"label": "Nivel de Tueste Agtron", "name": "nivelTueste", "type": "number"},
                 {"label": "Foto", "name": "imageUrl", "type": "image"}]
           }
         },
@@ -320,7 +322,13 @@
             "variables": [
               {"label": "Procesadora", "name": "procesadora", "type": "selectProcesadora"},
               {"label": "Fecha Tostado", "name": "fecha", "type": "date"},
-              {"label": "Perfil de Tueste", "name": "perfilTueste", "type": "text"}, {"label": "Tiempo de Tueste (min)", "name": "tiempoTueste", "type": "number"}, {"label": "Temperatura de Carga (°C)", "name": "temperaturaCarga", "type": "number"}, {"label": "Temperatura Final (°C)", "name": "temperaturaFinal", "type": "number"}, {"label": "Notas de Cata", "name": "notasCata", "type": "textarea"}, {"label": "Foto", "name": "imageUrl", "type": "image"}]
+              {"label": "Perfil de Tueste", "name": "perfilTueste", "type": "text"},
+              {"label": "Tiempo de Tueste (min)", "name": "tiempoTueste", "type": "number"},
+              {"label": "Temperatura de Carga (°C)", "name": "temperaturaCarga", "type": "number"},
+              {"label": "Temperatura Final (°C)", "name": "temperaturaFinal", "type": "number"},
+              {"label": "Notas de Cata", "name": "notasCata", "type": "textarea"},
+              {"label": "Nivel de Tueste Agtron", "name": "nivelTueste", "type": "number"},
+              {"label": "Foto", "name": "imageUrl", "type": "image"}]
           }
         },
         {

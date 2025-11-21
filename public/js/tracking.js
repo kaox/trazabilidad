@@ -42,6 +42,10 @@ document.addEventListener('DOMContentLoaded', () => {
     let chartInstances = {};
     let currentRating = 0;
 
+    if (typeof ChartDataLabels !== 'undefined') {
+        Chart.register(ChartDataLabels);
+    }
+
     // --- Lógica Principal ---
 
     async function handleSearch() {
@@ -468,7 +472,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     const img = thumbnailContainer.querySelector('img');
                     
                     if (img) {
-                        console.log(img);
                         modalImage.src = img.src;
                         imageModal.style.display = 'flex';
                     }
@@ -726,63 +729,108 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         // --- Data para Anillo Interior (Padres/Categorías) ---
-        const level1_labels = Object.keys(FLAVOR_DATA);
-        const level1_data = level1_labels.map(cat => FLAVOR_DATA[cat].children.length);
-        const level1_colors = level1_labels.map(label => selectedCategories[label] ? FLAVOR_DATA[label].color : '#E5E7EB');
+        const l1_labels = Object.keys(FLAVOR_DATA);
+        const l1_data = l1_labels.map(cat => FLAVOR_DATA[cat].children.length);
+        const l1_colors = l1_labels.map(label => selectedCategories[label] ? FLAVOR_DATA[label].color : '#E5E7EB');
 
         // --- Data para Anillo Exterior (Hijos/Notas) ---
-        const level2_labels = Object.values(FLAVOR_DATA).flatMap(d => d.children.map(c => c.name));
-        const level2_data = Array(level2_labels.length).fill(1);
-        const level2_colors = Object.values(FLAVOR_DATA).flatMap(d => {
+        const l2_labels = Object.values(FLAVOR_DATA).flatMap(d => d.children.map(c => c.name));
+        const l2_data = Array(l2_labels.length).fill(1);
+        const l2_colors = Object.values(FLAVOR_DATA).flatMap(d => {
             return d.children.map(child => {
                 const isSelected = notes.some(n => n.category === Object.keys(FLAVOR_DATA).find(k => FLAVOR_DATA[k] === d) && n.subnote === child.name);
                 return isSelected ? d.color : '#E5E7EB';
             });
         });
 
-        const chartOptions = {
-            responsive: true,
-            maintainAspectRatio: true,
-            plugins: {
-                legend: { display: false },
-                tooltip: { enabled: false },
-                datalabels: {
-                    color: '#000',
-                    font: { weight: 'bold', size: 10 },
-                    formatter: (value, context) => {
-                        const label = context.chart.data.labels[context.dataIndex];
-                        return context.chart.data.datasets[0].backgroundColor[context.dataIndex] !== '#E5E7EB' ? label : null;
+        new Chart(ctxL1, {
+            type: 'doughnut',
+            data: {
+                labels: l2_labels, 
+                datasets: [
+                    // ANILLO EXTERIOR (Dataset 0)
+                    {
+                        data: l2_data,
+                        backgroundColor: l2_colors,
+                        borderColor: '#ffffff',
+                        borderWidth: 1,
+                        weight: 1 
+                    },
+                    // ANILLO INTERIOR (Dataset 1)
+                    {
+                        data: l1_data,
+                        backgroundColor: l1_colors,
+                        borderColor: '#ffffff',
+                        borderWidth: 2,
+                        weight: 0.6 
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '1%', // Agujero central un poco más pequeño para dar espacio al texto
+                layout: {
+                    padding: 20
+                },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const idx = context.dataIndex;
+                                if(context.datasetIndex === 0) return l2_labels[idx];
+                                return l1_labels[idx];
+                            }
+                        }
+                    },
+                    // CONFIGURACIÓN DATALABELS
+                    datalabels: {
+                        color: '#ffffff',
+                        font: function(context) {
+                            var width = context.chart.width;
+                            var size = Math.round(width / 45); // Tamaño dinámico basado en el ancho
+                            // Límites para el tamaño de fuente
+                            if (size > 14) size = 14;
+                            if (size < 6) size = 6;
+                            
+                            return {
+                                size: size,
+                                family: 'Arial'
+                            };
+                        },
+                        formatter: function(value, context) {
+                            if (context.datasetIndex === 0) {
+                                const resultado = notes.find(item => {
+                                    return item.subnote.toLowerCase().includes(l2_labels[context.dataIndex].toLowerCase());
+                                });
+                                return resultado ? l2_labels[context.dataIndex] : "";
+                            } else {
+                                //l1_labels[context.dataIndex]
+                                return selectedCategories[l1_labels[context.dataIndex]] ? l1_labels[context.dataIndex] : "";
+                            }
+                        },
+                        anchor: 'center',
+                        align: 'center',
+                        // Rotación del texto
+                        rotation: function(ctx) {
+                            const valuesBefore = ctx.dataset.data.slice(0, ctx.dataIndex).reduce((a, b) => a + b, 0);
+                            const sum = ctx.dataset.data.reduce((a, b) => a + b, 0);
+                            const currentVal = ctx.dataset.data[ctx.dataIndex];
+                            const angle = Math.PI * 2 * (valuesBefore + currentVal / 2) / sum - Math.PI / 2;
+                            var degree = angle * 180 / Math.PI;
+                            
+                            // Voltear texto en el lado izquierdo
+                            if (degree > 90 && degree < 270) {
+                                degree += 180;
+                            }
+                            return degree;
+                        },
+                        textStrokeColor: 'rgba(0,0,0,0.6)',
+                        textStrokeWidth: 3
                     }
                 }
             }
-        };
-
-        chartInstances[baseId + '-l1'] = new Chart(ctxL1.getContext('2d'), { 
-            type: 'doughnut', 
-            data: { 
-                labels: level1_labels, 
-                datasets: [{ 
-                    data: level1_data, 
-                    backgroundColor: level1_colors, 
-                    borderWidth: 2, 
-                    borderColor: '#F5F5F5' 
-                }] 
-            }, 
-            options: {...chartOptions, cutout: '30%'} 
-        });
-
-        chartInstances[baseId + '-l2'] = new Chart(ctxL2.getContext('2d'), { 
-            type: 'doughnut', 
-            data: { 
-                labels: level2_labels, 
-                datasets: [{ 
-                    data: level2_data, 
-                    backgroundColor: level2_colors, 
-                    borderWidth: 2, 
-                    borderColor: '#F5F5F5' 
-                }] 
-            }, 
-            options: {...chartOptions, cutout: '65%'} 
         });
         
         renderCustomLegend(selectedCategories, FLAVOR_DATA);

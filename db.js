@@ -672,7 +672,6 @@ const getTrazabilidad = async (req, res) => {
         const ruedaData = history.stages.find(s => 
             s.nombre_etapa.toLowerCase().includes('chocolate')
         )?.data;
-        console.log(history.stages);
         if (ruedaData) {
             // 2. Obtener Rueda de Sabor (Notas de Cata)
             const ruedaSaborId = ruedaData.tipoRuedaSabor?.value;
