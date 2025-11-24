@@ -715,15 +715,19 @@ document.addEventListener('DOMContentLoaded', () => {
             await new Promise(resolve => setTimeout(resolve, 500));
 
             // 5. Generar PDF con html2canvas
-            const canvas = await html2canvas(container, { scale: 2 }); // Scale 2 para mejor calidad
-            const imgData = canvas.toDataURL('image/png');
+            const canvas = await html2canvas(container, { 
+                scale: 2, 
+                useCORS: true,
+                backgroundColor: '#ffffff'
+            }); // Scale 2 para mejor calidad
+            const imgData = canvas.toDataURL('image/jpeg', 0.8);
             
             const { jsPDF } = window.jspdf;
             const pdf = new jsPDF('p', 'mm', 'a4');
             const pdfWidth = pdf.internal.pageSize.getWidth();
             const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
             
-            pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+            pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
             pdf.save(`Reporte_Calidad_${reportData.codigo}.pdf`);
 
         } catch (error) {
