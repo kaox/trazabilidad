@@ -7,6 +7,14 @@
     <script src="/auth.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/qrcode-generator/qrcode.js"></script>
+    <!-- LIBRERÍAS PARA PDF Y GRÁFICOS -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+    <!-- FontAwesome para los iconos en el PDF -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet">
@@ -38,6 +46,11 @@
             <h2 class="text-3xl font-display text-amber-900 mb-2">Bienvenido</h2>
             <p class="text-stone-600">Inicia un nuevo proceso para comenzar a registrar tus lotes.</p>
         </div>
+    </div>
+
+    <!-- CONTENEDOR OCULTO PARA LA GENERACIÓN DEL REPORTE PDF -->
+    <div id="pdf-report-container" class="fixed top-0 left-0 -z-50 w-[800px] bg-white p-8 hidden">
+        <!-- El contenido se inyectará dinámicamente aquí -->
     </div>
 
     <dialog id="form-modal" class="p-0 rounded-2xl shadow-2xl w-11/12 max-w-xl">

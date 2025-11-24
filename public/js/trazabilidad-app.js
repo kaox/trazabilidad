@@ -5,6 +5,32 @@ document.addEventListener('DOMContentLoaded', () => {
     const formModal = document.getElementById('form-modal');
     const modalContent = document.getElementById('modal-content');
 
+    const SCAA_FLAVORS_ES = {
+        'Floral': { 'icon': 'fa-solid fa-fan', 'color': '#ec4899', 'children': [ { 'name': 'Té Negro', 'icon': 'fa-solid fa-mug-hot' }, { 'name': 'Floral', 'icon': 'fa-solid fa-flower' } ] },
+        'Frutal': { 'icon': 'fa-solid fa-apple-whole', 'color': '#ef4444', 'children': [ { 'name': 'Bayas', 'icon': 'fa-solid fa-gem' }, { 'name': 'Frutas Secas', 'icon': 'fa-solid fa-sun' }, { 'name': 'Otras Frutas', 'icon': 'fa-solid fa-bell-concierge' }, { 'name': 'Cítricos', 'icon': 'fa-solid fa-lemon' } ] },
+        'Agrio/Fermentado': { 'icon': 'fa-solid fa-vial-circle-check', 'color': '#a855f7', 'children': [ { 'name': 'Aromas Agrios', 'icon': 'fa-solid fa-smog' }, { 'name': 'Alcohol/Fermentado', 'icon': 'fa-solid fa-wine-bottle' } ] },
+        'Verde/Vegetal': { 'icon': 'fa-solid fa-leaf', 'color': '#22c55e', 'children': [ { 'name': 'Aceite de Oliva', 'icon': 'fa-solid fa-oil-can' }, { 'name': 'Crudo', 'icon': 'fa-solid fa-seedling' }, { 'name': 'Verde/Vegetal', 'icon': 'fa-solid fa-hashtag' }, { 'name': 'Frijol', 'icon': 'fa-solid fa-dot-circle' } ] },
+        'Otro': { 'icon': 'fa-solid fa-ban', 'color': '#6b7280', 'children': [ { 'name': 'Papel/Moho', 'icon': 'fa-solid fa-boxes-stacked' }, { 'name': 'Químico', 'icon': 'fa-solid fa-flask' } ] },
+        'Tostado': { 'icon': 'fa-solid fa-fire', 'color': '#0d9488', 'children': [ { 'name': 'Tabaco de Pipa', 'icon': 'fa-solid fa-smoking' }, { 'name': 'Tabaco', 'icon': 'fa-solid fa-leaf' }, { 'name': 'Quemado', 'icon': 'fa-solid fa-skull-crossbones' }, { 'name': 'Cereal', 'icon': 'fa-solid fa-wheat-awn' } ] },
+        'Especias': { 'icon': 'fa-solid fa-mortar-pestle', 'color': '#d97706', 'children': [ { 'name': 'Picante', 'icon': 'fa-solid fa-pepper-hot' }, { 'name': 'Pimienta', 'icon': 'fa-solid fa-ring' }, { 'name': 'Especias Dulces', 'icon': 'fa-solid fa-cookie-bite' } ] },
+        'Nuez/Cacao': { 'icon': 'fa-solid fa-stroopwafel', 'color': '#78350f', 'children': [ { 'name': 'Nueces', 'icon': 'fa-solid fa-seedling' }, { 'name': 'Cacao', 'icon': 'fa-solid fa-cookie-bite' } ] },
+        'Dulce': { 'icon': 'fa-solid fa-candy-cane', 'color': '#f59e0b', 'children': [ { 'name': 'Azúcar Moreno', 'icon': 'fa-solid fa-cube' }, { 'name': 'Vainilla', 'icon': 'fa-solid fa-star' }, { 'name': 'Dulce General', 'icon': 'fa-solid fa-cookie-bite' }, { 'name': 'Aromas Dulces', 'icon': 'fa-solid fa-droplet' } ] }
+    };
+    const COEX_FLAVORS_ES = {
+        "Fruta Fresca": { "icon": "fa-solid fa-apple-whole", "color": "#ef4444", "children": [ { "name": "Bayas / Frutos Rojos", "icon": "fa-solid fa-gem" }, { "name": "Cítricos", "icon": "fa-solid fa-lemon" }, { "name": "Oscura (Cereza, Ciruela)", "icon": "fa-solid fa-cloud-moon" }, { "name": "Pulpa Amarilla / Naranja / Blanca", "icon": "fa-solid fa-sun" }, { "name": "Tropical (Maracuyá, Piña)", "icon": "fa-solid fa-fan" } ] },
+        "Fruta Marrón": { "icon": "fa-solid fa-box-archive", "color": "#92400e", "children": [ { "name": "Seca (Pasa, Higo)", "icon": "fa-solid fa-sun" }, { "name": "Marrón (Dátil, Ciruela Pasa)", "icon": "fa-solid fa-box" }, { "name": "Sobre Madura", "icon": "fa-solid fa-hourglass-end" } ] },
+        "Vegetal": { "icon": "fa-solid fa-leaf", "color": "#22c55e", "children": [ { "name": "Pasto / Vegetal verde / Hierba", "icon": "fa-solid fa-hashtag" }, { "name": "Terroso / Hongo / Musgo / Bosque", "icon": "fa-solid fa-mountain" } ] },
+        "Floral": { "icon": "fa-solid fa-fan", "color": "#ec4899", "children": [ { "name": "Flor de Azahar", "icon": "fa-solid fa-sun" }, { "name": "Flores (Jazmín, Rosa, Lirio)", "icon": "fa-solid fa-flower" } ] },
+        "Madera": { "icon": "fa-solid fa-tree", "color": "#6b46c1", "children": [ { "name": "Madera Clara", "icon": "fa-solid fa-tree-city" }, { "name": "Madera Oscura", "icon": "fa-solid fa-bed" }, { "name": "Resina", "icon": "fa-solid fa-flask" } ] },
+        "Especia": { "icon": "fa-solid fa-mortar-pestle", "color": "#f59e0b", "children": [ { "name": "Especias (Canela, Vainilla)", "icon": "fa-solid fa-cookie-bite" }, { "name": "Tabaco (Hojas Secas)", "icon": "fa-solid fa-leaf" }, { "name": "Sazonado/Umami", "icon": "fa-solid fa-fish" } ] },
+        "Nuez": { "icon": "fa-solid fa-stroopwafel", "color": "#964b00", "children": [ { "name": "Nuez - Parte Interna (Avellana, Almendra)", "icon": "fa-solid fa-seedling" }, { "name": "Nuez - Piel (Cáscaras Tostadas)", "icon": "fa-solid fa-ring" } ] },
+        "Caramelo / Panela": { "icon": "fa-solid fa-candy-cane", "color": "#f97316", "children": [ { "name": "Caramelo / Panela (Azúcar Moreno)", "icon": "fa-solid fa-cube" } ] }
+    };
+
+    if (typeof ChartDataLabels !== 'undefined') {
+        Chart.register(ChartDataLabels);
+    }
+
     // --- Lógica de Datos ---
     function generateId(prefix = 'LOTE') {
         const now = new Date();
@@ -17,10 +43,20 @@ document.addEventListener('DOMContentLoaded', () => {
     async function init() {
         await loadTemplates();
         await loadBatches();
+        await loadPerfilesSensoriales();
+        await loadFincas();
         
         crearProcesoBtn.addEventListener('click', openTemplateSelectorModal);
         formModal.addEventListener('click', e => { if (e.target.id === 'form-modal') formModal.close(); });
         dashboardView.addEventListener('click', handleDashboardClick);
+    }
+
+    async function loadPerfilesSensoriales() {
+        try {
+            // Cargamos ambos tipos por si acaso
+            const [cacao, cafe] = await Promise.all([api('/api/perfiles'), api('/api/perfiles-cafe')]);
+            state.perfilesSensoriales = [...cacao, ...cafe];
+        } catch (e) { console.error("Error cargando perfiles", e); }
     }
     
     async function loadBatches() {
@@ -42,6 +78,12 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (error) {
             console.error("Error al cargar plantillas:", error);
         }
+    }
+
+    async function loadFincas() {
+        try {
+            state.fincas = await api('/api/fincas');
+        } catch (e) { console.error("Error cargando fincas", e); state.fincas = []; }
     }
 
     // --- Renderizado ---
@@ -122,6 +164,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const fecha = fechaKey ? (getFieldValue(processData, fechaKey) || 'Sin fecha') : 'Sin fecha';
         const imageUrl = imageUrlField ? getFieldValue(processData, imageUrlField.name) : null;
         
+        // Detectar si es etapa de Calidad/Cata/Tostado para mostrar el botón
+        const isQualityStage = stage.nombre_etapa.toLowerCase().match(/(cata|calidad)/);
+
         const cardContent = document.createElement('div');
         cardContent.className = 'bg-white rounded-xl shadow-md';
         cardContent.innerHTML = `
@@ -135,6 +180,12 @@ document.addEventListener('DOMContentLoaded', () => {
                         </div>
                     </div>
                     <div class="flex flex-wrap gap-2 items-center justify-start sm:justify-end flex-shrink-0">
+                        <!-- Botón PDF de Calidad -->
+                        ${isQualityStage ? `
+                            <button class="pdf-btn text-xs bg-purple-600 hover:bg-purple-700 text-white font-bold px-3 py-1.5 rounded-lg flex items-center gap-1" data-batch-id="${batchData.id}" title="Reporte de Calidad">
+                                <i class="fas fa-file-pdf"></i> Reporte
+                            </button>
+                        ` : ''}
                         <button class="text-xs bg-sky-600 hover:bg-sky-700 text-white p-2 rounded-lg" data-id="${batchData.id}" title="Ver Trazabilidad">
                             <a href="/${batchData.id}" target="_blank"><i class="fa-solid fa-eye"></i></a>
                         </button>
@@ -440,6 +491,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     async function handleDashboardClick(e) {
+
         const expandTrigger = e.target.closest('.expand-trigger');
         if (expandTrigger) {
             const wrapper = expandTrigger.closest('.batch-card-wrapper');
@@ -454,6 +506,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const button = e.target.closest('button');
         if (!button) return;
+
+        //const pdfBtn = e.target.closest('.pdf-btn');
+        if (button.classList.contains('pdf-btn')) {
+            //e.stopPropagation();
+            //const batchId = pdfBtn.dataset.batchId;
+            const batchNode = findBatchById(state.batches, button.dataset.batchId);
+            if (batchNode) {
+                await generateQualityReport(batchNode);
+            }
+        }
         
         if (button.classList.contains('add-sub-btn')) {
             const template = state.templates.find(t => t.id == button.dataset.templateId);
@@ -504,6 +566,347 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
         }
+    }
+
+    // --- LÓGICA DE GENERACIÓN DE REPORTE PDF ---
+    async function generateQualityReport(batchNode) {
+        const btn = document.querySelector(`.pdf-btn[data-batch-id="${batchNode.id}"]`);
+        const originalText = btn.innerHTML;
+        btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Generando...`;
+        btn.disabled = true;
+
+        try {
+            // 1. Obtener Datos Raíz (Origen)
+            const rootBatch = findRootBatch(state.batches, batchNode.id) || batchNode;
+            const template = state.templates.find(t => t.id === rootBatch.plantilla_id);
+            
+            // Extraer datos de origen del lote raíz
+            const getVal = (data, key) => {
+                if (!data || !key) return '';
+                const field = data[key];
+                if (field === undefined || field === null) return '';
+                return (typeof field === 'object' && 'value' in field) ? field.value : field;
+            };
+            
+            // Buscar datos de la finca
+            const fincaName = getVal(rootBatch.data, 'finca');
+            const fincaData = state.fincas.find(f => 
+                f.nombre_finca?.trim().toLowerCase() === fincaName?.trim().toLowerCase()
+            ) || {};
+            console.log(fincaData);
+            console.log(rootBatch);
+
+            const reportData = {
+                codigo: batchNode.id,
+                producto: template?.nombre_producto || 'Producto',
+                finca: fincaName,
+                // Priorizar datos de la tabla Fincas, luego del lote
+                productor: fincaData.propietario || getVal(rootBatch.data, 'productor') || 'Productor Certificado', 
+                pais: fincaData.pais || getVal(rootBatch.data, 'pais') || 'Origen',
+                ciudad: fincaData.ciudad || getVal(rootBatch.data, 'ciudad') || '-',
+                altitud: fincaData.altura ? `${fincaData.altura} msnm` : (getVal(rootBatch.data, 'altitud') || '-'),
+                variedad: getVal(rootBatch.data, 'variedad') || '-',
+                // Datos de la etapa actual (Cata)
+                clasificacion: getVal(rootBatch.data, 'clasificacion') || '-', // Usually in root batch
+                puntuacion: getVal(batchNode.data, 'puntuacion') || getVal(batchNode.data, 'notaFinal') || '0',
+                fechaCata: getVal(batchNode.data, 'fecha') || new Date().toLocaleDateString()
+            };
+
+            // 2. Identificar datos de gráficos
+            let sensoryData = null;
+            let flavorData = null;
+
+            // Buscar referencia a perfil sensorial
+            const perfilName = getVal(batchNode.data, 'tipoPerfil');
+            if (perfilName) {
+                const perfil = state.perfilesSensoriales.find(p => p.nombre === perfilName || p.nombre_perfil === perfilName);
+                if (perfil) sensoryData = typeof perfil.perfil_data === 'string' ? JSON.parse(perfil.perfil_data) : perfil.perfil_data;
+            }
+
+            // Buscar referencia a rueda de sabor
+            const ruedaId = getVal(batchNode.data, 'tipoRuedaSabor');
+            if (ruedaId) {
+                // Necesitamos asegurarnos de tener las ruedas cargadas o fetch
+                if (!state.ruedasSabor || state.ruedasSabor.length === 0) await loadRuedasSabor();
+                const rueda = state.ruedasSabor.find(r => r.id == ruedaId);
+                if (rueda) flavorData = rueda;
+            }
+
+            // 3. Construir HTML del Reporte (Oculto)
+            const container = document.getElementById('pdf-report-container');
+            container.classList.remove('hidden'); // Mostrar temporalmente (fuera de pantalla o z-index bajo)
+            
+            container.innerHTML = `
+                <div class="font-sans text-stone-800 bg-white p-8 border-4 border-amber-900/10 h-full">
+                    <!-- Header -->
+                    <div class="flex justify-between items-center border-b-2 border-amber-800 pb-6 mb-8">
+                        <div>
+                            <h1 class="text-4xl font-display font-bold text-amber-900">Reporte de Calidad</h1>
+                            <p class="text-stone-500 mt-1">Certificado de Análisis Sensorial</p>
+                        </div>
+                        <div class="text-right">
+                            <h2 class="text-2xl font-bold text-stone-800"><i class="fa-solid fa-fingerprint mr-2"></i>Ruru Lab</h2>
+                            <p class="text-sm text-stone-500">Trazabilidad Verificada</p>
+                        </div>
+                    </div>
+
+                    <!-- Info Grid -->
+                    <div class="grid grid-cols-2 gap-8 mb-8">
+                        <div class="bg-stone-50 p-6 rounded-xl">
+                            <h3 class="font-display font-bold text-xl text-amber-900 mb-4 border-b border-stone-200 pb-2">
+                                <i class="fas fa-seedling mr-2"></i> Datos de Origen
+                            </h3>
+                            <ul class="space-y-3 text-sm">
+                                <li class="flex justify-between"><span><i class="fas fa-barcode w-5 text-stone-400"></i> Código:</span> <strong class="font-mono">${reportData.codigo}</strong></li>
+                                <li class="flex justify-between"><span><i class="fas fa-box w-5 text-stone-400"></i> Producto:</span> <strong>${reportData.producto}</strong></li>
+                                <li class="flex justify-between"><span><i class="fas fa-leaf w-5 text-stone-400"></i> Variedad:</span> <strong>${reportData.variedad}</strong></li>
+                                <li class="flex justify-between"><span><i class="fas fa-mountain w-5 text-stone-400"></i> Finca:</span> <strong>${reportData.finca}</strong></li>
+                                <li class="flex justify-between"><span><i class="fas fa-user w-5 text-stone-400"></i> Productor:</span> <strong>${reportData.productor}</strong></li>
+                                <li class="flex justify-between"><span><i class="fas fa-map-marker-alt w-5 text-stone-400"></i> Ubicación:</span> <strong>${reportData.ciudad}, ${reportData.pais}</strong></li>
+                                <li class="flex justify-between"><span><i class="fas fa-layer-group w-5 text-stone-400"></i> Altitud:</span> <strong>${reportData.altitud}</strong></li>
+                            </ul>
+                        </div>
+
+                        <div class="bg-amber-50 p-6 rounded-xl">
+                            <h3 class="font-display font-bold text-xl text-amber-900 mb-4 border-b border-amber-200 pb-2">
+                                <i class="fas fa-star mr-2"></i> Resultados de Cata
+                            </h3>
+                            <div class="text-center mb-6">
+                                <span class="block text-sm text-amber-800 uppercase tracking-wide mb-1">Puntuación Global</span>
+                                <span class="text-6xl font-display font-bold text-amber-900">${parseFloat(reportData.puntuacion).toFixed(2)}</span>
+                                <span class="block mt-2 px-3 py-1 bg-amber-200 text-amber-900 rounded-full text-xs font-bold inline-block uppercase">${reportData.clasificacion}</span>
+                            </div>
+                            <ul class="space-y-3 text-sm">
+                                <li class="flex justify-between"><span><i class="fas fa-calendar w-5 text-amber-700"></i> Fecha de Cata:</span> <strong>${reportData.fechaCata}</strong></li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Charts Section -->
+                    <div class="grid grid-cols-2 gap-8">
+                        <div>
+                            <h4 class="font-bold text-center mb-4 text-stone-700">Perfil Sensorial (Intensidad)</h4>
+                            <div class="relative aspect-square">
+                                <canvas id="pdf-radar-chart"></canvas>
+                            </div>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-center mb-4 text-stone-700">Rueda de Sabor (Notas)</h4>
+                            <div class="relative aspect-square flex items-center justify-center">
+                                <canvas id="pdf-doughnut-chart" class="absolute inset-0"></canvas>
+                                <canvas id="pdf-doughnut-chart-l2" class="absolute inset-0" style="transform: scale(0.7)"></canvas>
+                            </div>
+                            <div id="pdf-flavor-legend" class="mt-4 text-xs grid grid-cols-2 gap-1"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Footer -->
+                    <div class="mt-12 pt-4 border-t border-stone-200 text-center text-xs text-stone-400">
+                        Reporte generado automáticamente por Ruru Lab. Escanea el código QR del producto para ver la trazabilidad completa.
+                    </div>
+                </div>
+            `;
+
+            // 4. Renderizar Gráficos en el contenedor oculto
+            if (sensoryData) renderPdfRadarChart(sensoryData);
+            if (flavorData) renderPdfFlavorChart(flavorData);
+
+            // Esperar un momento para que los canvas se pinten
+            await new Promise(resolve => setTimeout(resolve, 500));
+
+            // 5. Generar PDF con html2canvas
+            const canvas = await html2canvas(container, { scale: 2 }); // Scale 2 para mejor calidad
+            const imgData = canvas.toDataURL('image/png');
+            
+            const { jsPDF } = window.jspdf;
+            const pdf = new jsPDF('p', 'mm', 'a4');
+            const pdfWidth = pdf.internal.pageSize.getWidth();
+            const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+            
+            pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+            pdf.save(`Reporte_Calidad_${reportData.codigo}.pdf`);
+
+        } catch (error) {
+            console.error("Error generando PDF:", error);
+            alert("Error al generar el reporte PDF.");
+        } finally {
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+            document.getElementById('pdf-report-container').classList.add('hidden');
+        }
+    }
+
+    function renderPdfRadarChart(data) {
+        const ctx = document.getElementById('pdf-radar-chart').getContext('2d');
+        // Convertir objeto a array de valores (asegurar orden correcto según tus labels fijos o dinámicos)
+        const labels = Object.keys(data);
+        const values = Object.values(data);
+
+        new Chart(ctx, {
+            type: 'radar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Perfil',
+                    data: values,
+                    backgroundColor: 'rgba(146, 64, 14, 0.2)',
+                    borderColor: 'rgba(146, 64, 14, 1)',
+                    pointBackgroundColor: 'rgba(146, 64, 14, 1)',
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                animation: false, // Importante para html2canvas
+                scales: { r: { suggestedMin: 0, suggestedMax: 10, ticks: { display: false } } },
+                plugins: { legend: { display: false } }
+            }
+        });
+    }
+
+    function renderPdfFlavorChart(ruedaData) {
+        const FLAVOR_DATA = ruedaData.tipo === 'cafe' ? SCAA_FLAVORS_ES : COEX_FLAVORS_ES;
+        const notes = typeof ruedaData.notas_json === 'string' ? JSON.parse(ruedaData.notas_json) : ruedaData.notas_json;
+
+        const selectedCategories = {};
+        notes.forEach(note => {
+            if (!selectedCategories[note.category]) {
+                selectedCategories[note.category] = { color: FLAVOR_DATA[note.category].color, children: [] };
+            }
+            selectedCategories[note.category].children.push(note.subnote);
+        });
+
+        // --- Data para Anillo Interior (Padres/Categorías) ---
+        const l1_labels = Object.keys(FLAVOR_DATA);
+        const l1_data = l1_labels.map(cat => FLAVOR_DATA[cat].children.length);
+        const l1_colors = l1_labels.map(label => selectedCategories[label] ? FLAVOR_DATA[label].color : '#E5E7EB');
+
+        // --- Data para Anillo Exterior (Hijos/Notas) ---
+        const l2_labels = Object.values(FLAVOR_DATA).flatMap(d => d.children.map(c => c.name));
+        const l2_data = Array(l2_labels.length).fill(1);
+        const l2_colors = Object.values(FLAVOR_DATA).flatMap(d => {
+            return d.children.map(child => {
+                const isSelected = notes.some(n => n.category === Object.keys(FLAVOR_DATA).find(k => FLAVOR_DATA[k] === d) && n.subnote === child.name);
+                return isSelected ? d.color : '#E5E7EB';
+            });
+        });
+
+
+        // Reutilizar la lógica de visualización de ruedas-sabores-app.js pero simplificada para PDF
+        const categories = {};
+        
+        notes.forEach(n => {
+            if (!categories[n.category]) categories[n.category] = [];
+            categories[n.category].push(n.subnote);
+        });
+
+        const labelsL1 = Object.keys(categories);
+        const dataL1 = labelsL1.map(c => categories[c].length);
+        const colors = ['#ef4444', '#f97316', '#f59e0b', '#84cc16', '#06b6d4', '#8b5cf6', '#d946ef', '#f43f5e']; // Colores fijos para PDF
+
+        const ctx1 = document.getElementById('pdf-doughnut-chart').getContext('2d');
+        new Chart(ctx1, {
+            type: 'doughnut',
+            data: {
+                labels: l1_labels,
+                datasets: [
+                    // ANILLO EXTERIOR (Dataset 0)
+                    {
+                        data: l2_data,
+                        backgroundColor: l2_colors,
+                        borderColor: '#ffffff',
+                        borderWidth: 1,
+                        weight: 1 
+                    },
+                    // ANILLO INTERIOR (Dataset 1)
+                    {
+                        data: l1_data,
+                        backgroundColor: l1_colors,
+                        borderColor: '#ffffff',
+                        borderWidth: 2,
+                        weight: 0.6 
+                    }
+                ]
+            },
+            options: { 
+                responsive: true,
+                maintainAspectRatio: false,
+                animation: false,
+                cutout: '1%',
+                plugins: { 
+                    legend: { display: false },
+                    datalabels: {
+                        color: '#ffffff',
+                        font: function(context) {
+                            var width = context.chart.width;
+                            var size = Math.round(width / 45); // Tamaño dinámico basado en el ancho
+                            // Límites para el tamaño de fuente
+                            if (size > 14) size = 14;
+                            if (size < 6) size = 6;
+                            
+                            return {
+                                size: size,
+                                family: 'Arial'
+                            };
+                        },
+                        formatter: function(value, context) {
+                            if (context.datasetIndex === 0) {
+                                const resultado = notes.find(item => {
+                                    return item.subnote.toLowerCase().includes(l2_labels[context.dataIndex].toLowerCase());
+                                });
+                                return resultado ? l2_labels[context.dataIndex] : "";
+                            } else {
+                                //l1_labels[context.dataIndex]
+                                return selectedCategories[l1_labels[context.dataIndex]] ? l1_labels[context.dataIndex] : "";
+                            }
+                        },
+                        anchor: 'center',
+                        align: 'center',
+                        // Rotación del texto
+                        rotation: function(ctx) {
+                            const valuesBefore = ctx.dataset.data.slice(0, ctx.dataIndex).reduce((a, b) => a + b, 0);
+                            const sum = ctx.dataset.data.reduce((a, b) => a + b, 0);
+                            const currentVal = ctx.dataset.data[ctx.dataIndex];
+                            const angle = Math.PI * 2 * (valuesBefore + currentVal / 2) / sum - Math.PI / 2;
+                            var degree = angle * 180 / Math.PI;
+                            
+                            // Voltear texto en el lado izquierdo
+                            if (degree > 90 && degree < 270) {
+                                degree += 180;
+                            }
+                            return degree;
+                        },
+                        textStrokeColor: 'rgba(0,0,0,0.6)',
+                        textStrokeWidth: 2
+                    }
+                }
+            }
+        });
+
+        // Generar leyenda texto
+        const legendHtml = labelsL1.map((cat, i) => `
+            <div class="flex items-start gap-1">
+                <span class="w-3 h-3 rounded-full mt-1 flex-shrink-0" style="background-color: ${colors[i % colors.length]}"></span>
+                <div>
+                    <strong class="block font-bold text-stone-800">${cat}</strong>
+                    <span class="text-stone-500 leading-tight">${categories[cat].join(', ')}</span>
+                </div>
+            </div>
+        `).join('');
+        document.getElementById('pdf-flavor-legend').innerHTML = legendHtml;
+    }
+
+    // Helper para encontrar el lote raíz (padre de todos)
+    function findRootBatch(allBatches, currentId) {
+        // Necesitamos una forma de navegar hacia arriba.
+        // Dado que allBatches es un árbol, podemos usar findParentBatch repetidamente.
+        let current = findBatchById(allBatches, currentId);
+        let parent = findParentBatch(allBatches, currentId);
+        
+        while (parent) {
+            current = parent;
+            parent = findParentBatch(allBatches, current.id);
+        }
+        return current;
     }
 
     init();

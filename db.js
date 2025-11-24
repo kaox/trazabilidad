@@ -639,9 +639,9 @@ const getTrazabilidad = async (req, res) => {
             certificaciones_json: safeJSONParse(p.certificaciones_json || '[]')
         }));
         
-        const tostadoData = history.stages.find(s => s.nombre_etapa.toLowerCase().includes('tostado'))?.data;
-        if (tostadoData && tostadoData.tipoPerfil) {
-            const perfilCacao = await get('SELECT * FROM perfiles_cacao WHERE nombre = ? AND user_id = ?', [tostadoData.tipoPerfil.value, ownerId]);
+        const calidadData = history.stages.find(s => s.nombre_etapa.toLowerCase().includes('calidad'))?.data;
+        if (calidadData && calidadData.tipoPerfil) {
+            const perfilCacao = await get('SELECT * FROM perfiles_cacao WHERE nombre = ? AND user_id = ?', [calidadData.tipoPerfil.value, ownerId]);
             if (perfilCacao) {
                 perfilCacao.perfil_data = safeJSONParse(perfilCacao.perfil_data);
                 history.perfilSensorialData = perfilCacao.perfil_data;
@@ -670,7 +670,7 @@ const getTrazabilidad = async (req, res) => {
         }
 
         const ruedaData = history.stages.find(s => 
-            s.nombre_etapa.toLowerCase().includes('chocolate')
+            s.nombre_etapa.toLowerCase().includes('calidad')
         )?.data;
         if (ruedaData) {
             // 2. Obtener Rueda de Sabor (Notas de Cata)

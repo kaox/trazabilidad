@@ -1,7 +1,7 @@
 {
   "templates": [
     {
-      "nombre_producto": "Cacao",
+      "nombre_producto": "Cacao - Chocolate",
       "descripcion": "Plantilla estándar para el proceso de postcosecha del cacao.",
       "etapas": [
         {
@@ -65,7 +65,7 @@
                 {"label": "Procesadora", "name": "procesadora", "type": "selectProcesadora"},
                 {"label": "Fecha Tostado", "name": "fecha", "type": "date"},
                 {"label": "Tostador", "name": "tostador", "type": "text"},
-                {"label": "Perfil Sensorial", "name": "tipoPerfil", "type": "selectPerfil"},
+                {"label": "Tamaño de grano", "name": "tamanoGrano", "type": "select", "options": ["Pequeño", "Mediano", "Grande"]},
                 {"label": "Temperatura de Carga (°C)", "name": "temperaturaCarga", "type": "number"},
                 {"label": "Temperatura Final (°C)", "name": "temperaturaFinal", "type": "number"},
                 {"label": "Tiempo Tueste (min)", "name": "tiempoTueste", "type": "number"},
@@ -97,7 +97,6 @@
             "variables": [
               {"label": "Procesadora", "name": "procesadora", "type": "selectProcesadora"},
               {"label": "Fecha", "name": "fecha", "type": "date"},
-              {"label": "Rueda de Sabor", "name": "tipoRuedaSabor", "type": "selectRuedaSabor"},
               {"label": "Tiempo de Conchado (horas)", "name": "tiempoConchado", "type": "number"},
               {"label": "Temperatura de Templado (°C)", "name": "temperaturaTemplado", "type": "number"},
               {"label": "Porcentaje de Cacao (%)", "name": "porcentajeCacao", "type": "number"},
@@ -124,11 +123,28 @@
               {"label": "Foto del Producto", "name": "imageUrl", "type": "image"}
             ]
           }
+        },
+        {
+          "nombre_etapa": "Calidad / Cata",
+          "orden": 8,
+          "campos_json": {
+            "entradas": [{"label": "Peso Muestra (g)", "name": "pesoMuestra", "type": "number"}],
+            "salidas": [],
+            "variables": [
+                {"label": "Fecha de Catación", "name": "fecha", "type": "date"},
+                {"label": "Catador", "name": "nombreCatador", "type": "text"},
+                {"label": "Puntuación Final", "name": "puntuacion", "type": "number", "step": "0.25"},
+                {"label": "Perfil Sensorial", "name": "tipoPerfil", "type": "selectPerfil"},
+                {"label": "Rueda de Sabor", "name": "tipoRuedaSabor", "type": "selectRuedaSabor"},
+                {"label": "Perfil de Sabor", "name": "perfilSabor", "type": "textarea", "placeholder": "Ej: Notas a panela, cítricos como mandarina, cuerpo medio, acidez brillante..."},
+                {"label": "Foto", "name": "imageUrl", "type": "image"}
+                ]
+          }
         }
       ]
     },
     {
-      "nombre_producto": "Café Lavado",
+      "nombre_producto": "Café - Lavado",
       "descripcion": "Plantilla para el proceso de café lavado.",
       "etapas": [
         {
@@ -224,12 +240,12 @@
             "variables": [
                 {"label": "Procesadora", "name": "procesadora", "type": "selectProcesadora"},
                 {"label": "Fecha Tostado", "name": "fecha", "type": "date"},
+                {"label": "Tostador", "name": "tostador", "type": "text"},
                 {"label": "Perfil de Tueste", "name": "perfilTueste", "type": "text"},
                 {"label": "Tiempo de Tueste (min)", "name": "tiempoTueste", "type": "number"},
                 {"label": "Temperatura de Carga (°C)", "name": "temperaturaCarga", "type": "number"},
                 {"label": "Temperatura Final (°C)", "name": "temperaturaFinal", "type": "number"},
                 {"label": "Notas de Cata", "name": "notasCata", "type": "textarea"},
-                {"label": "Nivel de Tueste Agtron", "name": "nivelTueste", "type": "number"},
                 {"label": "Foto", "name": "imageUrl", "type": "image"}]
           }
         },
@@ -243,6 +259,7 @@
                 {"label": "Fecha de Catación", "name": "fecha", "type": "date"},
                 {"label": "Catador (Q Grader)", "name": "nombreCatador", "type": "text"},
                 {"label": "Puntuación Final (SCA)", "name": "puntuacionSCA", "type": "number", "step": "0.25"},
+                {"label": "Rueda de Sabor", "name": "tipoRuedaSabor", "type": "selectRuedaSabor"},
                 {"label": "Perfil de Sabor", "name": "perfilSabor", "type": "textarea", "placeholder": "Ej: Notas a panela, cítricos como mandarina, cuerpo medio, acidez brillante..."},
                 {"label": "Nivel de Tueste (Agtron)", "name": "nivelTueste", "type": "number"},
                 {"label": "Foto", "name": "imageUrl", "type": "image"}
@@ -252,7 +269,7 @@
       ]
     },
     {
-      "nombre_producto": "Café Honey",
+      "nombre_producto": "Café - Honey",
       "descripcion": "Plantilla para el proceso de café honey.",
       "etapas": [
         {
@@ -350,7 +367,7 @@
       ]
     },
     {
-      "nombre_producto": "Café Natural",
+      "nombre_producto": "Café - Natural",
       "descripcion": "Plantilla para el proceso de café natural.",
       "etapas": [
         {
