@@ -593,8 +593,6 @@ document.addEventListener('DOMContentLoaded', () => {
             const fincaData = state.fincas.find(f => 
                 f.nombre_finca?.trim().toLowerCase() === fincaName?.trim().toLowerCase()
             ) || {};
-            console.log(fincaData);
-            console.log(rootBatch);
 
             const reportData = {
                 codigo: batchNode.id,
