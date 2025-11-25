@@ -15,27 +15,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const highlightsContainer = document.getElementById('highlights-container');
     const reviewsContainer = document.getElementById('reviews-container');
 
-    const SCAA_FLAVORS_ES = {
-        'Floral': { 'icon': 'fa-solid fa-fan', 'color': '#ec4899', 'children': [ { 'name': 'Té Negro', 'icon': 'fa-solid fa-mug-hot' }, { 'name': 'Floral', 'icon': 'fa-solid fa-flower' } ] },
-        'Frutal': { 'icon': 'fa-solid fa-apple-whole', 'color': '#ef4444', 'children': [ { 'name': 'Bayas', 'icon': 'fa-solid fa-gem' }, { 'name': 'Frutas Secas', 'icon': 'fa-solid fa-sun' }, { 'name': 'Otras Frutas', 'icon': 'fa-solid fa-bell-concierge' }, { 'name': 'Cítricos', 'icon': 'fa-solid fa-lemon' } ] },
-        'Agrio/Fermentado': { 'icon': 'fa-solid fa-vial-circle-check', 'color': '#a855f7', 'children': [ { 'name': 'Aromas Agrios', 'icon': 'fa-solid fa-smog' }, { 'name': 'Alcohol/Fermentado', 'icon': 'fa-solid fa-wine-bottle' } ] },
-        'Verde/Vegetal': { 'icon': 'fa-solid fa-leaf', 'color': '#22c55e', 'children': [ { 'name': 'Aceite de Oliva', 'icon': 'fa-solid fa-oil-can' }, { 'name': 'Crudo', 'icon': 'fa-solid fa-seedling' }, { 'name': 'Verde/Vegetal', 'icon': 'fa-solid fa-hashtag' }, { 'name': 'Frijol', 'icon': 'fa-solid fa-dot-circle' } ] },
-        'Otro': { 'icon': 'fa-solid fa-ban', 'color': '#6b7280', 'children': [ { 'name': 'Papel/Moho', 'icon': 'fa-solid fa-boxes-stacked' }, { 'name': 'Químico', 'icon': 'fa-solid fa-flask' } ] },
-        'Tostado': { 'icon': 'fa-solid fa-fire', 'color': '#0d9488', 'children': [ { 'name': 'Tabaco de Pipa', 'icon': 'fa-solid fa-smoking' }, { 'name': 'Tabaco', 'icon': 'fa-solid fa-leaf' }, { 'name': 'Quemado', 'icon': 'fa-solid fa-skull-crossbones' }, { 'name': 'Cereal', 'icon': 'fa-solid fa-wheat-awn' } ] },
-        'Especias': { 'icon': 'fa-solid fa-mortar-pestle', 'color': '#d97706', 'children': [ { 'name': 'Picante', 'icon': 'fa-solid fa-pepper-hot' }, { 'name': 'Pimienta', 'icon': 'fa-solid fa-ring' }, { 'name': 'Especias Dulces', 'icon': 'fa-solid fa-cookie-bite' } ] },
-        'Nuez/Cacao': { 'icon': 'fa-solid fa-stroopwafel', 'color': '#78350f', 'children': [ { 'name': 'Nueces', 'icon': 'fa-solid fa-seedling' }, { 'name': 'Cacao', 'icon': 'fa-solid fa-cookie-bite' } ] },
-        'Dulce': { 'icon': 'fa-solid fa-candy-cane', 'color': '#f59e0b', 'children': [ { 'name': 'Azúcar Moreno', 'icon': 'fa-solid fa-cube' }, { 'name': 'Vainilla', 'icon': 'fa-solid fa-star' }, { 'name': 'Dulce General', 'icon': 'fa-solid fa-cookie-bite' }, { 'name': 'Aromas Dulces', 'icon': 'fa-solid fa-droplet' } ] }
-    };
-    const COEX_FLAVORS_ES = {
-        "Fruta Fresca": { "icon": "fa-solid fa-apple-whole", "color": "#ef4444", "children": [ { "name": "Bayas / Frutos Rojos", "icon": "fa-solid fa-gem" }, { "name": "Cítricos", "icon": "fa-solid fa-lemon" }, { "name": "Oscura (Cereza, Ciruela)", "icon": "fa-solid fa-cloud-moon" }, { "name": "Pulpa Amarilla / Naranja / Blanca", "icon": "fa-solid fa-sun" }, { "name": "Tropical (Maracuyá, Piña)", "icon": "fa-solid fa-fan" } ] },
-        "Fruta Marrón": { "icon": "fa-solid fa-box-archive", "color": "#92400e", "children": [ { "name": "Seca (Pasa, Higo)", "icon": "fa-solid fa-sun" }, { "name": "Marrón (Dátil, Ciruela Pasa)", "icon": "fa-solid fa-box" }, { "name": "Sobre Madura", "icon": "fa-solid fa-hourglass-end" } ] },
-        "Vegetal": { "icon": "fa-solid fa-leaf", "color": "#22c55e", "children": [ { "name": "Pasto / Vegetal verde / Hierba", "icon": "fa-solid fa-hashtag" }, { "name": "Terroso / Hongo / Musgo / Bosque", "icon": "fa-solid fa-mountain" } ] },
-        "Floral": { "icon": "fa-solid fa-fan", "color": "#ec4899", "children": [ { "name": "Flor de Azahar", "icon": "fa-solid fa-sun" }, { "name": "Flores (Jazmín, Rosa, Lirio)", "icon": "fa-solid fa-flower" } ] },
-        "Madera": { "icon": "fa-solid fa-tree", "color": "#6b46c1", "children": [ { "name": "Madera Clara", "icon": "fa-solid fa-tree-city" }, { "name": "Madera Oscura", "icon": "fa-solid fa-bed" }, { "name": "Resina", "icon": "fa-solid fa-flask" } ] },
-        "Especia": { "icon": "fa-solid fa-mortar-pestle", "color": "#f59e0b", "children": [ { "name": "Especias (Canela, Vainilla)", "icon": "fa-solid fa-cookie-bite" }, { "name": "Tabaco (Hojas Secas)", "icon": "fa-solid fa-leaf" }, { "name": "Sazonado/Umami", "icon": "fa-solid fa-fish" } ] },
-        "Nuez": { "icon": "fa-solid fa-stroopwafel", "color": "#964b00", "children": [ { "name": "Nuez - Parte Interna (Avellana, Almendra)", "icon": "fa-solid fa-seedling" }, { "name": "Nuez - Piel (Cáscaras Tostadas)", "icon": "fa-solid fa-ring" } ] },
-        "Caramelo / Panela": { "icon": "fa-solid fa-candy-cane", "color": "#f97316", "children": [ { "name": "Caramelo / Panela (Azúcar Moreno)", "icon": "fa-solid fa-cube" } ] }
-    };
+    let FLAVOR_WHEELS_DATA = {};
 
     // --- Estado Global ---
     let globalHistory = {};
@@ -59,12 +39,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
         try {
             // Buscar trazabilidad y reseñas en paralelo
-            const [history, reviews] = await Promise.all([
+            const [history, reviews, flavorData] = await Promise.all([
                 fetch(`/api/trazabilidad/${loteId}`).then(res => res.ok ? res.json() : Promise.reject(res)),
-                fetch(`/api/reviews/${loteId}`).then(res => res.ok ? res.json() : Promise.reject(res))
+                fetch(`/api/reviews/${loteId}`).then(res => res.ok ? res.json() : Promise.reject(res)),
+                fetch('/data/flavor-wheels.json').then(res => res.ok ? res.json() : {})
             ]);
 
             globalHistory = history;
+            FLAVOR_WHEELS_DATA = flavorData;
             renderStory(history, reviews); // Pasar reseñas al renderizador
             hideMessageModal();
         } catch (error) {
@@ -625,7 +607,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- NUEVA FUNCIÓN ---
     function initializeRuedaChart(baseId, ruedaData) {
-        console.log(ruedaData);
         const ctxL1 = document.getElementById(`${baseId}-l1`);
         const ctxL2 = document.getElementById(`${baseId}-l2`);
         if (!ctxL1 || !ctxL2 || !ruedaData || !ruedaData.notas_json) return;
@@ -635,7 +616,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (chartInstances[baseId + '-l2']) chartInstances[baseId + '-l2'].destroy();
 
         const notes = ruedaData.notas_json;
-        const FLAVOR_DATA = ruedaData.tipo === 'cafe' ? SCAA_FLAVORS_ES : COEX_FLAVORS_ES;
+        const FLAVOR_DATA = ruedaData.tipo === 'cafe' ? FLAVOR_WHEELS_DATA.cafe : FLAVOR_WHEELS_DATA.cacao;
 
         const selectedCategories = {};
         notes.forEach(note => {
@@ -686,9 +667,12 @@ document.addEventListener('DOMContentLoaded', () => {
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                cutout: '1%', // Agujero central un poco más pequeño para dar espacio al texto
+                cutout: '0%', // Agujero central un poco más pequeño para dar espacio al texto
                 layout: {
-                    padding: 20
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0
                 },
                 plugins: {
                     legend: { display: false },
