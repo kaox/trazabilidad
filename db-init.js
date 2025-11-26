@@ -131,28 +131,17 @@ async function initializeDatabase() {
             console.log("Tabla 'lotes' lista.");
             
             await runQuery(db, `
-                CREATE TABLE IF NOT EXISTS perfiles_cacao (
+                CREATE TABLE IF NOT EXISTS perfiles (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     user_id INTEGER NOT NULL,
                     nombre TEXT NOT NULL,
+                    tipo TEXT NOT NULL,
                     perfil_data TEXT NOT NULL,
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-                    UNIQUE(user_id, nombre)
+                    UNIQUE(user_id, nombre, tipo)
                 )`);
-            console.log("Tabla 'perfiles_cacao' lista.");
-
-            await runQuery(db, `
-                CREATE TABLE IF NOT EXISTS perfiles_cafe (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    user_id INTEGER NOT NULL,
-                    nombre_perfil TEXT NOT NULL,
-                    perfil_data TEXT NOT NULL,
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-                    UNIQUE(user_id, nombre_perfil)
-                )`);
-             console.log("Tabla 'perfiles_cafe' lista.");
+            console.log("Tabla 'perfiles' lista.");
 
             await runQuery(db, `
                 CREATE TABLE IF NOT EXISTS ruedas_sabores (

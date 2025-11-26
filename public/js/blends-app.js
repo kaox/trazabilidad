@@ -27,8 +27,8 @@ document.addEventListener('DOMContentLoaded', () => {
     async function init() {
         try {
             [state.cacaoProfiles, state.cafeProfiles, state.savedBlends] = await Promise.all([
-                api('/api/perfiles'),
-                api('/api/perfiles-cafe'),
+                api('/api/perfiles?tipo=cacao'),
+                api('/api/perfiles?tipo=cafe'),
                 api('/api/blends')
             ]);
             renderOriginLists();
@@ -57,7 +57,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     function createOriginCard(profile, type) {
-        const name = type === 'cacao' ? profile.nombre : profile.nombre_perfil;
+        const name = profile.nombre;
         return `
             <div class="p-3 border rounded-xl flex items-center justify-between hover:bg-amber-50">
                 <span class="font-medium text-sm">${name}</span>
@@ -77,7 +77,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         blendResultContainer.classList.remove('hidden');
         blendComponentsContainer.innerHTML = state.currentBlend.components.map((comp, index) => {
-            const name = state.currentBlend.type === 'cacao' ? comp.profile.nombre : comp.profile.nombre_perfil;
+            const name = comp.profile.nombre;
             return `
                 <div class="p-4 border rounded-xl">
                     <div class="flex justify-between items-center mb-2">
@@ -147,7 +147,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const datasets = components.map((comp, index) => {
             const color = componentColors[index % componentColors.length];
             return {
-                label: comp.profile.nombre || comp.profile.nombre_perfil,
+                label: comp.profile.nombre,
                 data: attributes.map(attr => comp.profile.perfil_data[attr] || 0),
                 fill: true,
                 backgroundColor: 'rgba(0,0,0,0)',
@@ -275,7 +275,7 @@ document.addEventListener('DOMContentLoaded', () => {
             tipo_producto: state.currentBlend.type,
             componentes_json: state.currentBlend.components.map(c => ({
                 id: c.profile.id,
-                nombre: c.profile.nombre || c.profile.nombre_perfil,
+                nombre: c.profile.nombre,
                 percentage: c.percentage
             })),
             perfil_final_json: calculateCurrentBlendProfile()

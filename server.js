@@ -137,7 +137,6 @@ app.get('/qr', (req, res) => {
 app.get('/app/trazabilidad', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'trazabilidad.html')));
 app.get('/app/fincas', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'fincas.html')));
 app.get('/app/perfiles', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'perfiles.html')));
-app.get('/app/perfiles-cafe', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'perfiles-cafe.html')));
 app.get('/app/procesadoras', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'procesadoras.html')));
 app.get('/app/plantillas', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'plantillas.html')));
 app.get('/app/ruedas-sabores', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'ruedas-sabores.html')));
@@ -168,17 +167,11 @@ app.post('/api/procesadoras', authenticateApi, db.createProcesadora);
 app.put('/api/procesadoras/:id', authenticateApi, db.updateProcesadora);
 app.delete('/api/procesadoras/:id', authenticateApi, db.deleteProcesadora);
 
-// Perfiles Cacao
+// Perfiles
 app.get('/api/perfiles', authenticateApi, db.getPerfiles);
 app.post('/api/perfiles', authenticateApi, db.createPerfil);
 app.put('/api/perfiles/:id', authenticateApi, db.updatePerfil);
 app.delete('/api/perfiles/:id', authenticateApi, db.deletePerfil);
-
-// Perfiles Café
-app.get('/api/perfiles-cafe', authenticateApi, db.getPerfilesCafe);
-app.post('/api/perfiles-cafe', authenticateApi, db.createPerfilCafe);
-app.put('/api/perfiles-cafe/:id', authenticateApi, db.updatePerfilCafe);
-app.delete('/api/perfiles-cafe/:id', authenticateApi, db.deletePerfilCafe);
 
 // Ruedas de Sabores
 app.get('/api/ruedas-sabores', authenticateApi, db.getRuedasSabores);

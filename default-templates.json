@@ -2,11 +2,11 @@
   "templates": [
     {
       "nombre_producto": "Cacao - Chocolate",
-      "descripcion": "Plantilla estándar para el proceso de postcosecha del cacao.",
+      "descripcion": "Un viaje sensorial desde el corazón del bosque hasta tu paladar: el proceso de creación de nuestro chocolate.",
       "etapas": [
         {
           "nombre_etapa": "Cosecha",
-          "descripcion": "Todo nace en el campo. Nuestros aliados agricultores seleccionan a mano solo las vainas en su punto exacto de madurez. Cada corte es un gesto de respeto al árbol, un arte que protege la cosecha del mañana.",
+          "descripcion": "Bajo la sombra de árboles, manos expertas eligen el fruto perfecto. Un corte preciso revela la pulpa blanca, brillante y dulce como perlas de la selva.",
           "orden": 1,
           "campos_json": {
             "entradas": [{"label": "Peso Mazorcas (kg)", "name": "pesoMazorcas", "type": "number"}],
@@ -21,7 +21,7 @@
         },
         {
           "nombre_etapa": "Fermentación",
-          "descripcion": "Aquí ocurre la magia. Las habas frescas reposan cubiertas durante días. Este paso crucial es pura alquimia: transforma los azúcares y despierta las complejas notas de sabor únicas de este cacao.",
+          "descripcion": "Aquí ocurre la magia. Los granos reposan durante días. Este paso crucial es pura alquimia: transforma los azúcares y despierta las complejas notas de sabor únicas de este cacao.",
           "orden": 2,
           "campos_json": {
             "entradas": [{"label": "Peso Granos en Baba (kg)", "name": "pesoEntrada", "type": "number"}],
@@ -38,7 +38,7 @@
         },
         {
           "nombre_etapa": "Secado",
-          "descripcion": "Bajo el sol tropical, las habas se extienden para secarse lentamente. Las removemos con paciencia, dejando que el calor selle los sabores desarrollados en la fermentación y preserve la calidad de cada grano.",
+          "descripcion": "Una danza bajo el sol. Los granos se mueven con rastrillos de madera hasta que el viento se lleva la humedad y crujen como hojas secas.",
           "orden": 3,
           "campos_json": {
             "entradas": [{"label": "Peso Granos Fermentados (kg)", "name": "pesoEntrada", "type": "number"}],
@@ -76,7 +76,7 @@
         },
         {
           "nombre_etapa": "Descascarillado & Molienda",
-          "descripcion": "Partimos las habas tostadas para liberar su corazón: los nibs. Al molerlos, la fricción los transforma mágicamente en el alma líquida del cacao: un intenso licor que es la base de todo.",
+          "descripcion": "Partimos los granos tostadas para liberar su corazón: los nibs. Al molerlos, la fricción los transforma mágicamente en el alma líquida del cacao: un intenso licor que es la base de todo.",
           "orden": 5,
           "campos_json": {
             "entradas": [{"label": "Peso Entrada (kg)", "name": "pesoEntrada", "type": "number"}],
@@ -108,7 +108,7 @@
         },
         {
           "nombre_etapa": "Envasado",
-          "descripcion": "Moldeamos y enfriamos el chocolate, preservando su brillo. Envolvemos cada tableta con cuidado para proteger su aroma y frescura. Este empaque es el guardián de la historia que acabas de leer, listo para llegar a tus manos.",
+          "descripcion": "Moldeamos y enfriamos el chocolate, preservando su brillo. Envolvemos cada tableta con cuidado para proteger su aroma y frescura. Este empaque es el guardián de la historia que acabas de leer.",
           "orden": 7,
           "campos_json": {
             "entradas": [{"label": "Número de Unidades", "name": "pesoEntrada", "type": "number"}],
@@ -126,6 +126,7 @@
         },
         {
           "nombre_etapa": "Calidad / Cata",
+          "descripcion": "Rompe la barra. Ese crack es el sonido final. Deja que se funda en tu lengua: lo que saboreas es la luz del sol de un lugar lejano.",
           "orden": 8,
           "campos_json": {
             "entradas": [{"label": "Peso Muestra (g)", "name": "pesoMuestra", "type": "number"}],

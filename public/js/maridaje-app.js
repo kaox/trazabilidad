@@ -9,8 +9,8 @@ document.addEventListener('DOMContentLoaded', () => {
     async function init() {
         try {
             [perfilesCacao, perfilesCafe, perfilesVino, perfilesQueso] = await Promise.all([
-                api('/api/perfiles'),
-                api('/api/perfiles-cafe'),
+                api('/api/perfiles?tipo=cacao'),
+                api('/api/perfiles?tipo=cafe'),
                 fetch('/data/maridajes_vino.json').then(res => res.json()).then(data => data.defaultPerfilesVino),
                 fetch('/data/maridajes_quesos.json').then(res => res.json())
             ]);
@@ -32,7 +32,7 @@ document.addEventListener('DOMContentLoaded', () => {
             optionsHtml += `<optgroup label="Perfiles de Cacao">${perfilesCacao.map(p => `<option value="cacao-${p.id}">${p.nombre}</option>`).join('')}</optgroup>`;
         }
         if (perfilesCafe.length > 0) {
-            optionsHtml += `<optgroup label="Perfiles de Café">${perfilesCafe.map(p => `<option value="cafe-${p.id}">${p.nombre_perfil}</option>`).join('')}</optgroup>`;
+            optionsHtml += `<optgroup label="Perfiles de Café">${perfilesCafe.map(p => `<option value="cafe-${p.id}">${p.nombre}</option>`).join('')}</optgroup>`;
         }
         if (perfilesVino.length > 0) {
             optionsHtml += `<optgroup label="Perfiles de Vino">${perfilesVino.map(p => `<option value="vino-${p.id}">${p.nombre}</option>`).join('')}</optgroup>`;
@@ -64,7 +64,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (tipo === 'vino') productoBase = perfilesVino.find(p => p.id == id);
             if (tipo === 'queso') productoBase = perfilesQueso.find(p => p.id == id);
             const recCacao = calcularMaridajes(productoBase, perfilesCacao, `${tipo}-cacao`);
-            renderRecomendaciones({ cacao: recCacao }, productoBase.nombre || productoBase.nombre_perfil);
+            renderRecomendaciones({ cacao: recCacao }, productoBase.nombre || productoBase.nombre);
         }
     }
     
@@ -231,7 +231,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function createCard(rec, index) {
-        const nombre = rec.producto.nombre || rec.producto.nombre_perfil;
+        const nombre = rec.producto.nombre;
         return `
             <div class="bg-white p-6 rounded-2xl shadow-lg border-t-4 border-amber-800">
                 <h3 class="text-xl font-bold font-display text-amber-900">${nombre}</h3>

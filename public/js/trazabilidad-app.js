@@ -1,9 +1,11 @@
 document.addEventListener('DOMContentLoaded', () => {
-    let state = { batches: [], templates: [], stagesByTemplate: {} };
+    let state = { batches: [], templates: [], stagesByTemplate: {}, ruedasSabor: [], perfilesSensoriales: [], fincas: [] };
     const crearProcesoBtn = document.getElementById('crear-proceso-btn');
     const dashboardView = document.getElementById('dashboard-view');
     const formModal = document.getElementById('form-modal');
     const modalContent = document.getElementById('modal-content');
+
+    let FLAVOR_WHEELS_DATA = {};
 
     const SCAA_FLAVORS_ES = {
         'Floral': { 'icon': 'fa-solid fa-fan', 'color': '#ec4899', 'children': [ { 'name': 'Té Negro', 'icon': 'fa-solid fa-mug-hot' }, { 'name': 'Floral', 'icon': 'fa-solid fa-flower' } ] },
@@ -45,6 +47,7 @@ document.addEventListener('DOMContentLoaded', () => {
         await loadBatches();
         await loadPerfilesSensoriales();
         await loadFincas();
+        await loadRuedasSabor();
         
         crearProcesoBtn.addEventListener('click', openTemplateSelectorModal);
         formModal.addEventListener('click', e => { if (e.target.id === 'form-modal') formModal.close(); });
@@ -54,8 +57,7 @@ document.addEventListener('DOMContentLoaded', () => {
     async function loadPerfilesSensoriales() {
         try {
             // Cargamos ambos tipos por si acaso
-            const [cacao, cafe] = await Promise.all([api('/api/perfiles'), api('/api/perfiles-cafe')]);
-            state.perfilesSensoriales = [...cacao, ...cafe];
+            state.perfilesSensoriales = await api('/api/perfiles');
         } catch (e) { console.error("Error cargando perfiles", e); }
     }
     
@@ -339,6 +341,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const value = (typeof fieldData === 'object' && fieldData !== null) ? fieldData.value : fieldData;
         const isVisible = (typeof fieldData === 'object' && fieldData !== null) ? fieldData.visible : true;
         const checkedAttr = isVisible ? 'checked' : '';
+        const tipoProducto = template.nombre_producto.toLowerCase().includes('cacao') ? 'cacao' : 'cafe';
 
         let inputHtml = '';
         switch(type) {
@@ -349,10 +352,10 @@ document.addEventListener('DOMContentLoaded', () => {
             case 'select': inputHtml = createSelectHTML(name, options, value); break;
             case 'selectFinca': inputHtml = await createFincaSelectHTML(name, value); break;
             case 'selectProcesadora': inputHtml = await createProcesadoraSelectHTML(name, value); break;
-            case 'selectPerfil': inputHtml = await createPerfilSelectHTML(name, value); break;
+            case 'selectPerfil': 
+                inputHtml = await createPerfilSelectHTML(name, value, tipoProducto);
+                break;
             case 'selectRuedaSabor':
-                // Determinar el tipo ('cafe' o 'cacao') basado en el nombre de la plantilla
-                const tipoProducto = template.nombre_producto.toLowerCase().includes('cacao') ? 'cacao' : 'cafe';
                 inputHtml = await createRuedaSaborSelectHTML(name, value, tipoProducto);
                 break;
             case 'selectLugar': inputHtml = await createLugarProcesoSelectHTML(name, value); break;
@@ -406,10 +409,11 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (error) { return `<div class="text-red-500">Error al cargar procesadoras.</div>`; }
     }
 
-    async function createPerfilSelectHTML(name, selectedValue) {
+    async function createPerfilSelectHTML(name, selectedValue, tipoProducto) {
         try {
             const perfiles = await api('/api/perfiles');
-            return createSelectHTML(name, perfiles.map(p => p.nombre), selectedValue);
+            const perfilesFiltradas = perfiles.filter(r => r.tipo === tipoProducto);
+            return createSelectHTML(name, perfilesFiltradas.map(p => p.nombre), selectedValue);
         } catch (error) { return `<div class="text-red-500">Error al cargar perfiles.</div>`; }
     }
 
@@ -433,6 +437,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function loadRuedasSabor() {
         try {
+            const response = await fetch('/data/flavor-wheels.json');
+            const data = await response.json();
+
+            FLAVOR_WHEELS_DATA = data;
+
             state.ruedasSabor = await api('/api/ruedas-sabores');
         } catch (error) {
             console.error("Error al cargar ruedas de sabor:", error);
@@ -766,7 +775,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function renderPdfFlavorChart(ruedaData) {
-        const FLAVOR_DATA = ruedaData.tipo === 'cafe' ? SCAA_FLAVORS_ES : COEX_FLAVORS_ES;
+        console.log(state.ruedasSabor);
+        const FLAVOR_DATA = ruedaData.tipo === 'cafe' ? FLAVOR_WHEELS_DATA.cafe : FLAVOR_WHEELS_DATA.cacao;
         const notes = typeof ruedaData.notas_json === 'string' ? JSON.parse(ruedaData.notas_json) : ruedaData.notas_json;
 
         const selectedCategories = {};

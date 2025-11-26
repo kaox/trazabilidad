@@ -3,67 +3,86 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Perfiles Sensoriales de Cacao</title>
+    <title>Perfiles Sensoriales - AgriTraza</title>
     <script src="/auth.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet">
-    <script src="/js/analytics-loader.js" defer></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
     <style>
         body { font-family: 'Inter', sans-serif; background-color: #fdfaf6; }
         h1, h2, h3, .font-display { font-family: 'Playfair Display', serif; }
-        input[type="range"]::-webkit-slider-thumb { appearance: none; width: 20px; height: 20px; background: #854d0e; cursor: pointer; border-radius: 50%; }
-        input[type="range"]::-moz-range-thumb { width: 20px; height: 20px; background: #854d0e; cursor: pointer; border-radius: 50%; border: none; }
     </style>
 </head>
 <body class="text-stone-800 antialiased">
     <div id="nav-placeholder"></div>
+    
     <div class="container mx-auto p-4 md:p-8">
         <header class="text-center mb-10 mt-4">
-            <h1 class="text-4xl md:text-5xl font-bold text-amber-900 mb-2">Perfiles Sensoriales del Cacao</h1>
-            <p class="text-stone-600">Analiza y gestiona los perfiles de sabor de tus granos.</p>
+            <h1 class="text-4xl md:text-5xl font-bold text-amber-900 mb-2">Perfiles Sensoriales</h1>
+            <p class="text-stone-600">Gestiona los perfiles de sabor de tus diferentes productos.</p>
         </header>
+
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <!-- Columna de Visualización y Selección -->
+            <!-- Columna Izquierda: Lista y Gráfico -->
             <div class="bg-white p-6 rounded-2xl shadow-lg">
-                <h2 class="text-2xl font-display text-amber-900 border-b pb-2 mb-6">Análisis Visual</h2>
-                <div class="mb-4">
-                    <label for="perfil-selector" class="block text-sm font-medium text-stone-700 mb-1">Seleccionar Perfil Existente</label>
-                    <div class="flex items-center gap-2">
-                        <select id="perfil-selector" class="w-full p-3 border border-stone-300 rounded-xl"></select>
-                        <button id="edit-profile-btn" class="p-3 bg-sky-600 text-white rounded-xl hover:bg-sky-700 transition"><svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z"></path><path fill-rule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clip-rule="evenodd"></path></svg></button>
-                        <button id="delete-profile-btn" class="p-3 bg-red-600 text-white rounded-xl hover:bg-red-700 transition"><svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm4 0a1 1 0 012 0v6a1 1 0 11-2 0V8z" clip-rule="evenodd"></path></svg></button>
+                <div class="flex justify-between items-center border-b pb-4 mb-4">
+                    <h2 class="text-2xl font-display text-amber-900">Mis Perfiles</h2>
+                    <!-- Filtro Visual -->
+                    <div class="flex bg-stone-100 rounded-lg p-1">
+                        <button id="filter-cafe" class="px-4 py-1 rounded-md text-sm font-medium transition-colors">Café</button>
+                        <button id="filter-cacao" class="px-4 py-1 rounded-md text-sm font-medium transition-colors">Cacao</button>
                     </div>
                 </div>
-                <div>
-                    <canvas id="radar-chart"></canvas>
+                
+                <div id="perfiles-list" class="space-y-2 mb-6 max-h-60 overflow-y-auto">
+                    <!-- Lista dinámica -->
+                </div>
+
+                <div class="pt-6 border-t">
+                    <h2 class="text-xl font-display text-amber-900 mb-4 text-center" id="chart-title">Visualización</h2>
+                    <div class="relative aspect-square max-w-md mx-auto">
+                        <canvas id="radar-chart"></canvas>
+                    </div>
                 </div>
             </div>
-            
-            <!-- Columna de Creación / Edición -->
+
+            <!-- Columna Derecha: Formulario -->
             <div class="bg-white p-6 rounded-2xl shadow-lg">
-                <h2 id="form-title" class="text-2xl font-display text-amber-900 border-b pb-2 mb-6">Crear Nuevo Perfil</h2>
-                <form id="perfil-form" class="space-y-3">
+                <h2 id="form-title" class="text-2xl font-display text-amber-900 border-b pb-2 mb-6">Nuevo Perfil</h2>
+                <form id="perfil-form" class="space-y-4">
                     <input type="hidden" id="edit-id">
+                    
+                    <!-- Selector de Tipo -->
                     <div>
-                        <label for="nombre_perfil" class="block text-sm font-medium text-stone-700 mb-1">Nombre del Perfil</label>
-                        <input type="text" id="nombre_perfil" name="nombre" class="w-full p-3 border border-stone-300 rounded-xl" required>
+                        <label for="tipo-producto" class="block text-sm font-medium text-stone-700 mb-1">Tipo de Producto</label>
+                        <select id="tipo-producto" class="w-full p-3 border border-stone-300 rounded-xl bg-white focus:ring-2 focus:ring-amber-800 transition">
+                            <option value="cafe">Café (SCA)</option>
+                            <option value="cacao">Cacao (CoEx)</option>
+                        </select>
                     </div>
-                    <div id="sliders-container" class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 pt-4 border-t">
-                        <!-- Sliders se generan aquí -->
+
+                    <div>
+                        <label for="nombre" class="block text-sm font-medium text-stone-700 mb-1">Nombre del Perfil</label>
+                        <input type="text" id="nombre" name="nombre" placeholder="Ej: Lote Especial 2024" class="w-full p-3 border border-stone-300 rounded-xl" required>
                     </div>
-                    <div class="pt-4 flex justify-end gap-4">
-                        <button type="button" id="cancel-edit-btn" class="bg-stone-500 hover:bg-stone-600 text-white font-bold py-2 px-6 rounded-xl hidden">Cancelar</button>
+
+                    <div id="sliders-container" class="space-y-4 pt-2 max-h-[50vh] overflow-y-auto pr-2">
+                        <!-- Sliders dinámicos se insertarán aquí -->
+                    </div>
+
+                    <div class="pt-6 flex justify-end gap-4">
+                        <button type="button" id="cancel-edit-btn" class="bg-stone-500 hover:bg-stone-600 text-white font-bold py-3 px-6 rounded-xl shadow-md hidden">Cancelar</button>
                         <button type="submit" class="bg-amber-800 hover:bg-amber-900 text-white font-bold py-3 px-8 rounded-xl shadow-md">Guardar Perfil</button>
                     </div>
                 </form>
             </div>
         </div>
     </div>
+
     <script src="/js/perfiles-app.js"></script>
     <script src="/js/nav-loader.js" defer></script>
 </body>
 </html>
-

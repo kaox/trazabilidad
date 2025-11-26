@@ -298,52 +298,71 @@ const deleteProcesadora = async (req, res) => {
 };
 const getPerfiles = async (req, res) => {
     const userId = req.user.id;
+    const { tipo } = req.query; // Opcional: filtrar por tipo desde el backend
+    
     try {
-        let perfiles = await all('SELECT * FROM perfiles_cacao WHERE user_id = ? ORDER BY nombre', [userId]);
-        if (perfiles.length === 0) {
-            const defaultProfiles = require('./default-profiles.json');
-            const defaultPerfiles = defaultProfiles.defaultPerfilesCacao;
-            const insertSql = 'INSERT INTO perfiles_cacao (user_id, nombre, perfil_data) VALUES (?, ?, ?)';
-            for (const perfil of defaultPerfiles) {
-                await run(insertSql, [userId, perfil.nombre, JSON.stringify(perfil.perfil_data)]);
-            }
-            perfiles = await all('SELECT * FROM perfiles_cacao WHERE user_id = ? ORDER BY nombre', [userId]);
+        let sql = 'SELECT * FROM perfiles WHERE user_id = ?';
+        const params = [userId];
+        
+        if (tipo) {
+            sql += ' AND tipo = ?';
+            params.push(tipo);
         }
-        const parsedPerfiles = perfiles.map(p => ({ ...p, perfil_data: safeJSONParse(p.perfil_data) }));
-        res.status(200).json(parsedPerfiles);
-    } catch (err) { res.status(500).json({ error: err.message }); }
-};
-const createPerfil = async (req, res) => {
-    const userId = req.user.id;
-    const { nombre, perfil_data } = req.body;
-    try {
-        const result = await run('INSERT INTO perfiles_cacao (user_id, nombre, perfil_data) VALUES (?, ?, ?)', [userId, nombre, JSON.stringify(perfil_data)]);
-        res.status(201).json({ id: result.lastID, user_id: userId, nombre, perfil_data });
+        
+        sql += ' ORDER BY created_at DESC';
+
+        const rows = await all(sql, params);
+        const perfiles = rows.map(p => ({
+            ...p,
+            perfil_data: safeJSONParse(p.perfil_data)
+        }));
+        res.status(200).json(perfiles);
     } catch (err) {
-        if (err.message.includes('UNIQUE constraint failed')) res.status(409).json({ error: "Ya existe un perfil con ese nombre." });
-        else res.status(500).json({ error: err.message });
-    }
-};
-const updatePerfil = async (req, res) => {
-    const userId = req.user.id;
-    const { id } = req.params;
-    const { nombre, perfil_data } = req.body;
-    try {
-        const result = await run('UPDATE perfiles_cacao SET nombre = ?, perfil_data = ? WHERE id = ? AND user_id = ?', [nombre, JSON.stringify(perfil_data), id, userId]);
-        if (result.changes === 0) return res.status(404).json({ error: 'Perfil no encontrado o sin permiso.' });
-        res.status(200).json({ message: 'Perfil de cacao actualizado.' });
-    } catch (err) {
-        if (err.message.includes('UNIQUE')) return res.status(409).json({ error: 'Ya existe un perfil de cacao con ese nombre.' });
         res.status(500).json({ error: err.message });
     }
 };
-const deletePerfil = async (req, res) => {
+
+const createPerfil = async (req, res) => {
     const userId = req.user.id;
-    const { id } = req.params;
+    const { nombre, tipo, perfil_data } = req.body;
+    
+    if (!tipo) return res.status(400).json({ error: "El tipo de perfil es requerido." });
+
     try {
-        const result = await run('DELETE FROM perfiles_cacao WHERE id = ? AND user_id = ?', [id, userId]);
-        if (result.changes === 0) return res.status(404).json({ error: 'Perfil no encontrado o sin permiso.' });
-        res.status(204).send();
+        const result = await run(
+            'INSERT INTO perfiles (user_id, nombre, tipo, perfil_data) VALUES (?, ?, ?, ?)',
+            [userId, nombre, tipo, JSON.stringify(perfil_data)]
+        );
+        res.status(201).json({ id: result.lastID, message: "Perfil creado exitosamente." });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};
+
+const updatePerfil = async (req, res) => {
+    const { id } = req.params;
+    const userId = req.user.id;
+    const { nombre, perfil_data } = req.body; // El tipo no se suele cambiar al editar
+    
+    try {
+        const result = await run(
+            'UPDATE perfiles SET nombre = ?, perfil_data = ? WHERE id = ? AND user_id = ?',
+            [nombre, JSON.stringify(perfil_data), id, userId]
+        );
+        if (result.changes === 0) return res.status(404).json({ error: 'Perfil no encontrado.' });
+        res.status(200).json({ message: 'Perfil actualizado.' });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};
+
+const deletePerfil = async (req, res) => {
+    const { id } = req.params;
+    const userId = req.user.id;
+    try {
+        const result = await run('DELETE FROM perfiles WHERE id = ? AND user_id = ?', [id, userId]);
+        if (result.changes === 0) return res.status(404).json({ error: 'Perfil no encontrado.' });
+        res.status(200).json({ message: 'Perfil eliminado.' });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
@@ -641,12 +660,12 @@ const getTrazabilidad = async (req, res) => {
         
         const calidadData = history.stages.find(s => s.nombre_etapa.toLowerCase().includes('calidad'))?.data;
         if (calidadData && calidadData.tipoPerfil) {
-            const perfilCacao = await get('SELECT * FROM perfiles_cacao WHERE nombre = ? AND user_id = ?', [calidadData.tipoPerfil.value, ownerId]);
+            const perfilCacao = await get('SELECT * FROM perfiles WHERE tipo = "cacao" AND nombre = ? AND user_id = ?', [calidadData.tipoPerfil.value, ownerId]);
             if (perfilCacao) {
                 perfilCacao.perfil_data = safeJSONParse(perfilCacao.perfil_data);
                 history.perfilSensorialData = perfilCacao.perfil_data;
 
-                const allCafes = await all('SELECT * FROM perfiles_cafe WHERE user_id = ?', [ownerId]);
+                const allCafes = await all('SELECT * FROM perfiles WHERE tipo = "cafe" AND user_id = ?', [ownerId]);
                 const allVinos = maridajesVinoData.defaultPerfilesVino;
                 const allQuesos = maridajesQuesoData;
 
@@ -722,60 +741,6 @@ function calcularMaridajeCacaoQueso(cacao, queso) {
     return ((pInt * 0.4) + (pContraste * 0.4) + (pArmonia * 0.2)) * 100;
 }
 
-const getPerfilesCafe = async (req, res) => {
-    const userId = req.user.id;
-    try {
-        let perfiles = await all('SELECT * FROM perfiles_cafe WHERE user_id = ? ORDER BY nombre_perfil', [userId]);
-        if (perfiles.length === 0) {
-            const defaultProfiles = require('./default-profiles.json');
-            const defaultPerfilesCafe = defaultProfiles.defaultPerfilesCafe;
-            const insertSql = 'INSERT INTO perfiles_cafe (user_id, nombre_perfil, perfil_data) VALUES (?, ?, ?)';
-            for (const perfil of defaultPerfilesCafe) {
-                await run(insertSql, [userId, perfil.nombre_perfil, JSON.stringify(perfil.perfil_data)]);
-            }
-            perfiles = await all('SELECT * FROM perfiles_cafe WHERE user_id = ? ORDER BY nombre_perfil', [userId]);
-        }
-        const parsedPerfiles = perfiles.map(p => ({ ...p, perfil_data: safeJSONParse(p.perfil_data) }));
-        res.status(200).json(parsedPerfiles);
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-};
-const createPerfilCafe = async (req, res) => {
-    const userId = req.user.id;
-    const { nombre_perfil, perfil_data } = req.body;
-    try {
-        const result = await run('INSERT INTO perfiles_cafe (user_id, nombre_perfil, perfil_data) VALUES (?, ?, ?)', [userId, nombre_perfil, JSON.stringify(perfil_data)]);
-        res.status(201).json({ id: result.lastID, user_id: userId, nombre_perfil, perfil_data });
-    } catch (err) {
-        if (err.message.includes('UNIQUE')) return res.status(409).json({ error: 'Ya existe un perfil de café con ese nombre.' });
-        res.status(500).json({ error: err.message });
-    }
-};
-const updatePerfilCafe = async (req, res) => {
-    const userId = req.user.id;
-    const { id } = req.params;
-    const { nombre_perfil, perfil_data } = req.body;
-    try {
-        const result = await run('UPDATE perfiles_cafe SET nombre_perfil = ?, perfil_data = ? WHERE id = ? AND user_id = ?', [nombre_perfil, JSON.stringify(perfil_data), id, userId]);
-        if (result.changes === 0) return res.status(404).json({ error: 'Perfil no encontrado o sin permiso.' });
-        res.status(200).json({ message: 'Perfil de café actualizado.' });
-    } catch (err) {
-        if (err.message.includes('UNIQUE')) return res.status(409).json({ error: 'Ya existe un perfil de café con ese nombre.' });
-        res.status(500).json({ error: err.message });
-    }
-};
-const deletePerfilCafe = async (req, res) => {
-    const userId = req.user.id;
-    const { id } = req.params;
-    try {
-        const result = await run('DELETE FROM perfiles_cafe WHERE id = ? AND user_id = ?', [id, userId]);
-        if (result.changes === 0) return res.status(404).json({ error: 'Perfil no encontrado o sin permiso.' });
-        res.status(204).send();
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-};
 const getRuedasSabores = async (req, res) => {
     const userId = req.user.id;
     try {
@@ -1196,7 +1161,6 @@ module.exports = {
     getBatchesTree, createBatch, updateBatch, deleteBatch,
     getTrazabilidad,
     getUserProfile, updateUserProfile, updateUserPassword,
-    getPerfilesCafe, createPerfilCafe, updatePerfilCafe, deletePerfilCafe,
     getRuedasSabores, createRuedaSabores, updateRuedaSabores, deleteRuedaSabores,
     getBlends, createBlend, deleteBlend,
     getRecetas, createReceta, deleteReceta, updateReceta,
