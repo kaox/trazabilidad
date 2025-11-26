@@ -149,7 +149,8 @@
       "descripcion": "Plantilla para el proceso de café lavado.",
       "etapas": [
         {
-          "nombre_etapa": "Cosecha",
+          "nombre_etapa": "Cosecha y Selección",
+          "descripcion": "Manos expertas eligen las cerezas maduras, asegurando la mejor calidad desde el inicio del proceso.",
           "orden": 1,
           "campos_json": {
             "entradas": [{"label": "Peso Cereza (kg)", "name": "pesoCereza", "type": "number"}],
@@ -164,6 +165,7 @@
         },
         {
           "nombre_etapa": "Despulpado",
+          "descripcion": "Separar la pulpa del grano es un arte que requiere precisión. Este paso es crucial para preparar los granos para una fermentación óptima.",
           "orden": 2,
           "campos_json": {
             "entradas": [{"label": "Peso Cereza Seleccionada (kg)", "name": "pesoCerezaSeleccionada", "type": "number"}],
@@ -177,6 +179,7 @@
         },
         {
           "nombre_etapa": "Fermentación",
+          "descripcion": "La fermentación es donde la magia sucede. Controlar este proceso es esencial para desarrollar los sabores complejos que definen un café de alta calidad.",
           "orden": 3,
           "campos_json": {
             "entradas": [{"label": "Peso en Pergamino Húmedo (kg)", "name": "pesoPergaminoHumedo", "type": "number"}],
@@ -194,6 +197,7 @@
         },
         {
           "nombre_etapa": "Lavado",
+          "descripcion": "Eliminar la mucílago residual es vital para asegurar un perfil de sabor limpio y brillante en el café final.",
           "orden": 4,
           "campos_json": {
             "entradas": [{"label": "Peso Post-Fermentación (kg)", "name": "pesoPostFermentacion", "type": "number"}],
@@ -209,6 +213,7 @@
         },
         {
           "nombre_etapa": "Secado",
+          "descripcion": "El secado adecuado preserva la calidad del grano. Controlar este proceso es clave para evitar defectos y asegurar un café de sabor excepcional.",
           "orden": 5,
           "campos_json": {
             "entradas": [{"label": "Peso Lavado (kg)", "name": "pesoLavado", "type": "number"}],
@@ -225,6 +230,7 @@
         },
         {
           "nombre_etapa": "Trilla y Selección",
+          "descripcion": "Quitar el pergamino y seleccionar los granos es esencial para garantizar la calidad del café verde antes del tostado.",
           "orden": 6,
           "campos_json": {
             "entradas": [{"label": "Peso Pergamino Seco (kg)", "name": "pesoPergaminoSeco", "type": "number"}],
@@ -234,6 +240,7 @@
         },
         {
           "nombre_etapa": "Tostado",
+          "descripcion": "El tostado es donde el café revela su carácter. Un control preciso del calor y el tiempo es crucial para desarrollar los perfiles de sabor deseados.",
           "orden": 7,
           "campos_json": {
             "entradas": [{"label": "Peso Café Verde (kg)", "name": "pesoCafeVerde", "type": "number"}],
@@ -251,7 +258,8 @@
           }
         },
         {
-          "nombre_etapa": "Evaluación en Taza",
+          "nombre_etapa": "Evaluación en Taza / Calidad",
+          "descripcion": "La evaluación sensorial es el arte de descubrir las historias ocultas en cada taza. Aquí, los catadores expertos desvelan los matices y la calidad del café tostado.",
           "orden": 8,
           "campos_json": {
             "entradas": [{"label": "Peso Muestra Tostada (g)", "name": "pesoMuestraTostada", "type": "number"}],
@@ -274,7 +282,8 @@
       "descripcion": "Plantilla para el proceso de café honey.",
       "etapas": [
         {
-          "nombre_etapa": "Cosecha",
+          "nombre_etapa": "Cosecha y Selección",
+          "descripcion": "Manos expertas eligen las cerezas maduras, asegurando la mejor calidad desde el inicio del proceso.",
           "orden": 1,
           "campos_json": {
             "entradas": [{"label": "Peso Cereza (kg)", "name": "pesoCereza", "type": "number"}],
@@ -289,6 +298,7 @@
         },
         {
           "nombre_etapa": "Despulpado",
+          "descripcion": "Separar la pulpa del grano es un arte que requiere precisión. Este paso es crucial para preparar los granos para una fermentación óptima.",
           "orden": 2,
           "campos_json": {
             "entradas": [{"label": "Peso Cereza Seleccionada (kg)", "name": "pesoCerezaSeleccionada", "type": "number"}],
@@ -303,6 +313,7 @@
         },
         {
           "nombre_etapa": "Secado",
+          "descripcion": "El secado adecuado preserva la calidad del grano. Controlar este proceso es clave para evitar defectos y asegurar un café de sabor excepcional.",
           "orden": 3,
           "campos_json": {
             "entradas": [{"label": "Peso Café con Mucílago (kg)", "name": "pesoCafeMucilago", "type": "number"}],
@@ -319,6 +330,7 @@
         },
         {
           "nombre_etapa": "Trilla y Selección",
+          "descripcion": "Quitar el pergamino y seleccionar los granos es esencial para garantizar la calidad del café verde antes del tostado.",
           "orden": 4,
           "campos_json": {
             "entradas": [{"label": "Peso Pergamino Seco (kg)", "name": "pesoPergaminoSeco", "type": "number"}],
@@ -333,6 +345,7 @@
         },
         {
           "nombre_etapa": "Tostado",
+          "descripcion": "El tostado es donde el café revela su carácter. Un control preciso del calor y el tiempo es crucial para desarrollar los perfiles de sabor deseados.",
           "orden": 5,
           "campos_json": {
             "entradas": [{"label": "Peso Café Verde (kg)", "name": "pesoCafeVerde", "type": "number"}],
@@ -350,7 +363,8 @@
           }
         },
         {
-          "nombre_etapa": "Evaluación en Taza",
+          "nombre_etapa": "Evaluación en Taza / Calidad",
+          "descripcion": "La evaluación sensorial es el arte de descubrir las historias ocultas en cada taza. Aquí, los catadores expertos desvelan los matices y la calidad del café tostado.",
           "orden": 6,
           "campos_json": {
             "entradas": [{"label": "Peso Muestra Tostada (g)", "name": "pesoMuestraTostada", "type": "number"}],
@@ -373,6 +387,7 @@
       "etapas": [
         {
           "nombre_etapa": "Cosecha y Selección",
+          "descripcion": "Manos expertas eligen las cerezas maduras, asegurando la mejor calidad desde el inicio del proceso.",
           "orden": 1,
           "campos_json": {
             "entradas": [{"label": "Peso Cereza (kg)", "name": "pesoCereza", "type": "number"}],
@@ -383,11 +398,13 @@
               {"label": "Clasificación de Cafe", "name": "clasificacion", "type": "select", "options": ["Arábica", "Robusta", "Liberica", "Otro"]},
               {"label": "Variedad", "name": "variedad", "type": "text"}, 
               {"label": "Nivel de Madurez (Grados Brix)", "name": "gradosBrix", "type": "number"},
-              {"label": "Método de Selección", "name": "metodoSeleccion", "type": "text", "description": "Flotación en agua, selección manual, etc."}, {"label": "Foto", "name": "imageUrl", "type": "image"}]
+              {"label": "Método de Selección", "name": "metodoSeleccion", "type": "text", "description": "Flotación en agua, selección manual, etc."},
+              {"label": "Foto", "name": "imageUrl", "type": "image"}]
           }
         },
         {
           "nombre_etapa": "Secado",
+          "descripcion": "El secado adecuado preserva la calidad del grano. Controlar este proceso es clave para evitar defectos y asegurar un café de sabor excepcional.",
           "orden": 2,
           "campos_json": {
             "entradas": [{"label": "Peso Cereza Seleccionada (kg)", "name": "pesoCerezaSeleccionada", "type": "number"}],
@@ -397,15 +414,17 @@
         },
         {
           "nombre_etapa": "Trilla y Selección",
+          "descripcion": "Quitar el pergamino y seleccionar los granos es esencial para garantizar la calidad del café verde antes del tostado.",
           "orden": 3,
           "campos_json": {
             "entradas": [{"label": "Peso Cereza Seca (kg)", "name": "pesoCerezaSeca", "type": "number"}],
             "salidas": [{"label": "Peso Café Verde (kg)", "name": "pesoCafeVerde", "type": "number"}],
-            "variables": [{"label": "Procesadora", "name": "procesadora", "type": "selectProcesadora"}, {"label": "Fecha Trilla", "name": "fecha", "type": "date"}, {"label": "Método de Selección", "name": "metodoSeleccion", "type": "text"}, {"label": "Densidad del grano (g/L)", "name": "densidadGrano", "type": "number"}, {"label": "Foto", "name": "imageUrl", "type": "image"}]
+            "variables": [{"label": "Procesadora", "name": "procesadora", "type": "selectProcesadora"}, {"label": "Fecha Trilla", "name": "fecha", "type": "date"},{"label": "Método de Selección", "name": "metodoSeleccion", "type": "text"}, {"label": "Densidad del grano (g/L)", "name": "densidadGrano", "type": "number"}, {"label": "Foto", "name": "imageUrl", "type": "image"}]
           }
         },
         {
           "nombre_etapa": "Tostado",
+          "descripcion": "El tostado es donde el café revela su carácter. Un control preciso del calor y el tiempo es crucial para desarrollar los perfiles de sabor deseados.",
           "orden": 4,
           "campos_json": {
             "entradas": [{"label": "Peso Café Verde (kg)", "name": "pesoCafeVerde", "type": "number"}],
@@ -414,7 +433,8 @@
           }
         },
         {
-          "nombre_etapa": "Evaluación en Taza",
+          "nombre_etapa": "Evaluación en Taza / Calidad",
+          "descripcion": "La evaluación sensorial es el arte de descubrir las historias ocultas en cada taza. Aquí, los catadores expertos desvelan los matices y la calidad del café tostado.",
           "orden": 5,
           "campos_json": {
             "entradas": [{"label": "Peso Muestra Tostada (g)", "name": "pesoMuestraTostada", "type": "number"}],
@@ -437,7 +457,7 @@
       "etapas": [
         {
           "nombre_etapa": "Cosecha en Apiario",
-          "descripcion": "Registro de la recolección de los panales (alzas) maduros directamente de las colmenas.",
+          "descripcion": "Recolección de panales maduros de las colmenas en el apiario, asegurando la calidad y el estado óptimo de los mismos para la extracción de miel.",
           "orden": 1,
           "campos_json": {
             "entradas": [{"label": "Número de Alzas a Cosechar", "name": "numAlzas", "type": "number"}],
@@ -453,7 +473,7 @@
         },
         {
           "nombre_etapa": "Desoperculado y Extracción",
-          "descripcion": "Proceso de retirar la capa de cera (opérculo) de los panales y extraer la miel cruda mediante centrifugado (manual o eléctrico).",
+          "descripcion": "Remoción de la cera que cubre los panales (desoperculado) y extracción de la miel utilizando centrifugadoras, separando la miel de otros componentes como cera y residuos.",
           "orden": 2,
           "campos_json": {
             "entradas": [{"label": "Peso de Panales con Miel (kg)", "name": "pesoPanalesEntrada", "type": "number"}],
@@ -468,7 +488,7 @@
         },
         {
           "nombre_etapa": "Filtrado y Decantación",
-          "descripcion": "Purificación de la miel cruda. Se cuela para eliminar impurezas (cera, etc.) y se deja reposar (decantar) para que las burbujas y partículas finas suban, obteniendo miel madura y limpia.",
+          "descripcion": "Proceso de purificación de la miel cruda mediante filtrado para eliminar impurezas y posterior decantación para separar burbujas de aire y partículas sólidas, mejorando la calidad y apariencia de la miel.",
           "orden": 3,
           "campos_json": {
             "entradas": [{"label": "Peso de Miel cruda (kg)", "name": "pesoMielCruda", "type": "number"}],
@@ -485,7 +505,7 @@
         },
         {
           "nombre_etapa": "Envasado",
-          "descripcion": "Etapa final donde la miel madura se dosifica en los recipientes de venta, se asigna un número de lote y se definen las fechas de empaque y vencimiento.",
+          "descripcion": "Llenado de envases con la miel, asegurando condiciones higiénicas y control de calidad para preservar las propiedades organolépticas y nutricionales de la miel durante su almacenamiento y distribución.",
           "orden": 4,
           "campos_json": {
             "entradas": [{"label": "Número de Unidades", "name": "pesoEntrada", "type": "number"}],
