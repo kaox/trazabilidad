@@ -1,0 +1,27 @@
+{
+  "cafe": [
+    { "id": "fraganciaAroma", "label": "Fragancia/Aroma" },
+    { "id": "sabor", "label": "Sabor" },
+    { "id": "postgusto", "label": "Postgusto" },
+    { "id": "acidez", "label": "Acidez" },
+    { "id": "cuerpo", "label": "Cuerpo" },
+    { "id": "dulzura", "label": "Dulzura" },
+    { "id": "balance", "label": "Balance" },
+    { "id": "limpieza", "label": "Limpieza" },
+    { "id": "impresionGeneral", "label": "Impresión General" }
+  ],
+  "cacao": [
+    { "id": "cacao", "label": "Cacao" },
+    { "id": "acidez", "label": "Acidez" },
+    { "id": "amargor", "label": "Amargor" },
+    { "id": "astringencia", "label": "Astringencia" },
+    { "id": "frutaFresca", "label": "Fruta Fresca" },
+    { "id": "frutaMarron", "label": "Fruta Marrón" },
+    { "id": "vegetal", "label": "Vegetal" },
+    { "id": "floral", "label": "Floral" },
+    { "id": "madera", "label": "Madera" },
+    { "id": "especia", "label": "Especia" },
+    { "id": "nuez", "label": "Nuez" },
+    { "id": "caramelo", "label": "Caramelo" }
+  ]
+}

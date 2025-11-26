@@ -1,0 +1,10 @@
+User-agent: *
+Allow: /
+
+# Bloquear áreas privadas de la aplicación
+Disallow: /app/
+Disallow: /api/
+Disallow: /views/
+
+# Indicar la ubicación del mapa del sitio
+Sitemap: https://rurulab.com/sitemap.xml

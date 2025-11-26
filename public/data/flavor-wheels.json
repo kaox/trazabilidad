@@ -1,0 +1,236 @@
+{
+  "cafe": {
+    "Floral": {
+      "icon": "fa-solid fa-fan",
+      "color": "#ec4899",
+      "children": [
+        { "name": "Té Negro", "icon": "fa-solid fa-mug-hot" },
+        { "name": "Floral", "icon": "fa-solid fa-flower" }
+      ]
+    },
+    "Frutal": {
+      "icon": "fa-solid fa-apple-whole",
+      "color": "#ef4444",
+      "children": [
+        { "name": "Bayas", "icon": "fa-solid fa-gem" },
+        { "name": "Frutas Secas", "icon": "fa-solid fa-sun" },
+        { "name": "Otras Frutas", "icon": "fa-solid fa-bell-concierge" },
+        { "name": "Cítricos", "icon": "fa-solid fa-lemon" }
+      ]
+    },
+    "Agrio/Fermentado": {
+      "icon": "fa-solid fa-vial-circle-check",
+      "color": "#a855f7",
+      "children": [
+        { "name": "Aromas Agrios", "icon": "fa-solid fa-smog" },
+        { "name": "Alcohol/Fermentado", "icon": "fa-solid fa-wine-bottle" }
+      ]
+    },
+    "Verde/Vegetal": {
+      "icon": "fa-solid fa-leaf",
+      "color": "#22c55e",
+      "children": [
+        { "name": "Aceite de Oliva", "icon": "fa-solid fa-oil-can" },
+        { "name": "Crudo", "icon": "fa-solid fa-seedling" },
+        { "name": "Verde/Vegetal", "icon": "fa-solid fa-hashtag" },
+        { "name": "Frijol", "icon": "fa-solid fa-dot-circle" }
+      ]
+    },
+    "Otro": {
+      "icon": "fa-solid fa-ban",
+      "color": "#6b7280",
+      "children": [
+        { "name": "Papel/Moho", "icon": "fa-solid fa-boxes-stacked" },
+        { "name": "Químico", "icon": "fa-solid fa-flask" }
+      ]
+    },
+    "Tostado": {
+      "icon": "fa-solid fa-fire",
+      "color": "#0d9488",
+      "children": [
+        { "name": "Tabaco de Pipa", "icon": "fa-solid fa-smoking" },
+        { "name": "Tabaco", "icon": "fa-solid fa-leaf" },
+        { "name": "Quemado", "icon": "fa-solid fa-skull-crossbones" },
+        { "name": "Cereal", "icon": "fa-solid fa-wheat-awn" }
+      ]
+    },
+    "Especias": {
+      "icon": "fa-solid fa-mortar-pestle",
+      "color": "#d97706",
+      "children": [
+        { "name": "Picante", "icon": "fa-solid fa-pepper-hot" },
+        { "name": "Pimienta", "icon": "fa-solid fa-ring" },
+        { "name": "Especias Dulces", "icon": "fa-solid fa-cookie-bite" }
+      ]
+    },
+    "Nuez/Cacao": {
+      "icon": "fa-solid fa-stroopwafel",
+      "color": "#78350f",
+      "children": [
+        { "name": "Nueces", "icon": "fa-solid fa-seedling" },
+        { "name": "Cacao", "icon": "fa-solid fa-cookie-bite" }
+      ]
+    },
+    "Dulce": {
+      "icon": "fa-solid fa-candy-cane",
+      "color": "#f59e0b",
+      "children": [
+        { "name": "Azúcar Moreno", "icon": "fa-solid fa-cube" },
+        { "name": "Vainilla", "icon": "fa-solid fa-star" },
+        { "name": "Dulce General", "icon": "fa-solid fa-cookie-bite" },
+        { "name": "Aromas Dulces", "icon": "fa-solid fa-droplet" }
+      ]
+    }
+  },
+  "cacao": {
+    "Fruta Fresca": {
+      "icon": "fa-solid fa-apple-whole",
+      "color": "#ef4444",
+      "children": [
+        { "name": "Bayas/Frutos Rojos", "icon": "fa-solid fa-gem" },
+        { "name": "Cítricos", "icon": "fa-solid fa-lemon" },
+        { "name": "Oscura", "icon": "fa-solid fa-cloud-moon" },
+        { "name": "Pulpa Amarilla/Naranja/Blanca", "icon": "fa-solid fa-sun" },
+        { "name": "Tropical", "icon": "fa-solid fa-fan" }
+      ]
+    },
+    "Fruta Marrón": {
+      "icon": "fa-solid fa-box-archive",
+      "color": "#92400e",
+      "children": [
+        { "name": "Seca (Pasa, Higo)", "icon": "fa-solid fa-sun" },
+        { "name": "Marrón", "icon": "fa-solid fa-box" },
+        { "name": "Sobre Madura", "icon": "fa-solid fa-hourglass-end" }
+      ]
+    },
+    "Vegetal": {
+      "icon": "fa-solid fa-leaf",
+      "color": "#22c55e",
+      "children": [
+        { "name": "Pasto/Vegetal verde/Hierba", "icon": "fa-solid fa-hashtag" },
+        { "name": "Terroso/Hongo/Musgo/Bosque", "icon": "fa-solid fa-mountain" }
+      ]
+    },
+    "Floral": {
+      "icon": "fa-solid fa-fan",
+      "color": "#ec4899",
+      "children": [
+        { "name": "Flor de Azahar", "icon": "fa-solid fa-sun" },
+        { "name": "Flores", "icon": "fa-solid fa-flower" }
+      ]
+    },
+    "Madera": {
+      "icon": "fa-solid fa-tree",
+      "color": "#6b46c1",
+      "children": [
+        { "name": "Madera Clara", "icon": "fa-solid fa-tree-city" },
+        { "name": "Madera Oscura", "icon": "fa-solid fa-bed" },
+        { "name": "Resina", "icon": "fa-solid fa-flask" }
+      ]
+    },
+    "Especia": {
+      "icon": "fa-solid fa-mortar-pestle",
+      "color": "#f59e0b",
+      "children": [
+        { "name": "Especias", "icon": "fa-solid fa-cookie-bite" },
+        { "name": "Tabaco", "icon": "fa-solid fa-leaf" },
+        { "name": "Salado/Umami", "icon": "fa-solid fa-fish" }
+      ]
+    },
+    "Nuez": {
+      "icon": "fa-solid fa-stroopwafel",
+      "color": "#964b00",
+      "children": [
+        { "name": "Parte Interna", "icon": "fa-solid fa-seedling" },
+        { "name": "Piel", "icon": "fa-solid fa-ring" }
+      ]
+    },
+    "Caramelo / Panela": {
+      "icon": "fa-solid fa-candy-cane",
+      "color": "#f97316",
+      "children": [
+        { "name": "Caramelo / Panela", "icon": "fa-solid fa-cube" }
+      ]
+    }
+  },
+  "miel": {
+    "Floral": {
+      "icon": "fa-solid fa-spa",
+      "color": "#d946ef",
+      "children": [
+        { "name": "Azahar / Cítrico", "icon": "fa-solid fa-sun" },
+        { "name": "Flores Silvestres", "icon": "fa-solid fa-wind" },
+        { "name": "Lavanda / Violeta", "icon": "fa-solid fa-feather" },
+        { "name": "Jazmín / Perfumado", "icon": "fa-solid fa-spray-can" }
+      ]
+    },
+    "Frutal": {
+      "icon": "fa-solid fa-apple-whole",
+      "color": "#ef4444",
+      "children": [
+        { "name": "Cítricos (Limón, Naranja)", "icon": "fa-solid fa-lemon" },
+        { "name": "Fruta Tropical (Piña, Mango)", "icon": "fa-solid fa-umbrella-beach" },
+        { "name": "Bayas / Frutos Rojos", "icon": "fa-solid fa-certificate" },
+        { "name": "Fruta Seca (Higos, Pasas)", "icon": "fa-solid fa-cookie" }
+      ]
+    },
+    "Vegetal / Herbáceo": {
+      "icon": "fa-solid fa-leaf",
+      "color": "#22c55e",
+      "children": [
+        { "name": "Hierba Fresca / Pasto", "icon": "fa-solid fa-scissors" },
+        { "name": "Heno / Paja Seca", "icon": "fa-solid fa-wheat-awn" },
+        { "name": "Mentolado / Eucalipto", "icon": "fa-solid fa-snowflake" },
+        { "name": "Té Verde / Orégano", "icon": "fa-solid fa-mug-hot" }
+      ]
+    },
+    "Amaderado": {
+      "icon": "fa-solid fa-tree",
+      "color": "#581c87",
+      "children": [
+        { "name": "Resinoso / Pino", "icon": "fa-solid fa-flask" },
+        { "name": "Madera Vieja / Roble", "icon": "fa-solid fa-dungeon" },
+        { "name": "Corteza", "icon": "fa-solid fa-shield-halved" }
+      ]
+    },
+    "Especiado": {
+      "icon": "fa-solid fa-pepper-hot",
+      "color": "#eab308",
+      "children": [
+        { "name": "Canela / Clavo", "icon": "fa-solid fa-scroll" },
+        { "name": "Pimienta / Picante", "icon": "fa-solid fa-explosion" },
+        { "name": "Regaliz / Anís", "icon": "fa-solid fa-star" },
+        { "name": "Nuez Moscada", "icon": "fa-solid fa-globe" }
+      ]
+    },
+    "Nuez / Frutos Secos": {
+      "icon": "fa-solid fa-stroopwafel",
+      "color": "#854d0e",
+      "children": [
+        { "name": "Almendra / Mazapán", "icon": "fa-solid fa-egg" },
+        { "name": "Avellana", "icon": "fa-solid fa-circle" },
+        { "name": "Coco", "icon": "fa-solid fa-circle-notch" }
+      ]
+    },
+    "Caramelo / Confitería": {
+      "icon": "fa-solid fa-candy-cane",
+      "color": "#f97316",
+      "children": [
+        { "name": "Vainilla", "icon": "fa-solid fa-ice-cream" },
+        { "name": "Azúcar Quemado / Melaza", "icon": "fa-solid fa-fire-burner" },
+        { "name": "Toffee / Dulce de Leche", "icon": "fa-solid fa-cube" },
+        { "name": "Chocolate / Cacao", "icon": "fa-solid fa-mug-saucer" }
+      ]
+    },
+    "Terroso / Intenso": {
+      "icon": "fa-solid fa-mountain",
+      "color": "#57534e",
+      "children": [
+        { "name": "Tierra Húmeda", "icon": "fa-solid fa-cloud-rain" },
+        { "name": "Hongo / Setas", "icon": "fa-solid fa-umbrella" },
+        { "name": "Cuero / Animal", "icon": "fa-solid fa-briefcase" },
+        { "name": "Ahumado", "icon": "fa-solid fa-smog" }
+      ]
+    }
+  }
+}
