@@ -180,7 +180,11 @@ app.put('/api/ruedas-sabores/:id', authenticateApi, db.updateRuedaSabores);
 app.delete('/api/ruedas-sabores/:id', authenticateApi, db.deleteRuedaSabores);
 
 // Plantillas y Etapas
-app.get('/api/templates', authenticateApi, db.getTemplates);
+// --- ACTUALIZACIÓN: Nuevas rutas para Catálogo y Clonación ---
+app.get('/api/templates', authenticateApi, db.getTemplates); // Mis plantillas
+app.get('/api/templates/system', authenticateApi, db.getSystemTemplates); // Catálogo (JSON)
+app.post('/api/templates/clone', authenticateApi, db.cloneTemplate); // Clonar del catálogo a la DB
+// -------------------------------------------------------------
 app.post('/api/templates', authenticateApi, db.createTemplate);
 app.put('/api/templates/:templateId', authenticateApi, db.updateTemplate);
 app.delete('/api/templates/:templateId', authenticateApi, db.deleteTemplate);
@@ -233,4 +237,3 @@ app.get('/api/dashboard/data', authenticateApi, checkSubscription('profesional')
 app.listen(PORT, () => {
     console.log(`Servidor corriendo en modo [${process.env.NODE_ENV || 'development'}] en http://localhost:${PORT}`);
 });
-

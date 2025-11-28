@@ -7,7 +7,6 @@ const path = require('path');
 const { MercadoPagoConfig, Preference, Payment } = require('mercadopago');
 
 // Configurar el cliente de Mercado Pago
-// Asegúrate de que MP_ACCESS_TOKEN esté en tu .env o en las variables de Vercel
 const mpClient = new MercadoPagoConfig({
     access_token: process.env.MP_ACCESS_TOKEN,
     options: { timeout: 5000 }
@@ -19,10 +18,8 @@ const crypto = require('crypto');
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
 const client = new OAuth2Client(GOOGLE_CLIENT_ID);
 
-const defaultProfilesData = JSON.parse(fs.readFileSync(path.join(__dirname, 'default-profiles.json'), 'utf8'));
 const maridajesVinoData = JSON.parse(fs.readFileSync(path.join(__dirname, 'public', 'data', 'maridajes_vino.json'), 'utf8'));
 const maridajesQuesoData = JSON.parse(fs.readFileSync(path.join(__dirname, 'public', 'data', 'maridajes_quesos.json'), 'utf8'));
-
 
 let get, all, run;
 
@@ -81,7 +78,6 @@ const registerUser = async (req, res) => {
     if (!usuario || !password) return res.status(400).json({ error: "Usuario y contraseña son requeridos." });
     try {
         const hashedPassword = await bcrypt.hash(password, 10);
-        // Establecer la fecha de fin de la prueba para 30 días en el futuro
         const trialEndDate = new Date();
         trialEndDate.setDate(trialEndDate.getDate() + 30);
         
@@ -99,6 +95,7 @@ const registerUser = async (req, res) => {
         }
     }
 };
+
 const loginUser = async (req, res) => {
     const { usuario, password } = req.body;
     try {
@@ -130,7 +127,6 @@ const handleGoogleLogin = async (req, res) => {
         let user = await get('SELECT * FROM users WHERE correo = ?', [email]);
 
         if (!user) {
-            // Si el usuario no existe, lo creamos
             const randomPassword = crypto.randomBytes(16).toString('hex');
             const hashedPassword = await bcrypt.hash(randomPassword, 10);
             const username = email.split('@')[0];
@@ -145,7 +141,6 @@ const handleGoogleLogin = async (req, res) => {
             user = await get('SELECT * FROM users WHERE correo = ?', [email]);
         }
 
-        // Generar token de nuestra aplicación y enviar cookie
         const appTokenPayload = { id: user.id, username: user.usuario, role: user.role };
         const appToken = jwt.sign(appTokenPayload, process.env.JWT_SECRET || 'supersecretkey', { expiresIn: '1h' });
         
@@ -162,24 +157,24 @@ const logoutUser = (req, res) => {
     res.clearCookie('token', { path: '/' });
     res.status(200).json({ message: 'Cierre de sesión exitoso.' });
 };
+
 const getUserProfile = async (req, res) => {
     const userId = req.user.id;
     try {
         let user = await get('SELECT id, usuario, nombre, apellido, dni, ruc, empresa, company_logo, celular, correo, role, subscription_tier, trial_ends_at FROM users WHERE id = ?', [userId]);
         if (!user) return res.status(404).json({ error: "Usuario no encontrado." });
 
-        // Si el usuario no tiene fecha de prueba (cuenta antigua), se le asigna una.
         if (!user.trial_ends_at) {
             const trialEndDate = new Date();
             trialEndDate.setDate(trialEndDate.getDate() + 30);
             user.trial_ends_at = trialEndDate.toISOString();
-            
             await run('UPDATE users SET trial_ends_at = ? WHERE id = ?', [user.trial_ends_at, userId]);
         }
 
         res.status(200).json(user);
     } catch (err) { res.status(500).json({ error: err.message }); }
 };
+
 const updateUserProfile = async (req, res) => {
     const userId = req.user.id;
     const { nombre, apellido, dni, ruc, empresa, company_logo, celular, correo } = req.body;
@@ -188,6 +183,7 @@ const updateUserProfile = async (req, res) => {
         res.status(200).json({ message: "Perfil actualizado." });
     } catch (err) { res.status(500).json({ error: err.message }); }
 };
+
 const updateUserPassword = async (req, res) => {
     const userId = req.user.id;
     const { oldPassword, newPassword } = req.body;
@@ -202,7 +198,8 @@ const updateUserPassword = async (req, res) => {
         res.status(200).json({ message: "Contraseña actualizada." });
     } catch (err) { res.status(500).json({ error: err.message }); }
 };
-// --- Fincas (Actualizado) ---
+
+// --- Fincas ---
 const getFincas = async (req, res) => {
     const userId = req.user.id;
     try {
@@ -249,6 +246,8 @@ const deleteFinca = async (req, res) => {
         res.status(204).send();
     } catch (err) { res.status(500).json({ error: err.message }); }
 };
+
+// --- Procesadoras ---
 const getProcesadoras = async (req, res) => {
     const userId = req.user.id;
     try {
@@ -296,9 +295,10 @@ const deleteProcesadora = async (req, res) => {
         res.status(204).send();
     } catch (err) { res.status(500).json({ error: err.message }); }
 };
+
 const getPerfiles = async (req, res) => {
     const userId = req.user.id;
-    const { tipo } = req.query; // Opcional: filtrar por tipo desde el backend
+    const { tipo } = req.query;
     
     try {
         let sql = 'SELECT * FROM perfiles WHERE user_id = ?';
@@ -342,7 +342,7 @@ const createPerfil = async (req, res) => {
 const updatePerfil = async (req, res) => {
     const { id } = req.params;
     const userId = req.user.id;
-    const { nombre, perfil_data } = req.body; // El tipo no se suele cambiar al editar
+    const { nombre, perfil_data } = req.body;
     
     try {
         const result = await run(
@@ -367,27 +367,79 @@ const deletePerfil = async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 };
+
+// --- Plantillas (Modificado: Lazy Loading / Catálogo) ---
+
+// 1. Obtener solo las plantillas guardadas por el usuario en DB
 const getTemplates = async (req, res) => {
     const userId = req.user.id;
     try {
-        let templates = await all('SELECT * FROM plantillas_proceso WHERE user_id = ? ORDER BY nombre_producto', [userId]);
-        if (templates.length === 0) {
-            const defaultTemplates = require('./default-templates.json').templates;
-            for (const template of defaultTemplates) {
-                const templateResult = await run('INSERT INTO plantillas_proceso (user_id, nombre_producto, descripcion) VALUES (?, ?, ?)', [userId, template.nombre_producto, template.descripcion]);
-                const templateId = templateResult.lastID;
-                for (const stage of template.etapas) {
-                    await run('INSERT INTO etapas_plantilla (plantilla_id, nombre_etapa, descripcion, orden, campos_json) VALUES (?, ?, ?, ?, ?)', [templateId, stage.nombre_etapa, stage.descripcion, stage.orden, JSON.stringify(stage.campos_json)]);
-                }
-            }
-            templates = await all('SELECT * FROM plantillas_proceso WHERE user_id = ? ORDER BY nombre_producto', [userId]);
-        }
+        // Se elimina la lógica de auto-sembrado. Solo devuelve lo que existe.
+        const templates = await all('SELECT * FROM plantillas_proceso WHERE user_id = ? ORDER BY nombre_producto', [userId]);
         res.status(200).json(templates);
     } catch (err) {
         console.error("Error en getTemplates:", err);
         res.status(500).json({ error: err.message });
     }
 };
+
+// 2. Obtener el Catálogo del Sistema (JSON)
+const getSystemTemplates = (req, res) => {
+    try {
+        // Lee el archivo JSON siempre fresco
+        const catalog = require('./default-templates.json').templates;
+        res.status(200).json(catalog);
+    } catch (err) {
+        console.error("Error al leer el catálogo de plantillas:", err);
+        res.status(500).json({ error: "Error interno al cargar el catálogo." });
+    }
+};
+
+// 3. Clonar una plantilla del Catálogo a la DB del Usuario
+const cloneTemplate = async (req, res) => {
+    const userId = req.user.id;
+    // El frontend debe enviar el nombre exacto del producto tal cual aparece en el JSON
+    const { nombre_producto_sistema } = req.body; 
+
+    if (!nombre_producto_sistema) return res.status(400).json({ error: "Falta el nombre de la plantilla del sistema." });
+
+    try {
+        const catalog = require('./default-templates.json').templates;
+        const templateToClone = catalog.find(t => t.nombre_producto === nombre_producto_sistema);
+
+        if (!templateToClone) return res.status(404).json({ error: "Plantilla no encontrada en el catálogo." });
+
+        // A. Insertar la Cabecera (Plantilla)
+        const templateResult = await run(
+            'INSERT INTO plantillas_proceso (user_id, nombre_producto, descripcion) VALUES (?, ?, ?)',
+            [userId, templateToClone.nombre_producto, templateToClone.descripcion]
+        );
+        const newTemplateId = templateResult.lastID; // Funciona en SQLite y Postgres (vía wrapper)
+
+        // B. Insertar las Etapas
+        for (const stage of templateToClone.etapas) {
+            await run(
+                'INSERT INTO etapas_plantilla (plantilla_id, nombre_etapa, descripcion, orden, campos_json) VALUES (?, ?, ?, ?, ?)',
+                [newTemplateId, stage.nombre_etapa, stage.descripcion, stage.orden, JSON.stringify(stage.campos_json)]
+            );
+        }
+
+        res.status(201).json({ 
+            message: "Plantilla importada correctamente.", 
+            id: newTemplateId,
+            nombre_producto: templateToClone.nombre_producto
+        });
+
+    } catch (err) {
+        // Manejar duplicados si el usuario intenta clonar la misma plantilla dos veces
+        if (err.message.includes('UNIQUE')) {
+            return res.status(409).json({ error: 'Ya tienes esta plantilla importada en "Mis Procesos".' });
+        }
+        console.error("Error en cloneTemplate:", err);
+        res.status(500).json({ error: err.message });
+    }
+};
+
 const createTemplate = async (req, res) => {
     const userId = req.user.id;
     const { nombre_producto, descripcion } = req.body;
@@ -396,6 +448,7 @@ const createTemplate = async (req, res) => {
         res.status(201).json({ id: result.lastID, user_id: userId, nombre_producto, descripcion });
     } catch (err) { res.status(500).json({ error: err.message }); }
 };
+
 const updateTemplate = async (req, res) => {
     const userId = req.user.id;
     const { templateId } = req.params;
@@ -409,6 +462,7 @@ const updateTemplate = async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 };
+
 const deleteTemplate = async (req, res) => {
     const userId = req.user.id;
     const { templateId } = req.params;
@@ -417,6 +471,7 @@ const deleteTemplate = async (req, res) => {
         res.status(204).send();
     } catch (err) { res.status(500).json({ error: err.message }); }
 };
+
 const getStagesForTemplate = async (req, res) => {
     const { templateId } = req.params;
     try {
@@ -429,6 +484,7 @@ const getStagesForTemplate = async (req, res) => {
         res.status(200).json(parsedStages);
     } catch (err) { res.status(500).json({ error: err.message }); }
 };
+
 const createStage = async (req, res) => {
     const { templateId } = req.params;
     const { nombre_etapa,  descripcion, campos_json } = req.body;
@@ -439,6 +495,7 @@ const createStage = async (req, res) => {
         res.status(201).json({ message: "Etapa creada" });
     } catch (err) { res.status(500).json({ error: err.message }); }
 };
+
 const updateStage = async (req, res) => {
     const userId = req.user.id;
     const { stageId } = req.params;
@@ -452,6 +509,7 @@ const updateStage = async (req, res) => {
         res.status(200).json({ message: "Etapa actualizada." });
     } catch (err) { res.status(500).json({ error: err.message }); }
 };
+
 const deleteStage = async (req, res) => {
     const userId = req.user.id;
     const { stageId } = req.params;
@@ -465,38 +523,31 @@ const deleteStage = async (req, res) => {
         res.status(204).send();
     } catch (err) { res.status(500).json({ error: err.message }); }
 };
+
 const getBatchesTree = async (req, res) => {
     const userId = req.user.id;
     try {
-        // 1. Obtener todos los lotes para construir el árbol completo
         const allLotes = await all('SELECT * FROM lotes', []);
-
-        // 2. Parsear la data JSON y preparar la estructura de nodos
         const lotesProcesados = allLotes.map(lote => ({
             ...lote,
             data: safeJSONParse(lote.data),
-            children: [] // Inicializar array para los hijos
+            children: [] 
         }));
 
-        // 3. Crear un mapa para acceso rápido a cada lote por su ID
         const loteMap = {};
         lotesProcesados.forEach(lote => {
             loteMap[lote.id] = lote;
         });
 
-        // 4. Construir el árbol: conectar hijos con padres
         const allRoots = [];
         lotesProcesados.forEach(lote => {
             if (lote.parent_id && loteMap[lote.parent_id]) {
-                // Si tiene un padre válido, añadirlo al array 'children' de ese padre
                 loteMap[lote.parent_id].children.push(lote);
             } else {
-                // Si no tiene padre, es un lote raíz potencial
                 allRoots.push(lote);
             }
         });
 
-        // 5. Filtrar para devolver solo los árboles que pertenecen al usuario actual
         const userRoots = allRoots.filter(root => root.user_id === userId);
         
         res.status(200).json(userRoots);
@@ -564,6 +615,7 @@ const createBatch = async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 };
+
 const updateBatch = async (req, res) => {
     const { id } = req.params;
     const { data } = req.body;
@@ -574,6 +626,7 @@ const updateBatch = async (req, res) => {
         res.status(200).json({ message: "Lote actualizado" });
     } catch (err) { res.status(500).json({ error: err.message }); }
 };
+
 const deleteBatch = async (req, res) => {
     const { id } = req.params;
     const isOwner = await checkBatchOwnership(id, req.user.id);
@@ -692,7 +745,6 @@ const getTrazabilidad = async (req, res) => {
             s.nombre_etapa.toLowerCase().includes('calidad')
         )?.data;
         if (ruedaData) {
-            // 2. Obtener Rueda de Sabor (Notas de Cata)
             const ruedaSaborId = ruedaData.tipoRuedaSabor?.value;
             if (ruedaSaborId) {
                 const rueda = await get('SELECT * FROM ruedas_sabores WHERE id = ? AND user_id = ?', [ruedaSaborId, ownerId]);
@@ -712,7 +764,6 @@ const getTrazabilidad = async (req, res) => {
     }
 };
 
-// --- Lógica de Maridaje (Backend) ---
 function calcularMaridajeCacaoCafe(cacao, cafe) {
     const pInt = 1 - (Math.abs((cacao.perfil_data.cacao || 0) - (cafe.perfil_data.sabor || 0)) / 10);
     const pAcid = 1 - (Math.abs((cacao.perfil_data.acidez || 0) - (cafe.perfil_data.acidez || 0)) / 10);
@@ -787,7 +838,6 @@ const deleteRuedaSabores = async (req, res) => {
     }
 };
 
-// --- Blends ---
 const getBlends = async (req, res) => {
     const userId = req.user.id;
     try {
@@ -806,7 +856,7 @@ const getBlends = async (req, res) => {
 const createBlend = async (req, res) => {
     const userId = req.user.id;
     const { nombre_blend, tipo_producto, componentes_json, perfil_final_json } = req.body;
-    const id = require('crypto').randomUUID(); // Generar ID aquí
+    const id = require('crypto').randomUUID(); 
     try {
         await run(
             'INSERT INTO blends (id, user_id, nombre_blend, tipo_producto, componentes_json, perfil_final_json) VALUES (?, ?, ?, ?, ?, ?)',
@@ -831,7 +881,6 @@ const deleteBlend = async (req, res) => {
     }
 };
 
-// --- Recetas de Chocolate ---
 const getRecetas = async (req, res) => {
     const userId = req.user.id;
     try {
@@ -889,7 +938,6 @@ const deleteReceta = async (req, res) => {
     }
 };
 
-// Nueva función para obtener el estado de la suscripción
 const getUserSubscriptionStatus = async (userId) => {
     return await get('SELECT subscription_tier, trial_ends_at FROM users WHERE id = ?', [userId]);
 };
@@ -956,7 +1004,6 @@ const saveLoteCosts = async (req, res) => {
 const getDashboardData = async (req, res) => {
     const userId = req.user.id;
     try {
-        // Ejecutar todas las consultas en paralelo para mayor eficiencia
         const [
             allLotes,
             templates,
@@ -973,7 +1020,6 @@ const getDashboardData = async (req, res) => {
             all('SELECT * FROM lote_costs WHERE user_id = ?', [userId])
         ]);
 
-        // Construir el árbol de lotes
         const lotesProcesados = allLotes.map(lote => ({
             ...lote,
             data: safeJSONParse(lote.data),
@@ -990,19 +1036,17 @@ const getDashboardData = async (req, res) => {
             }
         });
 
-        // Organizar etapas por plantilla
         const stages = allStagesRaw.reduce((acc, stage) => {
             if (!acc[stage.plantilla_id]) {
                 acc[stage.plantilla_id] = [];
             }
             acc[stage.plantilla_id].push({
                 ...stage,
-                campos_json: safeJSONParse(stage.campos_json) // <-- CORRECCIÓN
+                campos_json: safeJSONParse(stage.campos_json)
             });
             return acc;
         }, {});
 
-        // Enviar todos los datos consolidados
         res.status(200).json({
             batchTrees,
             templates,
@@ -1030,7 +1074,7 @@ const createPaymentPreference = async (req, res, client) => {
                 description: 'Acceso completo a todos los módulos de I+D y trazabilidad ilimitada.',
                 quantity: 1,
                 unit_price: 19.00,
-                currency_id: 'USD' // Asegúrate de que tu cuenta de MP acepte USD
+                currency_id: 'USD'
             }
         ],
         back_urls: {
@@ -1058,9 +1102,8 @@ const createPaymentPreference = async (req, res, client) => {
 };
 
 const handlePaymentWebhook = async (req, res) => {
-    // Usar req.body (que es raw) para seguridad, aunque query también funciona
     const { query } = req;
-    const body = JSON.parse(req.body.toString()); // Parsear el raw body
+    const body = JSON.parse(req.body.toString());
 
     const topic = query.type || body.type;
     
@@ -1075,7 +1118,6 @@ const handlePaymentWebhook = async (req, res) => {
             if (paymentInfo && paymentInfo.status === 'approved') {
                 const userId = paymentInfo.external_reference;
                 if (userId) {
-                    // Pago aprobado, actualizar al usuario a "profesional"
                     await run(
                         "UPDATE users SET subscription_tier = 'profesional', trial_ends_at = NULL WHERE id = ?",
                         [userId]
@@ -1115,7 +1157,6 @@ const submitReview = async (req, res) => {
 
     let user_email;
     try {
-        // 1. Verificar el token de Google para obtener el email
         const ticket = await client.verifyIdToken({
             idToken: idToken,
             audience: GOOGLE_CLIENT_ID,
@@ -1133,7 +1174,6 @@ const submitReview = async (req, res) => {
     }
 
     try {
-        // 2. Insertar la reseña en la base de datos
         await run(
             'INSERT INTO product_reviews (lote_id, user_email, rating, comment) VALUES (?, ?, ?, ?)',
             [lote_id, user_email, rating, comment]
@@ -1142,7 +1182,6 @@ const submitReview = async (req, res) => {
     
     } catch (err) {
         if (err.message.includes('UNIQUE') || (err.code && err.code.includes('23505'))) {
-            // Error de constraint único (ya reseñó este lote)
             res.status(409).json({ error: 'Ya has enviado una reseña para este producto.' });
         } else {
             console.error("Error al guardar la reseña:", err);
@@ -1157,6 +1196,7 @@ module.exports = {
     getProcesadoras, createProcesadora, updateProcesadora, deleteProcesadora,
     getPerfiles, createPerfil, updatePerfil, deletePerfil,
     getTemplates, createTemplate, updateTemplate, deleteTemplate, 
+    getSystemTemplates, cloneTemplate, // <-- NUEVAS FUNCIONES EXPORTADAS
     getStagesForTemplate, createStage, updateStage, deleteStage,
     getBatchesTree, createBatch, updateBatch, deleteBatch,
     getTrazabilidad,

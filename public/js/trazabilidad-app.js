@@ -7,28 +7,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let FLAVOR_WHEELS_DATA = {};
 
-    const SCAA_FLAVORS_ES = {
-        'Floral': { 'icon': 'fa-solid fa-fan', 'color': '#ec4899', 'children': [ { 'name': 'Té Negro', 'icon': 'fa-solid fa-mug-hot' }, { 'name': 'Floral', 'icon': 'fa-solid fa-flower' } ] },
-        'Frutal': { 'icon': 'fa-solid fa-apple-whole', 'color': '#ef4444', 'children': [ { 'name': 'Bayas', 'icon': 'fa-solid fa-gem' }, { 'name': 'Frutas Secas', 'icon': 'fa-solid fa-sun' }, { 'name': 'Otras Frutas', 'icon': 'fa-solid fa-bell-concierge' }, { 'name': 'Cítricos', 'icon': 'fa-solid fa-lemon' } ] },
-        'Agrio/Fermentado': { 'icon': 'fa-solid fa-vial-circle-check', 'color': '#a855f7', 'children': [ { 'name': 'Aromas Agrios', 'icon': 'fa-solid fa-smog' }, { 'name': 'Alcohol/Fermentado', 'icon': 'fa-solid fa-wine-bottle' } ] },
-        'Verde/Vegetal': { 'icon': 'fa-solid fa-leaf', 'color': '#22c55e', 'children': [ { 'name': 'Aceite de Oliva', 'icon': 'fa-solid fa-oil-can' }, { 'name': 'Crudo', 'icon': 'fa-solid fa-seedling' }, { 'name': 'Verde/Vegetal', 'icon': 'fa-solid fa-hashtag' }, { 'name': 'Frijol', 'icon': 'fa-solid fa-dot-circle' } ] },
-        'Otro': { 'icon': 'fa-solid fa-ban', 'color': '#6b7280', 'children': [ { 'name': 'Papel/Moho', 'icon': 'fa-solid fa-boxes-stacked' }, { 'name': 'Químico', 'icon': 'fa-solid fa-flask' } ] },
-        'Tostado': { 'icon': 'fa-solid fa-fire', 'color': '#0d9488', 'children': [ { 'name': 'Tabaco de Pipa', 'icon': 'fa-solid fa-smoking' }, { 'name': 'Tabaco', 'icon': 'fa-solid fa-leaf' }, { 'name': 'Quemado', 'icon': 'fa-solid fa-skull-crossbones' }, { 'name': 'Cereal', 'icon': 'fa-solid fa-wheat-awn' } ] },
-        'Especias': { 'icon': 'fa-solid fa-mortar-pestle', 'color': '#d97706', 'children': [ { 'name': 'Picante', 'icon': 'fa-solid fa-pepper-hot' }, { 'name': 'Pimienta', 'icon': 'fa-solid fa-ring' }, { 'name': 'Especias Dulces', 'icon': 'fa-solid fa-cookie-bite' } ] },
-        'Nuez/Cacao': { 'icon': 'fa-solid fa-stroopwafel', 'color': '#78350f', 'children': [ { 'name': 'Nueces', 'icon': 'fa-solid fa-seedling' }, { 'name': 'Cacao', 'icon': 'fa-solid fa-cookie-bite' } ] },
-        'Dulce': { 'icon': 'fa-solid fa-candy-cane', 'color': '#f59e0b', 'children': [ { 'name': 'Azúcar Moreno', 'icon': 'fa-solid fa-cube' }, { 'name': 'Vainilla', 'icon': 'fa-solid fa-star' }, { 'name': 'Dulce General', 'icon': 'fa-solid fa-cookie-bite' }, { 'name': 'Aromas Dulces', 'icon': 'fa-solid fa-droplet' } ] }
-    };
-    const COEX_FLAVORS_ES = {
-        "Fruta Fresca": { "icon": "fa-solid fa-apple-whole", "color": "#ef4444", "children": [ { "name": "Bayas / Frutos Rojos", "icon": "fa-solid fa-gem" }, { "name": "Cítricos", "icon": "fa-solid fa-lemon" }, { "name": "Oscura (Cereza, Ciruela)", "icon": "fa-solid fa-cloud-moon" }, { "name": "Pulpa Amarilla / Naranja / Blanca", "icon": "fa-solid fa-sun" }, { "name": "Tropical (Maracuyá, Piña)", "icon": "fa-solid fa-fan" } ] },
-        "Fruta Marrón": { "icon": "fa-solid fa-box-archive", "color": "#92400e", "children": [ { "name": "Seca (Pasa, Higo)", "icon": "fa-solid fa-sun" }, { "name": "Marrón (Dátil, Ciruela Pasa)", "icon": "fa-solid fa-box" }, { "name": "Sobre Madura", "icon": "fa-solid fa-hourglass-end" } ] },
-        "Vegetal": { "icon": "fa-solid fa-leaf", "color": "#22c55e", "children": [ { "name": "Pasto / Vegetal verde / Hierba", "icon": "fa-solid fa-hashtag" }, { "name": "Terroso / Hongo / Musgo / Bosque", "icon": "fa-solid fa-mountain" } ] },
-        "Floral": { "icon": "fa-solid fa-fan", "color": "#ec4899", "children": [ { "name": "Flor de Azahar", "icon": "fa-solid fa-sun" }, { "name": "Flores (Jazmín, Rosa, Lirio)", "icon": "fa-solid fa-flower" } ] },
-        "Madera": { "icon": "fa-solid fa-tree", "color": "#6b46c1", "children": [ { "name": "Madera Clara", "icon": "fa-solid fa-tree-city" }, { "name": "Madera Oscura", "icon": "fa-solid fa-bed" }, { "name": "Resina", "icon": "fa-solid fa-flask" } ] },
-        "Especia": { "icon": "fa-solid fa-mortar-pestle", "color": "#f59e0b", "children": [ { "name": "Especias (Canela, Vainilla)", "icon": "fa-solid fa-cookie-bite" }, { "name": "Tabaco (Hojas Secas)", "icon": "fa-solid fa-leaf" }, { "name": "Sazonado/Umami", "icon": "fa-solid fa-fish" } ] },
-        "Nuez": { "icon": "fa-solid fa-stroopwafel", "color": "#964b00", "children": [ { "name": "Nuez - Parte Interna (Avellana, Almendra)", "icon": "fa-solid fa-seedling" }, { "name": "Nuez - Piel (Cáscaras Tostadas)", "icon": "fa-solid fa-ring" } ] },
-        "Caramelo / Panela": { "icon": "fa-solid fa-candy-cane", "color": "#f97316", "children": [ { "name": "Caramelo / Panela (Azúcar Moreno)", "icon": "fa-solid fa-cube" } ] }
-    };
-
     if (typeof ChartDataLabels !== 'undefined') {
         Chart.register(ChartDataLabels);
     }
@@ -97,6 +75,9 @@ document.addEventListener('DOMContentLoaded', () => {
             if (template && state.stagesByTemplate[template.id]?.length > 0) {
                 const firstStage = state.stagesByTemplate[template.id][0];
                 dashboardView.appendChild(createBatchCard(loteRaiz, template, firstStage));
+            } else {
+                // Fallback visual si la plantilla fue borrada pero el lote existe (caso borde)
+                console.warn(`Plantilla no encontrada para lote ${loteRaiz.id}`);
             }
         });
     }
@@ -232,33 +213,143 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- Lógica de Modales y Formularios ---
-    function openTemplateSelectorModal() {
-        if (state.templates.length === 0) {
-            alert("No hay plantillas de proceso. Crea una en Gestión -> Plantillas.");
-            return;
+    // --- Lógica Nueva: Selector de Plantillas (Catálogo vs Mis Plantillas) ---
+    async function openTemplateSelectorModal() {
+        // 1. Cargar el catálogo del sistema (siempre fresco)
+        let systemTemplates = [];
+        try {
+            systemTemplates = await api('/api/templates/system');
+        } catch (e) {
+            console.error("Error cargando catálogo del sistema", e);
         }
-        let optionsHTML = state.templates.map(t => `<option value="${t.id}">${t.nombre_producto}</option>`).join('');
+
+        // 2. Construir HTML Dinámico
+        
+        // Sección A: Mis Plantillas (si existen)
+        let myTemplatesHTML = '';
+        if (state.templates.length > 0) {
+            const options = state.templates.map(t => `<option value="${t.id}">${t.nombre_producto}</option>`).join('');
+            myTemplatesHTML = `
+                <div class="mb-6 border-b border-stone-200 pb-6">
+                    <h3 class="font-bold text-lg text-amber-900 mb-2">1. Usar una de mis plantillas</h3>
+                    <p class="text-sm text-stone-500 mb-3">Selecciona una plantilla que ya has importado o personalizado.</p>
+                    <div class="flex gap-2">
+                        <select id="my-template-selector" class="flex-grow p-3 border border-stone-300 rounded-xl bg-white focus:ring-2 focus:ring-amber-500 outline-none">
+                            ${options}
+                        </select>
+                        <button id="use-my-template-btn" class="bg-amber-800 hover:bg-amber-900 text-white font-bold px-6 rounded-xl shadow-sm transition-colors">
+                            Iniciar
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Sección B: Catálogo
+        const catalogHTML = systemTemplates.map(t => `
+            <div class="border border-stone-200 rounded-xl p-4 hover:border-amber-500 hover:bg-amber-50 transition-all cursor-pointer flex justify-between items-center group">
+                <div>
+                    <h4 class="font-bold text-amber-900 flex items-center gap-2">
+                        ${t.nombre_producto}
+                        <span class="text-xs bg-stone-100 text-stone-500 px-2 py-0.5 rounded-full border">Sistema</span>
+                    </h4>
+                    <p class="text-xs text-stone-500 mt-1 line-clamp-2">${t.descripcion || 'Sin descripción'}</p>
+                </div>
+                <button class="clone-template-btn bg-white border border-stone-300 text-stone-700 font-bold py-1.5 px-4 rounded-lg text-sm shadow-sm group-hover:bg-green-600 group-hover:text-white group-hover:border-green-600 transition-all" 
+                    data-system-name="${t.nombre_producto}">
+                    + Importar
+                </button>
+            </div>
+        `).join('');
+
         modalContent.innerHTML = `
             <h2 class="text-2xl font-display text-amber-900 border-b pb-2 mb-4">Iniciar Nuevo Proceso</h2>
-            <p class="text-stone-600 mb-4">Selecciona la plantilla a utilizar:</p>
-            <select id="template-selector" class="w-full p-3 border rounded-xl">${optionsHTML}</select>
-            <div class="flex justify-end gap-4 mt-6">
-                <button type="button" class="bg-stone-300 hover:bg-stone-400 font-bold py-2 px-6 rounded-xl" onclick="document.getElementById('form-modal').close()">Cancelar</button>
-                <button type="button" id="start-process-btn" class="bg-amber-800 hover:bg-amber-900 text-white font-bold py-2 px-6 rounded-xl">Siguiente</button>
-            </div>`;
+            
+            ${myTemplatesHTML}
+
+            <div>
+                <h3 class="font-bold text-lg text-amber-900 mb-2">
+                    ${state.templates.length > 0 ? '2. O importar del catálogo' : 'Selecciona una plantilla para comenzar'}
+                </h3>
+                <p class="text-sm text-stone-500 mb-3">Estas son las plantillas estándar disponibles. Al importar una, podrás usarla y personalizarla.</p>
+                <div class="space-y-3 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
+                    ${catalogHTML}
+                </div>
+            </div>
+
+            <div class="flex justify-end mt-6 border-t pt-4">
+                <button type="button" class="text-stone-500 hover:text-stone-700 font-bold px-4" onclick="document.getElementById('form-modal').close()">Cancelar</button>
+            </div>
+        `;
         formModal.showModal();
 
-        document.getElementById('start-process-btn').addEventListener('click', async () => {
-            const templateId = document.getElementById('template-selector').value;
-            const template = state.templates.find(t => t.id == templateId);
-            if (!template) return;
-            const stages = state.stagesByTemplate[template.id];
-            if (stages.length === 0) {
-                alert("Esta plantilla no tiene etapas definidas.");
-                return;
-            }
-            openFormModal('create', template, stages[0]);
+        // Listeners para "Mis Plantillas"
+        if (state.templates.length > 0) {
+            document.getElementById('use-my-template-btn').addEventListener('click', () => {
+                const templateId = document.getElementById('my-template-selector').value;
+                startProcessWithTemplate(templateId);
+            });
+        }
+
+        // Listeners para "Catálogo" (Botones Clonar)
+        modalContent.querySelectorAll('.clone-template-btn').forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                const btnEl = e.currentTarget; // Usar currentTarget por si el click es en el icono
+                const systemName = btnEl.dataset.systemName;
+                
+                // Feedback visual
+                const originalText = btnEl.innerHTML;
+                btnEl.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+                btnEl.disabled = true;
+
+                try {
+                    const result = await api('/api/templates/clone', {
+                        method: 'POST',
+                        body: JSON.stringify({ nombre_producto_sistema: systemName })
+                    });
+                    
+                    // Recargar plantillas locales para que aparezca la nueva
+                    await loadTemplates();
+                    
+                    // Iniciar proceso directamente con la nueva plantilla
+                    startProcessWithTemplate(result.id);
+                    
+                } catch (error) {
+                    console.error(error);
+                    alert("Error al importar la plantilla: " + error.message);
+                    btnEl.innerHTML = originalText;
+                    btnEl.disabled = false;
+                }
+            });
         });
+    }
+
+    // Nueva función auxiliar para arrancar el modal de creación
+    async function startProcessWithTemplate(templateId) {
+        const template = state.templates.find(t => t.id == templateId); // Doble igual para compatibilidad number/string ID
+        if (!template) {
+            alert("Error: Plantilla no encontrada en memoria.");
+            return;
+        }
+        
+        // Asegurarse de que las etapas estén cargadas para esa plantilla
+        if (!state.stagesByTemplate[template.id]) {
+             try {
+                state.stagesByTemplate[template.id] = await api(`/api/templates/${template.id}/stages`);
+             } catch(e) {
+                 alert("Error cargando etapas de la plantilla.");
+                 return;
+             }
+        }
+        
+        const stages = state.stagesByTemplate[template.id];
+        if (!stages || stages.length === 0) {
+            alert("Esta plantilla no tiene etapas definidas.");
+            return;
+        }
+        
+        // Abrir el modal de formulario en la primera etapa
+        openFormModal('create', template, stages[0]);
     }
     
     async function openFormModal(mode, template, stage, parentBatch = null, batchData = {}) {
@@ -283,6 +374,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const form = document.getElementById('batch-form');
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
+
+            // Bloquear botón para evitar doble envío
+            const submitBtn = form.querySelector('button[type="submit"]');
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
+
             const formData = new FormData(form);
             const rawData = Object.fromEntries(formData.entries());
             
@@ -314,6 +411,8 @@ document.addEventListener('DOMContentLoaded', () => {
             } catch (error) {
                 console.error('Error al guardar:', error);
                 alert('No se pudo guardar el lote: ' + error.message);
+                submitBtn.disabled = false;
+                submitBtn.innerText = 'Guardar';
             }
         });
         document.getElementById('cancel-btn').addEventListener('click', () => formModal.close());
