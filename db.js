@@ -711,10 +711,7 @@ const getTrazabilidad = async (req, res) => {
             certificaciones_json: safeJSONParse(p.certificaciones_json || '[]')
         }));
         
-        const calidadData = history.stages.find(s => 
-            s.nombre_etapa.toLowerCase().includes('calidad') || 
-            s.nombre_etapa.toLowerCase().includes('tostado')
-            )?.data;
+        const calidadData = history.stages.find(s => s.nombre_etapa.toLowerCase().includes('calidad'))?.data;
         if (calidadData && calidadData.tipoPerfil) {
             const perfilCacao = await get('SELECT * FROM perfiles WHERE tipo = "cacao" AND nombre = ? AND user_id = ?', [calidadData.tipoPerfil.value, ownerId]);
             if (perfilCacao) {
