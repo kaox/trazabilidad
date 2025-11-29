@@ -362,12 +362,17 @@ document.addEventListener('DOMContentLoaded', () => {
         e.preventDefault();
         const formData = new FormData(form);
         const fincaData = Object.fromEntries(formData.entries());
+
+        console.log(fincaData);
+        
         fincaData.imagenes_json = currentImages;
         fincaData.certificaciones_json = currentFincaCertifications;
         fincaData.premios_json = currentFincaPremios;
         
         if (fincaData.coordenadas) fincaData.coordenadas = JSON.parse(fincaData.coordenadas);
         else fincaData.coordenadas = null;
+
+        console.log(fincaData);
 
         const editId = editIdInput.value;
         try {

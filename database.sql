@@ -10,6 +10,10 @@ DROP TABLE IF EXISTS fincas CASCADE;
 DROP TABLE IF EXISTS users CASCADE;
 DROP TABLE IF EXISTS blends CASCADE;
 DROP TABLE IF EXISTS recetas_chocolate;
+DROP TABLE IF EXISTS lote_costs;
+DROP TABLE IF EXISTS product_reviews;
+DROP TABLE IF EXISTS perfiles;
+DROP TABLE IF EXISTS perfiles_cafe;
 
 -- Paso 2: Crear las tablas con la estructura más reciente y correcta.
 
