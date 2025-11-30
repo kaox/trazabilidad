@@ -649,6 +649,7 @@ const getTrazabilidad = async (req, res) => {
             )
             SELECT * FROM trazabilidad_completa;
         `, [id]);
+        console.log(rows);
         
         if (rows.length === 0) return res.status(404).json({ error: 'Lote no encontrado' });
         

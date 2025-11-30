@@ -874,7 +874,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function renderPdfFlavorChart(ruedaData) {
-        console.log(state.ruedasSabor);
         const FLAVOR_DATA = ruedaData.tipo === 'cafe' ? FLAVOR_WHEELS_DATA.cafe : FLAVOR_WHEELS_DATA.cacao;
         const notes = typeof ruedaData.notas_json === 'string' ? JSON.parse(ruedaData.notas_json) : ruedaData.notas_json;
 
