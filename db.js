@@ -761,7 +761,7 @@ const getTrazabilidad = async (req, res) => {
         res.status(200).json(history);
     } catch (error) { 
         console.error(`Error en getTrazabilidad para el lote ${id}:`, error.message);
-        res.status(500).json({ error: "Error interno del servidor." }); 
+        res.status(500).json({ error: "Error interno del servidor." + rows }); 
     }
 };
 
