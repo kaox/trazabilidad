@@ -649,7 +649,6 @@ const getTrazabilidad = async (req, res) => {
             )
             SELECT * FROM trazabilidad_completa;
         `, [id]);
-        console.log(rows);
         
         if (rows.length === 0) return res.status(404).json({ error: 'Lote no encontrado' });
         
@@ -714,12 +713,12 @@ const getTrazabilidad = async (req, res) => {
         
         const calidadData = history.stages.find(s => s.nombre_etapa.toLowerCase().includes('calidad'))?.data;
         if (calidadData && calidadData.tipoPerfil) {
-            const perfilCacao = await get('SELECT * FROM perfiles WHERE tipo = "cacao" AND nombre = ? AND user_id = ?', [calidadData.tipoPerfil.value, ownerId]);
+            const perfilCacao = await get("SELECT * FROM perfiles WHERE tipo = 'cacao' AND nombre = ? AND user_id = ?", [calidadData.tipoPerfil.value, ownerId]);
             if (perfilCacao) {
                 perfilCacao.perfil_data = safeJSONParse(perfilCacao.perfil_data);
                 history.perfilSensorialData = perfilCacao.perfil_data;
 
-                const allCafes = await all('SELECT * FROM perfiles WHERE tipo = "cafe" AND user_id = ?', [ownerId]);
+                const allCafes = await all("SELECT * FROM perfiles WHERE tipo = 'cafe' AND user_id = ?", [ownerId]);
                 const allVinos = maridajesVinoData.defaultPerfilesVino;
                 const allQuesos = maridajesQuesoData;
 
@@ -761,7 +760,7 @@ const getTrazabilidad = async (req, res) => {
         res.status(200).json(history);
     } catch (error) { 
         console.error(`Error en getTrazabilidad para el lote ${id}:`, error.message);
-        res.status(500).json({ error: "Error interno del servidor." + rows }); 
+        res.status(500).json({ error: "Error interno del servidor." }); 
     }
 };
 
