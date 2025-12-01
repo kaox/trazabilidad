@@ -8,7 +8,7 @@ document.addEventListener('DOMContentLoaded', () => {
             scanText: 'Encuentre el recorrido de su cacao',
             securityImage: 'images/cacao.jpeg',
             qrImage: 'images/qr_cacao.png',
-            qrLink: 'CHO-J678K94Z',
+            qrLink: 'ENV-5W8BL4HE',
             process: [
                 { icon: 'fa-leaf', title: 'Cosecha Selectiva', description: 'Registro del origen, la variedad y el punto exacto de maduración de cada mazorca.', fields: ['Finca de Origen', 'Variedad de Cacao', 'Fecha de Cosecha', 'Peso de Mazorcas (kg)'] },
                 { icon: 'fa-hourglass-half', title: 'Fermentación Controlada', description: 'Monitorización de los días, método y temperatura para desarrollar perfiles de sabor complejos y consistentes.', fields: ['Método de Fermentación', 'Duración (días)', 'Frecuencia de Volteos', 'Temperatura Máxima (°C)'] },
