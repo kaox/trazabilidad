@@ -21,6 +21,8 @@ document.addEventListener('DOMContentLoaded', () => {
             description: 'Demuestra la calidad de tu café de origen único. Registra la altitud, el método de beneficio y el perfil de tueste para que tus clientes puedan saborear la historia detrás de cada taza.',
             scanText: 'Encuentre el recorrido de su café',
             securityImage: 'images/cafe.jpg',
+            qrImage: 'images/qr_cafe.png',
+            qrLink: 'EVA-SOEQC90S',
             process: [
                 { icon: 'fa-leaf', title: 'Cosecha de Cerezas', description: 'Registro de la recolección manual de cerezas en su punto óptimo de maduración.', fields: ['Finca de Origen', 'Variedad', 'Altitud', 'Fecha de Cosecha'] },
                 { icon: 'fa-water', title: 'Beneficio Húmedo', description: 'Control del proceso de despulpado, fermentación y lavado que define el perfil de acidez y limpieza en taza.', fields: ['Método de Beneficio', 'Horas de Fermentación', 'pH Inicial/Final'] },
