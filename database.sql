@@ -178,3 +178,16 @@ CREATE TABLE IF NOT EXISTS product_reviews (
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(lote_id, user_email) -- Un usuario (email) solo puede reseñar un lote una vez
 );
+
+CREATE TABLE IF NOT EXISTS blog_posts (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(), -- O INTEGER AUTOINCREMENT en SQLite
+    title TEXT NOT NULL,
+    slug TEXT NOT NULL UNIQUE,
+    summary TEXT, -- Un extracto corto para la tarjeta en la grilla
+    content TEXT NOT NULL, -- Aquí va el HTML enriquecido del editor
+    cover_image TEXT, -- Imagen principal para la grilla
+    author_id INTEGER REFERENCES users(id),
+    is_published BOOLEAN DEFAULT FALSE,
+    published_at TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);

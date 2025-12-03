@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cargando artículo... - Rurulab</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Estilos para el contenido del editor Quill (necesario para que el HTML se vea bien) -->
+    <link href="https://cdn.quilljs.com/1.3.6/quill.core.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #fdfdfb; }
+        .font-display { font-family: 'Playfair Display', serif; }
+        
+        /* Estilos específicos para el contenido traído del CMS */
+        .prose img { border-radius: 0.75rem; margin: 2rem auto; max-width: 100%; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
+        .prose h1, .prose h2, .prose h3 { font-family: 'Playfair Display', serif; color: #451a03; margin-top: 2em; margin-bottom: 1em; font-weight: 700; }
+        .prose h2 { font-size: 1.875rem; }
+        .prose p { margin-bottom: 1.25em; line-height: 1.8; color: #44403c; font-size: 1.125rem; }
+        .prose blockquote { border-left: 4px solid #d97706; padding-left: 1rem; font-style: italic; color: #78350f; background: #fffbeb; padding: 1rem; border-radius: 0 0.5rem 0.5rem 0; }
+        .prose ul { list-style-type: disc; padding-left: 1.5rem; margin-bottom: 1.25rem; }
+        .prose a { color: #d97706; text-decoration: underline; font-weight: 500; }
+    </style>
+</head>
+<body class="text-stone-800 antialiased">
+
+    <header class="bg-white/80 backdrop-blur-sm sticky top-0 z-50 border-b border-stone-200">
+        <div class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <a href="/" class="text-2xl font-bold font-display text-amber-900">Ruru Lab</a>
+            <a href="/blog.html" class="text-stone-500 hover:text-amber-800"><i class="fas fa-arrow-left mr-2"></i>Volver al Blog</a>
+        </div>
+    </header>
+
+    <article class="max-w-3xl mx-auto px-6 py-12">
+        <div id="loading" class="text-center py-20">
+            <i class="fas fa-circle-notch fa-spin text-4xl text-amber-800"></i>
+        </div>
+
+        <div id="article-content" class="hidden">
+            <!-- Cabecera del Artículo -->
+            <header class="mb-10 text-center">
+                <span class="inline-block bg-amber-100 text-amber-800 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider mb-4" id="post-date"></span>
+                <h1 class="text-4xl md:text-5xl font-bold font-display text-amber-900 mb-6 leading-tight" id="post-title"></h1>
+                <img id="post-cover" src="" alt="Cover" class="w-full h-64 md:h-96 object-cover rounded-2xl shadow-lg mb-8 hidden">
+            </header>
+
+            <!-- Cuerpo del Artículo (Rich Text) -->
+            <div id="post-body" class="prose max-w-none">
+                <!-- Inyectado por JS -->
+            </div>
+            
+            <!-- Footer del Artículo -->
+            <div class="mt-12 pt-8 border-t border-stone-200">
+                <h3 class="font-display font-bold text-xl mb-4">¿Te gustó este artículo?</h3>
+                <p class="text-stone-600 mb-6">Descubre cómo Rurulab puede ayudarte a contar la historia de tus propios productos.</p>
+                <a href="/" class="inline-block bg-amber-800 text-white font-bold py-3 px-8 rounded-xl hover:bg-amber-900 transition">Conocer Rurulab</a>
+            </div>
+        </div>
+        
+        <!-- Estado de Error -->
+        <div id="error-state" class="hidden text-center py-20">
+            <i class="fas fa-heart-crack text-6xl text-stone-300 mb-4"></i>
+            <h2 class="text-2xl font-display font-bold text-stone-700">Artículo no encontrado</h2>
+            <p class="text-stone-500 mt-2">Parece que el enlace está roto o el artículo fue eliminado.</p>
+            <a href="/blog.html" class="inline-block mt-6 text-amber-800 font-bold hover:underline">Volver al Blog</a>
+        </div>
+    </article>
+
+    <footer class="py-8 bg-stone-800 text-stone-300 mt-12">
+        <div class="container mx-auto px-6 text-center"><p>&copy; 2025 Rurulab.</p></div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            // 1. Obtener el SLUG de la URL (ej: /blog/mi-articulo -> mi-articulo)
+            // Asumimos que el servidor sirve este HTML para cualquier ruta /blog/*
+            const pathParts = window.location.pathname.split('/');
+            const slug = pathParts[pathParts.length - 1]; // Obtiene lo último de la URL
+
+            if (!slug) return showError();
+
+            try {
+                const response = await fetch(`/api/blog/${slug}`);
+                if (!response.ok) throw new Error('Post not found');
+                
+                const post = await response.json();
+                renderPost(post);
+            } catch (error) {
+                console.error(error);
+                showError();
+            }
+        });
+
+        function renderPost(post) {
+            document.title = `${post.title} - Blog Rurulab`;
+            document.getElementById('post-title').innerText = post.title;
+            document.getElementById('post-date').innerText = new Date(post.created_at).toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' });
+            document.getElementById('post-body').innerHTML = post.content; // Renderizar HTML del editor
+
+            if (post.cover_image) {
+                const img = document.getElementById('post-cover');
+                img.src = post.cover_image;
+                img.classList.remove('hidden');
+            }
+
+            document.getElementById('loading').classList.add('hidden');
+            document.getElementById('article-content').classList.remove('hidden');
+        }
+
+        function showError() {
+            document.getElementById('loading').classList.add('hidden');
+            document.getElementById('error-state').classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>

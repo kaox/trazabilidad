@@ -12,22 +12,41 @@ document.addEventListener('DOMContentLoaded', () => {
             .then(data => {
                 navPlaceholder.innerHTML = data;
                 
-                document.getElementById('nav-placeholder').innerHTML = data;
+                // Helper para mostrar enlaces de admin
+                const showAdminLinks = (role) => {
+                    if (role === 'admin') {
+                        const adminLinks = document.querySelectorAll('.admin-only');
+                        adminLinks.forEach(link => link.classList.remove('hidden'));
+                    }
+                };
 
-        // Lógica para mostrar/ocultar el enlace de admin
-        const adminLink = document.getElementById('admin-dashboard-link');
-        const token = localStorage.getItem('token');
-
-        if (adminLink && token) {
-            try {
-                const payload = JSON.parse(atob(token.split('.')[1]));
-                if (payload.role === 'admin') {
-                    adminLink.classList.remove('hidden');
+                // ESTRATEGIA HÍBRIDA DE ROLES:
+                // 1. Intento Rápido: Leer del localStorage (si existe)
+                const token = localStorage.getItem('token');
+                if (token) {
+                    try {
+                        const payload = JSON.parse(atob(token.split('.')[1]));
+                        showAdminLinks(payload.role);
+                    } catch (e) {
+                        console.error('Error al decodificar el token local:', e);
+                    }
+                } else {
+                    // 2. Intento Robusto: Si localStorage es null, consultar a la API (usa la cookie)
+                    // Esto arregla el problema cuando el usuario tiene sesión pero no token en storage
+                    fetch('/api/user/profile', { headers: { 'Content-Type': 'application/json' } })
+                        .then(res => {
+                            if (res.ok) return res.json();
+                            throw new Error('No sesión');
+                        })
+                        .then(user => {
+                            if (user && user.role) {
+                                showAdminLinks(user.role);
+                            }
+                        })
+                        .catch(() => {
+                            // Usuario no logueado o error, no hacemos nada (links siguen ocultos)
+                        });
                 }
-            } catch (e) {
-                console.error('Error al decodificar el token:', e);
-            }
-        }
 
                 initializeNav();
             })
@@ -52,39 +71,33 @@ function initializeNav() {
     function setupDropdown(btn, dropdown) {
         if (!btn || !dropdown) return;
 
-        const container = btn.parentElement; // El <div class="relative">
+        const container = btn.parentElement;
         let hideTimer;
 
-        // Abrir/cerrar con clic en el botón (ideal para touch)
         btn.addEventListener('click', (e) => {
             e.stopPropagation();
             const isHidden = dropdown.classList.contains('hidden');
-            // Ocultar todos los dropdowns primero
             document.querySelectorAll('.absolute.z-50').forEach(d => d.classList.add('hidden'));
-            // Mostrar/ocultar el actual
             if (isHidden) {
                 dropdown.classList.remove('hidden');
             }
         });
 
-        // Mantener abierto mientras el mouse esté sobre el botón o el menú
         container.addEventListener('mouseenter', () => {
-            clearTimeout(hideTimer); // Cancela cualquier temporizador de cierre pendiente
+            clearTimeout(hideTimer);
             dropdown.classList.remove('hidden');
         });
 
-        // Iniciar un temporizador para cerrar cuando el mouse salga del área
         container.addEventListener('mouseleave', () => {
             hideTimer = setTimeout(() => {
                 dropdown.classList.add('hidden');
-            }, 500); // Medio segundo de retraso
+            }, 500);
         });
     }
 
     setupDropdown(labDropdownBtn, labDropdown);
     setupDropdown(configDropdownBtn, configDropdown);
     
-    // Cerrar todos los dropdowns si se hace clic en cualquier otro lugar
     document.addEventListener('click', () => {
         if(labDropdown) labDropdown.classList.add('hidden');
         if(configDropdown) configDropdown.classList.add('hidden');
@@ -99,13 +112,18 @@ function initializeNav() {
         if (link.href) {
             const linkPath = new URL(link.href).pathname;
             
-            if (currentPage === linkPath || (currentPage.startsWith('/app/trazabilidad') && linkPath.startsWith('/app/trazabilidad'))) {
+            // Lógica extendida para mantener activo el botón en sub-rutas
+            if (
+                currentPage === linkPath || 
+                (currentPage.startsWith('/app/trazabilidad') && linkPath.startsWith('/app/trazabilidad')) ||
+                // NUEVO: Mantener activo si estamos en el CMS del blog
+                (currentPage.startsWith('/app/admin-blog') && linkPath.startsWith('/app/admin-blog'))
+            ) {
                 link.classList.add('bg-amber-800');
             }
         }
     });
 
-    // Lógica para resaltar el botón del dropdown activo
     if (labDropdownBtn && (currentPage.startsWith('/app/maridaje') || currentPage.startsWith('/app/blends'))) {
         labDropdownBtn.classList.add('bg-amber-800');
     }
@@ -113,4 +131,3 @@ function initializeNav() {
         configDropdownBtn.classList.add('bg-amber-800');
     }
 }
-

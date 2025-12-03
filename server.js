@@ -68,11 +68,8 @@ const checkSubscription = (requiredTier) => async (req, res, next) => {
         const hasProfesionalTier = user.subscription_tier === 'profesional';
 
         if (hasProfesionalTier || hasActiveTrial) {
-            return next(); // Tiene acceso
+            return next();
         }
-        
-        // Lógica para planes específicos si es necesario en el futuro
-        // Por ahora, solo profesional/trial tiene acceso a todo lo premium
 
         return res.status(403).json({ error: 'Esta funcionalidad requiere un plan Profesional. Mejora tu cuenta para acceder.' });
     } catch (error) {
@@ -107,6 +104,14 @@ app.get('/pricing-public.html', (req, res) => res.sendFile(path.join(__dirname, 
 // Nuevas rutas para el módulo de reseñas
 app.get('/api/reviews/:lote_id', db.getReviews);
 app.post('/api/reviews/submit', db.submitReview);
+
+app.get('/api/blog', db.getBlogPosts);
+app.get('/api/blog/:slug', db.getBlogPostBySlug);
+
+app.get('/blog/:slug', (req, res) => {
+    // Servimos el HTML plantilla. El JS del cliente leerá el slug de la URL y pedirá los datos.
+    res.sendFile(path.join(__dirname, 'public', 'article.html'));
+});
 
 // Nueva ruta para servir los parciales de HTML
 app.get('/partials/:partialName', (req, res) => {
@@ -147,7 +152,13 @@ app.get('/app/recetas-chocolate', authenticatePage, (req, res) => res.sendFile(p
 app.get('/app/pricing', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'pricing.html'))); // Nueva ruta
 app.get('/app/costos', authenticatePage, checkSubscription('profesional'), (req, res) => res.sendFile(path.join(__dirname, 'views', 'costos.html'))); // Nueva ruta
 app.get('/app/admin-dashboard', authenticatePage, checkAdmin, (req, res) => res.sendFile(path.join(__dirname, 'views', 'admin-dashboard.html')));
+app.get('/app/cms', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'admin-blog-list.html')));
 app.get('/app/costos', authenticatePage, checkSubscription('profesional'), (req, res) => res.sendFile(path.join(__dirname, 'views', 'costos.html')));
+
+// --- NUEVAS RUTAS VISTAS ADMIN BLOG ---
+app.get('/app/admin-blog', authenticatePage, checkAdmin, (req, res) => res.sendFile(path.join(__dirname, 'views', 'admin-blog-list.html')));
+app.get('/app/admin-blog/editor', authenticatePage, checkAdmin, (req, res) => res.sendFile(path.join(__dirname, 'views', 'admin-blog-editor.html')));
+
 
 // Nuevas rutas para el flujo de pago
 app.get('/app/payment-success', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'payment-success.html')));
@@ -180,10 +191,9 @@ app.put('/api/ruedas-sabores/:id', authenticateApi, db.updateRuedaSabores);
 app.delete('/api/ruedas-sabores/:id', authenticateApi, db.deleteRuedaSabores);
 
 // Plantillas y Etapas
-// --- ACTUALIZACIÓN: Nuevas rutas para Catálogo y Clonación ---
-app.get('/api/templates', authenticateApi, db.getTemplates); // Mis plantillas
-app.get('/api/templates/system', authenticateApi, db.getSystemTemplates); // Catálogo (JSON)
-app.post('/api/templates/clone', authenticateApi, db.cloneTemplate); // Clonar del catálogo a la DB
+app.get('/api/templates', authenticateApi, db.getTemplates);
+app.get('/api/templates/system', authenticateApi, db.getSystemTemplates);
+app.post('/api/templates/clone', authenticateApi, db.cloneTemplate);
 // -------------------------------------------------------------
 app.post('/api/templates', authenticateApi, db.createTemplate);
 app.put('/api/templates/:templateId', authenticateApi, db.updateTemplate);
@@ -232,6 +242,13 @@ app.post('/api/payments/webhook', express.raw({type: 'application/json'}), db.ha
 
 // Nueva ruta para consolidar los datos del dashboard
 app.get('/api/dashboard/data', authenticateApi, checkSubscription('profesional'), db.getDashboardData);
+
+// --- NUEVAS RUTAS API ADMIN BLOG (CRUD) ---
+app.get('/api/admin/blog', authenticateApi, checkAdmin, db.getAdminBlogPosts);
+app.get('/api/admin/blog/:id', authenticateApi, checkAdmin, db.getBlogPostById); // Para editar
+app.post('/api/admin/blog', authenticateApi, checkAdmin, db.createBlogPost);
+app.put('/api/admin/blog/:id', authenticateApi, checkAdmin, db.updateBlogPost);
+app.delete('/api/admin/blog/:id', authenticateApi, checkAdmin, db.deleteBlogPost);
 
 // Iniciar Servidor
 app.listen(PORT, () => {

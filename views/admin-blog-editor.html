@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Editor de Blog - Rurulab Admin</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Quill.js CSS para el editor -->
+    <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+    <script src="/auth.js"></script>
+</head>
+<body class="bg-gray-100">
+    
+    <div class="max-w-5xl mx-auto py-8 px-4">
+        <form id="blog-form" class="bg-white rounded-xl shadow-lg overflow-hidden">
+            <!-- Header del Editor -->
+            <div class="px-8 py-5 border-b border-gray-200 flex justify-between items-center bg-gray-50">
+                <h1 class="text-xl font-bold text-gray-800" id="editor-title">Crear Nuevo Artículo</h1>
+                <div class="flex items-center gap-3">
+                    <a href="/app/admin-blog" class="text-gray-500 hover:text-gray-700 font-medium px-4">Cancelar</a>
+                    <button type="submit" class="bg-amber-800 hover:bg-amber-900 text-white font-bold py-2 px-6 rounded-lg shadow flex items-center gap-2">
+                        <i class="fas fa-save"></i> Guardar
+                    </button>
+                </div>
+            </div>
+
+            <div class="p-8 space-y-6">
+                <input type="hidden" id="post-id">
+                
+                <!-- Título -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Título del Artículo</label>
+                    <input type="text" id="title" class="w-full text-2xl font-bold p-3 border-b-2 border-gray-200 focus:border-amber-500 focus:outline-none placeholder-gray-300" placeholder="Escribe un título impactante..." required>
+                </div>
+
+                <!-- Configuración: Estado y Portada -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Resumen (SEO & Cards)</label>
+                        <textarea id="summary" rows="3" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:outline-none text-sm" placeholder="Breve descripción para la grilla..."></textarea>
+                    </div>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">URL Imagen de Portada</label>
+                            <input type="text" id="cover_image" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-amber-500 text-sm" placeholder="https://...">
+                        </div>
+                        <div class="flex items-center p-3 bg-yellow-50 rounded-lg border border-yellow-100">
+                            <input type="checkbox" id="is_published" class="h-5 w-5 text-amber-600 rounded focus:ring-amber-500 cursor-pointer">
+                            <label for="is_published" class="ml-3 block text-sm font-medium text-yellow-800 cursor-pointer select-none">
+                                Publicar inmediatamente (visible para todos)
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Editor Quill -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Contenido</label>
+                    <div class="bg-gray-50 border border-gray-300 rounded-lg">
+                        <!-- Toolbar custom container could go here if needed -->
+                        <div id="editor-container" class="h-[500px] bg-white rounded-b-lg"></div>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Quill.js JS -->
+    <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
+    <script>
+        // Configuración de Quill
+        var quill = new Quill('#editor-container', {
+            theme: 'snow',
+            placeholder: 'Escribe tu historia aquí...',
+            modules: {
+                toolbar: [
+                    [{ 'header': [2, 3, false] }],
+                    ['bold', 'italic', 'underline', 'strike'],
+                    ['blockquote', 'code-block'],
+                    [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                    [{ 'color': [] }, { 'background': [] }],
+                    ['link', 'image'], // 'image' permite pegar imágenes (base64)
+                    ['clean']
+                ]
+            }
+        });
+
+        // Cargar datos si hay ID en la URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const postId = urlParams.get('id');
+
+        if (postId) {
+            document.getElementById('editor-title').innerText = "Editar Artículo";
+            document.getElementById('post-id').value = postId;
+            loadPostData(postId);
+        }
+
+        async function loadPostData(id) {
+            try {
+                // Usamos la nueva ruta privada que creamos en server.js
+                const post = await api(`/api/admin/blog/${id}`);
+                
+                document.getElementById('title').value = post.title;
+                document.getElementById('summary').value = post.summary || '';
+                document.getElementById('cover_image').value = post.cover_image || '';
+                document.getElementById('is_published').checked = post.is_published;
+                
+                // Cargar contenido en Quill
+                // Usamos clipboard.dangerouslyPasteHTML para asegurar que el HTML se renderice
+                quill.clipboard.dangerouslyPasteHTML(post.content);
+            } catch (error) {
+                console.error(error);
+                alert("Error cargando el artículo: " + error.message);
+                window.location.href = '/app/admin-blog';
+            }
+        }
+
+        // Guardar
+        document.getElementById('blog-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
+
+            const postData = {
+                title: document.getElementById('title').value,
+                summary: document.getElementById('summary').value,
+                cover_image: document.getElementById('cover_image').value,
+                content: quill.root.innerHTML, // Extraer HTML
+                is_published: document.getElementById('is_published').checked
+            };
+
+            const id = document.getElementById('post-id').value;
+            const url = id ? `/api/admin/blog/${id}` : '/api/admin/blog';
+            const method = id ? 'PUT' : 'POST';
+
+            try {
+                await api(url, { method, body: JSON.stringify(postData) });
+                window.location.href = '/app/admin-blog'; // Volver a la lista
+            } catch (error) {
+                alert('Error al guardar: ' + error.message);
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalText;
+            }
+        });
+    </script>
+    <script src="/js/nav-loader.js" defer></script>
+</body>
+</html>

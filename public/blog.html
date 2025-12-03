@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blog Rurulab - Historias de Origen</title>
+    <meta name="description" content="Artículos sobre trazabilidad, tecnología en alimentos, cacao, café y sostenibilidad.">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+    
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #fdfdfb; }
+        .font-display { font-family: 'Playfair Display', serif; }
+        .hero-pattern {
+            background-color: #78350f;
+            background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%2392400e' fill-opacity='0.1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+        }
+    </style>
+</head>
+<body class="text-stone-800 antialiased flex flex-col min-h-screen">
+
+    <!-- Header (Copia idéntica del index.html para consistencia) -->
+    <header class="bg-white/80 backdrop-blur-sm sticky top-0 z-50 border-b border-stone-200">
+        <div class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <a href="/" class="text-2xl font-bold font-display text-amber-900"><i class="fa-solid fa-fingerprint mr-2"></i>Ruru Lab</a>
+            <nav class="hidden md:flex space-x-8 items-center">
+                <a href="/" class="hover:text-amber-800 transition">Inicio</a>
+                <a href="/qr" class="hover:text-amber-800 transition">Descubrir Lote</a>
+                <a href="/blog.html" class="text-amber-800 font-bold">Blog</a>
+                <a href="/login.html" class="bg-amber-800 text-white font-bold py-2 px-5 rounded-lg hover:bg-amber-900 transition">Acceso Clientes</a>
+            </nav>
+            <!-- Botón Móvil -->
+            <button class="md:hidden text-amber-900"><i class="fas fa-bars fa-lg"></i></button>
+        </div>
+    </header>
+
+    <!-- Hero Blog -->
+    <section class="hero-pattern text-white py-16 md:py-24">
+        <div class="container mx-auto px-6 text-center">
+            <h1 class="text-4xl md:text-5xl font-bold font-display mb-4">El Blog de Rurulab</h1>
+            <p class="text-lg md:text-xl text-amber-100 max-w-2xl mx-auto">Insights sobre trazabilidad, tecnología alimentaria y el futuro de la cadena de suministro transparente.</p>
+        </div>
+    </section>
+
+    <!-- Contenido Principal -->
+    <main class="flex-grow container mx-auto px-6 py-12">
+        
+        <!-- Grid de Artículos -->
+        <div id="blog-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
+            <!-- Loading State -->
+            <div class="col-span-full text-center py-20">
+                <i class="fas fa-circle-notch fa-spin text-4xl text-amber-200"></i>
+                <p class="mt-4 text-stone-500">Cargando historias...</p>
+            </div>
+        </div>
+
+        <!-- Paginación -->
+        <div id="pagination" class="flex justify-center items-center gap-2">
+            <!-- Se inyecta vía JS -->
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="py-8 bg-stone-800 text-stone-300 mt-auto">
+        <div class="container mx-auto px-6 text-center">
+            <p>&copy; 2025 Rurulab. Todos los derechos reservados.</p>
+        </div>
+    </footer>
+
+    <!-- Script Lógica Blog -->
+    <script src="/js/blog.js"></script>
+</body>
+</html>

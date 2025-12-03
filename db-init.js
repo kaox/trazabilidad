@@ -203,6 +203,21 @@ async function initializeDatabase() {
                 )`);
             console.log("Tabla 'plantillas_proceso' lista.");
 
+            await runQuery(db, `
+                CREATE TABLE IF NOT EXISTS blog_posts (
+                    id TEXT PRIMARY KEY, 
+                    title TEXT NOT NULL,
+                    slug TEXT NOT NULL UNIQUE,
+                    summary TEXT,
+                    content TEXT NOT NULL,
+                    cover_image TEXT,
+                    author_id INTEGER REFERENCES users(id),
+                    is_published BOOLEAN DEFAULT FALSE,
+                    published_at TIMESTAMP,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )`);
+            console.log("Tabla 'blog_posts' lista.");
+            
             console.log('Esquema de base de datos listo.');
 
         } catch (error) {

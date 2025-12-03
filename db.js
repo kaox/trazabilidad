@@ -72,6 +72,26 @@ if (environment === 'production') {
 // --- Helper para parsear JSON de forma segura ---
 const safeJSONParse = (data) => typeof data === 'string' ? JSON.parse(data) : data;
 
+// --- Helper para sanitizar números (CORRECCIÓN DEL ERROR) ---
+// Convierte "" (string vacío) o undefined a null, para que Postgres no falle con tipos INTEGER/REAL
+const sanitizeNumber = (val) => {
+    if (val === '' || val === null || val === undefined) return null;
+    const num = Number(val);
+    return isNaN(num) ? null : num;
+};
+
+// --- Helper para crear Slugs ---
+const createSlug = (text) => {
+    return text
+        .toString()
+        .toLowerCase()
+        .trim()
+        .replace(/\s+/g, '-')     // Reemplazar espacios con -
+        .replace(/[^\w\-]+/g, '') // Eliminar caracteres no palabras
+        .replace(/\-\-+/g, '-')   // Reemplazar múltiples - con uno solo
+        + '-' + Math.floor(Math.random() * 1000); // Añadir sufijo aleatorio para unicidad
+};
+
 // --- Lógica de la API (usa las funciones adaptadoras) ---
 const registerUser = async (req, res) => {
     const { usuario, password, nombre, apellido, dni, ruc, empresa, company_logo, celular, correo } = req.body;
@@ -1190,6 +1210,126 @@ const submitReview = async (req, res) => {
     }
 };
 
+// --- BLOG SYSTEM ---
+
+// Obtener posts (Público, Paginado)
+const getBlogPosts = async (req, res) => {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const offset = (page - 1) * limit;
+
+    try {
+        // Obtenemos solo los publicados
+        const posts = await all(
+            'SELECT id, title, slug, summary, cover_image, created_at FROM blog_posts WHERE is_published = TRUE ORDER BY created_at DESC LIMIT ? OFFSET ?',
+            [limit, offset]
+        );
+        
+        // Contamos total para la paginación
+        const countResult = await get('SELECT COUNT(*) as count FROM blog_posts WHERE is_published = TRUE');
+        const totalPosts = parseInt(countResult.count);
+        const totalPages = Math.ceil(totalPosts / limit);
+
+        res.status(200).json({
+            data: posts,
+            pagination: {
+                page,
+                limit,
+                totalPosts,
+                totalPages
+            }
+        });
+    } catch (err) {
+        console.error("Error getting blog posts:", err);
+        res.status(500).json({ error: err.message });
+    }
+};
+
+// Obtener un post por Slug (Público)
+const getBlogPostBySlug = async (req, res) => {
+    const { slug } = req.params;
+    try {
+        const post = await get('SELECT * FROM blog_posts WHERE slug = ? AND is_published = TRUE', [slug]);
+        if (!post) return res.status(404).json({ error: "Artículo no encontrado." });
+        res.status(200).json(post);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};
+
+// Crear Post (Admin)
+const createBlogPost = async (req, res) => {
+    const { title, content, summary, cover_image, is_published } = req.body;
+    const userId = req.user.id;
+    const id = require('crypto').randomUUID();
+    const slug = createSlug(title);
+
+    try {
+        await run(
+            'INSERT INTO blog_posts (id, title, slug, content, summary, cover_image, author_id, is_published) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+            [id, title, slug, content, summary, cover_image, userId, is_published]
+        );
+        res.status(201).json({ message: "Artículo creado", slug });
+    } catch (err) {
+        if (err.message.includes('UNIQUE')) return res.status(409).json({ error: "Ya existe un artículo con título similar." });
+        res.status(500).json({ error: err.message });
+    }
+};
+
+// Actualizar Post (Admin)
+const updateBlogPost = async (req, res) => {
+    const { id } = req.params;
+    const { title, content, summary, cover_image, is_published } = req.body;
+    // Si cambia el título, podríamos querer actualizar el slug, pero para mantener SEO, a veces es mejor no hacerlo.
+    // Aquí actualizaremos el slug solo si se envía explícitamente o generaremos uno nuevo si cambia el título significativamente (opcional).
+    // Por simplicidad, regeneramos el slug si cambia el título.
+    const slug = createSlug(title); 
+
+    try {
+        const result = await run(
+            'UPDATE blog_posts SET title = ?, slug = ?, content = ?, summary = ?, cover_image = ?, is_published = ? WHERE id = ?',
+            [title, slug, content, summary, cover_image, is_published, id]
+        );
+        if (result.changes === 0) return res.status(404).json({ error: "Artículo no encontrado." });
+        res.status(200).json({ message: "Artículo actualizado", slug });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};
+
+// Eliminar Post (Admin)
+const deleteBlogPost = async (req, res) => {
+    const { id } = req.params;
+    try {
+        const result = await run('DELETE FROM blog_posts WHERE id = ?', [id]);
+        if (result.changes === 0) return res.status(404).json({ error: "Artículo no encontrado." });
+        res.status(204).send();
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};
+
+// Obtener todos los posts para el admin (incluso borradores)
+const getAdminBlogPosts = async (req, res) => {
+    try {
+        const posts = await all('SELECT id, title, slug, is_published, created_at FROM blog_posts ORDER BY created_at DESC');
+        res.status(200).json(posts);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};
+
+const getBlogPostById = async (req, res) => {
+    const { id } = req.params;
+    try {
+        const post = await get('SELECT * FROM blog_posts WHERE id = ?', [id]);
+        if (!post) return res.status(404).json({ error: "Artículo no encontrado." });
+        res.status(200).json(post);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};
+
 module.exports = {
     registerUser, loginUser, logoutUser, handleGoogleLogin,
     getFincas, createFinca, updateFinca, deleteFinca,
@@ -1209,5 +1349,6 @@ module.exports = {
     getLoteCosts, saveLoteCosts,
     getDashboardData,
     createPaymentPreference, handlePaymentWebhook,
-    getReviews, submitReview
+    getReviews, submitReview,
+    getBlogPosts, getBlogPostBySlug, createBlogPost, updateBlogPost, deleteBlogPost, getAdminBlogPosts, getBlogPostById
 };

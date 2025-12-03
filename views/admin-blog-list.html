@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Blog - Rurulab Admin</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+    <script src="/auth.js"></script>
+    <script src="/js/analytics-loader.js" defer></script>
+</head>
+<body class="text-stone-800 antialiased">
+    <div id="nav-placeholder"></div>
+    
+    <!-- Navbar simplificada -->
+    <nav class="bg-white shadow-sm border-b border-gray-200 px-6 py-4">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <div class="flex items-center gap-4">
+                <a href="/app/admin-dashboard" class="text-gray-500 hover:text-gray-900"><i class="fas fa-arrow-left"></i> Volver</a>
+                <h1 class="text-xl font-bold text-amber-900">Gestión de Blog</h1>
+            </div>
+            <a href="/app/admin-blog/editor" class="bg-amber-800 hover:bg-amber-900 text-white font-bold py-2 px-4 rounded-lg flex items-center gap-2">
+                <i class="fas fa-plus"></i> Nuevo Artículo
+            </a>
+        </div>
+    </nav>
+
+    <main class="max-w-7xl mx-auto px-6 py-8">
+        <!-- Tabla de Artículos -->
+        <div class="bg-white rounded-xl shadow overflow-hidden border border-gray-200">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Artículo</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha</th>
+                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="posts-table-body" class="bg-white divide-y divide-gray-200">
+                    <!-- Se llena con JS -->
+                    <tr>
+                        <td colspan="4" class="px-6 py-10 text-center text-gray-500">
+                            <i class="fas fa-circle-notch fa-spin text-2xl mb-2"></i><br>Cargando artículos...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', loadPosts);
+
+        async function loadPosts() {
+            try {
+                const posts = await api('/api/admin/blog');
+                renderTable(posts);
+            } catch (error) {
+                console.error(error);
+                document.getElementById('posts-table-body').innerHTML = `<tr><td colspan="4" class="text-center text-red-500 py-4">Error cargando datos: ${error.message}</td></tr>`;
+            }
+        }
+
+        function renderTable(posts) {
+            const tbody = document.getElementById('posts-table-body');
+            
+            if (posts.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4" class="text-center py-10 text-gray-500">No hay artículos creados. ¡Escribe el primero!</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = posts.map(post => `
+                <tr class="hover:bg-gray-50 transition-colors">
+                    <td class="px-6 py-4">
+                        <div class="flex items-center">
+                            <div class="h-10 w-10 flex-shrink-0">
+                                <img class="h-10 w-10 rounded-md object-cover" src="${post.cover_image || 'https://placehold.co/100?text=IMG'}" alt="">
+                            </div>
+                            <div class="ml-4">
+                                <div class="text-sm font-medium text-gray-900">${post.title}</div>
+                                <div class="text-sm text-gray-500 text-xs truncate max-w-xs">/${post.slug}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${post.is_published ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}">
+                            ${post.is_published ? 'Publicado' : 'Borrador'}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        ${new Date(post.created_at).toLocaleDateString()}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <a href="/app/admin-blog/editor?id=${post.id}" class="text-indigo-600 hover:text-indigo-900 mr-4" title="Editar"><i class="fas fa-edit"></i></a>
+                        <a href="/blog/${post.slug}" target="_blank" class="text-gray-400 hover:text-gray-600 mr-4" title="Ver en vivo"><i class="fas fa-eye"></i></a>
+                        <button onclick="deletePost('${post.id}')" class="text-red-600 hover:text-red-900" title="Eliminar"><i class="fas fa-trash"></i></button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        async function deletePost(id) {
+            if (!confirm('¿Estás seguro de eliminar este artículo? Esta acción no se puede deshacer.')) return;
+            try {
+                await api(`/api/admin/blog/${id}`, { method: 'DELETE' });
+                loadPosts(); // Recargar tabla
+            } catch (error) {
+                alert('Error al eliminar: ' + error.message);
+            }
+        }
+    </script>
+    <script src="/js/nav-loader.js" defer></script>
+</body>
+</html>
