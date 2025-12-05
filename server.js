@@ -154,6 +154,7 @@ app.get('/app/costos', authenticatePage, checkSubscription('profesional'), (req,
 app.get('/app/admin-dashboard', authenticatePage, checkAdmin, (req, res) => res.sendFile(path.join(__dirname, 'views', 'admin-dashboard.html')));
 app.get('/app/cms', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'admin-blog-list.html')));
 app.get('/app/costos', authenticatePage, checkSubscription('profesional'), (req, res) => res.sendFile(path.join(__dirname, 'views', 'costos.html')));
+app.get('/app/trazabilidad-inmutable', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'trazabilidad-inmutable.html')));
 
 // --- NUEVAS RUTAS VISTAS ADMIN BLOG ---
 app.get('/app/admin-blog', authenticatePage, checkAdmin, (req, res) => res.sendFile(path.join(__dirname, 'views', 'admin-blog-list.html')));
@@ -209,6 +210,8 @@ app.post('/api/batches', authenticateApi, db.createBatch);
 app.put('/api/batches/:id', authenticateApi, db.updateBatch);
 app.delete('/api/batches/:id', authenticateApi, db.deleteBatch);
 app.post('/api/batches/:id/finalize', authenticateApi, db.finalizeBatch);
+app.get('/api/batches/immutable', authenticateApi, db.getImmutableBatches);
+
 
 
 // Cuenta de Usuario

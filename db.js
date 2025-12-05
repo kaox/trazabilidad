@@ -721,6 +721,7 @@ const finalizeBatch = async (req, res) => {
 const getTrazabilidad = async (req, res) => {
     const { id } = req.params;
     try {
+        
         const rows = await all(`
             WITH RECURSIVE trazabilidad_completa AS (
                 SELECT * FROM lotes WHERE UPPER(id) = UPPER(?)
@@ -841,11 +842,64 @@ const getTrazabilidad = async (req, res) => {
                 }
             }
         }
+
+        run('UPDATE lotes SET views = COALESCE(views, 0) + 1 WHERE id = ?', [id]).catch(err => console.error("Error contando vista:", err));
         
         res.status(200).json(history);
     } catch (error) { 
         console.error(`Error en getTrazabilidad para el lote ${id}:`, error.message);
         res.status(500).json({ error: "Error interno del servidor." }); 
+    }
+};
+
+const getImmutableBatches = async (req, res) => {
+    const userId = req.user.id;
+    try {
+        const sql = `
+            WITH RECURSIVE user_batches AS (
+                -- 1. Lotes Raíz (tienen user_id explícito)
+                SELECT id FROM lotes WHERE user_id = ?
+                
+                UNION ALL
+                
+                -- 2. Lotes Hijos (se unen por parent_id)
+                SELECT l.id 
+                FROM lotes l 
+                JOIN user_batches ub ON l.parent_id = ub.id
+            )
+            SELECT 
+                l.id, 
+                l.blockchain_hash, 
+                l.created_at,
+                l.views,
+                l.data,
+                p.nombre_producto as tipo_proceso,
+                e.nombre_etapa as ultima_etapa,
+                COALESCE(AVG(r.rating), 0) as avg_rating,
+                COUNT(r.id) as total_reviews
+            FROM lotes l
+            JOIN user_batches ub ON l.id = ub.id -- Filtramos solo los lotes que pertenecen al árbol del usuario
+            JOIN plantillas_proceso p ON l.plantilla_id = p.id
+            JOIN etapas_plantilla e ON l.etapa_id = e.id
+            LEFT JOIN product_reviews r ON l.id = r.lote_id
+            WHERE l.blockchain_hash IS NOT NULL 
+            AND l.blockchain_hash != ''
+            GROUP BY l.id, p.nombre_producto, e.nombre_etapa, l.created_at, l.views, l.blockchain_hash, l.data
+            ORDER BY l.created_at DESC
+        `;
+        
+        const rows = await all(sql, [userId]);
+        
+        // Parseamos la data JSON por si necesitamos sacar info extra como la foto
+        const result = rows.map(row => ({
+            ...row,
+            data: safeJSONParse(row.data)
+        }));
+
+        res.status(200).json(result);
+    } catch (err) {
+        console.error("Error en getImmutableBatches:", err);
+        res.status(500).json({ error: err.message });
     }
 };
 
@@ -1404,7 +1458,7 @@ module.exports = {
     getSystemTemplates, cloneTemplate, // <-- NUEVAS FUNCIONES EXPORTADAS
     getStagesForTemplate, createStage, updateStage, deleteStage,
     getBatchesTree, createBatch, updateBatch, deleteBatch, finalizeBatch,
-    getTrazabilidad,
+    getTrazabilidad, getImmutableBatches,
     getUserProfile, updateUserProfile, updateUserPassword,
     getRuedasSabores, createRuedaSabores, updateRuedaSabores, deleteRuedaSabores,
     getBlends, createBlend, deleteBlend,

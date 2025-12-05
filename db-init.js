@@ -125,6 +125,7 @@ async function initializeDatabase() {
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     blockchain_hash TEXT,
                     is_locked BOOLEAN DEFAULT 0,
+                    views INTEGER DEFAULT 0,
                     FOREIGN KEY (plantilla_id) REFERENCES plantillas_proceso(id) ON DELETE CASCADE,
                     FOREIGN KEY (etapa_id) REFERENCES etapas_plantilla(id) ON DELETE CASCADE,
                     FOREIGN KEY (parent_id) REFERENCES lotes(id) ON DELETE CASCADE,

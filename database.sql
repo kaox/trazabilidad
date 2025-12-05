@@ -1,3 +1,6 @@
+-- EXTENSIONES
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
 -- Paso 1: Eliminar las tablas existentes en el orden correcto para evitar errores de dependencia.
 -- La cláusula "CASCADE" asegura que también se eliminen las relaciones.
 DROP TABLE IF EXISTS perfiles_cacao CASCADE;
@@ -61,12 +64,18 @@ CREATE TABLE IF NOT EXISTS etapas_plantilla (
 
 -- Tabla de Lotes
 CREATE TABLE IF NOT EXISTS lotes (
-    id TEXT PRIMARY KEY,
+    id TEXT PRIMARY KEY, -- IDs personalizados (ej: 'COS-123')
     plantilla_id INTEGER REFERENCES plantillas_proceso(id) ON DELETE CASCADE,
     etapa_id INTEGER NOT NULL REFERENCES etapas_plantilla(id) ON DELETE CASCADE,
     user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
     parent_id TEXT REFERENCES lotes(id) ON DELETE CASCADE,
     data JSONB NOT NULL,
+    
+    -- Campos Nuevos para Certificación
+    blockchain_hash TEXT,
+    is_locked BOOLEAN DEFAULT FALSE,
+    views INTEGER DEFAULT 0,
+    
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 
