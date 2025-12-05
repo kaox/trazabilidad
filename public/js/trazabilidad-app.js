@@ -88,9 +88,11 @@ document.addEventListener('DOMContentLoaded', () => {
         
         const nextStage = state.stagesByTemplate[template.id]?.find(s => s.orden === stage.orden + 1);
         const hasChildren = batchData.children && Array.isArray(batchData.children) && batchData.children.length > 0;
+        const isLocked = batchData.is_locked; 
 
         const processData = batchData.data || batchData;
-
+        
+        // ... (extracción de datos, pesos y rendimiento igual) ...
         const entradas = stage.campos_json.entradas || [];
         const salidas = stage.campos_json.salidas || [];
         const variables = stage.campos_json.variables || [];
@@ -112,7 +114,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (salidas.length > 0 && salidas[0].name) {
             outputWeight = parseFloat(getFieldValue(processData, salidas[0].name)) || 0;
         }
-
+        
         const inputField = entradas[0]?.name;
         if (inputField && processData[inputField]) {
             inputWeight = parseFloat(getFieldValue(processData, inputField)) || 0;
@@ -123,7 +125,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 inputWeight = parseFloat(getFieldValue(parentBatch.data || parentBatch, outputFieldOfParent)) || 0;
             }
         }
-        
         displayInputWeight = inputWeight;
         if (parentBatch && inputWeight === 0) {
              const parentStage = state.stagesByTemplate[template.id]?.find(s => s.orden === stage.orden - 1);
@@ -132,11 +133,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 displayInputWeight = parseFloat(getFieldValue(parentBatch.data || parentBatch, outputFieldOfParent)) || 0;
             }
         }
-
         const yieldPercent = (inputWeight > 0) ? (outputWeight / inputWeight) * 100 : 0;
-        
         let variablesHtml = variables.filter(v => v.type !== 'image').map(v => `<div><dt class="text-stone-500">${v.label}:</dt><dd class="font-medium text-stone-800">${getFieldValue(processData, v.name) || 'N/A'}</dd></div>`).join('');
-        
         let ioHtml = `<div class="flex gap-4">`;
         const inputLabel = entradas[0]?.label || 'Entrada';
         ioHtml += `<div class="flex-1"><p class="text-sm text-stone-500">${inputLabel}</p><p class="font-bold text-lg">${displayInputWeight.toFixed(2)} kg</p></div>`;
@@ -146,43 +144,87 @@ document.addEventListener('DOMContentLoaded', () => {
         const fechaKey = variables.find(v => v.type === 'date')?.name;
         const fecha = fechaKey ? (getFieldValue(processData, fechaKey) || 'Sin fecha') : 'Sin fecha';
         const imageUrl = imageUrlField ? getFieldValue(processData, imageUrlField.name) : null;
-        
-        // Detectar si es etapa de Calidad/Cata/Tostado para mostrar el botón
         const isQualityStage = stage.nombre_etapa.toLowerCase().match(/(cata|calidad)/);
+
+        // --- BOTONES DE ACCIÓN (Corregido: PDF visible en ambos estados) ---
+        let actionButtonsHtml = '';
+
+        // Botón Sub-Lote (Siempre visible)
+        const addSubButton = nextStage 
+            ? `<button ${outputWeight <= 0 ? 'disabled' : ''} class="add-sub-btn text-xs bg-green-600 hover:bg-green-700 text-white font-bold px-3 py-1.5 rounded-lg disabled:bg-gray-400 ml-2" data-parent-id="${batchData.id}" data-template-id="${template.id}" data-next-stage-id="${nextStage.id}" title="Crear nueva rama">+ ${nextStage.nombre_etapa}</button>` 
+            : '';
+
+        // Botón PDF (Condicional por tipo de etapa, no por bloqueo)
+        const pdfButton = isQualityStage ? `
+            <button class="pdf-btn text-xs bg-purple-600 hover:bg-purple-700 text-white font-bold px-3 py-1.5 rounded-lg flex items-center gap-1" data-batch-id="${batchData.id}" title="Reporte de Calidad">
+                <i class="fas fa-file-pdf"></i> Reporte
+            </button>
+        ` : '';
+
+        if (isLocked) {
+            const hashShort = batchData.blockchain_hash ? batchData.blockchain_hash.substring(0, 8) + '...' : 'Generado';
+            actionButtonsHtml = `
+                <div class="flex items-center gap-2 bg-green-100 border border-green-200 text-green-800 px-3 py-1.5 rounded-lg">
+                    <i class="fas fa-certificate text-green-600"></i>
+                    <div class="flex flex-col">
+                        <span class="text-xs font-bold leading-none">HASH INMUTABLE</span>
+                        <span class="text-[10px] font-mono leading-none mt-0.5 opacity-75 cursor-help" title="${batchData.blockchain_hash}">${hashShort}</span>
+                    </div>
+                </div>
+                ${pdfButton} <!-- Botón PDF visible aquí -->
+                <button class="text-xs bg-sky-600 hover:bg-sky-700 text-white p-2 rounded-lg" data-id="${batchData.id}" title="Ver Trazabilidad Pública">
+                    <a href="/${batchData.id}" target="_blank"><i class="fa-solid fa-globe"></i></a>
+                </button>
+                <button class="qr-btn text-xs bg-sky-600 hover:bg-sky-700 text-white p-2 rounded-lg" data-id="${batchData.id}" title="Descargar QR">
+                    <i class="fa-solid fa-qrcode"></i>
+                </button>
+                ${addSubButton}
+            `;
+        } else {
+            actionButtonsHtml = `
+                ${pdfButton} <!-- Botón PDF visible aquí -->
+                
+                <button class="text-xs bg-sky-600 hover:bg-sky-700 text-white p-2 rounded-lg" data-id="${batchData.id}" title="Ver">
+                    <a href="/${batchData.id}" target="_blank"><i class="fa-solid fa-eye"></i></a>
+                </button>
+                
+                <button class="edit-btn text-xs bg-stone-200 hover:bg-stone-300 p-2 rounded-lg" data-batch-id="${batchData.id}" data-template-id="${template.id}" data-stage-id="${stage.id}" title="Editar">
+                    <i class="fa-solid fa-pen-to-square"></i>
+                </button>
+                
+                <button class="delete-btn text-xs bg-red-600 hover:bg-red-700 text-white p-2 rounded-lg" data-batch-id="${batchData.id}" title="Eliminar">
+                    <i class="fa-solid fa-trash"></i>
+                </button>
+
+                <button class="finalize-btn text-xs bg-stone-800 hover:bg-black text-white font-bold px-3 py-1.5 rounded-lg flex items-center gap-1" data-batch-id="${batchData.id}" title="Generar Hash y Bloquear Lote">
+                    <i class="fas fa-link"></i> Generar Hash & QR
+                </button>
+
+                ${addSubButton}
+            `;
+        }
 
         const cardContent = document.createElement('div');
         cardContent.className = 'bg-white rounded-xl shadow-md';
         cardContent.innerHTML = `
-            <div class="p-4 border-l-4" style="border-color: ${getTemplateColor(template.id)}">
+            <div class="p-4 border-l-4 relative" style="border-color: ${isLocked ? '#10b981' : getTemplateColor(template.id)}">
+                ${isLocked ? '<div class="absolute top-0 right-0 p-2 opacity-5 pointer-events-none"><i class="fas fa-lock text-6xl text-green-900"></i></div>' : ''}
                 <div class="flex flex-col sm:flex-row justify-between sm:items-start gap-2">
                     <div class="flex items-center gap-2 flex-grow ${hasChildren ? 'cursor-pointer expand-trigger' : ''}">
                         ${hasChildren ? `<svg class="w-5 h-5 text-stone-400 transition-transform duration-300 flex-shrink-0 expand-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7-7"></path></svg>` : '<div class="w-5 flex-shrink-0"></div>' }
                         <div>
-                            <h3 class="font-bold text-lg text-amber-900">${stage.nombre_etapa} <span class="text-base font-normal text-stone-500">[${fecha}]</span></h3>
+                            <h3 class="font-bold text-lg text-amber-900 flex items-center gap-2">
+                                ${stage.nombre_etapa} 
+                                <span class="text-base font-normal text-stone-500">[${fecha}]</span>
+                            </h3>
                             ${!parentBatch ? `<span class="inline-block text-xs font-semibold mr-2 px-2.5 py-0.5 rounded-full" style="background-color: ${getTemplateColor(template.id, true)}; color: ${getTemplateColor(template.id)}">${template.nombre_producto}</span>`: ''}
                         </div>
                     </div>
-                    <div class="flex flex-wrap gap-2 items-center justify-start sm:justify-end flex-shrink-0">
-                        <!-- Botón PDF de Calidad -->
-                        ${isQualityStage ? `
-                            <button class="pdf-btn text-xs bg-purple-600 hover:bg-purple-700 text-white font-bold px-3 py-1.5 rounded-lg flex items-center gap-1" data-batch-id="${batchData.id}" title="Reporte de Calidad">
-                                <i class="fas fa-file-pdf"></i> Reporte
-                            </button>
-                        ` : ''}
-                        <button class="text-xs bg-sky-600 hover:bg-sky-700 text-white p-2 rounded-lg" data-id="${batchData.id}" title="Ver Trazabilidad">
-                            <a href="/${batchData.id}" target="_blank"><i class="fa-solid fa-eye"></i></a>
-                        </button>
-                        <button class="qr-btn text-xs bg-sky-600 hover:bg-sky-700 text-white p-2 rounded-lg" data-id="${batchData.id}" title="Generar QR">
-                            <i class="fa-solid fa-qrcode"></i>
-                        </button>
-                        <button class="edit-btn text-xs bg-stone-200 hover:bg-stone-300 p-2 rounded-lg" data-batch-id="${batchData.id}" data-template-id="${template.id}" data-stage-id="${stage.id}" title="Editar">
-                            <i class="fa-solid fa-pen-to-square"></i>
-                        </button>
-                        <button class="delete-btn text-xs bg-red-600 hover:bg-red-700 text-white p-2 rounded-lg" data-batch-id="${batchData.id}" title="Eliminar">
-                            <i class="fa-solid fa-trash"></i>                        </button>
-                        ${nextStage ? `<button ${outputWeight <= 0 ? 'disabled' : ''} class="add-sub-btn text-xs bg-green-600 hover:bg-green-700 text-white font-bold px-3 py-1.5 rounded-lg disabled:bg-gray-400" data-parent-id="${batchData.id}" data-template-id="${template.id}" data-next-stage-id="${nextStage.id}">+ Añadir ${nextStage.nombre_etapa}</button>` : ''}
+                    <div class="flex flex-wrap gap-2 items-center justify-start sm:justify-end flex-shrink-0 relative z-10">
+                        ${actionButtonsHtml}
                     </div>
                 </div>
+                
                 <div class="pl-7 mt-4 flex flex-col sm:flex-row gap-4">
                     ${imageUrl ? `<img src="${imageUrl}" class="w-24 h-24 rounded-lg object-cover flex-shrink-0">` : ''}
                     <div class="flex-grow space-y-4">
@@ -614,6 +656,27 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const button = e.target.closest('button');
         if (!button) return;
+
+        // NUEVO: Manejo del botón "Finalizar"
+        if (button.classList.contains('finalize-btn')) {
+            const batchId = button.dataset.batchId;
+            if (confirm('⚠️ ¿Generar Hash Inmutable?\n\nAl confirmar, se creará un sello criptográfico para este lote y no podrás editar sus datos. Sin embargo, SÍ podrás seguir creando nuevos lotes a partir de él.')) {
+                const originalText = button.innerHTML;
+                button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+                button.disabled = true;
+                
+                try {
+                    await api(`/api/batches/${batchId}/finalize`, { method: 'POST' });
+                    await loadBatches();
+                    alert("✅ Lote certificado exitosamente.");
+                } catch (error) {
+                    console.error(error);
+                    alert("Error: " + error.message);
+                    button.innerHTML = originalText;
+                    button.disabled = false;
+                }
+            }
+        }
 
         //const pdfBtn = e.target.closest('.pdf-btn');
         if (button.classList.contains('pdf-btn')) {

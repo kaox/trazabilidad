@@ -14,6 +14,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const closeLocationModalBtn = document.querySelector('.close-location-modal');
     const highlightsContainer = document.getElementById('highlights-container');
     const reviewsContainer = document.getElementById('reviews-container');
+    const blockchainContainer = document.getElementById('blockchain-certificate');
+    const hashDisplay = document.getElementById('hash-display');
 
     let FLAVOR_WHEELS_DATA = {};
 
@@ -50,9 +52,11 @@ document.addEventListener('DOMContentLoaded', () => {
             renderStory(history, reviews); // Pasar reseñas al renderizador
             hideMessageModal();
         } catch (error) {
+            console.error(error);
             storyContainer.innerHTML = '';
             highlightsContainer.innerHTML = '';
             reviewsContainer.innerHTML = '';
+            if (blockchainContainer) blockchainContainer.classList.add('hidden'); // Ocultar certificado si hay error
             messageText.textContent = 'Lote no encontrado. Verifica el código e inténtalo de nuevo.';
         }
     }
@@ -68,13 +72,14 @@ document.addEventListener('DOMContentLoaded', () => {
         storyContainer.innerHTML = finalHTML;
 
         // Renderizar el encabezado personalizado
-        //renderLogoCompany(h.ownerInfo);
+        renderLogoCompany(h.ownerInfo);
 
         const routePoints = getRoutePoints(h);
         const highlights = calculateHighlights(h);
 
         // Post-renderizado de componentes visuales y eventos
         renderHighlightsSection(highlights);
+        renderBlockchainCertificate(h);
         renderReviewsSection(reviews);
 
         setupTabs(routePoints.length >= 1);
@@ -86,6 +91,29 @@ document.addEventListener('DOMContentLoaded', () => {
         if (h.perfilSensorialData) {
             renderFlavorProfile(h.perfilSensorialData);
             initializePerfilChart('sensory-profile-chart', h.perfilSensorialData);
+        }
+    }
+
+    function renderBlockchainCertificate(h) {
+        console.log(blockchainContainer, hashDisplay);
+        if (!blockchainContainer || !hashDisplay) return;
+        console.log("2")
+        // Resetear estado (ocultar por defecto)
+        blockchainContainer.classList.add('hidden');
+
+        // Buscar si alguna etapa de la cadena tiene un hash (está certificada)
+        // Buscamos de atrás hacia adelante para encontrar el hash más reciente (el del producto final)
+        const certifiedStage = h.stages.slice().reverse().find(s => s.blockchain_hash);
+        console.log(certifiedStage);
+        if (certifiedStage) {
+            // Inyectar el hash
+            hashDisplay.textContent = certifiedStage.blockchain_hash;
+            
+            // Mostrar el contenedor
+            blockchainContainer.classList.remove('hidden');
+            
+            // Opcional: Agregar un pequeño efecto visual o log
+            console.log("🔒 Certificado Blockchain encontrado:", certifiedStage.blockchain_hash);
         }
     }
 

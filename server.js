@@ -208,6 +208,8 @@ app.get('/api/batches/tree', authenticateApi, db.getBatchesTree);
 app.post('/api/batches', authenticateApi, db.createBatch);
 app.put('/api/batches/:id', authenticateApi, db.updateBatch);
 app.delete('/api/batches/:id', authenticateApi, db.deleteBatch);
+app.post('/api/batches/:id/finalize', authenticateApi, db.finalizeBatch);
+
 
 // Cuenta de Usuario
 app.get('/api/user/profile', authenticateApi, db.getUserProfile);

@@ -620,9 +620,13 @@ const createBatch = async (req, res) => {
             sql = 'INSERT INTO lotes (id, user_id, plantilla_id, etapa_id, parent_id, data) VALUES (?, ?, ?, ?, ?, ?)';
             params = [data.id, userId, plantilla_id, etapa_id, null, JSON.stringify(data)];
         } else {
-            const isOwner = await checkBatchOwnership(parent_id, userId);
-            if (!isOwner) return res.status(403).json({ error: "No tienes permiso para añadir a este lote." });
+            const ownerInfo = await checkBatchOwnership(parent_id, userId);
+            if (!ownerInfo) return res.status(403).json({ error: "No tienes permiso para añadir a este lote." });
             
+            // CAMBIO CRÍTICO: Eliminamos la restricción de 'is_locked'.
+            // Ahora se permite crear hijos (ramificar) aunque el padre esté bloqueado.
+            // if (ownerInfo.is_locked) return res.status(409).json({ error: ... }); <--- ELIMINADO
+
             const parentLote = await get('SELECT plantilla_id FROM lotes WHERE id = ?', [parent_id]);
             if (!parentLote) return res.status(404).json({ error: "Lote padre no encontrado." });
 
@@ -639,8 +643,13 @@ const createBatch = async (req, res) => {
 const updateBatch = async (req, res) => {
     const { id } = req.params;
     const { data } = req.body;
-    const isOwner = await checkBatchOwnership(id, req.user.id);
-    if (!isOwner) return res.status(403).json({ error: "No tienes permiso para modificar este lote." });
+    
+    const ownerInfo = await checkBatchOwnership(id, req.user.id);
+    if (!ownerInfo) return res.status(403).json({ error: "No tienes permiso para modificar este lote." });
+    
+    // VALIDACIÓN: No editar si está bloqueado
+    if (ownerInfo.is_locked) return res.status(409).json({ error: "Lote certificado y bloqueado. No se permiten modificaciones." });
+
     try {
         await run('UPDATE lotes SET data = ? WHERE id = ?', [JSON.stringify(data), id]);
         res.status(200).json({ message: "Lote actualizado" });
@@ -649,12 +658,64 @@ const updateBatch = async (req, res) => {
 
 const deleteBatch = async (req, res) => {
     const { id } = req.params;
-    const isOwner = await checkBatchOwnership(id, req.user.id);
-    if (!isOwner) return res.status(403).json({ error: "No tienes permiso para eliminar este lote." });
+    const ownerInfo = await checkBatchOwnership(id, req.user.id);
+    if (!ownerInfo) return res.status(403).json({ error: "No tienes permiso para eliminar este lote." });
+    
+    // VALIDACIÓN: No borrar si está bloqueado
+    if (ownerInfo.is_locked) return res.status(409).json({ error: "Lote certificado y bloqueado. No se puede eliminar." });
+
     try {
         await run('DELETE FROM lotes WHERE id = ?', [id]);
         res.status(204).send();
     } catch (err) { res.status(500).json({ error: err.message }); }
+};
+
+const finalizeBatch = async (req, res) => {
+    const { id } = req.params;
+    const userId = req.user.id;
+
+    // 1. Verificar propiedad y estado actual
+    const ownerInfo = await checkBatchOwnership(id, userId);
+    if (!ownerInfo) return res.status(403).json({ error: "No tienes permiso." });
+    if (ownerInfo.is_locked) return res.status(409).json({ error: "El lote ya ha sido finalizado previamente." });
+
+    try {
+        // 2. Obtener datos completos del lote para el Hash
+        const lote = await get('SELECT * FROM lotes WHERE id = ?', [id]);
+        if (!lote) return res.status(404).json({ error: 'Lote no encontrado' });
+
+        // 3. Crear el "Contenido Digital" a firmar
+        const dataToHash = {
+            lote_id: lote.id,
+            user_id: userId,
+            data: safeJSONParse(lote.data),
+            parent_id: lote.parent_id,
+            timestamp: new Date().toISOString(),
+            salt: crypto.randomBytes(16).toString('hex') // Añadir aleatoriedad
+        };
+
+        // 4. Generar Hash SHA-256
+        const hash = crypto.createHash('sha256').update(JSON.stringify(dataToHash)).digest('hex');
+
+        // 5. Guardar Hash y Bloquear Lote (y ancestros)
+        // Bloquear el actual
+        await run('UPDATE lotes SET blockchain_hash = ?, is_locked = TRUE WHERE id = ?', [hash, id]);
+
+        // Bloquear recursivamente hacia arriba (padres)
+        let curr = lote.parent_id;
+        while(curr) {
+             await run('UPDATE lotes SET is_locked = TRUE WHERE id = ?', [curr]);
+             const p = await get('SELECT parent_id FROM lotes WHERE id = ?', [curr]);
+             curr = p ? p.parent_id : null;
+        }
+
+        console.log(`Lote ${id} finalizado y cadena bloqueada. Hash: ${hash}`);
+        res.status(200).json({ message: "Trazabilidad finalizada y certificada.", hash: hash });
+
+    } catch (err) {
+        console.error("Error finalizando lote:", err);
+        res.status(500).json({ error: err.message });
+    }
 };
 
 const getTrazabilidad = async (req, res) => {
@@ -701,10 +762,14 @@ const getTrazabilidad = async (req, res) => {
             const stageInfo = allStages.find(s => s.id === row.etapa_id);
             if(stageInfo) {
                 history.stages.push({
+                    id: row.id,
                     nombre_etapa: stageInfo.nombre_etapa,
                     descripcion: stageInfo.descripcion,
                     campos_json: safeJSONParse(stageInfo.campos_json),
-                    data: safeJSONParse(row.data)
+                    data: safeJSONParse(row.data),
+                    blockchain_hash: row.blockchain_hash,
+                    is_locked: row.is_locked,
+                    timestamp: row.created_at
                 });
             }
         });
@@ -1338,7 +1403,7 @@ module.exports = {
     getTemplates, createTemplate, updateTemplate, deleteTemplate, 
     getSystemTemplates, cloneTemplate, // <-- NUEVAS FUNCIONES EXPORTADAS
     getStagesForTemplate, createStage, updateStage, deleteStage,
-    getBatchesTree, createBatch, updateBatch, deleteBatch,
+    getBatchesTree, createBatch, updateBatch, deleteBatch, finalizeBatch,
     getTrazabilidad,
     getUserProfile, updateUserProfile, updateUserPassword,
     getRuedasSabores, createRuedaSabores, updateRuedaSabores, deleteRuedaSabores,

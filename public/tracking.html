@@ -126,6 +126,36 @@
         <!-- Contenedor de Puntos Clave (Highlights) -->
         <div id="highlights-container"></div>
 
+        <!-- NUEVA SECCIÓN: Certificado Blockchain -->
+        <div id="blockchain-certificate" class="container mx-auto px-6 max-w-4xl mt-8 hidden animate-fade-in">
+            <div class="bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 rounded-2xl p-6 relative overflow-hidden shadow-sm">
+                <!-- Decoración de fondo -->
+                <div class="absolute top-0 right-0 -mt-4 -mr-4 text-emerald-100 opacity-50">
+                    <i class="fas fa-shield-alt text-9xl"></i>
+                </div>
+                
+                <div class="relative z-10 flex flex-col md:flex-row items-center gap-6 text-center md:text-left">
+                    <div class="flex-shrink-0 bg-white p-4 rounded-full shadow-sm border border-emerald-100">
+                        <i class="fas fa-check-circle text-4xl text-emerald-500"></i>
+                    </div>
+                    <div class="flex-grow">
+                        <h3 class="text-xl font-display font-bold text-emerald-900 mb-1">
+                            Pasaporte Digital Verificado
+                        </h3>
+                        <p class="text-emerald-700 text-sm mb-3">
+                            La historia de este producto ha sido certificada criptográficamente. Su origen y proceso son inmutables.
+                        </p>
+                        <div class="bg-white/80 backdrop-blur border border-emerald-200 rounded-lg p-3 flex items-center gap-3">
+                            <i class="fas fa-link text-emerald-400 text-xs"></i>
+                            <code id="hash-display" class="text-xs font-mono text-emerald-800 break-all select-all">
+                                <!-- El hash se inyectará aquí -->
+                            </code>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div id="story-container" class="container mx-auto p-4 md:p-8">
              <!-- El contenido dinámico se insertará aquí -->
         </div>
