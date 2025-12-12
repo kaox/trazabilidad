@@ -12,11 +12,11 @@
             "entradas": [{"label": "Peso Mazorcas (kg)", "name": "pesoMazorcas", "type": "number"}],
             "salidas": [{"label": "Peso Granos en Baba (kg)", "name": "pesoGranosBaba", "type": "number"}],
             "variables": [
-                {"label": "Finca", "name": "finca", "type": "selectFinca"},
-                {"label": "Fecha Cosecha", "name": "fecha", "type": "date"},
-                {"label": "Clasificación de Cacao", "name": "clasificacion", "type": "select", "options": ["Criollo", "Forastero", "Trinitario (Híbrido)"]},
-                {"label": "Variedad de Cacao", "name": "variedad", "type": "text"},
-                {"label": "Foto", "name": "imageUrl", "type": "image"}]
+                {"label": "Finca", "name": "finca", "type": "selectFinca", "popup": true},
+                {"label": "Fecha Cosecha", "name": "fecha", "type": "date", "popup": true},
+                {"label": "Clasificación de Cacao", "name": "clasificacion", "type": "select", "options": ["Criollo", "Forastero", "Trinitario (Híbrido)"], "popup": true},
+                {"label": "Variedad de Cacao", "name": "variedad", "type": "text", "popup": true},
+                {"label": "Foto", "name": "imageUrl", "type": "image", "popup": true}]
           }
         },
         {
@@ -27,13 +27,13 @@
             "entradas": [{"label": "Peso Granos en Baba (kg)", "name": "pesoEntrada", "type": "number"}],
             "salidas": [{"label": "Peso Granos Fermentado (kg)", "name": "pesoFermentado", "type": "number"}],
             "variables": [
-                {"label": "Lugar del Proceso", "name": "lugarProceso", "type": "selectLugar"},
-                {"label": "Fecha Inicio", "name": "fecha", "type": "date"},
-                {"label": "Método de Fermentación", "name": "metodoFermentacion", "type": "select", "options": ["Cajón de madera", "Sacos de yute", "Montones"]},
+                {"label": "Lugar del Proceso", "name": "lugarProceso", "type": "selectLugar", "popup": true},
+                {"label": "Fecha Inicio", "name": "fecha", "type": "date", "popup": true},
+                {"label": "Método de Fermentación", "name": "metodoFermentacion", "type": "select", "options": ["Cajón de madera", "Sacos de yute", "Montones"], "popup": true},
                 {"label": "Duración (días)", "name": "duracionDias", "type": "number"},
                 {"label": "Frecuencia de Volteos", "name": "frecuenciaVolteos", "type": "text", "description": "Ej: Cada 24 horas, 2 veces al día"},
                 {"label": "Temperatura Máxima (°C)", "name": "temperaturaMaxima", "type": "number"},
-                {"label": "Foto", "name": "imageUrl", "type": "image"}]
+                {"label": "Foto", "name": "imageUrl", "type": "image", "popup": true}]
           }
         },
         {
@@ -44,14 +44,14 @@
             "entradas": [{"label": "Peso Granos Fermentados (kg)", "name": "pesoEntrada", "type": "number"}],
             "salidas": [{"label": "Peso Cacao Seco (kg)", "name": "pesoSeco", "type": "number"}],
             "variables": [
-                {"label": "Lugar del Proceso", "name": "lugarProceso", "type": "selectLugar"},
-                {"label": "Fecha Inicio", "name": "fecha", "type": "date"},
-                {"label": "Tipo de Secado", "name": "tipoSecado", "type": "select", "options": ["Patios de cemento", "Camas, Paseras o Esterillas", "Marquesinas o Túneles de Secado", "Hornos y Secadores Mecánicos"]},
+                {"label": "Lugar del Proceso", "name": "lugarProceso", "type": "selectLugar", "popup": true},
+                {"label": "Fecha Inicio", "name": "fecha", "type": "date", "popup": true},
+                {"label": "Tipo de Secado", "name": "tipoSecado", "type": "select", "options": ["Patios de cemento", "Camas, Paseras o Esterillas", "Marquesinas o Túneles de Secado", "Hornos y Secadores Mecánicos"], "popup": true},
                 {"label": "Duración (días)", "name": "duracionDias", "type": "number"},
                 {"label": "Humedad Final (%)", "name": "humedadFinal", "type": "number"},
                 {"label": "Porcentaje granos fermentados (%)", "name": "granosFermentados", "type": "number"},
                 {"label": "Porcentaje granos violetas (%)", "name": "granosVioletas", "type": "number"},
-                {"label": "Foto", "name": "imageUrl", "type": "image"}]
+                {"label": "Foto", "name": "imageUrl", "type": "image", "popup": true}]
           }
         },
         {
@@ -62,8 +62,8 @@
             "entradas": [{"label": "Peso Cacao Seco (kg)", "name": "pesoEntrada", "type": "number"}],
             "salidas": [{"label": "Peso Cacao Tostado (kg)", "name": "pesoTostado", "type": "number"}],
             "variables": [
-                {"label": "Procesadora", "name": "procesadora", "type": "selectProcesadora"},
-                {"label": "Fecha Tostado", "name": "fecha", "type": "date"},
+                {"label": "Procesadora", "name": "procesadora", "type": "selectProcesadora", "popup": true},
+                {"label": "Fecha Tostado", "name": "fecha", "type": "date", "popup": true},
                 {"label": "Tostador", "name": "tostador", "type": "text"},
                 {"label": "Tamaño de grano", "name": "tamanoGrano", "type": "select", "options": ["Pequeño", "Mediano", "Grande"]},
                 {"label": "Temperatura de Carga (°C)", "name": "temperaturaCarga", "type": "number"},
@@ -71,7 +71,7 @@
                 {"label": "Tiempo Tueste (min)", "name": "tiempoTueste", "type": "number"},
                 {"label": "Humedad Residual del Grano (%)", "name": "humedadGrano", "type": "number"},
                 {"label": "Anotaciones", "name": "anotaciones", "type": "textarea"},
-                {"label": "Foto", "name": "imageUrl", "type": "image"}]
+                {"label": "Foto", "name": "imageUrl", "type": "image", "popup": true}]
           }
         },
         {
@@ -82,9 +82,13 @@
             "entradas": [{"label": "Peso Entrada (kg)", "name": "pesoEntrada", "type": "number"}],
             "salidas": [{"label": "Peso Producto Final (kg)", "name": "pesoProductoFinal", "type": "number"}, {"label": "Peso Cascarilla (kg)", "name": "pesoCascarilla", "type": "number"}],
             "variables": [
-                {"label": "Procesadora", "name": "procesadora", "type": "selectProcesadora"},
-                {"label": "Fecha", "name": "fecha", "type": "date"},
-                {"label": "Producto Final", "name": "productoFinal", "type": "text", "description":"Ej: Nibs, Licor de Cacao"}]
+                {"label": "Procesadora", "name": "procesadora", "type": "selectProcesadora", "popup": true},
+                {"label": "Fecha", "name": "fecha", "type": "date", "popup": true},
+                {"label": "Tipo de Molino", "name": "tipoMolino", "type": "select", "options": ["Molino de martillos", "Molino de rodillos", "Otro"]},
+                {"label": "Tamaño de Partícula (mm)", "name": "tamanoParticula", "type": "number"},
+                {"label": "Anotaciones", "name": "anotaciones", "type": "textarea"},
+                {"label": "Producto Final", "name": "productoFinal", "type": "text", "description":"Ej: Nibs, Licor de Cacao"},
+                {"label": "Foto", "name": "imageUrl", "type": "image", "popup": true}]
           }
         },
         {
@@ -95,14 +99,15 @@
             "entradas": [{"label": "Peso Entrada (kg)", "name": "pesoEntrada", "type": "number"}],
             "salidas": [{"label": "Número de Unidades", "name": "unidades", "type": "number"}],
             "variables": [
-              {"label": "Procesadora", "name": "procesadora", "type": "selectProcesadora"},
-              {"label": "Fecha", "name": "fecha", "type": "date"},
+              {"label": "Procesadora", "name": "procesadora", "type": "selectProcesadora", "popup": true},
+              {"label": "Fecha", "name": "fecha", "type": "date", "popup": true},
               {"label": "Tiempo de Conchado (horas)", "name": "tiempoConchado", "type": "number"},
               {"label": "Temperatura de Templado (°C)", "name": "temperaturaTemplado", "type": "number"},
-              {"label": "Porcentaje de Cacao (%)", "name": "porcentajeCacao", "type": "number"},
-              {"label": "Endulzante", "name": "endulzante", "type": "text"},
+              {"label": "Porcentaje de Cacao (%)", "name": "porcentajeCacao", "type": "number", "popup": true},
+              {"label": "Tipo de Chocolate", "name": "tipoChocolate", "type": "select", "options": ["Oscuro", "Con Leche", "Blanco"], "popup": true},
+              {"label": "Endulzante", "name": "endulzante", "type": "text", "popup": true},
               {"label": "Ingredientes Adicionales", "name": "ingredientesAdicionales", "type": "textarea"},
-              {"label": "Foto del Producto", "name": "imageUrl", "type": "image"}
+              {"label": "Foto del Producto", "name": "imageUrl", "type": "image", "popup": true}
             ]
           }
         },
@@ -114,11 +119,11 @@
             "entradas": [{"label": "Número de Unidades", "name": "pesoEntrada", "type": "number"}],
             "salidas": [{"label": "Número de Unidades", "name": "unidades", "type": "number"}],
             "variables": [
-              {"label": "Procesadora", "name": "procesadora", "type": "selectProcesadora"},
-              {"label": "Fecha Empaque", "name": "fecha", "type": "date"},
+              {"label": "Procesadora", "name": "procesadora", "type": "selectProcesadora", "popup": true},
+              {"label": "Fecha Empaque", "name": "fecha", "type": "date", "popup": true},
               {"label": "Numero de Lote", "name": "numeroLote", "type": "text"},
-              {"label": "Fecha Vencimiento", "name": "vencimiento", "type": "date"},
-              {"label": "Tamaño (g)", "name": "tamaño", "type": "number"},
+              {"label": "Fecha Vencimiento", "name": "vencimiento", "type": "date", "popup": true},
+              {"label": "Peso por Unidad (g)", "name": "pesoUnidad", "type": "number", "popup": true},
               {"label": "Link Producto", "name": "link", "type": "text"},
               {"label": "Foto del Producto", "name": "imageUrl", "type": "image"}
             ]
@@ -132,13 +137,13 @@
             "entradas": [{"label": "Peso Muestra (g)", "name": "pesoMuestra", "type": "number"}],
             "salidas": [],
             "variables": [
-                {"label": "Fecha de Catación", "name": "fecha", "type": "date"},
-                {"label": "Catador", "name": "nombreCatador", "type": "text"},
+                {"label": "Fecha de Catación", "name": "fecha", "type": "date", "popup": true},
+                {"label": "Catador", "name": "nombreCatador", "type": "text", "popup": true},
                 {"label": "Puntuación Final", "name": "puntuacion", "type": "number", "step": "0.25"},
-                {"label": "Perfil Sensorial", "name": "tipoPerfil", "type": "selectPerfil"},
-                {"label": "Rueda de Sabor", "name": "tipoRuedaSabor", "type": "selectRuedaSabor"},
+                {"label": "Perfil Sensorial", "name": "tipoPerfil", "type": "selectPerfil", "popup": true},
+                {"label": "Rueda de Sabor", "name": "tipoRuedaSabor", "type": "selectRuedaSabor", "popup": true},
                 {"label": "Perfil de Sabor", "name": "perfilSabor", "type": "textarea", "placeholder": "Ej: Notas a panela, cítricos como mandarina, cuerpo medio, acidez brillante..."},
-                {"label": "Foto", "name": "imageUrl", "type": "image"}
+                {"label": "Foto", "name": "imageUrl", "type": "image", "popup": true}
                 ]
           }
         }
