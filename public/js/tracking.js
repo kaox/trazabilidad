@@ -265,7 +265,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     function createAdditionalInfoSection(h) {
         const { maridajesRecomendados, ruedaSaborData } = h;
-        let maridajesHtml = '<p>No se encontraron recomendaciones automáticas.</p>';
+        let maridajesHtml = '<p class="text-stone-500 italic text-center p-4">No se encontraron recomendaciones automáticas.</p>';
 
         if (maridajesRecomendados && Object.keys(maridajesRecomendados).length > 0) {
             const renderMaridajeGroup = (recs, type) => {
@@ -275,14 +275,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 let groupHtml = '';
                 if (excepcionales.length > 0) {
                     groupHtml += `<div class="mb-4">
-                                    <h5 class="font-semibold text-stone-600 mb-2">Sinergia Excepcional (Maridaje "Mágico")</h5>
-                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">${excepcionales.map(createMaridajeCard).join('')}</div>
+                                    <h5 class="font-bold text-amber-800 text-sm mb-2 uppercase tracking-wide border-b border-amber-100 pb-1">Sinergia Excepcional</h5>
+                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">${excepcionales.map(createMaridajeCard).join('')}</div>
                                  </div>`;
                 }
                 if (recomendados.length > 0) {
                     groupHtml += `<div>
-                                    <h5 class="font-semibold text-stone-600 mb-2">Muy Buen Maridaje (Recomendado)</h5>
-                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">${recomendados.map(createMaridajeCard).join('')}</div>
+                                    <h5 class="font-bold text-stone-600 text-sm mb-2 uppercase tracking-wide border-b border-stone-100 pb-1">Muy Recomendado</h5>
+                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">${recomendados.map(createMaridajeCard).join('')}</div>
                                  </div>`;
                 }
                 return groupHtml;
@@ -292,49 +292,54 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (!recs || recs.length === 0) return '';
                 const title = type.charAt(0).toUpperCase() + type.slice(1);
                 const colorClass = type === 'cafe' ? 'text-green-800' : (type === 'vino' ? 'text-red-800' : 'text-blue-800');
+                const bgClass = type === 'cafe' ? 'bg-green-50' : (type === 'vino' ? 'bg-red-50' : 'bg-blue-50');
                 const icon = type === 'cafe' ? '☕' : (type === 'vino' ? '🍷' : '🧀');
 
                 const groupContent = renderMaridajeGroup(recs, type);
                 if(!groupContent) return '';
 
-                return `<div class="mb-6">
-                            <h4 class="text-lg font-bold ${colorClass}">Con ${title} ${icon}</h4>
+                return `<div class="mb-6 p-4 rounded-xl ${bgClass}">
+                            <h4 class="text-xl font-display font-bold ${colorClass} mb-4 flex items-center gap-2">${icon} Con ${title}</h4>
                             ${groupContent}
                         </div>`;
             }).join('');
         }
 
-        // --- INICIO DE NUEVA LÓGICA ---
         let ruedaHtml = '';
         if (ruedaSaborData) {
             const chartId = `rueda-sabor-chart-${ruedaSaborData.id}`;
             ruedaHtml = `
-                <details class="bg-white rounded-lg shadow-md mb-4" open>
-                    <summary class="font-bold font-display text-lg p-4 cursor-pointer">Perfil de Sabor (Notas de Cata)</summary>
-                    <div class="p-4 border-t">
-                        <p class="text-sm text-stone-500 mb-4">Perfil seleccionado: <strong>${ruedaSaborData.nombre_rueda}</strong></p>
+                <div class="bg-white rounded-2xl shadow-sm border border-stone-100 mb-8 overflow-hidden">
+                    <div class="bg-stone-50 p-4 border-b border-stone-200">
+                        <h3 class="font-bold font-display text-xl text-amber-900">Perfil de Sabor</h3>
+                    </div>
+                    <div class="p-6">
+                        <p class="text-sm text-stone-500 mb-6 text-center">Perfil detectado: <strong class="text-amber-800">${ruedaSaborData.nombre_rueda}</strong></p>
                         
                         <div id="rueda-chart-container" class="relative w-full max-w-sm mx-auto aspect-square">
-                            <canvas id="${chartId}-l1" class="absolute"></canvas>
-                            <canvas id="${chartId}-l2" class="absolute"></canvas>
+                            <canvas id="${chartId}-l1" class="absolute inset-0"></canvas>
+                            <canvas id="${chartId}-l2" class="absolute inset-0" style="transform: scale(0.85)"></canvas>
                         </div>
-                        <div id="rueda-chart-legend" class="mt-4"></div>
-
+                        <div id="rueda-chart-legend" class="mt-8 pt-6 border-t border-stone-100"></div>
                     </div>
-                </details>
+                </div>
             `;
-            // Usamos setTimeout para asegurar que el canvas exista en el DOM antes de dibujarlo
-            setTimeout(() => initializeRuedaChart(chartId, ruedaSaborData), 0);
+            setTimeout(() => initializeRuedaChart(chartId, ruedaSaborData), 100);
         }
-        // --- FIN DE NUEVA LÓGICA ---
 
         return `
-            <section class="additional-info max-w-3xl mx-auto my-16">
-                ${ruedaHtml}
-                <details class="bg-white rounded-lg shadow-md mb-4">
-                    <summary class="font-bold font-display text-lg p-4 cursor-pointer">Maridajes Sugeridos</summary>
-                    <div class="p-4 border-t space-y-4">${maridajesHtml}</div>
-                </details>
+            <section class="additional-info max-w-4xl mx-auto my-16 px-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
+                    ${ruedaHtml}
+                    <div class="bg-white rounded-2xl shadow-sm border border-stone-100 overflow-hidden">
+                        <div class="bg-amber-50 p-4 border-b border-amber-100">
+                            <h3 class="font-bold font-display text-xl text-amber-900">Maridajes Sugeridos</h3>
+                        </div>
+                        <div class="p-6">
+                            ${maridajesHtml}
+                        </div>
+                    </div>
+                </div>
             </section>
         `;
     }
@@ -364,7 +369,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // 2. Usar el mapa de búsqueda para obtener el label
         const dataPointsHtml = Object.entries(data)
-            .filter(([key, fieldData]) => fieldData?.visible && !['id', 'imageUrl', 'finca', 'lugarProceso'].includes(key) && !key.toLowerCase().includes('fecha'))
+            .filter(([key, fieldData]) => {
+                // 1. Excluir campos de sistema
+                if (['id', 'imageUrl', 'finca', 'lugarProceso', 'procesadora'].includes(key)) return false;
+                if (key.toLowerCase().includes('fecha')) return false;
+                if (!fieldData?.visible) return false;
+
+                // 2. Excluir valores vacíos o nulos
+                const val = fieldData.value;
+                if (val === null || val === undefined || val === '') return false;
+                if (val === 'N/A' || val === 'n/a') return false; // También filtrar strings "N/A" explícitos si los hubiera
+
+                return true;
+            })
             .map(([key, fieldData]) => {
                 const label = fieldMap.get(key) || key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase()); // Usa el label, o vuelve al método anterior como fallback
                 return `<li><strong>${label}:</strong> ${fieldData.value || 'N/A'}</li>`;
