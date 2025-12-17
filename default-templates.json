@@ -161,11 +161,11 @@
             "entradas": [{"label": "Peso Cereza (kg)", "name": "pesoCereza", "type": "number"}],
             "salidas": [{"label": "Peso Cereza Seleccionada (kg)", "name": "pesoCerezaSeleccionada", "type": "number"}],
             "variables": [
-                {"label": "Finca", "name": "finca", "type": "selectFinca"},
-                {"label": "Fecha Cosecha", "name": "fecha", "type": "date"},
-                {"label": "Clasificación de Cafe", "name": "clasificacion", "type": "select", "options": ["Arábica", "Robusta", "Liberica", "Otro"]},
-                {"label": "Variedad", "name": "variedad", "type": "text"},
-                {"label": "Foto", "name": "imageUrl", "type": "image"}]
+                {"label": "Finca", "name": "finca", "type": "selectFinca", "popup": true},
+                {"label": "Fecha Cosecha", "name": "fecha", "type": "date", "popup": true},
+                {"label": "Clasificación de Cafe", "name": "clasificacion", "type": "select", "options": ["Arábica", "Robusta", "Liberica", "Otro"], "popup": true},
+                {"label": "Variedad", "name": "variedad", "type": "text", "popup": true},
+                {"label": "Foto", "name": "imageUrl", "type": "image", "popup": true}]
           }
         },
         {
@@ -176,10 +176,10 @@
             "entradas": [{"label": "Peso Cereza Seleccionada (kg)", "name": "pesoCerezaSeleccionada", "type": "number"}],
             "salidas": [{"label": "Peso en Pergamino Húmedo (kg)", "name": "pesoPergaminoHumedo", "type": "number"}],
             "variables": [
-                {"label": "Lugar del Proceso", "name": "lugarProceso", "type": "selectLugar"},
-                {"label": "Fecha Despulpado", "name": "fecha", "type": "date"},
+                {"label": "Lugar del Proceso", "name": "lugarProceso", "type": "selectLugar", "popup": true},
+                {"label": "Fecha Despulpado", "name": "fecha", "type": "date", "popup": true},
                 {"label": "Manejo de la Pulpa", "name": "manejoPulpa", "type": "text", "description": "Ej: Compostaje, vertido directo"},
-                {"label": "Foto", "name": "imageUrl", "type": "image"}]
+                {"label": "Foto", "name": "imageUrl", "type": "image", "popup": true}]
           }
         },
         {
@@ -190,14 +190,14 @@
             "entradas": [{"label": "Peso en Pergamino Húmedo (kg)", "name": "pesoPergaminoHumedo", "type": "number"}],
             "salidas": [{"label": "Peso Post-Fermentación (kg)", "name": "pesoPostFermentacion", "type": "number"}],
             "variables": [
-                {"label": "Lugar del Proceso", "name": "lugarProceso", "type": "selectLugar"},
-                {"label": "Fecha Inicio", "name": "fecha", "type": "date"},
-                {"label": "Tipo Fermentación", "name": "tipoFermentacion", "type": "select", "options": ["Aeróbica", "Anaeróbica"]},
-                {"label": "Duración (horas)", "name": "duracion", "type": "number"},
+                {"label": "Lugar del Proceso", "name": "lugarProceso", "type": "selectLugar", "popup": true},
+                {"label": "Fecha Inicio", "name": "fecha", "type": "date", "popup": true},
+                {"label": "Tipo Fermentación", "name": "tipoFermentacion", "type": "select", "options": ["Aeróbica", "Anaeróbica"], "popup": true},
+                {"label": "Duración (horas)", "name": "duracion", "type": "number", "popup": true},
                 {"label": "Temperatura Ambiente (°C)", "name": "temperaturaAmbiente", "type": "number"},
                 {"label": "pH inicial", "name": "phInicial", "type": "number"},
                 {"label": "pH final", "name": "phFinal", "type": "number"},
-                {"label": "Foto", "name": "imageUrl", "type": "image"}]
+                {"label": "Foto", "name": "imageUrl", "type": "image", "popup": true}]
           }
         },
         {
