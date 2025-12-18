@@ -144,7 +144,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         try {
             // 2. Llamada real al Backend (Proxy a GEE)
-            // Se asume que existe el endpoint POST /api/validate-deforestation
             const response = await api('/api/validate-deforestation', {
                 method: 'POST',
                 body: JSON.stringify({ 
@@ -167,9 +166,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 // 4. Agregar Certificado Automáticamente
                 const eudrCert = {
-                    id: Date.now(), // ID temporal único
+                    id: 9999, // ID especial
                     nombre: "EUDR Compliant - GEE Verified",
-                    logo_url: "https://placehold.co/50x50/34a853/ffffff?text=GEE", // Logo placeholder
+                    // --- CAMBIO AQUÍ: Icono de la Unión Europea ---
+                    logo_url: "https://upload.wikimedia.org/wikipedia/commons/b/b7/Flag_of_Europe.svg",
                     fecha_vencimiento: new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString().split('T')[0], // Vence en 1 año
                     metadata: {
                         source: "Google Earth Engine",
@@ -197,7 +197,6 @@ document.addEventListener('DOMContentLoaded', () => {
             scanLine.classList.add('hidden');
             analysisModal.classList.add('hidden');
             
-            // Mensaje amigable si el backend aún no tiene el endpoint
             if (error.message.includes("404")) {
                 alert("El servicio de validación satelital no está disponible en este momento (Endpoint no configurado).");
             } else {
@@ -313,9 +312,6 @@ document.addEventListener('DOMContentLoaded', () => {
             renderAddedPremios();
             
             if (finca.coordenadas) { 
-                // Asegurarse de que Leaflet entienda las coordenadas (si son polígono)
-                // Tu código backend guarda [[lat,lng],...]
-                // Leaflet.polygon espera ese mismo formato
                 const polygon = L.polygon(finca.coordenadas, { color: '#854d0e' }); 
                 drawnItems.addLayer(polygon); 
                 currentPolygon = polygon; 
