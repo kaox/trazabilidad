@@ -1454,7 +1454,6 @@ const getBlogPostById = async (req, res) => {
 const validateDeforestation = async (req, res) => {
     const { coordinates } = req.body; // Espera un GeoJSON Polygon coordinates
 
-    console.log(coordinates, process.env.GEE_PRIVATE_KEY, process.env.GEE_CLIENT_EMAIL);
     if (!coordinates || !process.env.GEE_PRIVATE_KEY || !process.env.GEE_CLIENT_EMAIL) {
         return res.status(500).json({ 
             error: "Configuración de GEE faltante o coordenadas inválidas." 
