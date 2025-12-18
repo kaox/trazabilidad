@@ -20,9 +20,6 @@ const crypto = require('crypto');
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
 const client = new OAuth2Client(GOOGLE_CLIENT_ID);
 
-const GEE_PRIVATE_KEY = process.env.GEE_PRIVATE_KEY;
-const GEE_CLIENT_EMAIL = process.env.GEE_CLIENT_EMAIL;
-
 const maridajesVinoData = JSON.parse(fs.readFileSync(path.join(__dirname, 'public', 'data', 'maridajes_vino.json'), 'utf8'));
 const maridajesQuesoData = JSON.parse(fs.readFileSync(path.join(__dirname, 'public', 'data', 'maridajes_quesos.json'), 'utf8'));
 
@@ -1436,7 +1433,7 @@ const deleteBlogPost = async (req, res) => {
 // Obtener todos los posts para el admin (incluso borradores)
 const getAdminBlogPosts = async (req, res) => {
     try {
-        const posts = await all('SELECT id, title, slug, is_published, created_at FROM blog_posts ORDER BY created_at DESC');
+        const posts = await all('SELECT id, title, slug, is_published, created_at, cover_image FROM blog_posts ORDER BY created_at DESC');
         res.status(200).json(posts);
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -1457,16 +1454,42 @@ const getBlogPostById = async (req, res) => {
 const validateDeforestation = async (req, res) => {
     const { coordinates } = req.body; // Espera un GeoJSON Polygon coordinates
 
-    if (!coordinates || !GEE_PRIVATE_KEY || !GEE_CLIENT_EMAIL) {
-        return res.status(500).json({ 
-            error: "Configuración de GEE faltante o coordenadas inválidas." 
+    if (!coordinates) {
+        return res.status(400).json({ 
+            error: "Coordenadas inválidas." 
+        });
+    }
+    
+    // Diagnóstico seguro para logs de producción
+    if (!process.env.GEE_PRIVATE_KEY) {
+         console.error("GEE_PRIVATE_KEY está vacía o indefinida en el entorno.");
+         return res.status(500).json({ 
+            error: "Configuración de GEE faltante en el servidor." 
         });
     }
 
     try {
-        // 1. Autenticación con Google Earth Engine (Service Account)
-        // El contenido de la llave privada debe estar en la variable de entorno, parseado si es string
-        const privateKey = JSON.parse(GEE_PRIVATE_KEY); 
+        // Intento robusto de parseo para Vercel
+        let privateKey;
+        try {
+            privateKey = JSON.parse(process.env.GEE_PRIVATE_KEY);
+        } catch (jsonError) {
+            // A veces Vercel convierte los \n en saltos de línea reales que rompen el JSON.parse
+            // O el usuario copió el JSON con saltos de línea.
+            // Intentamos limpiarlo.
+            console.warn("Fallo el parseo directo de GEE_PRIVATE_KEY, intentando sanitización...");
+            try {
+                // Reemplaza saltos de línea literales que podrían haber roto el JSON string
+                // Primero intentamos eliminar saltos de línea reales y luego parsear
+                 const sanitizedKey = process.env.GEE_PRIVATE_KEY.replace(/(\r\n|\n|\r)/gm, "");
+                 privateKey = JSON.parse(sanitizedKey);
+            } catch (e2) {
+                console.error("Error de formato en GEE_PRIVATE_KEY:", jsonError.message);
+                 return res.status(500).json({ 
+                    error: "El formato de GEE_PRIVATE_KEY no es un JSON válido. Asegúrate de que esté en una sola línea sin espacios extra." 
+                });
+            }
+        }
         
         await new Promise((resolve, reject) => {
             ee.data.authenticateViaPrivateKey(
