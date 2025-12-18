@@ -1,4 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
+    // Referencias al DOM
     const form = document.getElementById('finca-form');
     const fincasList = document.getElementById('fincas-list');
     const editIdInput = document.getElementById('edit-id');
@@ -22,8 +23,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const productorFotoInput = document.getElementById('productor-foto-input');
     const productorFotoPreview = document.getElementById('productor-foto-preview');
     const fotoProductorHiddenInput = document.getElementById('foto_productor');
+    const validateDeforestationBtn = document.getElementById('validate-deforestation-btn');
     
-    
+    // Elementos del Modal de Análisis
+    const analysisModal = document.getElementById('analysisModal');
+    const analysisLoading = document.getElementById('analysis-loading');
+    const analysisSuccess = document.getElementById('analysis-success');
+    const closeAnalysisBtn = document.getElementById('close-analysis-btn');
+    const scanLine = document.getElementById('satellite-scan-line');
+
     let allPremios = [];
     let currentFincaPremios = [];
     let allCertifications = [];
@@ -85,6 +93,117 @@ document.addEventListener('DOMContentLoaded', () => {
         addPremioBtn.addEventListener('click', handleAddPremio);
         premiosListContainer.addEventListener('click', handlePremioAction);
         productorFotoInput.addEventListener('change', handleProductorFotoUpload);
+        // Nuevo Event Listener
+        validateDeforestationBtn.addEventListener('click', handleDeforestationValidation);
+        closeAnalysisBtn.addEventListener('click', () => analysisModal.classList.add('hidden'));
+    }
+
+    // --- LÓGICA DE VALIDACIÓN DE DEFORESTACIÓN CON GOOGLE EARTH ENGINE ---
+    async function handleDeforestationValidation() {
+        const coordsValue = document.getElementById('coordenadas').value;
+        
+        if (!coordsValue) {
+            alert("Por favor, dibuja el polígono de la finca en el mapa antes de validar.");
+            return;
+        }
+
+        // Preparar polígono para el backend (formato GeoJSON para GEE)
+        let polygonCoords;
+        try {
+            const parsed = JSON.parse(coordsValue);
+            // Leaflet usa [lat, lng], pero GeoJSON usa [lng, lat]
+            if (Array.isArray(parsed)) {
+                polygonCoords = parsed.map(p => [p[1], p[0]]); // Invertir a [lng, lat]
+                // Cerrar el polígono (primer punto = último punto)
+                if (polygonCoords.length > 0) {
+                    const first = polygonCoords[0];
+                    const last = polygonCoords[polygonCoords.length - 1];
+                    if (first[0] !== last[0] || first[1] !== last[1]) {
+                        polygonCoords.push(first);
+                    }
+                }
+            } else {
+                alert("Para la validación de deforestación se requiere dibujar un área (polígono), no un punto.");
+                return;
+            }
+        } catch(e) {
+            console.error("Error procesando coordenadas:", e);
+            alert("Error en el formato de coordenadas.");
+            return;
+        }
+
+        // 1. Mostrar Modal y Estado de Carga
+        analysisModal.classList.remove('hidden');
+        analysisLoading.classList.remove('hidden');
+        analysisSuccess.classList.add('hidden');
+        scanLine.classList.remove('hidden'); // Activar efecto de escaneo en mapa
+
+        // Actualizar textos para reflejar la integración con GEE
+        const loadingText = analysisLoading.querySelector('p');
+        if(loadingText) loadingText.textContent = "Conectando con Google Earth Engine (Dataset Hansen/UMD)...";
+
+        try {
+            // 2. Llamada real al Backend (Proxy a GEE)
+            // Se asume que existe el endpoint POST /api/validate-deforestation
+            const response = await api('/api/validate-deforestation', {
+                method: 'POST',
+                body: JSON.stringify({ 
+                    type: 'Polygon', 
+                    coordinates: [polygonCoords] 
+                })
+            });
+
+            // 3. Procesar Resultado
+            analysisLoading.classList.add('hidden');
+            scanLine.classList.add('hidden');
+
+            if (response.compliant) {
+                analysisSuccess.classList.remove('hidden');
+                
+                const successText = analysisSuccess.querySelector('p');
+                const lossPercent = response.loss_percentage !== undefined ? response.loss_percentage.toFixed(4) : "0.0000";
+                
+                if(successText) successText.textContent = `Cobertura arbórea estable. Pérdida detectada: ${lossPercent}% (Umbral EUDR < 0.1%).`;
+
+                // 4. Agregar Certificado Automáticamente
+                const eudrCert = {
+                    id: Date.now(), // ID temporal único
+                    nombre: "EUDR Compliant - GEE Verified",
+                    logo_url: "https://placehold.co/50x50/34a853/ffffff?text=GEE", // Logo placeholder
+                    fecha_vencimiento: new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString().split('T')[0], // Vence en 1 año
+                    metadata: {
+                        source: "Google Earth Engine",
+                        dataset: "UMD/hansen/global_forest_change_2023_v1_11",
+                        validation_date: new Date().toISOString()
+                    }
+                };
+
+                // Verificar si ya existe para no duplicar
+                const exists = currentFincaCertifications.some(c => c.nombre.includes("EUDR") || c.nombre.includes("GEE"));
+                if (!exists) {
+                    currentFincaCertifications.push(eudrCert);
+                    renderAddedCertifications();
+                }
+            } else {
+                // Caso: No cumple (Deforestación detectada) o Error en análisis
+                analysisModal.classList.add('hidden');
+                const lossMsg = response.loss_percentage ? `(${response.loss_percentage}% detectado)` : '';
+                alert(`⚠️ ALERTA: Se detectó pérdida de cobertura arbórea en el área ${lossMsg}. No se puede emitir el certificado automático.`);
+            }
+
+        } catch (error) {
+            console.error("Error en validación GEE:", error);
+            analysisLoading.classList.add('hidden');
+            scanLine.classList.add('hidden');
+            analysisModal.classList.add('hidden');
+            
+            // Mensaje amigable si el backend aún no tiene el endpoint
+            if (error.message.includes("404")) {
+                alert("El servicio de validación satelital no está disponible en este momento (Endpoint no configurado).");
+            } else {
+                alert("Error al conectar con el servicio de validación: " + error.message);
+            }
+        }
     }
 
     async function loadPremios() {
@@ -168,7 +287,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const finca = fincas.find(f => f.id === id);
             if (!finca) return;
             
-            resetForm(); // Limpia el formulario antes de poblarlo
+            resetForm(); 
 
             form.propietario.value = finca.propietario || '';
             form.dni_ruc.value = finca.dni_ruc || '';
@@ -194,7 +313,10 @@ document.addEventListener('DOMContentLoaded', () => {
             renderAddedPremios();
             
             if (finca.coordenadas) { 
-                const polygon = L.polygon(finca.coordenadas); 
+                // Asegurarse de que Leaflet entienda las coordenadas (si son polígono)
+                // Tu código backend guarda [[lat,lng],...]
+                // Leaflet.polygon espera ese mismo formato
+                const polygon = L.polygon(finca.coordenadas, { color: '#854d0e' }); 
                 drawnItems.addLayer(polygon); 
                 currentPolygon = polygon; 
                 map.fitBounds(polygon.getBounds()); 
@@ -283,7 +405,7 @@ document.addEventListener('DOMContentLoaded', () => {
             };
             reader.readAsDataURL(file);
         });
-        e.target.value = ''; // Reset input para poder subir el mismo archivo otra vez
+        e.target.value = ''; 
     }
 
     function handleImageDelete(e) {
@@ -379,6 +501,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             resetForm();
             await loadFincas();
+            alert('Finca guardada exitosamente.');
         } catch (error) { 
             console.error("Error al guardar:", error);
             alert('Error al guardar la finca.'); 
@@ -416,4 +539,3 @@ document.addEventListener('DOMContentLoaded', () => {
 
     init();
 });
-

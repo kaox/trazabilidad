@@ -3,6 +3,8 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const fs = require('fs');
 const path = require('path');
+const ee = require('@google/earthengine'); 
+
 // Importar las clases necesarias del SDK v3 de Mercado Pago
 const { MercadoPagoConfig, Preference, Payment } = require('mercadopago');
 
@@ -1449,6 +1451,96 @@ const getBlogPostById = async (req, res) => {
     }
 };
 
+const validateDeforestation = async (req, res) => {
+    const { coordinates } = req.body; // Espera un GeoJSON Polygon coordinates
+
+    console.log(coordinates, process.env.GEE_PRIVATE_KEY, process.env.GEE_CLIENT_EMAIL);
+    if (!coordinates || !process.env.GEE_PRIVATE_KEY || !process.env.GEE_CLIENT_EMAIL) {
+        return res.status(500).json({ 
+            error: "Configuración de GEE faltante o coordenadas inválidas." 
+        });
+    }
+
+    try {
+        // 1. Autenticación con Google Earth Engine (Service Account)
+        // El contenido de la llave privada debe estar en la variable de entorno, parseado si es string
+        const privateKey = JSON.parse(process.env.GEE_PRIVATE_KEY); 
+        
+        await new Promise((resolve, reject) => {
+            ee.data.authenticateViaPrivateKey(
+                privateKey,
+                () => ee.initialize(null, null, resolve, reject),
+                (e) => reject(e)
+            );
+        });
+
+        // 2. Definir la Geometría (Polígono de la Finca)
+        // GEE espera: geometry = ee.Geometry.Polygon(coords)
+        const polygon = ee.Geometry.Polygon(coordinates);
+
+        // 3. Cargar Dataset Global Forest Change (Hansen/UMD)
+        // Versión v1_11 incluye datos hasta 2023
+        const gfc = ee.Image('UMD/hansen/global_forest_change_2023_v1_11');
+        
+        // 4. Definir Criterios EUDR (Reglamento UE)
+        // Fecha de corte: 31 Dic 2020.
+        // La banda 'lossyear' tiene valores 1 (2001) a 23 (2023).
+        // Pérdida relevante: año > 20 (es decir, 2021, 2022, 2023).
+        const lossYear = gfc.select(['lossyear']);
+        const lossAfter2020 = lossYear.gt(20); // 1 si hubo pérdida después de 2020, 0 si no.
+        const maskedLoss = lossAfter2020.updateMask(lossAfter2020); // Máscara para contar solo píxeles de pérdida
+
+        // 5. Calcular el Área Afectada (en metros cuadrados)
+        const areaImage = maskedLoss.multiply(ee.Image.pixelArea());
+        
+        // Reducir la región para sumar el área de pérdida dentro del polígono
+        // Usamos scale: 30 (resolución nativa de Landsat ~30m)
+        const stats = areaImage.reduceRegion({
+            reducer: ee.Reducer.sum(),
+            geometry: polygon,
+            scale: 30,
+            maxPixels: 1e9
+        });
+
+        // 6. Obtener Área Total del Polígono para calcular porcentaje
+        const polygonArea = polygon.area();
+
+        // 7. Ejecutar análisis asíncrono (evaluate)
+        // GEE funciona con "Lazy Evaluation", necesitamos pedir los datos explícitamente
+        const result = await new Promise((resolve, reject) => {
+            // Evaluamos un diccionario con ambos valores
+            ee.Dictionary({
+                lossArea: stats.get('lossyear'),
+                totalArea: polygonArea
+            }).evaluate((data, error) => {
+                if (error) reject(error);
+                else resolve(data);
+            });
+        });
+
+        const lossAreaM2 = result.lossArea || 0;
+        const totalAreaM2 = result.totalArea || 1; // Evitar división por cero
+        const lossPercentage = (lossAreaM2 / totalAreaM2) * 100;
+
+        // 8. Determinar Cumplimiento
+        // Umbral de tolerancia: < 0.1% (para descartar ruido de píxeles de borde)
+        const isCompliant = lossPercentage < 0.1;
+
+        res.json({
+            compliant: isCompliant,
+            loss_percentage: lossPercentage,
+            loss_area_hectares: (lossAreaM2 / 10000).toFixed(4),
+            details: isCompliant 
+                ? "Certificado Automático: Sin pérdida de cobertura arbórea detectada post-2020."
+                : `Alerta: Se detectó deforestación en ${lossPercentage.toFixed(2)}% del área.`
+        });
+
+    } catch (error) {
+        console.error("Error en análisis GEE:", error);
+        res.status(500).json({ error: "Fallo en el servicio de análisis satelital: " + error.message });
+    }
+};
+
 module.exports = {
     registerUser, loginUser, logoutUser, handleGoogleLogin,
     getFincas, createFinca, updateFinca, deleteFinca,
@@ -1469,5 +1561,6 @@ module.exports = {
     getDashboardData,
     createPaymentPreference, handlePaymentWebhook,
     getReviews, submitReview,
-    getBlogPosts, getBlogPostBySlug, createBlogPost, updateBlogPost, deleteBlogPost, getAdminBlogPosts, getBlogPostById
+    getBlogPosts, getBlogPostBySlug, createBlogPost, updateBlogPost, deleteBlogPost, getAdminBlogPosts, getBlogPostById,
+    validateDeforestation
 };

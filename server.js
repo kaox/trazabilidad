@@ -155,6 +155,7 @@ app.get('/app/admin-dashboard', authenticatePage, checkAdmin, (req, res) => res.
 app.get('/app/cms', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'admin-blog-list.html')));
 app.get('/app/costos', authenticatePage, checkSubscription('profesional'), (req, res) => res.sendFile(path.join(__dirname, 'views', 'costos.html')));
 app.get('/app/trazabilidad-inmutable', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'trazabilidad-inmutable.html')));
+app.post('/api/validate-deforestation', authenticateApi, db.validateDeforestation);
 
 // --- NUEVAS RUTAS VISTAS ADMIN BLOG ---
 app.get('/app/admin-blog', authenticatePage, checkAdmin, (req, res) => res.sendFile(path.join(__dirname, 'views', 'admin-blog-list.html')));
@@ -172,6 +173,9 @@ app.get('/api/fincas', authenticateApi, db.getFincas);
 app.post('/api/fincas', authenticateApi, db.createFinca);
 app.put('/api/fincas/:id', authenticateApi, db.updateFinca);
 app.delete('/api/fincas/:id', authenticateApi, db.deleteFinca);
+
+app.post('/api/validate-deforestation', authenticateApi, db.validateDeforestation);
+
 
 // Procesadoras
 app.get('/api/procesadoras', authenticateApi, db.getProcesadoras);
