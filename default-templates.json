@@ -208,12 +208,12 @@
             "entradas": [{"label": "Peso Post-Fermentación (kg)", "name": "pesoPostFermentacion", "type": "number"}],
             "salidas": [{"label": "Peso Lavado (kg)", "name": "pesoLavado", "type": "number"}],
             "variables": [
-              {"label": "Lugar del Proceso", "name": "lugarProceso", "type": "selectLugar"},
-              {"label": "Fecha Lavado", "name": "fecha", "type": "date"},
+              {"label": "Lugar del Proceso", "name": "lugarProceso", "type": "selectLugar", "popup": true},
+              {"label": "Fecha Lavado", "name": "fecha", "type": "date", "popup": true},
               {"label": "Método de Lavado", "name": "metodoLavado", "type": "text"},
               {"label": "Agua Utilizada (litros)", "name": "aguaUtilizada", "type": "number"},
               {"label": "Tratamiento de Aguas Mieles", "name": "tratamientoAguas", "type": "text", "description": "Ej: Fosas de oxidación, vertido a río, reutilización"},
-              {"label": "Foto", "name": "imageUrl", "type": "image"}]
+              {"label": "Foto", "name": "imageUrl", "type": "image", "popup": true}]
           }
         },
         {
