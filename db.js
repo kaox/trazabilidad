@@ -20,6 +20,9 @@ const crypto = require('crypto');
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
 const client = new OAuth2Client(GOOGLE_CLIENT_ID);
 
+const GEE_PRIVATE_KEY = process.env.GEE_PRIVATE_KEY;
+const GEE_CLIENT_EMAIL = process.env.GEE_CLIENT_EMAIL;
+
 const maridajesVinoData = JSON.parse(fs.readFileSync(path.join(__dirname, 'public', 'data', 'maridajes_vino.json'), 'utf8'));
 const maridajesQuesoData = JSON.parse(fs.readFileSync(path.join(__dirname, 'public', 'data', 'maridajes_quesos.json'), 'utf8'));
 
@@ -1454,7 +1457,7 @@ const getBlogPostById = async (req, res) => {
 const validateDeforestation = async (req, res) => {
     const { coordinates } = req.body; // Espera un GeoJSON Polygon coordinates
 
-    if (!coordinates || !process.env.GEE_PRIVATE_KEY || !process.env.GEE_CLIENT_EMAIL) {
+    if (!coordinates || !GEE_PRIVATE_KEY || !GEE_CLIENT_EMAIL) {
         return res.status(500).json({ 
             error: "Configuración de GEE faltante o coordenadas inválidas." 
         });
@@ -1463,7 +1466,7 @@ const validateDeforestation = async (req, res) => {
     try {
         // 1. Autenticación con Google Earth Engine (Service Account)
         // El contenido de la llave privada debe estar en la variable de entorno, parseado si es string
-        const privateKey = JSON.parse(process.env.GEE_PRIVATE_KEY); 
+        const privateKey = JSON.parse(GEE_PRIVATE_KEY); 
         
         await new Promise((resolve, reject) => {
             ee.data.authenticateViaPrivateKey(
