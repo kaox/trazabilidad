@@ -420,7 +420,6 @@ const getSystemTemplates = (req, res) => {
 // 3. Clonar una plantilla del Catálogo a la DB del Usuario
 const cloneTemplate = async (req, res) => {
     const userId = req.user.id;
-    // El frontend debe enviar el nombre exacto del producto tal cual aparece en el JSON
     const { nombre_producto_sistema } = req.body; 
 
     if (!nombre_producto_sistema) return res.status(400).json({ error: "Falta el nombre de la plantilla del sistema." });
@@ -431,14 +430,46 @@ const cloneTemplate = async (req, res) => {
 
         if (!templateToClone) return res.status(404).json({ error: "Plantilla no encontrada en el catálogo." });
 
-        // A. Insertar la Cabecera (Plantilla)
+        // VERIFICAR SI YA EXISTE (Lógica Upsert)
+        const existingTemplate = await get('SELECT id FROM plantillas_proceso WHERE user_id = ? AND nombre_producto = ?', [userId, templateToClone.nombre_producto]);
+
+        if (existingTemplate) {
+            // --- MODO ACTUALIZACIÓN ---
+            console.log(`Actualizando plantilla existente: ${templateToClone.nombre_producto}`);
+            
+            // 1. Actualizar info base
+            await run('UPDATE plantillas_proceso SET descripcion = ? WHERE id = ?', [templateToClone.descripcion, existingTemplate.id]);
+            
+            // 2. Actualizar o Insertar etapas
+            for (const stage of templateToClone.etapas) {
+                const existingStage = await get('SELECT id FROM etapas_plantilla WHERE plantilla_id = ? AND nombre_etapa = ?', [existingTemplate.id, stage.nombre_etapa]);
+                
+                if (existingStage) {
+                    await run(
+                        'UPDATE etapas_plantilla SET descripcion = ?, orden = ?, campos_json = ? WHERE id = ?',
+                        [stage.descripcion, stage.orden, JSON.stringify(stage.campos_json), existingStage.id]
+                    );
+                } else {
+                    await run(
+                        'INSERT INTO etapas_plantilla (plantilla_id, nombre_etapa, descripcion, orden, campos_json) VALUES (?, ?, ?, ?, ?)',
+                        [existingTemplate.id, stage.nombre_etapa, stage.descripcion, stage.orden, JSON.stringify(stage.campos_json)]
+                    );
+                }
+            }
+            return res.status(200).json({ 
+                message: "Plantilla actualizada con las nuevas definiciones.", 
+                id: existingTemplate.id,
+                nombre_producto: templateToClone.nombre_producto
+            });
+        }
+
+        // --- MODO INSERCIÓN (NUEVA) ---
         const templateResult = await run(
             'INSERT INTO plantillas_proceso (user_id, nombre_producto, descripcion) VALUES (?, ?, ?)',
             [userId, templateToClone.nombre_producto, templateToClone.descripcion]
         );
-        const newTemplateId = templateResult.lastID; // Funciona en SQLite y Postgres (vía wrapper)
+        const newTemplateId = templateResult.lastID;
 
-        // B. Insertar las Etapas
         for (const stage of templateToClone.etapas) {
             await run(
                 'INSERT INTO etapas_plantilla (plantilla_id, nombre_etapa, descripcion, orden, campos_json) VALUES (?, ?, ?, ?, ?)',
@@ -453,10 +484,6 @@ const cloneTemplate = async (req, res) => {
         });
 
     } catch (err) {
-        // Manejar duplicados si el usuario intenta clonar la misma plantilla dos veces
-        if (err.message.includes('UNIQUE')) {
-            return res.status(409).json({ error: 'Ya tienes esta plantilla importada en "Mis Procesos".' });
-        }
         console.error("Error en cloneTemplate:", err);
         res.status(500).json({ error: err.message });
     }
@@ -616,24 +643,24 @@ const createBatch = async (req, res) => {
         const prefix = stage.nombre_etapa.substring(0, 3).toUpperCase();
         const newId = await generateUniqueLoteId(prefix);
         data.id = newId;
+        console.log(data);
+        // NUEVO: Verificar si se seleccionó un producto final para vincularlo en la DB
+        const productoId = data.productoFinal && typeof data.productoFinal === 'object' ? data.productoFinal.value : null;
+        console.log(productoId);
 
         let sql, params;
         if (!parent_id) {
-            sql = 'INSERT INTO lotes (id, user_id, plantilla_id, etapa_id, parent_id, data) VALUES (?, ?, ?, ?, ?, ?)';
-            params = [data.id, userId, plantilla_id, etapa_id, null, JSON.stringify(data)];
+            sql = 'INSERT INTO lotes (id, user_id, plantilla_id, etapa_id, parent_id, data, producto_id) VALUES (?, ?, ?, ?, ?, ?, ?)';
+            params = [data.id, userId, plantilla_id, etapa_id, null, JSON.stringify(data), productoId];
         } else {
             const ownerInfo = await checkBatchOwnership(parent_id, userId);
             if (!ownerInfo) return res.status(403).json({ error: "No tienes permiso para añadir a este lote." });
             
-            // CAMBIO CRÍTICO: Eliminamos la restricción de 'is_locked'.
-            // Ahora se permite crear hijos (ramificar) aunque el padre esté bloqueado.
-            // if (ownerInfo.is_locked) return res.status(409).json({ error: ... }); <--- ELIMINADO
-
             const parentLote = await get('SELECT plantilla_id FROM lotes WHERE id = ?', [parent_id]);
             if (!parentLote) return res.status(404).json({ error: "Lote padre no encontrado." });
 
-            sql = 'INSERT INTO lotes (id, plantilla_id, etapa_id, parent_id, data) VALUES (?, ?, ?, ?, ?)';
-            params = [data.id, parentLote.plantilla_id, etapa_id, parent_id, JSON.stringify(data)];
+            sql = 'INSERT INTO lotes (id, plantilla_id, etapa_id, parent_id, data, producto_id) VALUES (?, ?, ?, ?, ?, ?)';
+            params = [data.id, parentLote.plantilla_id, etapa_id, parent_id, JSON.stringify(data), productoId];
         }
         await run(sql, params);
         res.status(201).json({ message: "Lote creado" });
@@ -649,11 +676,17 @@ const updateBatch = async (req, res) => {
     const ownerInfo = await checkBatchOwnership(id, req.user.id);
     if (!ownerInfo) return res.status(403).json({ error: "No tienes permiso para modificar este lote." });
     
-    // VALIDACIÓN: No editar si está bloqueado
     if (ownerInfo.is_locked) return res.status(409).json({ error: "Lote certificado y bloqueado. No se permiten modificaciones." });
 
+    // NUEVO: Verificar si hay producto vinculado para actualizarlo
+    const productoId = data.productoFinal && typeof data.productoFinal === 'object' ? data.productoFinal.value : null;
+
     try {
-        await run('UPDATE lotes SET data = ? WHERE id = ?', [JSON.stringify(data), id]);
+        if (productoId) {
+             await run('UPDATE lotes SET data = ?, producto_id = ? WHERE id = ?', [JSON.stringify(data), productoId, id]);
+        } else {
+             await run('UPDATE lotes SET data = ? WHERE id = ?', [JSON.stringify(data), id]);
+        }
         res.status(200).json({ message: "Lote actualizado" });
     } catch (err) { res.status(500).json({ error: err.message }); }
 };
@@ -742,17 +775,20 @@ const getTrazabilidad = async (req, res) => {
         const ownerId = loteRaiz.user_id;
         const plantillaId = loteRaiz.plantilla_id;
 
+        const templateInfo = await get('SELECT nombre_producto FROM plantillas_proceso WHERE id = ?', [plantillaId]);
         const allStages = await all('SELECT id, nombre_etapa, descripcion, orden, campos_json FROM etapas_plantilla WHERE plantilla_id = ? ORDER BY orden', [plantillaId]);
         const ownerInfo = await get('SELECT empresa, company_logo, subscription_tier, trial_ends_at FROM users WHERE id = ?', [ownerId]);
 
         const history = {
+            productName: templateInfo ? templateInfo.nombre_producto : '',
             ownerInfo,
             stages: [],
             fincaData: null,
             procesadorasData: [],
             perfilSensorialData: null,
             ruedaSaborData: null,
-            maridajesRecomendados: {}
+            maridajesRecomendados: {},
+            productoFinal: null
         };
         
         const sortedRows = rows.sort((a, b) => {
@@ -760,6 +796,8 @@ const getTrazabilidad = async (req, res) => {
             const stageB = allStages.find(s => s.id === b.etapa_id)?.orden || 0;
             return stageA - stageB;
         });
+
+        let lastProductId = null;
         
         sortedRows.forEach(row => {
             const stageInfo = allStages.find(s => s.id === row.etapa_id);
@@ -774,8 +812,21 @@ const getTrazabilidad = async (req, res) => {
                     is_locked: row.is_locked,
                     timestamp: row.created_at
                 });
+                if (row.producto_id) lastProductId = row.producto_id;
             }
         });
+
+        console.log(lastProductId);
+        if (lastProductId) {
+             const producto = await get('SELECT * FROM productos WHERE id = ?', [lastProductId]);
+             if (producto) {
+                 history.productoFinal = {
+                     ...producto,
+                     imagenes_json: safeJSONParse(producto.imagenes_json || '[]'),
+                     premios_json: safeJSONParse(producto.premios_json || '[]')
+                 };
+             }
+        }
 
         const cosechaData = history.stages[0]?.data;
         if (cosechaData && cosechaData.finca) {
@@ -1451,6 +1502,74 @@ const getBlogPostById = async (req, res) => {
     }
 };
 
+const getProductos = async (req, res) => {
+    const userId = req.user.id;
+    try {
+        const rows = await all('SELECT * FROM productos WHERE user_id = ? ORDER BY created_at DESC', [userId]);
+        const productos = rows.map(p => ({
+            ...p,
+            imagenes_json: safeJSONParse(p.imagenes_json || '[]'),
+            premios_json: safeJSONParse(p.premios_json || '[]')
+        }));
+        res.status(200).json(productos);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};
+
+const createProducto = async (req, res) => {
+    const userId = req.user.id;
+    const { nombre, descripcion, gtin, is_formal_gtin, imagenes_json, ingredientes, tipo_producto, peso, premios_json } = req.body;
+    const id = require('crypto').randomUUID();
+
+    // Generador de GTIN Interno si no se provee uno
+    let finalGtin = gtin;
+    if (!finalGtin) {
+        // Prefijo 999 + random
+        finalGtin = '999' + Math.floor(10000000000 + Math.random() * 90000000000); 
+    }
+
+    try {
+        await run(
+            'INSERT INTO productos (id, user_id, nombre, descripcion, gtin, is_formal_gtin, imagenes_json, ingredientes, tipo_producto, peso, premios_json) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            [id, userId, nombre, descripcion, finalGtin, is_formal_gtin || false, JSON.stringify(imagenes_json || []), ingredientes, tipo_producto, peso, JSON.stringify(premios_json || [])]
+        );
+        res.status(201).json({ message: "Producto creado", id });
+    } catch (err) {
+        if (err.message.includes('UNIQUE')) return res.status(409).json({ error: "Ya existe un producto con este GTIN." });
+        res.status(500).json({ error: err.message });
+    }
+};
+
+const updateProducto = async (req, res) => {
+    const userId = req.user.id;
+    const { id } = req.params;
+    const { nombre, descripcion, gtin, imagenes_json, ingredientes, tipo_producto, peso, premios_json } = req.body;
+
+    try {
+        await run(
+            'UPDATE productos SET nombre = ?, descripcion = ?, gtin = ?, imagenes_json = ?, ingredientes = ?, tipo_producto = ?, peso = ?, premios_json = ? WHERE id = ? AND user_id = ?',
+            [nombre, descripcion, gtin, JSON.stringify(imagenes_json || []), ingredientes, tipo_producto, peso, JSON.stringify(premios_json || []), id, userId]
+        );
+        res.status(200).json({ message: "Producto actualizado" });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};
+
+// ... (deleteProducto y resto del archivo se mantiene igual) ...
+
+const deleteProducto = async (req, res) => {
+    const userId = req.user.id;
+    const { id } = req.params;
+    try {
+        await run('DELETE FROM productos WHERE id = ? AND user_id = ?', [id, userId]);
+        res.status(204).send();
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};
+
 const validateDeforestation = async (req, res) => {
     const { coordinates } = req.body; // Espera un GeoJSON Polygon coordinates
 
@@ -1587,5 +1706,6 @@ module.exports = {
     createPaymentPreference, handlePaymentWebhook,
     getReviews, submitReview,
     getBlogPosts, getBlogPostBySlug, createBlogPost, updateBlogPost, deleteBlogPost, getAdminBlogPosts, getBlogPostById,
+    getProductos, createProducto, updateProducto, deleteProducto,
     validateDeforestation
 };

@@ -3,26 +3,24 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- Paso 1: Eliminar las tablas existentes en el orden correcto para evitar errores de dependencia.
 -- La cláusula "CASCADE" asegura que también se eliminen las relaciones.
-DROP TABLE IF EXISTS perfiles_cacao CASCADE;
+DROP TABLE IF EXISTS blog_posts CASCADE;
+DROP TABLE IF EXISTS product_reviews CASCADE;
+DROP TABLE IF EXISTS lote_costs CASCADE;
+DROP TABLE IF EXISTS recetas_chocolate CASCADE;
+DROP TABLE IF EXISTS blends CASCADE;
 DROP TABLE IF EXISTS ruedas_sabores CASCADE;
-DROP TABLE IF EXISTS lotes CASCADE;
+DROP TABLE IF EXISTS perfiles CASCADE;
+DROP TABLE IF EXISTS perfiles_cacao CASCADE;
+DROP TABLE IF EXISTS perfiles_cafe CASCADE;
+DROP TABLE IF EXISTS lotes CASCADE; -- Lotes depende de productos, plantillas y etapas
+DROP TABLE IF EXISTS productos CASCADE; -- Nueva tabla
 DROP TABLE IF EXISTS etapas_plantilla CASCADE;
 DROP TABLE IF EXISTS plantillas_proceso CASCADE;
 DROP TABLE IF EXISTS procesadoras CASCADE;
 DROP TABLE IF EXISTS fincas CASCADE;
 DROP TABLE IF EXISTS users CASCADE;
-DROP TABLE IF EXISTS blends CASCADE;
-DROP TABLE IF EXISTS recetas_chocolate;
-DROP TABLE IF EXISTS lote_costs;
-DROP TABLE IF EXISTS product_reviews;
-DROP TABLE IF EXISTS perfiles;
-DROP TABLE IF EXISTS perfiles_cafe;
 
 -- Paso 2: Crear las tablas con la estructura más reciente y correcta.
-
--- Habilitar la extensión para UUIDs si no está habilitada
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-
 
 -- Tabla de Usuarios
 CREATE TABLE IF NOT EXISTS users (
@@ -43,7 +41,53 @@ CREATE TABLE IF NOT EXISTS users (
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 
--- Tabla de Plantillas de Proceso (Productos)
+-- Tabla de Fincas
+CREATE TABLE IF NOT EXISTS fincas (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    propietario TEXT,
+    dni_ruc TEXT,
+    nombre_finca TEXT NOT NULL,
+    pais TEXT,
+    ciudad TEXT,
+    altura INTEGER,
+    superficie NUMERIC,
+    coordenadas JSONB,
+    telefono TEXT,
+    historia TEXT,
+    imagenes_json JSONB DEFAULT '[]',
+    certificaciones_json JSONB DEFAULT '[]',
+    premios_json JSONB DEFAULT '[]',
+    foto_productor TEXT,
+    numero_trabajadores INTEGER,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(user_id, nombre_finca)
+);
+
+-- Tabla de Procesadoras
+CREATE TABLE IF NOT EXISTS procesadoras (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    ruc TEXT NOT NULL,
+    razon_social TEXT NOT NULL,
+    nombre_comercial TEXT,
+    tipo_empresa TEXT,
+    pais TEXT,
+    ciudad TEXT,
+    direccion TEXT,
+    telefono TEXT,
+    coordenadas JSONB,
+    premios_json JSONB DEFAULT '[]',
+    certificaciones_json JSONB DEFAULT '[]',
+    imagenes_json JSONB DEFAULT '[]',
+    numero_trabajadores INTEGER,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(user_id, ruc)
+);
+
+-- Tabla de Plantillas de Proceso (Productos Base)
 CREATE TABLE IF NOT EXISTS plantillas_proceso (
     id SERIAL PRIMARY KEY,
     user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -62,6 +106,24 @@ CREATE TABLE IF NOT EXISTS etapas_plantilla (
     campos_json JSONB NOT NULL
 );
 
+-- Tabla de Productos Comerciales (SKUs)
+-- Esta tabla define las presentaciones finales (ej. Tableta 70%, Café Tostado 250g)
+CREATE TABLE IF NOT EXISTS productos (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    nombre TEXT NOT NULL,
+    descripcion TEXT,
+    tipo_producto TEXT, -- 'cacao', 'cafe', 'miel', 'otro'
+    peso TEXT, -- Ej: '250g'
+    gtin TEXT, -- Código de barras
+    is_formal_gtin BOOLEAN DEFAULT FALSE,
+    imagenes_json JSONB DEFAULT '[]', -- Array de strings Base64
+    ingredientes TEXT,
+    premios_json JSONB DEFAULT '[]', -- Array de objetos premio
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(user_id, gtin)
+);
+
 -- Tabla de Lotes
 CREATE TABLE IF NOT EXISTS lotes (
     id TEXT PRIMARY KEY, -- IDs personalizados (ej: 'COS-123')
@@ -69,9 +131,10 @@ CREATE TABLE IF NOT EXISTS lotes (
     etapa_id INTEGER NOT NULL REFERENCES etapas_plantilla(id) ON DELETE CASCADE,
     user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
     parent_id TEXT REFERENCES lotes(id) ON DELETE CASCADE,
+    producto_id UUID REFERENCES productos(id) ON DELETE SET NULL, -- Vinculación con el SKU final
     data JSONB NOT NULL,
     
-    -- Campos Nuevos para Certificación
+    -- Campos para Certificación
     blockchain_hash TEXT,
     is_locked BOOLEAN DEFAULT FALSE,
     views INTEGER DEFAULT 0,
@@ -79,51 +142,6 @@ CREATE TABLE IF NOT EXISTS lotes (
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 
--- Tabla de Fincas
-CREATE TABLE IF NOT EXISTS fincas (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    propietario TEXT,
-    dni_ruc TEXT,
-    nombre_finca TEXT NOT NULL,
-    pais TEXT,
-    ciudad TEXT,
-    altura INTEGER,
-    superficie NUMERIC,
-    coordenadas JSONB,
-    telefono TEXT,
-    historia TEXT,
-    imagenes_json TEXT,
-    certificaciones_json TEXT,
-    premios_json TEXT,
-    foto_productor TEXT,
-    numero_trabajadores INTEGER,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-    UNIQUE(user_id, nombre_finca)
-);
--- Tabla de Procesadoras
-CREATE TABLE IF NOT EXISTS procesadoras (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    ruc TEXT NOT NULL,
-    razon_social TEXT NOT NULL,
-    nombre_comercial TEXT,
-    tipo_empresa TEXT,
-    pais TEXT,
-    ciudad TEXT,
-    direccion TEXT,
-    telefono TEXT,
-    coordenadas JSONB,
-    premios_json TEXT,
-    certificaciones_json TEXT,
-    imagenes_json TEXT,
-    numero_trabajadores INTEGER,
-    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE(user_id, ruc)
-);
 -- Tabla de Perfiles
 CREATE TABLE IF NOT EXISTS perfiles (
     id SERIAL PRIMARY KEY,
@@ -146,9 +164,9 @@ CREATE TABLE IF NOT EXISTS ruedas_sabores (
     UNIQUE(user_id, nombre_rueda)
 );
 
--- Tabla de Blends (Corregida)
+-- Tabla de Blends (I+D)
 CREATE TABLE IF NOT EXISTS blends (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(), -- Cambiado a UUID para consistencia
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     nombre_blend TEXT NOT NULL,
     tipo_producto TEXT NOT NULL,
@@ -158,9 +176,9 @@ CREATE TABLE IF NOT EXISTS blends (
     UNIQUE(user_id, nombre_blend)
 );
 
--- Tabla de Recetas de Chocolate
+-- Tabla de Recetas de Chocolate (I+D)
 CREATE TABLE IF NOT EXISTS recetas_chocolate (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(), -- Cambiado a UUID para consistencia
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     nombre_receta TEXT NOT NULL,
     componentes_json JSONB NOT NULL,
@@ -169,15 +187,14 @@ CREATE TABLE IF NOT EXISTS recetas_chocolate (
     UNIQUE(user_id, nombre_receta)
 );
 
--- Nueva Tabla para Almacenar Costos de Lotes
+-- Tabla de Costos de Lotes
 CREATE TABLE IF NOT EXISTS lote_costs (
-    lote_id TEXT PRIMARY KEY,
+    lote_id TEXT PRIMARY KEY REFERENCES lotes(id) ON DELETE CASCADE,
     user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    cost_data JSONB NOT NULL,
-    FOREIGN KEY (lote_id) REFERENCES lotes(id) ON DELETE CASCADE
+    cost_data JSONB NOT NULL
 );
 
--- Nueva Tabla para Reseñas de Productos
+-- Tabla de Reseñas de Productos
 CREATE TABLE IF NOT EXISTS product_reviews (
     id SERIAL PRIMARY KEY,
     lote_id TEXT NOT NULL REFERENCES lotes(id) ON DELETE CASCADE,
@@ -185,18 +202,19 @@ CREATE TABLE IF NOT EXISTS product_reviews (
     rating INTEGER NOT NULL CHECK (rating >= 1 AND rating <= 5),
     comment TEXT,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE(lote_id, user_email) -- Un usuario (email) solo puede reseñar un lote una vez
+    UNIQUE(lote_id, user_email)
 );
 
+-- Tabla de Blog (CMS)
 CREATE TABLE IF NOT EXISTS blog_posts (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(), -- O INTEGER AUTOINCREMENT en SQLite
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     title TEXT NOT NULL,
     slug TEXT NOT NULL UNIQUE,
-    summary TEXT, -- Un extracto corto para la tarjeta en la grilla
-    content TEXT NOT NULL, -- Aquí va el HTML enriquecido del editor
-    cover_image TEXT, -- Imagen principal para la grilla
+    summary TEXT, 
+    content TEXT NOT NULL,
+    cover_image TEXT,
     author_id INTEGER REFERENCES users(id),
     is_published BOOLEAN DEFAULT FALSE,
     published_at TIMESTAMP,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );

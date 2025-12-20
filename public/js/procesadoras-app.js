@@ -104,7 +104,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function loadPremios() {
         try {
-            const data = await fetch('/data/premios.json').then(res => res.json());
+            const data = await fetch('/data/premios-finca.json').then(res => res.json());
             allPremios = data.premios;
             premioSelect.innerHTML = `<option value="">Seleccionar premio...</option>` + allPremios.map(p => `<option value="${p.id}">${p.nombre}</option>`).join('');
         } catch (error) {

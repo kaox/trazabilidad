@@ -6,6 +6,11 @@ function runQuery(db, sql) {
     return new Promise((resolve, reject) => {
         db.run(sql, (err) => {
             if (err) {
+                if (err.message.includes('duplicate column')) {
+                    console.log(`[INFO] Columna ya existe (Saltando): ${sql.substring(0, 30)}...`);
+                    resolve();
+                    return;
+                }
                 console.error(`Error ejecutando SQL: ${sql.substring(0, 60)}...`, err.message);
                 return reject(err);
             }
@@ -121,6 +126,7 @@ async function initializeDatabase() {
                     etapa_id INTEGER NOT NULL,
                     user_id INTEGER,
                     parent_id TEXT,
+                    producto_id TEXT, -- Referencia al SKU
                     data TEXT NOT NULL,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     blockchain_hash TEXT,
@@ -129,7 +135,8 @@ async function initializeDatabase() {
                     FOREIGN KEY (plantilla_id) REFERENCES plantillas_proceso(id) ON DELETE CASCADE,
                     FOREIGN KEY (etapa_id) REFERENCES etapas_plantilla(id) ON DELETE CASCADE,
                     FOREIGN KEY (parent_id) REFERENCES lotes(id) ON DELETE CASCADE,
-                    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+                    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+                    FOREIGN KEY (producto_id) REFERENCES productos(id) ON DELETE SET NULL
                 )`);
             console.log("Tabla 'lotes' lista.");
             
@@ -220,6 +227,38 @@ async function initializeDatabase() {
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )`);
             console.log("Tabla 'blog_posts' lista.");
+
+            await runQuery(db, `
+                CREATE TABLE IF NOT EXISTS productos (
+                    id TEXT PRIMARY KEY,
+                    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                    nombre TEXT NOT NULL,
+                    descripcion TEXT,
+                    tipo_producto TEXT,
+                    peso TEXT,
+                    gtin TEXT, 
+                    is_formal_gtin BOOLEAN DEFAULT 0,
+                    imagenes_json TEXT,
+                    ingredientes TEXT,
+                    premios_json TEXT,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    UNIQUE(user_id, gtin)
+                )`);
+            console.log("Tabla 'productos' lista (Estructura Actualizada).");
+
+            try {
+                await runQuery(db, `ALTER TABLE lotes ADD COLUMN producto_id TEXT REFERENCES productos(id) ON DELETE SET NULL`);
+
+                await runQuery(db, `ALTER TABLE productos ADD COLUMN tipo_producto TEXT`);
+                await runQuery(db, `ALTER TABLE productos ADD COLUMN peso TEXT`);
+                await runQuery(db, `ALTER TABLE productos ADD COLUMN imagenes_json TEXT`);
+                await runQuery(db, `ALTER TABLE productos ADD COLUMN premios_json TEXT`);
+                await runQuery(db, `ALTER TABLE productos ADD COLUMN ingredientes TEXT`);
+                console.log("Columna producto_id agregada a lotes.");
+            } catch (e) {
+                // Ignorar error si la columna ya existe (para no romper ejecuciones futuras)
+                if (!e.message.includes("duplicate column")) console.log("Nota sobre lotes:", e.message);
+            }
 
             console.log('Esquema de base de datos listo.');
 

@@ -1,46 +1,75 @@
 {
-  "premios": [
-    {
-      "id": 1,
-      "nombre": "Cacao of Excellence",
-      "descripcion": "Reconoce a los productores de cacao de alta calidad a nivel mundial, celebrando y promoviendo la diversidad de sabores del cacao.",
-      "logo_url": "/images/ENG_COLOR_CacaoOfExcellenceNewLogo2023.png"
-    },
-    {
-      "id": 2,
-      "nombre": "International Chocolate Awards - Oro",
-      "descripcion": "Máximo galardón en la competencia de chocolatería fina más grande del mundo.",
-      "logo_url": "/images/ica.png"
-    },
-    {
-      "id": 3,
-      "nombre": "International Chocolate Awards - Plata",
-      "descripcion": "Reconocimiento de plata en la competencia de chocolatería fina más grande del mundo.",
-      "logo_url": "/images/ica.png"
-    },
-    {
-      "id": 4,
-      "nombre": "International Chocolate Awards - Bronce",
-      "descripcion": "Reconocimiento de bronce en la competencia de chocolatería fina más grande del mundo.",
-      "logo_url": "/images/ica.png"
-    },
-    {
-      "id": 5,
-      "nombre": "Paris Gourmet AVPA - Bronce",
-      "descripcion": "Reconocimiento de bronce en la competencia del Salon du Chocolat de Paris",
-      "logo_url": "/images/avpa-bronce.avif"
-    },
-    {
-      "id": 6,
-      "nombre": "Paris Gourmet AVPA - Plata",
-      "descripcion": "Reconocimiento de plata en la competencia del Salon du Chocolat de Paris",
-      "logo_url": "/images/avpa-plata.avif"
-    },
-    {
-      "id": 7,
-      "nombre": "Paris Gourmet AVPA - Oro",
-      "descripcion": "Reconocimiento de oro en la competencia del Salon du Chocolat de Paris",
-      "logo_url": "/images/avpa-oro.avif"
-    }
-  ]
+  "premios": {
+    "chocolate": [
+      {
+        "nombre": "Cacao of Excellence",
+        "descripcion": "Reconoce a los productores de cacao de alta calidad a nivel mundial, celebrando y promoviendo la diversidad de sabores del cacao.",
+        "logo_url": "/images/ENG_COLOR_CacaoOfExcellenceNewLogo2023.png"
+      },
+      {
+        "nombre": "International Chocolate Awards - Oro",
+        "descripcion": "Máximo galardón en la competencia de chocolatería fina más grande del mundo.",
+        "logo_url": "/images/ica.png"
+      },
+      {
+        "nombre": "International Chocolate Awards - Plata",
+        "descripcion": "Reconocimiento de plata en la competencia de chocolatería fina más grande del mundo.",
+        "logo_url": "/images/ica.png"
+      },
+      {
+        "nombre": "International Chocolate Awards - Bronce",
+        "descripcion": "Reconocimiento de bronce en la competencia de chocolatería fina más grande del mundo.",
+        "logo_url": "/images/ica.png"
+      },
+      {
+        "nombre": "Paris Gourmet AVPA - Bronce",
+        "descripcion": "Reconocimiento de bronce en la competencia del Salon du Chocolat de Paris",
+        "logo_url": "/images/avpa-bronce.avif"
+      },
+      {
+        "nombre": "Paris Gourmet AVPA - Plata",
+        "descripcion": "Reconocimiento de plata en la competencia del Salon du Chocolat de Paris",
+        "logo_url": "/images/avpa-plata.avif"
+      },
+      {
+        "nombre": "Paris Gourmet AVPA - Oro",
+        "descripcion": "Reconocimiento de oro en la competencia del Salon du Chocolat de Paris",
+        "logo_url": "/images/avpa-oro.avif"
+      },
+      {
+        "nombre": "Academy of Chocolate - Oro",
+        "descripcion": "Reconocimiento de oro en la competencia del Academy of Chocolate de Londres",
+        "logo_url": "/images/premios-aoc.jpg"
+      },
+      {
+        "nombre": "Academy of Chocolate - Plata",
+        "descripcion": "Reconocimiento de plata en la competencia del Academy of Chocolate de Londres",
+        "logo_url": "/images/premios-aoc.jpg"
+      },
+      {
+        "nombre": "Academy of Chocolate - Bronce",
+        "descripcion": "Reconocimiento de bronce en la competencia del Academy of Chocolate de Londres",
+        "logo_url": "/images/premios-aoc.jpg"
+      }
+    ],
+    "cafe": [
+      {
+        "nombre": "Cup of Excellence (Taza de Excelencia)",
+        "descripcion": "El premio más prestigioso para cafés de alta calidad. Identifica los mejores cafés producidos en un país cada año.",
+        "logo_url": "/images/premios-coe.jpg"
+      }
+    ],
+    "miel": [
+      {
+        "nombre": "London Honey Awards - Platino",
+        "descripcion": "Reconocimiento internacional de alta calidad para las mieles con propiedades organolépticas superiores.",
+        "logo_url": "/images/london-honey-platino.png"
+      },
+      {
+        "nombre": "Biolmiel - Medalla de Oro",
+        "descripcion": "Premio internacional único dedicado a la miel orgánica de alta calidad.",
+        "logo_url": "/images/biolmiel-oro.png"
+      }
+    ]
+  }
 }

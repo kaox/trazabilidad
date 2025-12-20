@@ -64,6 +64,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function renderStory(h, reviews) {
 
         let finalHTML = renderLogoCompany(h.ownerInfo);
+        finalHTML += createProductDetailsSection(h);
         finalHTML += createMainContent(h);
         finalHTML += createTimelineSection(h);
         finalHTML += createAdditionalInfoSection(h);
@@ -94,17 +95,73 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    function createProductDetailsSection(h) {
+        // Verificar si el backend devolvió info del producto (SKU)
+        const p = h.productoFinal;
+        console.log(p);
+        if (!p) return ''; 
+
+        const mainImage = (p.imagenes_json && p.imagenes_json.length > 0) ? p.imagenes_json[0] : null;
+        
+        let awardsHtml = '';
+        if (p.premios_json && p.premios_json.length > 0) {
+            awardsHtml = `<div class="flex flex-wrap gap-2 mt-4">
+                ${p.premios_json.map(prem => 
+                    `<span class="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-yellow-50 text-yellow-800 border border-yellow-200 shadow-sm">
+                        ${prem.logo_url ? `<img src="${prem.logo_url}" class="w-6 h-6 object-contain" alt="">` : '<i class="fas fa-trophy text-amber-500"></i>'} ${prem.name} ${prem.year ? `(${prem.year})` : ''}
+                    </span>`
+                ).join('')}
+            </div>`;
+        }
+
+        return `
+            <section class="bg-white rounded-3xl shadow-sm border border-stone-200 overflow-hidden mb-12 animate-fade-in mx-4 md:mx-0">
+                <div class="flex flex-col md:flex-row">
+                    ${mainImage ? `
+                    <div class="md:w-2/5 relative min-h-[300px] bg-stone-100">
+                        <img src="${mainImage}" class="absolute inset-0 w-full h-full object-cover" alt="${p.nombre}">
+                    </div>
+                    ` : ''}
+                    <div class="${mainImage ? 'md:w-3/5' : 'w-full'} p-8 md:p-12 flex flex-col justify-center">
+                        <div class="mb-3 flex items-center gap-3">
+                            <span class="px-3 py-1 rounded-full bg-amber-100 text-amber-800 text-xs font-bold uppercase tracking-wider border border-amber-200">
+                                ${p.tipo_producto || 'Producto de Origen'}
+                            </span>
+                            ${p.gtin ? `<span class="text-xs font-mono text-stone-400 bg-stone-50 px-2 py-0.5 rounded border border-stone-100" title="Código GTIN"><i class="fas fa-barcode mr-1"></i>${p.gtin}</span>` : ''}
+                        </div>
+                        
+                        <h2 class="text-3xl md:text-5xl font-display font-bold text-stone-900 mb-4 leading-tight">${p.nombre}</h2>
+                        
+                        ${p.descripcion ? `<p class="text-stone-600 text-lg leading-relaxed mb-6 font-light border-l-4 border-amber-500 pl-4">${p.descripcion}</p>` : ''}
+                        
+                        ${p.ingredientes ? `
+                        <div class="mb-6">
+                            <h4 class="text-xs font-bold text-stone-400 uppercase tracking-widest mb-1">Ingredientes</h4>
+                            <p class="text-stone-700 text-sm font-medium">${p.ingredientes}</p>
+                        </div>
+                        ` : ''}
+
+                        <div class="flex flex-wrap items-center justify-between mt-auto pt-6 border-t border-stone-100 w-full">
+                            ${p.peso ? `<div class="text-stone-800 font-bold text-lg"><i class="fas fa-scale-balanced mr-2 text-stone-400"></i>${p.peso}</div>` : '<div></div>'}
+                            ${awardsHtml}
+                        </div>
+                    </div>
+                </div>
+            </section>
+        `;
+    }
+
     function renderBlockchainCertificate(h) {
         console.log(blockchainContainer, hashDisplay);
         if (!blockchainContainer || !hashDisplay) return;
-        console.log("2")
+
         // Resetear estado (ocultar por defecto)
         blockchainContainer.classList.add('hidden');
 
         // Buscar si alguna etapa de la cadena tiene un hash (está certificada)
         // Buscamos de atrás hacia adelante para encontrar el hash más reciente (el del producto final)
         const certifiedStage = h.stages.slice().reverse().find(s => s.blockchain_hash);
-        console.log(certifiedStage);
+
         if (certifiedStage) {
             // Inyectar el hash
             hashDisplay.textContent = certifiedStage.blockchain_hash;
@@ -121,6 +178,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const getFieldValue = (field) => (typeof field === 'object' && field !== null) ? field.value : field;
         const locations = new Set();
         let totalWorkers = 0;
+        let daysSinceRoasting = null;
+        let isExpired = false;
+        let expirationDateString = '';
 
         // 1. Recolectar todas las ubicaciones únicas del proceso
         if (h.fincaData) {
@@ -144,23 +204,93 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-        return { totalWorkers };
+        // 3. Calcular Días desde Tostado (Solo para Café)
+        const product = h.productName ? h.productName.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "") : "";
+        
+        if (product.includes('cafe')) {
+            const roastingStage = h.stages.find(s => s.nombre_etapa.toLowerCase().includes('tostado'));
+            if (roastingStage) {
+                const roastingDateStr = getFieldValue(roastingStage.data.fecha) || getFieldValue(roastingStage.data.fechaTostado);
+                
+                if (roastingDateStr) {
+                    const roastingDate = new Date(roastingDateStr);
+                    const today = new Date();
+                    const diffTime = Math.abs(today - roastingDate);
+                    daysSinceRoasting = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+                }
+            }
+        }
+
+        // 4. Validar Vencimiento (Nuevo)
+        // Busca la etapa de envasado
+        const packagingStage = h.stages.find(s => s.nombre_etapa.toLowerCase().includes('envasado'));
+        if (packagingStage) {
+            const expDateStr = getFieldValue(packagingStage.data.vencimiento);
+            if (expDateStr) {
+                // Comparamos fecha de vencimiento contra hoy
+                // Usamos T23:59:59 para que venza al FINAL del día indicado
+                const expDate = new Date(expDateStr + 'T23:59:59');
+                const today = new Date();
+                
+                if (expDate < today) {
+                    isExpired = true;
+                    // Formato legible para el usuario
+                    expirationDateString = new Date(expDateStr + 'T00:00:00').toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' });
+                }
+            }
+        }
+
+        return { totalWorkers, daysSinceRoasting, isExpired, expirationDateString };
     }
 
     function renderHighlightsSection(highlights) {
-        if (highlights.totalWorkers <= 0) {
+        let contentHtml = '';
+
+        // Tarjeta de Trabajadores (Existente)
+        if (highlights.totalWorkers > 0) {
+            contentHtml += `
+                <div class="bg-white p-6 rounded-lg shadow-md text-center border-b-4 border-amber-800 flex-1 min-w-[200px]">
+                    <i class="fas fa-users text-3xl text-amber-800 mb-2"></i>
+                    <p class="text-4xl font-bold font-display text-amber-900">${highlights.totalWorkers}</p>
+                    <p class="text-sm text-stone-500">Personas Beneficiadas</p>
+                </div>
+            `;
+        }
+
+        // Tarjeta de Días de Tostado (Nueva - Solo Café)
+        if (highlights.daysSinceRoasting !== null) {
+            contentHtml += `
+                <div class="bg-white p-6 rounded-lg shadow-md text-center border-b-4 border-orange-700 flex-1 min-w-[200px]">
+                    <i class="fas fa-fire-burner text-3xl text-orange-700 mb-2"></i>
+                    <p class="text-4xl font-bold font-display text-amber-900">${highlights.daysSinceRoasting}</p>
+                    <p class="text-sm text-stone-500">Días de Tostado</p>
+                </div>
+            `;
+        }
+
+        if (highlights.isExpired) {
+            contentHtml += `
+                <div class="bg-red-50 p-6 rounded-lg shadow-md text-center border-b-4 border-red-300 flex-1 min-w-[200px]">
+                    <div class="flex justify-center mb-2">
+                        <span class="bg-red-100 text-red-600 rounded-full p-3">
+                            <i class="fas fa-triangle-exclamation text-xl"></i>
+                        </span>
+                    </div>
+                    <p class="text-xl font-bold font-display text-red-900">Producto Vencido</p>
+                    <p class="text-sm text-red-700 mt-1">Expiró el ${highlights.expirationDateString}</p>
+                </div>
+            `;
+        }
+
+        if (!contentHtml) {
             highlightsContainer.innerHTML = '';
             return;
         }
 
         highlightsContainer.innerHTML = `
-            <div class="container mx-auto px-4 md:px-8 -mt-8 mb-16 relative z-10">
-                <div class="max-w-xs mx-auto">
-                    <div class="bg-white p-6 rounded-lg shadow-md text-center">
-                        <i class="fas fa-users text-3xl text-amber-800 mb-2"></i>
-                        <p class="text-4xl font-bold font-display text-amber-900">${highlights.totalWorkers}</p>
-                        <p class="text-sm text-stone-500">Personas Beneficiadas en el Proceso</p>
-                    </div>
+            <div class="container mx-auto px-4 md:px-8 -mt-8 mb-8 relative z-10">
+                <div class="max-w-4xl mx-auto flex flex-wrap justify-center gap-6">
+                    ${contentHtml}
                 </div>
             </div>
         `;

@@ -7,8 +7,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let FLAVOR_WHEELS_DATA = {};
 
-    // Configuración de Gráficos y Ruedas de Sabor (Estáticas para visualización)
-    const SCAA_FLAVORS_ES = { /* ... configuración omitida por brevedad ... */ }; 
+    // Configuración de Gráficos y Ruedas de Sabor
+    const SCAA_FLAVORS_ES = { /* ... se mantiene igual ... */ }; 
 
     if (typeof ChartDataLabels !== 'undefined') {
         Chart.register(ChartDataLabels);
@@ -176,7 +176,7 @@ document.addEventListener('DOMContentLoaded', () => {
         let actionButtonsHtml = '';
 
         const addSubButton = nextStage 
-            ? `<button ${outputWeight <= 0 ? 'disabled' : ''} class="add-sub-btn text-xs bg-green-600 hover:bg-green-700 text-white font-bold px-3 py-1.5 rounded-lg disabled:bg-gray-400 ml-2" data-parent-id="${batchData.id}" data-template-id="${template.id}" data-next-stage-id="${nextStage.id}" title="Crear nueva rama">+ ${nextStage.nombre_etapa}</button>` 
+            ? `<button class="add-sub-btn text-xs bg-green-600 hover:bg-green-700 text-white font-bold px-3 py-1.5 rounded-lg disabled:bg-gray-400 ml-2" data-parent-id="${batchData.id}" data-template-id="${template.id}" data-next-stage-id="${nextStage.id}" title="Crear nueva rama">+ ${nextStage.nombre_etapa}</button>` 
             : '';
 
         const pdfButton = isQualityStage ? `
@@ -412,7 +412,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
 
-        // NUEVO: Handler para el botón de campos opcionales/ocultos
+        // Handler para el botón de campos opcionales/ocultos
         const toggleBtn = document.getElementById('toggle-fields-btn');
         if (toggleBtn) {
             toggleBtn.addEventListener('click', () => {
@@ -483,20 +483,17 @@ document.addEventListener('DOMContentLoaded', () => {
         let formFields = '';
         if (mode === 'edit') formFields += `<div><label class="block text-sm font-medium text-stone-700">ID Lote</label><p class="w-full p-3 bg-stone-100 rounded-xl font-mono text-sm">${(data.id?.value || data.id)}</p></div>`;
         
-        // Unir todos los campos
         const allFields = [
             ...(stage.campos_json.entradas || []),
             ...(stage.campos_json.salidas || []),
             ...(stage.campos_json.variables || [])
         ];
         
-        // Separar campos visibles de ocultos según atributo 'popup'
         let visibleHtml = '';
         let hiddenHtml = '';
 
         for (const field of allFields) {
             const html = await createFieldHTML(field, data[field.name], template);
-            // MODIFICACIÓN PRINCIPAL: Verificar atributo popup
             if (field.popup === true) {
                 visibleHtml += html;
             } else {
@@ -506,7 +503,6 @@ document.addEventListener('DOMContentLoaded', () => {
         
         formFields += visibleHtml;
 
-        // Si hay campos ocultos, agregar el botón y el contenedor
         if (hiddenHtml) {
             formFields += `
                 <div class="mt-4 pt-4 border-t border-stone-100">
@@ -529,7 +525,13 @@ document.addEventListener('DOMContentLoaded', () => {
         const value = (typeof fieldData === 'object' && fieldData !== null) ? fieldData.value : fieldData;
         const isVisible = (typeof fieldData === 'object' && fieldData !== null) ? fieldData.visible : true;
         const checkedAttr = isVisible ? 'checked' : '';
-        const tipoProducto = template.nombre_producto.toLowerCase().includes('cacao') ? 'cacao' : 'cafe';
+        
+        // Detección mejorada del tipo de producto
+        let tipoProducto = 'otro';
+        const tName = template.nombre_producto.toLowerCase();
+        if (tName.includes('cacao') || tName.includes('chocolate')) tipoProducto = 'cacao';
+        else if (tName.includes('cafe') || tName.includes('café')) tipoProducto = 'cafe';
+        else if (tName.includes('miel')) tipoProducto = 'miel';
 
         let inputHtml = '';
         switch(type) {
@@ -543,6 +545,8 @@ document.addEventListener('DOMContentLoaded', () => {
             case 'selectPerfil': inputHtml = await createPerfilSelectHTML(name, value, tipoProducto); break;
             case 'selectRuedaSabor': inputHtml = await createRuedaSaborSelectHTML(name, value, tipoProducto); break;
             case 'selectLugar': inputHtml = await createLugarProcesoSelectHTML(name, value); break;
+            // NUEVO CASE: SELECTOR DE PRODUCTOS
+            case 'selectProduct': inputHtml = await createProductSelectHTML(name, value, tipoProducto); break; 
             default: inputHtml = createInputHTML(name, 'text', value);
         }
         
@@ -635,7 +639,41 @@ document.addEventListener('DOMContentLoaded', () => {
             return `<div class="text-red-500">Error al cargar lugares.</div>`;
         }
     }
+
+    // --- NUEVA FUNCIÓN HELPER: SELECTOR DE PRODUCTOS ---
+    async function createProductSelectHTML(name, selectedValue, tipoProductoFilter) {
+        try {
+            const products = await api('/api/productos');
+            
+            // Opcional: Filtrar productos que coincidan con el tipo de la plantilla para facilitar la búsqueda
+            // Si el filtro es 'otro', mostramos todo.
+            let productsToShow = products;
+            if (tipoProductoFilter !== 'otro') {
+                const filtered = products.filter(p => p.tipo_producto === tipoProductoFilter || !p.tipo_producto);
+                if (filtered.length > 0) productsToShow = filtered;
+            }
+
+            if (productsToShow.length === 0) {
+                 return `<div><div class="p-3 border rounded-xl bg-stone-50 text-stone-500 text-sm">No hay productos registrados de tipo ${tipoProductoFilter}. <a href="/app/productos" class="text-sky-600 hover:underline" target="_blank">Crear uno aquí</a>.</div><input type="hidden" name="${name}" value=""></div>`;
+            }
+
+            const options = productsToShow.map(p => {
+                const isSelected = p.id === selectedValue ? 'selected' : '';
+                const gtinText = p.gtin ? ` (GTIN: ${p.gtin})` : '';
+                return `<option value="${p.id}" ${isSelected}>${p.nombre}${gtinText}</option>`;
+            }).join('');
+
+            return `<select id="${name}" name="${name}" class="w-full p-3 border border-stone-300 rounded-xl bg-white focus:ring-2 focus:ring-amber-500 outline-none">
+                        <option value="">Seleccionar Producto Final (SKU)...</option>
+                        ${options}
+                    </select>
+                    <p class="text-xs text-stone-500 mt-1">Vincula este lote a un producto comercial para generar el Pasaporte Digital.</p>`;
+        } catch (error) {
+            return `<div class="text-red-500">Error al cargar productos.</div>`;
+        }
+    }
     
+    // ... (Helpers de Árbol, Gráficos y PDF se mantienen igual) ...
     function findBatchById(lotes, id) {
         for (const lote of lotes) {
             if (lote.id === id) return lote;
@@ -692,26 +730,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const button = e.target.closest('button');
         if (!button) return;
 
-        if (button.classList.contains('finalize-btn')) {
-            const batchId = button.dataset.batchId;
-            if (confirm('⚠️ ¿Generar Hash Inmutable?\n\nAl confirmar, se creará un sello criptográfico para este lote y no podrás editar sus datos. Sin embargo, SÍ podrás seguir creando nuevos lotes a partir de él.')) {
-                const originalText = button.innerHTML;
-                button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
-                button.disabled = true;
-                
-                try {
-                    await api(`/api/batches/${batchId}/finalize`, { method: 'POST' });
-                    await loadBatches();
-                    alert("✅ Lote certificado exitosamente.");
-                } catch (error) {
-                    console.error(error);
-                    alert("Error: " + error.message);
-                    button.innerHTML = originalText;
-                    button.disabled = false;
-                }
-            }
-        }
-
         if (button.classList.contains('pdf-btn')) {
             const batchNode = findBatchById(state.batches, button.dataset.batchId);
             if (batchNode) {
@@ -756,10 +774,30 @@ document.addEventListener('DOMContentLoaded', () => {
             link.download = `QR_${button.dataset.id}.png`;
             link.click();
         }
+
+        if (button.classList.contains('finalize-btn')) {
+            const batchId = button.dataset.batchId;
+            if (confirm('⚠️ ¿Generar Hash Inmutable?\n\nAl confirmar, se creará un sello criptográfico para este lote y no podrás editar sus datos. Sin embargo, SÍ podrás seguir creando nuevos lotes a partir de él.')) {
+                const originalText = button.innerHTML;
+                button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+                button.disabled = true;
+                
+                try {
+                    await api(`/api/batches/${batchId}/finalize`, { method: 'POST' });
+                    await loadBatches();
+                    alert("✅ Lote certificado exitosamente.");
+                } catch (error) {
+                    console.error(error);
+                    alert("Error: " + error.message);
+                    button.innerHTML = originalText;
+                    button.disabled = false;
+                }
+            }
+        }
     }
 
     async function generateQualityReport(batchNode) {
-        // ... (Se mantiene igual que la versión original, omitida por brevedad) ...
+        // ... (código existente del reporte PDF) ...
         const btn = document.querySelector(`.pdf-btn[data-batch-id="${batchNode.id}"]`);
         const originalText = btn.innerHTML;
         btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Generando...`;

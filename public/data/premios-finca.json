@@ -1,0 +1,46 @@
+{
+  "premios": [
+    {
+      "id": 1,
+      "nombre": "Cacao of Excellence",
+      "descripcion": "Reconoce a los productores de cacao de alta calidad a nivel mundial, celebrando y promoviendo la diversidad de sabores del cacao.",
+      "logo_url": "/images/ENG_COLOR_CacaoOfExcellenceNewLogo2023.png"
+    },
+    {
+      "id": 2,
+      "nombre": "International Chocolate Awards - Oro",
+      "descripcion": "Máximo galardón en la competencia de chocolatería fina más grande del mundo.",
+      "logo_url": "/images/ica.png"
+    },
+    {
+      "id": 3,
+      "nombre": "International Chocolate Awards - Plata",
+      "descripcion": "Reconocimiento de plata en la competencia de chocolatería fina más grande del mundo.",
+      "logo_url": "/images/ica.png"
+    },
+    {
+      "id": 4,
+      "nombre": "International Chocolate Awards - Bronce",
+      "descripcion": "Reconocimiento de bronce en la competencia de chocolatería fina más grande del mundo.",
+      "logo_url": "/images/ica.png"
+    },
+    {
+      "id": 5,
+      "nombre": "Paris Gourmet AVPA - Bronce",
+      "descripcion": "Reconocimiento de bronce en la competencia del Salon du Chocolat de Paris",
+      "logo_url": "/images/avpa-bronce.avif"
+    },
+    {
+      "id": 6,
+      "nombre": "Paris Gourmet AVPA - Plata",
+      "descripcion": "Reconocimiento de plata en la competencia del Salon du Chocolat de Paris",
+      "logo_url": "/images/avpa-plata.avif"
+    },
+    {
+      "id": 7,
+      "nombre": "Paris Gourmet AVPA - Oro",
+      "descripcion": "Reconocimiento de oro en la competencia del Salon du Chocolat de Paris",
+      "logo_url": "/images/avpa-oro.avif"
+    }
+  ]
+}
