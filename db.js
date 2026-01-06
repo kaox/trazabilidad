@@ -287,11 +287,15 @@ const getProcesadoras = async (req, res) => {
 
 const createProcesadora = async (req, res) => {
     const userId = req.user.id;
-    const { ruc, razon_social, nombre_comercial, tipo_empresa, pais, ciudad, direccion, telefono, premios_json, certificaciones_json, coordenadas, imagenes_json, numero_trabajadores } = req.body;
+    // CAMBIO: Quitamos tipo_empresa, agregamos departamento, provincia, distrito
+    let { ruc, razon_social, nombre_comercial, pais, ciudad, departamento, provincia, distrito, direccion, telefono, premios_json, certificaciones_json, coordenadas, imagenes_json, numero_trabajadores } = req.body;
     const id = require('crypto').randomUUID();
-    const sql = 'INSERT INTO procesadoras (id, user_id, ruc, razon_social, nombre_comercial, tipo_empresa, pais, ciudad, direccion, telefono, premios_json, certificaciones_json, coordenadas, imagenes_json, numero_trabajadores) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
+    
+    numero_trabajadores = sanitizeNumber(numero_trabajadores);
+
+    const sql = 'INSERT INTO procesadoras (id, user_id, ruc, razon_social, nombre_comercial, pais, ciudad, departamento, provincia, distrito, direccion, telefono, premios_json, certificaciones_json, coordenadas, imagenes_json, numero_trabajadores) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
     try {
-        await run(sql, [id, userId, ruc, razon_social, nombre_comercial, tipo_empresa, pais, ciudad, direccion, telefono, JSON.stringify(premios_json || []), JSON.stringify(certificaciones_json || []), coordenadas, JSON.stringify(imagenes_json || []), numero_trabajadores]);
+        await run(sql, [id, userId, ruc, razon_social, nombre_comercial, pais, ciudad, departamento, provincia, distrito, direccion, telefono, JSON.stringify(premios_json || []), JSON.stringify(certificaciones_json || []), coordenadas, JSON.stringify(imagenes_json || []), numero_trabajadores]);
         res.status(201).json({ message: "Procesadora creada" });
     } catch (err) { res.status(500).json({ error: err.message }); }
 };
@@ -299,11 +303,14 @@ const createProcesadora = async (req, res) => {
 const updateProcesadora = async (req, res) => {
     const userId = req.user.id;
     const { id } = req.params;
-    const { ruc, razon_social, nombre_comercial, tipo_empresa, pais, ciudad, direccion, telefono, premios_json, certificaciones_json, coordenadas, imagenes_json, numero_trabajadores } = req.body;
-    const sql = 'UPDATE procesadoras SET ruc = ?, razon_social = ?, nombre_comercial = ?, tipo_empresa = ?, pais = ?, ciudad = ?, direccion = ?, telefono = ?, premios_json = ?, certificaciones_json = ?, coordenadas = ?, imagenes_json = ?, numero_trabajadores = ? WHERE id = ? AND user_id = ?';
+    // CAMBIO: Quitamos tipo_empresa, agregamos departamento, provincia, distrito
+    let { ruc, razon_social, nombre_comercial, pais, ciudad, departamento, provincia, distrito, direccion, telefono, premios_json, certificaciones_json, coordenadas, imagenes_json, numero_trabajadores } = req.body;
+    
+    numero_trabajadores = sanitizeNumber(numero_trabajadores);
+
+    const sql = 'UPDATE procesadoras SET ruc = ?, razon_social = ?, nombre_comercial = ?, pais = ?, ciudad = ?, departamento = ?, provincia = ?, distrito = ?, direccion = ?, telefono = ?, premios_json = ?, certificaciones_json = ?, coordenadas = ?, imagenes_json = ?, numero_trabajadores = ? WHERE id = ? AND user_id = ?';
     try {
-        const result = await run(sql, [ruc, razon_social, nombre_comercial, tipo_empresa, pais, ciudad, direccion, telefono, JSON.stringify(premios_json || []), JSON.stringify(certificaciones_json || []), coordenadas, JSON.stringify(imagenes_json || []), numero_trabajadores, id, userId]);
-        if (result.changes === 0) return res.status(404).json({ error: "Procesadora no encontrada o no tienes permiso." });
+        await run(sql, [ruc, razon_social, nombre_comercial, pais, ciudad, departamento, provincia, distrito, direccion, telefono, JSON.stringify(premios_json || []), JSON.stringify(certificaciones_json || []), coordenadas, JSON.stringify(imagenes_json || []), numero_trabajadores, id, userId]);
         res.status(200).json({ message: "Procesadora actualizada" });
     } catch (err) { res.status(500).json({ error: err.message }); }
 };
@@ -910,12 +917,8 @@ const getImmutableBatches = async (req, res) => {
     try {
         const sql = `
             WITH RECURSIVE user_batches AS (
-                -- 1. Lotes Raíz (tienen user_id explícito)
                 SELECT id FROM lotes WHERE user_id = ?
-                
                 UNION ALL
-                
-                -- 2. Lotes Hijos (se unen por parent_id)
                 SELECT l.id 
                 FROM lotes l 
                 JOIN user_batches ub ON l.parent_id = ub.id
@@ -928,22 +931,24 @@ const getImmutableBatches = async (req, res) => {
                 l.data,
                 p.nombre_producto as tipo_proceso,
                 e.nombre_etapa as ultima_etapa,
+                prod.gtin, -- <--- NUEVO: Obtenemos el GTIN del producto comercial
+                prod.nombre as nombre_comercial, -- Opcional, para mostrar nombre del producto final
                 COALESCE(AVG(r.rating), 0) as avg_rating,
                 COUNT(r.id) as total_reviews
             FROM lotes l
-            JOIN user_batches ub ON l.id = ub.id -- Filtramos solo los lotes que pertenecen al árbol del usuario
+            JOIN user_batches ub ON l.id = ub.id
             JOIN plantillas_proceso p ON l.plantilla_id = p.id
             JOIN etapas_plantilla e ON l.etapa_id = e.id
+            LEFT JOIN productos prod ON l.producto_id = prod.id -- <--- JOIN con productos
             LEFT JOIN product_reviews r ON l.id = r.lote_id
             WHERE l.blockchain_hash IS NOT NULL 
             AND l.blockchain_hash != ''
-            GROUP BY l.id, p.nombre_producto, e.nombre_etapa, l.created_at, l.views, l.blockchain_hash, l.data
+            GROUP BY l.id, p.nombre_producto, e.nombre_etapa, l.created_at, l.views, l.blockchain_hash, l.data, prod.gtin, prod.nombre
             ORDER BY l.created_at DESC
         `;
         
         const rows = await all(sql, [userId]);
         
-        // Parseamos la data JSON por si necesitamos sacar info extra como la foto
         const result = rows.map(row => ({
             ...row,
             data: safeJSONParse(row.data)

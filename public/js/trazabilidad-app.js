@@ -7,9 +7,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let FLAVOR_WHEELS_DATA = {};
 
-    // Configuración de Gráficos y Ruedas de Sabor
-    const SCAA_FLAVORS_ES = { /* ... se mantiene igual ... */ }; 
-
     if (typeof ChartDataLabels !== 'undefined') {
         Chart.register(ChartDataLabels);
     }
@@ -202,6 +199,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 <button class="qr-btn text-xs bg-sky-600 hover:bg-sky-700 text-white p-2 rounded-lg" data-id="${batchData.id}" title="Descargar QR">
                     <i class="fa-solid fa-qrcode"></i>
                 </button>
+
+                <!-- NUEVO BOTÓN DUPLICAR (Disponible en bloqueado también, para agilizar) -->
+                <button class="duplicate-btn text-xs bg-amber-100 hover:bg-amber-200 text-stone-700 p-2 rounded-lg" data-batch-id="${batchData.id}" data-template-id="${template.id}" data-stage-id="${stage.id}" title="Duplicar Lote">
+                    <i class="fas fa-copy"></i>
+                </button>
                 ${addSubButton}
             `;
         } else {
@@ -212,6 +214,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 </button>
                 <button class="edit-btn text-xs bg-stone-200 hover:bg-stone-300 p-2 rounded-lg" data-batch-id="${batchData.id}" data-template-id="${template.id}" data-stage-id="${stage.id}" title="Editar">
                     <i class="fa-solid fa-pen-to-square"></i>
+                </button>
+                <button class="duplicate-btn text-xs bg-amber-100 hover:bg-amber-200 text-stone-700 p-2 rounded-lg" data-batch-id="${batchData.id}" data-template-id="${template.id}" data-stage-id="${stage.id}" title="Duplicar Lote">
+                    <i class="fas fa-copy"></i>
                 </button>
                 <button class="delete-btn text-xs bg-red-600 hover:bg-red-700 text-white p-2 rounded-lg" data-batch-id="${batchData.id}" title="Eliminar">
                     <i class="fa-solid fa-trash"></i>
@@ -394,6 +399,34 @@ document.addEventListener('DOMContentLoaded', () => {
     
     async function openFormModal(mode, template, stage, parentBatch = null, batchData = {}) {
         modalContent.innerHTML = await generateFormHTML(mode, template, stage, parentBatch, batchData.data);
+        
+        // --- LÓGICA DE HERENCIA (NUEVO) ---
+        if (mode === 'create' && parentBatch) {
+            const parentData = parentBatch.data;
+            
+            // Mapeo de campos que deberían heredarse automáticamente
+            const fieldsToInherit = ['finca', 'lugarProceso', 'procesadora', 'variedad', 'clasificacion'];
+            
+            fieldsToInherit.forEach(field => {
+                // Si el formulario actual tiene ese campo y el padre tiene datos
+                const input = document.getElementById(field);
+                const parentValue = parentData[field]?.value; // Asumiendo estructura {value: '...', visible: true}
+                
+                if (input && parentValue) {
+                    input.value = parentValue;
+                    // Efecto visual para indicar que fue heredado
+                    input.style.backgroundColor = "#f0fdf4"; // Verde muy claro
+                    input.title = "Heredado de la etapa anterior";
+                }
+            });
+
+            // Pre-llenar fecha con HOY
+            const dateInput = document.querySelector('input[type="date"]');
+            if (dateInput && !dateInput.value) {
+                dateInput.value = new Date().toISOString().split('T')[0];
+            }
+        }
+
         formModal.showModal();
         
         // Manejo de Inputs de Imagen
@@ -574,7 +607,14 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     function createTextAreaHTML(name, value) {
-        return `<textarea id="${name}" name="${name}" class="w-full p-3 border border-stone-300 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none" rows="3">${value || ''}</textarea>`;
+        return `
+            <div class="relative">
+                <textarea id="${name}" name="${name}" class="w-full p-3 border border-stone-300 rounded-xl pr-10" rows="3">${value || ''}</textarea>
+                <button type="button" onclick="startDictation('${name}')" class="absolute right-2 bottom-2 text-stone-400 hover:text-amber-600 transition p-2">
+                    <i class="fas fa-microphone"></i>
+                </button>
+            </div>
+        `;
     }
     
     function createImageInputHTML(name, value) {
@@ -734,6 +774,27 @@ document.addEventListener('DOMContentLoaded', () => {
             const batchNode = findBatchById(state.batches, button.dataset.batchId);
             if (batchNode) {
                 await generateQualityReport(batchNode);
+            }
+        }
+
+        // NUEVO: Lógica de Duplicación (Clonar)
+        if (button.classList.contains('duplicate-btn')) {
+            const batchId = button.dataset.batchId;
+            const batchToDuplicate = findBatchById(state.batches, batchId);
+            
+            if (batchToDuplicate) {
+                const template = state.templates.find(t => t.id == button.dataset.templateId);
+                const stage = state.stagesByTemplate[template.id].find(s => s.id == button.dataset.stageId);
+                const parentBatch = findParentBatch(state.batches, batchId);
+
+                // Clonación profunda de los datos
+                const clonedData = JSON.parse(JSON.stringify(batchToDuplicate.data));
+                
+                // Eliminamos el ID para que se trate como un lote nuevo
+                delete clonedData.id; 
+                
+                // Abrir el modal en modo 'create' (nuevo registro) pero con los datos pre-cargados
+                openFormModal('create', template, stage, parentBatch, { data: clonedData });
             }
         }
         
@@ -1004,6 +1065,28 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         return current;
     }
+
+    // Función Global para el dictado
+    window.startDictation = (inputId) => {
+        if (!('webkitSpeechRecognition' in window)) {
+            alert("Tu navegador no soporta dictado por voz.");
+            return;
+        }
+        const recognition = new webkitSpeechRecognition();
+        recognition.lang = 'es-ES';
+        const btn = document.querySelector(`button[onclick="startDictation('${inputId}')"] i`);
+        
+        recognition.onstart = () => { btn.className = "fas fa-circle-notch fa-spin text-red-600"; };
+        recognition.onend = () => { btn.className = "fas fa-microphone"; };
+        
+        recognition.onresult = (event) => {
+            const transcript = event.results[0][0].transcript;
+            const input = document.getElementById(inputId);
+            // Agrega el texto al existente
+            input.value = input.value ? input.value + ' ' + transcript : transcript;
+        };
+        recognition.start();
+    };
 
     init();
 });

@@ -125,6 +125,35 @@ app.get('/partials/:partialName', (req, res) => {
     }
 });
 
+// --- PROXY PARA CONSULTA RUC (Protege el Token y evita CORS) ---
+app.get('/api/proxy/ruc/:numero', authenticateApi, async (req, res) => {
+    const { numero } = req.params;
+    const token = process.env.DECOLECTA_TOKEN;
+
+    if (!token) return res.status(500).json({ error: "Token de API RUC no configurado" });
+
+    try {
+        const response = await fetch(`https://api.decolecta.com/v1/sunat/ruc?numero=${numero}`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (!response.ok) {
+             const errorText = await response.text();
+             return res.status(response.status).json({ error: "Error en servicio externo", details: errorText });
+        }
+
+        const data = await response.json();
+        res.json(data);
+    } catch (error) {
+        console.error("Error Proxy RUC:", error);
+        res.status(500).json({ error: "Error interno al consultar RUC" });
+    }
+});
+
 // --- Rutas Públicas (Páginas) ---
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
 

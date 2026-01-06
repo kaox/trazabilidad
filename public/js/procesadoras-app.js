@@ -6,6 +6,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const submitButton = form.querySelector('button[type="submit"]');
     const cancelEditBtn = document.getElementById('cancel-edit-btn');
     const formTitle = document.getElementById('form-title');
+
+    // Inputs del formulario
+    const rucInput = document.getElementById('ruc');
+    const searchRucBtn = document.getElementById('search-ruc-btn');
+    const razonSocialInput = document.getElementById('razon_social');
+    const direccionInput = document.getElementById('direccion');
+    const departamentoInput = document.getElementById('departamento');
+    const provinciaInput = document.getElementById('provincia');
+    const distritoInput = document.getElementById('distrito');
+
     const countrySelect = document.getElementById('pais');
     const premioSelect = document.getElementById('premio-select');
     const premioYearInput = document.getElementById('premio-year');
@@ -88,6 +98,49 @@ document.addEventListener('DOMContentLoaded', () => {
         searchBtn.addEventListener('click', searchLocation);
         fotosInput.addEventListener('change', handleImageUpload);
         fotosPreviewContainer.addEventListener('click', handleImageDelete);
+        // Listener para búsqueda de RUC
+        if (searchRucBtn) {
+            searchRucBtn.addEventListener('click', handleSearchRuc);
+        }
+    }
+
+    // --- LÓGICA: BÚSQUEDA RUC (API Decolecta vía Proxy) ---
+    async function handleSearchRuc() {
+        const ruc = rucInput.value.trim();
+        if (!ruc || ruc.length !== 11) {
+            alert("Por favor ingrese un RUC válido de 11 dígitos.");
+            return;
+        }
+
+        const originalHtml = searchRucBtn.innerHTML;
+        searchRucBtn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i>';
+        searchRucBtn.disabled = true;
+
+        try {
+            // Se usa el proxy del backend para no exponer el Bearer Token en el cliente
+            const response = await api(`/api/proxy/ruc/${ruc}`);
+            
+            if (response) {
+                // Mapeo de respuesta de API Decolecta a campos del formulario
+                razonSocialInput.value = response.razon_social || '';
+                direccionInput.value = response.direccion || '';
+                
+                // Ubigeo / Ubicación
+                departamentoInput.value = response.departamento || '';
+                provinciaInput.value = response.provincia || '';
+                distritoInput.value = response.distrito || '';
+
+                // Feedback visual de éxito
+                razonSocialInput.classList.add('bg-green-50');
+                setTimeout(() => razonSocialInput.classList.remove('bg-green-50'), 1000);
+            }
+        } catch (error) {
+            console.error(error);
+            alert("No se encontraron datos para este RUC o hubo un error en la consulta.");
+        } finally {
+            searchRucBtn.innerHTML = originalHtml;
+            searchRucBtn.disabled = false;
+        }
     }
 
     // --- Carga de Datos ---
