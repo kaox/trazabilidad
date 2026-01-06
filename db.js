@@ -1685,6 +1685,36 @@ const validateDeforestation = async (req, res) => {
     }
 };
 
+// --- NUEVA FUNCIÓN PARA GS1 RESOLVER ---
+const getBatchByGtinAndLot = async (gtin, loteId) => {
+    try {
+        // Buscamos el lote por ID
+        // Hacemos JOIN con productos para verificar que el GTIN coincida
+        // Esto previene que alguien escanee un QR falso que apunte a otro producto
+        const sql = `
+            SELECT 
+                l.id, 
+                l.status, 
+                l.recall_reason,
+                p.gtin,
+                p.nombre as producto_nombre
+            FROM lotes l
+            JOIN productos p ON l.producto_id = p.id
+            WHERE l.id = ? 
+            AND (p.gtin = ? OR p.gtin IS NULL) -- Permitimos si gtin es null en db (interno) o coincide
+        `;
+        
+        // Nota: En un escenario estricto, p.gtin DEBE ser igual al gtin de la URL.
+        // Si usamos códigos internos, el 'gtin' en la URL podría ser el código interno.
+        
+        const row = await get(sql, [loteId, gtin]);
+        return row;
+    } catch (err) {
+        console.error("Error en getBatchByGtinAndLot:", err);
+        return null;
+    }
+};
+
 module.exports = {
     registerUser, loginUser, logoutUser, handleGoogleLogin,
     getFincas, createFinca, updateFinca, deleteFinca,
@@ -1707,5 +1737,5 @@ module.exports = {
     getReviews, submitReview,
     getBlogPosts, getBlogPostBySlug, createBlogPost, updateBlogPost, deleteBlogPost, getAdminBlogPosts, getBlogPostById,
     getProductos, createProducto, updateProducto, deleteProducto,
-    validateDeforestation
+    validateDeforestation, getBatchByGtinAndLot
 };

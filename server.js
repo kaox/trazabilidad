@@ -7,6 +7,7 @@ const path = require('path');
 const db = require('./db');
 const jwt = require('jsonwebtoken');
 const cookieParser = require('cookie-parser');
+const gs1Resolver = require('./gs1-resolver');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -131,6 +132,11 @@ app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.ht
 app.get('/:loteId([A-Z]{3}-[A-Z0-9]{8})', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'tracking.html'));
 });
+
+// RUTA GS1 DIGITAL LINK
+// Estándar: /01/{GTIN}/10/{Lote}
+// Ejemplo: https://rurulab.com/01/95012345678903/10/COS-X82A
+app.get('/01/:gtin/10/:loteId', gs1Resolver.resolve);
 
 // Ruta anterior para compatibilidad o si se usa el formulario
 app.get('/qr', (req, res) => {

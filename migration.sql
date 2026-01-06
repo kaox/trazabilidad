@@ -76,3 +76,21 @@ BEGIN
         ALTER TABLE fincas ADD COLUMN imagenes_json JSONB DEFAULT '[]';
     END IF;
 END $$;
+
+-- NUEVO
+
+-- Agregar columna status (active, recall, expired)
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='lotes' AND column_name='status') THEN
+        ALTER TABLE lotes ADD COLUMN status TEXT DEFAULT 'active';
+    END IF;
+END $$;
+
+-- Agregar columna recall_reason (Razón del retiro)
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='lotes' AND column_name='recall_reason') THEN
+        ALTER TABLE lotes ADD COLUMN recall_reason TEXT;
+    END IF;
+END $$;

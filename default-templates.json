@@ -15,7 +15,7 @@
                 {"label": "Finca", "name": "finca", "type": "selectFinca", "popup": true},
                 {"label": "Fecha Cosecha", "name": "fecha", "type": "date", "popup": true},
                 {"label": "Clasificación de Cacao", "name": "clasificacion", "type": "select", "options": ["Criollo", "Forastero", "Trinitario (Híbrido)"], "popup": true},
-                {"label": "Variedad de Cacao", "name": "variedad", "type": "text", "popup": true},
+                {"label": "Grupo genético", "name": "variedad", "type": "text", "popup": true},
                 {"label": "Foto", "name": "imageUrl", "type": "image", "popup": true}]
           }
         },
