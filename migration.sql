@@ -94,3 +94,11 @@ BEGIN
         ALTER TABLE lotes ADD COLUMN recall_reason TEXT;
     END IF;
 END $$;
+
+-- Agregar campos de ubicación
+ALTER TABLE procesadoras ADD COLUMN departamento TEXT;
+ALTER TABLE procesadoras ADD COLUMN provincia TEXT;
+ALTER TABLE procesadoras ADD COLUMN distrito TEXT;
+
+-- Eliminar tipo_empresa (PostgreSQL)
+ALTER TABLE procesadoras DROP COLUMN tipo_empresa;

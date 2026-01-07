@@ -1,3 +1,8 @@
+// 1. Definir initMap globalmente para Google Maps Callback
+window.initMap = function() {
+    // Se sobrescribirá dentro de DOMContentLoaded si se necesita
+};
+
 document.addEventListener('DOMContentLoaded', () => {
     // Referencias al DOM
     const form = document.getElementById('finca-form');
@@ -38,46 +43,181 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentFincaCertifications = [];
     let currentImages = [];
     
-    let map = L.map('map').setView([-12.046374, -77.042793], 6); // Centrado en Perú
-    let drawnItems = new L.FeatureGroup();
-    map.addLayer(drawnItems);
-    let currentPolygon = null;
+    // Mapa Google
+    let map;
+    let drawingManager;
+    let currentPolygon; // Instancia de google.maps.Polygon
 
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-
-    const drawControl = new L.Control.Draw({
-        edit: { featureGroup: drawnItems },
-        draw: {
-            polyline: false, marker: false, circle: false,
-            rectangle: false, circlemarker: false,
-            polygon: {
-                allowIntersection: false,
-                shapeOptions: { color: '#854d0e' }
-            }
-        }
-    });
-    map.addControl(drawControl);
-
-    map.on(L.Draw.Event.CREATED, (e) => {
-        drawnItems.clearLayers();
-        currentPolygon = e.layer;
-        drawnItems.addLayer(currentPolygon);
-        const latlngs = currentPolygon.getLatLngs()[0].map(p => [p.lat, p.lng]);
-        document.getElementById('coordenadas').value = JSON.stringify(latlngs);
-    });
-    
-    map.on(L.Draw.Event.EDITED, (e) => {
-        const layers = e.layers;
-        layers.eachLayer(layer => {
-            currentPolygon = layer;
-            const latlngs = currentPolygon.getLatLngs()[0].map(p => [p.lat, p.lng]);
-            document.getElementById('coordenadas').value = JSON.stringify(latlngs);
-        });
-    });
+    init();
 
     async function init() {
+        // Exponer initMap para callback y llamar si Gmaps ya cargó
+        window.initMap = initMap;
+        if (typeof google !== 'undefined' && typeof google.maps !== 'undefined') {
+            initMap();
+        }
+        
         await Promise.all([loadCountries(), loadCertifications(), loadPremios(), loadFincas()]);
+        
         setupEventListeners();
+    }
+
+    // --- GOOGLE MAPS ---
+    function initMap() {
+        if (map) return; // Evitar reinicializar
+        
+        const mapContainer = document.getElementById('map');
+        if (!mapContainer || typeof google === 'undefined') return;
+
+        try {
+            const defaultLoc = { lat: -9.19, lng: -75.015 }; // Centro Perú
+            
+            map = new google.maps.Map(mapContainer, {
+                zoom: 5,
+                center: defaultLoc,
+                mapTypeId: 'hybrid', // Satélite con etiquetas
+                streetViewControl: false
+            });
+
+            // Drawing Manager
+            drawingManager = new google.maps.drawing.DrawingManager({
+                drawingMode: google.maps.drawing.OverlayType.POLYGON,
+                drawingControl: true,
+                drawingControlOptions: {
+                    position: google.maps.ControlPosition.TOP_CENTER,
+                    drawingModes: ['polygon']
+                },
+                polygonOptions: {
+                    fillColor: '#854d0e',
+                    fillOpacity: 0.4,
+                    strokeColor: '#854d0e',
+                    strokeWeight: 2,
+                    editable: true,
+                    draggable: false 
+                }
+            });
+            drawingManager.setMap(map);
+
+            // Evento: Polígono completado
+            google.maps.event.addListener(drawingManager, 'overlaycomplete', function(event) {
+                // Borrar polígono anterior si existe (solo 1 por finca)
+                if (currentPolygon) {
+                    currentPolygon.setMap(null);
+                }
+                
+                // Desactivar modo dibujo para evitar múltiples polígonos
+                drawingManager.setDrawingMode(null);
+
+                currentPolygon = event.overlay;
+                updateCoordenadasInput();
+
+                // Listeners para edición (mover vértices)
+                currentPolygon.getPath().addListener('set_at', updateCoordenadasInput);
+                currentPolygon.getPath().addListener('insert_at', updateCoordenadasInput);
+            });
+
+        } catch(e) {
+            console.error("Error inicializando Google Maps:", e);
+        }
+    }
+
+    function updateCoordenadasInput() {
+        if (!currentPolygon) {
+            document.getElementById('coordenadas').value = '';
+            return;
+        }
+        
+        const path = currentPolygon.getPath();
+        const coords = [];
+        for (let i = 0; i < path.getLength(); i++) {
+            const xy = path.getAt(i);
+            coords.push([xy.lat(), xy.lng()]);
+        }
+        // Guardamos array de arrays [[lat, lng], [lat, lng]...] compatible con Leaflet anterior
+        document.getElementById('coordenadas').value = JSON.stringify(coords);
+    }
+
+    function setMapData(coordsJson) {
+        // Limpiar mapa
+        if (currentPolygon) {
+            currentPolygon.setMap(null);
+            currentPolygon = null;
+        }
+        
+        if (!coordsJson || !map) return;
+
+        try {
+            // Esperar array de arrays: [[lat, lng], ...]
+            const coordsArray = typeof coordsJson === 'string' ? JSON.parse(coordsJson) : coordsJson;
+            
+            if (Array.isArray(coordsArray) && coordsArray.length > 0) {
+                const paths = coordsArray.map(p => ({ lat: p[0], lng: p[1] }));
+                
+                currentPolygon = new google.maps.Polygon({
+                    paths: paths,
+                    fillColor: '#854d0e',
+                    fillOpacity: 0.4,
+                    strokeColor: '#854d0e',
+                    strokeWeight: 2,
+                    editable: true,
+                    map: map
+                });
+
+                // Centrar mapa
+                const bounds = new google.maps.LatLngBounds();
+                paths.forEach(p => bounds.extend(p));
+                map.fitBounds(bounds);
+                
+                // Listeners de edición
+                currentPolygon.getPath().addListener('set_at', updateCoordenadasInput);
+                currentPolygon.getPath().addListener('insert_at', updateCoordenadasInput);
+                
+                // Switch a modo edición (no dibujo)
+                if(drawingManager) drawingManager.setDrawingMode(null);
+                
+                updateCoordenadasInput();
+            }
+        } catch (e) {
+            console.error("Error seteando datos de mapa:", e);
+        }
+    }
+
+    // --- Búsqueda y Geolocalización ---
+    async function searchLocation() {
+        const query = searchInput.value;
+        if (!query) return;
+        
+        // Usar Nominatim para ahorrar costos o Google Geocoding si prefieres
+        try {
+            const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`);
+            const data = await response.json();
+            if (data && data.length > 0) {
+                const { lat, lon } = data[0];
+                const latLng = { lat: parseFloat(lat), lng: parseFloat(lon) };
+                map.setCenter(latLng);
+                map.setZoom(15);
+            } else {
+                alert('Ubicación no encontrada.');
+            }
+        } catch(e) { console.error(e); }
+    }
+
+    function locateUser() {
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    const pos = {
+                        lat: position.coords.latitude,
+                        lng: position.coords.longitude,
+                    };
+                    map.setCenter(pos);
+                    map.setZoom(16);
+                },
+                () => { alert("Error obteniendo ubicación."); }
+            );
+        } else {
+            alert("Tu navegador no soporta geolocalización.");
+        }
     }
 
     function setupEventListeners() {
@@ -101,58 +241,39 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- LÓGICA DE VALIDACIÓN DE DEFORESTACIÓN CON GOOGLE EARTH ENGINE ---
     async function handleDeforestationValidation() {
         const coordsValue = document.getElementById('coordenadas').value;
+        if (!coordsValue) { alert("Dibuja el polígono primero."); return; }
         
-        if (!coordsValue) {
-            alert("Por favor, dibuja el polígono de la finca en el mapa antes de validar.");
-            return;
-        }
-
-        // Preparar polígono para el backend (formato GeoJSON para GEE)
         let polygonCoords;
         try {
-            const parsed = JSON.parse(coordsValue);
-            // Leaflet usa [lat, lng], pero GeoJSON usa [lng, lat]
-            if (Array.isArray(parsed)) {
-                polygonCoords = parsed.map(p => [p[1], p[0]]); // Invertir a [lng, lat]
-                // Cerrar el polígono (primer punto = último punto)
-                if (polygonCoords.length > 0) {
-                    const first = polygonCoords[0];
-                    const last = polygonCoords[polygonCoords.length - 1];
-                    if (first[0] !== last[0] || first[1] !== last[1]) {
-                        polygonCoords.push(first);
-                    }
-                }
-            } else {
-                alert("Para la validación de deforestación se requiere dibujar un área (polígono), no un punto.");
-                return;
+            // Google Maps coords vienen como [[lat, lng],...]
+            // GeoJSON necesita [[lng, lat],...]
+            const raw = JSON.parse(coordsValue);
+            polygonCoords = raw.map(p => [p[1], p[0]]); 
+            // Cerrar el anillo
+            if (polygonCoords.length > 0) {
+                 const first = polygonCoords[0];
+                 const last = polygonCoords[polygonCoords.length - 1];
+                 if (first[0] !== last[0] || first[1] !== last[1]) {
+                     polygonCoords.push(first);
+                 }
             }
-        } catch(e) {
-            console.error("Error procesando coordenadas:", e);
-            alert("Error en el formato de coordenadas.");
-            return;
-        }
+        } catch(e) { return; }
 
-        // 1. Mostrar Modal y Estado de Carga
         analysisModal.classList.remove('hidden');
         analysisLoading.classList.remove('hidden');
         analysisSuccess.classList.add('hidden');
-        scanLine.classList.remove('hidden'); // Activar efecto de escaneo en mapa
+        scanLine.classList.remove('hidden');
 
-        // Actualizar textos para reflejar la integración con GEE
+        // Textos para GEE
         const loadingText = analysisLoading.querySelector('p');
         if(loadingText) loadingText.textContent = "Conectando con Google Earth Engine (Dataset Hansen/UMD)...";
 
         try {
-            // 2. Llamada real al Backend (Proxy a GEE)
             const response = await api('/api/validate-deforestation', {
                 method: 'POST',
-                body: JSON.stringify({ 
-                    type: 'Polygon', 
-                    coordinates: [polygonCoords] 
-                })
+                body: JSON.stringify({ type: 'Polygon', coordinates: [polygonCoords] })
             });
 
-            // 3. Procesar Resultado
             analysisLoading.classList.add('hidden');
             scanLine.classList.add('hidden');
 
@@ -161,47 +282,29 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 const successText = analysisSuccess.querySelector('p');
                 const lossPercent = response.loss_percentage !== undefined ? response.loss_percentage.toFixed(4) : "0.0000";
-                
                 if(successText) successText.textContent = `Cobertura arbórea estable. Pérdida detectada: ${lossPercent}% (Umbral EUDR < 0.1%).`;
 
-                // 4. Agregar Certificado Automáticamente
                 const eudrCert = {
-                    id: 9999, // ID especial
+                    id: 9999,
                     nombre: "EUDR Compliant - GEE Verified",
-                    // --- CAMBIO AQUÍ: Icono de la Unión Europea ---
                     logo_url: "https://upload.wikimedia.org/wikipedia/commons/b/b7/Flag_of_Europe.svg",
-                    fecha_vencimiento: new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString().split('T')[0], // Vence en 1 año
-                    metadata: {
-                        source: "Google Earth Engine",
-                        dataset: "UMD/hansen/global_forest_change_2023_v1_11",
-                        validation_date: new Date().toISOString()
-                    }
+                    fecha_vencimiento: new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString().split('T')[0]
                 };
 
-                // Verificar si ya existe para no duplicar
                 const exists = currentFincaCertifications.some(c => c.nombre.includes("EUDR") || c.nombre.includes("GEE"));
                 if (!exists) {
                     currentFincaCertifications.push(eudrCert);
                     renderAddedCertifications();
                 }
             } else {
-                // Caso: No cumple (Deforestación detectada) o Error en análisis
                 analysisModal.classList.add('hidden');
-                const lossMsg = response.loss_percentage ? `(${response.loss_percentage}% detectado)` : '';
-                alert(`⚠️ ALERTA: Se detectó pérdida de cobertura arbórea en el área ${lossMsg}. No se puede emitir el certificado automático.`);
+                alert(`Alerta: ${response.details}`);
             }
-
         } catch (error) {
-            console.error("Error en validación GEE:", error);
-            analysisLoading.classList.add('hidden');
-            scanLine.classList.add('hidden');
+            console.error(error);
             analysisModal.classList.add('hidden');
-            
-            if (error.message.includes("404")) {
-                alert("El servicio de validación satelital no está disponible en este momento (Endpoint no configurado).");
-            } else {
-                alert("Error al conectar con el servicio de validación: " + error.message);
-            }
+            if (error.message.includes("404")) alert("Servicio no disponible.");
+            else alert("Error: " + error.message);
         }
     }
 
@@ -272,8 +375,13 @@ document.addEventListener('DOMContentLoaded', () => {
         renderImagePreviews();
         renderAddedCertifications();
         renderAddedPremios();
-        if (currentPolygon) drawnItems.removeLayer(currentPolygon);
-        drawnItems.clearLayers(); currentPolygon = null;
+        
+        // Reset Map
+        if (currentPolygon) { currentPolygon.setMap(null); currentPolygon = null; }
+        if (drawingManager) drawingManager.setDrawingMode(google.maps.drawing.OverlayType.POLYGON);
+        if (map) { map.setCenter({ lat: -9.19, lng: -75.015 }); map.setZoom(5); }
+        document.getElementById('coordenadas').value = '';
+
         formTitle.textContent = 'Nueva Finca';
         submitButton.textContent = 'Guardar Finca';
         submitButton.className = 'bg-amber-800 hover:bg-amber-900 text-white font-bold py-3 px-8 rounded-xl shadow-md';
@@ -312,10 +420,7 @@ document.addEventListener('DOMContentLoaded', () => {
             renderAddedPremios();
             
             if (finca.coordenadas) { 
-                const polygon = L.polygon(finca.coordenadas, { color: '#854d0e' }); 
-                drawnItems.addLayer(polygon); 
-                currentPolygon = polygon; 
-                map.fitBounds(polygon.getBounds()); 
+                setMapData(finca.coordenadas);
             }
             formTitle.textContent = `Editando: ${finca.nombre_finca}`;
             submitButton.textContent = 'Actualizar Finca';
@@ -515,23 +620,5 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
     }
-    
-    async function searchLocation() {
-        const query = searchInput.value;
-        if (!query) return;
-        const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${query}`);
-        const data = await response.json();
-        if (data && data.length > 0) {
-            const { lat, lon } = data[0];
-            map.setView([lat, lon], 13);
-        } else {
-            alert('Ubicación no encontrada.');
-        }
-    }
 
-    function locateUser() {
-        map.locate({ setView: true, maxZoom: 16 });
-    }
-
-    init();
 });

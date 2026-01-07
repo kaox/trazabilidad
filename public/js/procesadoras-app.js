@@ -1,12 +1,16 @@
+window.initMap = function() {
+    // Se sobrescribirá dentro de DOMContentLoaded
+};
+
 document.addEventListener('DOMContentLoaded', () => {
-    // Elementos del DOM
+    // Referencias al DOM
     const form = document.getElementById('procesadora-form');
     const procesadorasList = document.getElementById('procesadoras-list');
     const editIdInput = document.getElementById('edit-id');
     const submitButton = form.querySelector('button[type="submit"]');
     const cancelEditBtn = document.getElementById('cancel-edit-btn');
     const formTitle = document.getElementById('form-title');
-
+    
     // Inputs del formulario
     const rucInput = document.getElementById('ruc');
     const searchRucBtn = document.getElementById('search-ruc-btn');
@@ -15,96 +19,180 @@ document.addEventListener('DOMContentLoaded', () => {
     const departamentoInput = document.getElementById('departamento');
     const provinciaInput = document.getElementById('provincia');
     const distritoInput = document.getElementById('distrito');
+    // Otros inputs
+    const paisInput = document.getElementById('pais');
+    const ciudadInput = document.getElementById('ciudad');
+    const telefonoInput = document.getElementById('telefono');
+    const numeroTrabajadoresInput = document.getElementById('numero_trabajadores');
+    const nombreComercialInput = document.getElementById('nombre_comercial');
 
-    const countrySelect = document.getElementById('pais');
-    const premioSelect = document.getElementById('premio-select');
-    const premioYearInput = document.getElementById('premio-year');
-    const addPremioBtn = document.getElementById('add-premio-btn');
-    const premiosListContainer = document.getElementById('premios-list');
+    // Búsqueda en Mapa
+    const locationSearchInput = document.getElementById('location-search');
+    const searchLocationBtn = document.getElementById('search-btn');
+
+    // Listas dinámicas y sus contenedores
     const certSelect = document.getElementById('certification-select');
     const certExpiryInput = document.getElementById('certification-expiry');
     const addCertBtn = document.getElementById('add-certification-btn');
     const certsListContainer = document.getElementById('certifications-list');
-    const searchInput = document.getElementById('location-search');
-    const searchBtn = document.getElementById('search-btn');
-    const fotosInput = document.getElementById('fotos-input');
+    
+    const premioSelect = document.getElementById('premio-select');
+    const premioYearInput = document.getElementById('premio-year');
+    const addPremioBtn = document.getElementById('add-premio-btn');
+    const premiosListContainer = document.getElementById('premios-list');
+    
+    const fotosInput = document.getElementById('fotos');
     const fotosPreviewContainer = document.getElementById('fotos-preview-container');
 
-    // Estado de la aplicación
-    let allPremios = [];
-    let currentProcesadoraPremios = [];
-    let allCertifications = [];
-    let currentProcesadoraCerts = [];
+    // Estado local
     let currentImages = [];
+    let currentCertifications = [];
+    let currentPremios = [];
+    let allPremios = [];
+    let allCertifications = [];
+    
+    // Mapa Google
     let map;
-    let marker = null;
+    let marker;
+
+    // Inicialización
+    init();
 
     async function init() {
-        initializeMap();
-        await Promise.all([
-            loadCountries(),
-            loadPremios(),
-            loadCertifications(),
-            loadProcesadoras()
-        ]);
+        // Exponer initMap globalmente para el callback de Google si fuera necesario
+        window.initMap = initMap;
+        
         setupEventListeners();
-    }
 
-    function initializeMap() {
-        map = L.map('map').setView([-12.046374, -77.042793], 5); // Vista inicial en Perú
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-
-        map.on('click', (e) => {
-            placeMarker(e.latlng);
-        });
-    }
-
-    function placeMarker(latlng) {
-        if (marker) {
-            marker.setLatLng(latlng);
-        } else {
-            marker = L.marker(latlng, { draggable: true }).addTo(map);
-            marker.on('dragend', (e) => {
-                document.getElementById('coordenadas').value = JSON.stringify(e.target.getLatLng());
-            });
+        if (typeof google !== 'undefined' && typeof google.maps !== 'undefined') {
+            initMap();
         }
-        document.getElementById('coordenadas').value = JSON.stringify(latlng);
-        map.panTo(latlng);
+        
+        // Cargar datos
+        try {
+            await Promise.all([
+                loadCertificationsData().catch(e => console.error("Error certs:", e)), 
+                loadPremiosData().catch(e => console.error("Error premios:", e)), 
+                loadProcesadoras().catch(e => console.error("Error procesadoras:", e))
+            ]);
+        } catch (error) {
+            console.error("Error en inicialización de datos:", error);
+        }
     }
 
-    async function searchLocation() {
-        const query = searchInput.value;
+    // --- MAPA GOOGLE ---
+    function initMap() {
+        // Evitar reinicializar si ya existe
+        if (map) return;
+
+        const mapContainer = document.getElementById('map');
+        if (!mapContainer || typeof google === 'undefined') return;
+
+        try {
+            // Coordenadas por defecto (Centro de Perú)
+            const defaultLoc = { lat: -9.19, lng: -75.015 };
+            
+            map = new google.maps.Map(mapContainer, {
+                zoom: 5,
+                center: defaultLoc,
+                mapTypeId: 'roadmap',
+                streetViewControl: false
+            });
+
+            // Listener para clic en el mapa
+            map.addListener("click", (e) => {
+                placeMarker(e.latLng);
+            });
+
+        } catch(e) {
+            console.error("Error inicializando Google Maps:", e);
+        }
+    }
+
+    function placeMarker(latLng) {
+        // Eliminar marcador anterior si existe
+        if (marker) {
+            marker.setMap(null);
+        }
+        
+        // Crear nuevo marcador
+        marker = new google.maps.Marker({
+            position: latLng,
+            map: map,
+            draggable: true
+        });
+
+        // Actualizar input al arrastrar
+        marker.addListener('dragend', (e) => {
+            updateCoordinatesInput(e.latLng);
+        });
+
+        // Actualizar input inicial
+        updateCoordinatesInput(latLng);
+        
+        // Centrar mapa si se desea
+        // map.panTo(latLng);
+    }
+
+    function updateCoordinatesInput(latLng) {
+        // Google Maps usa funciones .lat() y .lng()
+        const coords = { lat: latLng.lat(), lng: latLng.lng() };
+        document.getElementById('coordenadas').value = JSON.stringify(coords);
+    }
+
+    // Búsqueda en Mapa (Usando Nominatim como en el código original para no gastar cuota de Google Geocoding)
+    async function handleSearchLocation() {
+        const query = locationSearchInput.value;
         if (!query) return;
-        const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${query}`);
-        const data = await response.json();
-        if (data && data.length > 0) {
-            const { lat, lon } = data[0];
-            const latlng = { lat: parseFloat(lat), lng: parseFloat(lon) };
-            map.setView(latlng, 15);
-            placeMarker(latlng);
-        } else {
-            alert('Ubicación no encontrada.');
+        
+        try {
+            const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`);
+            const data = await response.json();
+            if (data && data.length > 0) {
+                const { lat, lon } = data[0];
+                const latLng = new google.maps.LatLng(parseFloat(lat), parseFloat(lon));
+                
+                // Actualizar mapa
+                map.setCenter(latLng);
+                map.setZoom(15);
+                
+                // Poner marcador
+                placeMarker(latLng);
+                
+            } else {
+                alert('Ubicación no encontrada.');
+            }
+        } catch (e) {
+            console.error(e);
+            alert('Error al buscar ubicación.');
         }
     }
 
     function setupEventListeners() {
-        form.addEventListener('submit', handleFormSubmit);
-        cancelEditBtn.addEventListener('click', resetForm);
-        procesadorasList.addEventListener('click', handleProcesadoraListClick);
-        addPremioBtn.addEventListener('click', handleAddPremio);
-        premiosListContainer.addEventListener('click', handlePremioAction);
-        addCertBtn.addEventListener('click', handleAddCertification);
-        certsListContainer.addEventListener('click', handleCertificationAction);
-        searchBtn.addEventListener('click', searchLocation);
-        fotosInput.addEventListener('change', handleImageUpload);
-        fotosPreviewContainer.addEventListener('click', handleImageDelete);
+        if(form) form.addEventListener('submit', handleFormSubmit);
+        if(cancelEditBtn) cancelEditBtn.addEventListener('click', resetForm);
+        if(procesadorasList) procesadorasList.addEventListener('click', handleListClick);
+        
+        // Listeners Listas Dinámicas
+        if(fotosInput) fotosInput.addEventListener('change', handleImageUpload);
+        if(addCertBtn) addCertBtn.addEventListener('click', handleAddCertification);
+        if(certsListContainer) certsListContainer.addEventListener('click', handleCertificationAction);
+        if(addPremioBtn) addPremioBtn.addEventListener('click', handleAddPremio);
+        if(premiosListContainer) premiosListContainer.addEventListener('click', handlePremioAction);
+        if(fotosPreviewContainer) fotosPreviewContainer.addEventListener('click', handleImageDelete);
+
         // Listener para búsqueda de RUC
         if (searchRucBtn) {
             searchRucBtn.addEventListener('click', handleSearchRuc);
         }
+
+        // Listener para búsqueda en Mapa
+        if (searchLocationBtn) {
+            searchLocationBtn.addEventListener('click', handleSearchLocation);
+        }
     }
 
-    // --- LÓGICA: BÚSQUEDA RUC (API Decolecta vía Proxy) ---
+    // --- LÓGICA: BÚSQUEDA RUC ---
     async function handleSearchRuc() {
         const ruc = rucInput.value.trim();
         if (!ruc || ruc.length !== 11) {
@@ -117,20 +205,15 @@ document.addEventListener('DOMContentLoaded', () => {
         searchRucBtn.disabled = true;
 
         try {
-            // Se usa el proxy del backend para no exponer el Bearer Token en el cliente
             const response = await api(`/api/proxy/ruc/${ruc}`);
             
             if (response) {
-                // Mapeo de respuesta de API Decolecta a campos del formulario
                 razonSocialInput.value = response.razon_social || '';
                 direccionInput.value = response.direccion || '';
-                
-                // Ubigeo / Ubicación
                 departamentoInput.value = response.departamento || '';
                 provinciaInput.value = response.provincia || '';
                 distritoInput.value = response.distrito || '';
 
-                // Feedback visual de éxito
                 razonSocialInput.classList.add('bg-green-50');
                 setTimeout(() => razonSocialInput.classList.remove('bg-green-50'), 1000);
             }
@@ -143,309 +226,304 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // --- Carga de Datos ---
-    async function loadCountries() {
-        try {
-            const response = await fetch('/data/countries.json');
-            const countries = await response.json();
-            countrySelect.innerHTML = countries.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
-            countrySelect.value = 'Perú';
-        } catch (error) {
-            console.error("Error cargando países:", error);
-        }
-    }
-
-    async function loadPremios() {
-        try {
-            const data = await fetch('/data/premios-finca.json').then(res => res.json());
-            allPremios = data.premios;
-            premioSelect.innerHTML = `<option value="">Seleccionar premio...</option>` + allPremios.map(p => `<option value="${p.id}">${p.nombre}</option>`).join('');
-        } catch (error) {
-            console.error("Error cargando premios:", error);
-        }
-    }
-
-    async function loadCertifications() {
-        try {
-            const data = await fetch('/data/certifications.json').then(res => res.json());
-            allCertifications = data.certifications;
-            certSelect.innerHTML = `<option value="">Seleccionar certificación...</option>` + allCertifications.map(c => `<option value="${c.id}">${c.nombre}</option>`).join('');
-        } catch (error) {
-            console.error("Error cargando certificaciones:", error);
-        }
-    }
-
+    // --- API CALLS ---
     async function loadProcesadoras() {
         try {
-            const procesadoras = await api('/api/procesadoras');
-            renderProcesadoras(procesadoras);
-        } catch (error) {
-            procesadorasList.innerHTML = `<p class="text-red-500">Error al cargar las procesadoras.</p>`;
-        }
+            const data = await api('/api/procesadoras');
+            renderList(data);
+        } catch(e) { console.error(e); }
     }
 
-    // --- Renderizado ---
-    function renderProcesadoras(procesadoras) {
-        procesadorasList.innerHTML = procesadoras.length === 0 
-            ? '<p class="text-stone-500 text-center">No hay procesadoras registradas.</p>' 
-            : procesadoras.map(p => `
-                <div class="p-4 border rounded-xl bg-stone-50">
-                    <div class="flex justify-between items-start">
-                        <div>
-                            <h3 class="font-bold text-lg text-amber-900">${p.nombre_comercial || p.razon_social}</h3>
-                            <p class="text-sm text-stone-600">RUC: ${p.ruc}</p>
-                            <p class="text-sm text-stone-500">${p.ciudad || 'N/A'}, ${p.pais || 'N/A'}</p>
-                        </div>
-                        <div class="flex gap-2 flex-shrink-0">
-                            <button data-id="${p.id}" class="edit-btn text-sm bg-sky-600 hover:bg-sky-700 text-white px-3 py-1 rounded-lg">Editar</button>
-                            <button data-id="${p.id}" class="delete-btn text-sm bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-lg">Eliminar</button>
-                        </div>
+    function renderList(list) {
+        if (!procesadorasList) return;
+        
+        procesadorasList.innerHTML = list.length === 0 ? 
+            '<p class="text-stone-500 text-center py-4">No hay procesadoras registradas.</p>' : 
+            list.map(p => `
+                <div class="p-4 border rounded-xl bg-stone-50 flex justify-between items-center hover:shadow-sm transition">
+                    <div>
+                        <h3 class="font-bold text-amber-900">${p.nombre_comercial || p.razon_social}</h3>
+                        <p class="text-xs text-stone-500">RUC: ${p.ruc}</p>
+                        <p class="text-xs text-stone-500">${p.distrito || ''}, ${p.provincia || ''} - ${p.departamento || ''}</p>
+                    </div>
+                    <div class="flex gap-2">
+                        <button data-id="${p.id}" class="edit-btn text-sky-600 hover:bg-sky-100 p-2 rounded transition"><i class="fas fa-pen"></i></button>
+                        <button data-id="${p.id}" class="delete-btn text-red-600 hover:bg-red-100 p-2 rounded transition"><i class="fas fa-trash"></i></button>
                     </div>
                 </div>
             `).join('');
     }
 
-    function renderAddedPremios() {
-        premiosListContainer.innerHTML = currentProcesadoraPremios.map(premio => `
-            <div class="flex items-center justify-between p-2 border rounded-lg">
-                <div class="flex items-center gap-3">
-                    <img src="${premio.logo_url}" alt="${premio.nombre}" class="w-8 h-8 rounded-full">
-                    <div>
-                        <p class="font-semibold text-sm">${premio.nombre}</p>
-                        <p class="text-xs text-stone-500">Año: ${premio.ano}</p>
-                    </div>
-                </div>
-                <button type="button" data-id="${premio.id}" data-year="${premio.ano}" class="delete-premio-btn text-red-500 hover:text-red-700 font-bold">&times;</button>
-            </div>
-        `).join('');
-    }
-
-    function renderAddedCertifications() {
-        certsListContainer.innerHTML = currentProcesadoraCerts.map(cert => {
-            const isExpired = new Date(cert.fecha_vencimiento) < new Date();
-            const statusClass = isExpired ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800';
-            const statusText = isExpired ? 'Vencida' : 'Vigente';
-
-            return `
-                <div class="flex items-center justify-between p-2 border rounded-lg">
-                    <div class="flex items-center gap-3">
-                        <img src="${cert.logo_url}" alt="${cert.nombre}" class="w-8 h-8 rounded-full">
-                        <div>
-                            <p class="font-semibold text-sm">${cert.nombre}</p>
-                            <p class="text-xs text-stone-500">Vence: ${cert.fecha_vencimiento}</p>
-                        </div>
-                    </div>
-                    <div class="flex items-center gap-2">
-                         <span class="text-xs font-medium px-2 py-1 rounded-full ${statusClass}">${statusText}</span>
-                         <button type="button" data-id="${cert.id}" class="delete-cert-btn text-red-500 hover:text-red-700 font-bold">&times;</button>
-                    </div>
-                </div>
-            `;
-        }).join('');
-    }
-
-    // --- Manejo del Formulario ---
-    function resetForm() {
-        form.reset();
-        editIdInput.value = '';
-        currentImages = [];
-        renderImagePreviews();
-        currentProcesadoraPremios = [];
-        currentProcesadoraCerts = [];
-        if (marker) {
-            marker.remove();
-            marker = null;
-        }
-        document.getElementById('coordenadas').value = '';
-        map.setView([-12.046374, -77.042793], 5);
-        renderAddedPremios();
-        renderAddedCertifications();
-        formTitle.textContent = 'Nueva Procesadora';
-        submitButton.textContent = 'Guardar Procesadora';
-        submitButton.className = 'bg-amber-800 hover:bg-amber-900 text-white font-bold py-3 px-8 rounded-xl shadow-md';
-        cancelEditBtn.classList.add('hidden');
-    }
-
-    async function populateFormForEdit(id) {
-        try {
-            const procesadoras = await api('/api/procesadoras');
-            const procesadora = procesadoras.find(p => p.id === id);
-            if (!procesadora) return;
-
-            resetForm();
-            form.ruc.value = procesadora.ruc || '';
-            form.razon_social.value = procesadora.razon_social || '';
-            form.nombre_comercial.value = procesadora.nombre_comercial || '';
-            form.tipo_empresa.value = procesadora.tipo_empresa || '';
-            form.pais.value = procesadora.pais || '';
-            form.ciudad.value = procesadora.ciudad || '';
-            form.direccion.value = procesadora.direccion || '';
-            form.telefono.value = procesadora.telefono || '';
-            form.numero_trabajadores.value = procesadora.numero_trabajadores || '';
-            editIdInput.value = procesadora.id;
-
-            currentImages = procesadora.imagenes_json || [];
-            renderImagePreviews();
-
-            if (procesadora.coordenadas) {
-                placeMarker(procesadora.coordenadas);
-                map.setView(procesadora.coordenadas, 15);
-            }
-
-            currentProcesadoraPremios = procesadora.premios_json || [];
-            currentProcesadoraCerts = procesadora.certificaciones_json || [];
-            renderAddedPremios();
-            renderAddedCertifications();
-
-            formTitle.textContent = `Editando: ${procesadora.nombre_comercial || procesadora.razon_social}`;
-            submitButton.textContent = 'Actualizar Procesadora';
-            submitButton.className = 'bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 rounded-xl shadow-md';
-            cancelEditBtn.classList.add('hidden');
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        } catch (error) {
-            alert('Error al cargar datos para editar.');
-        }
-    }
-
-    // --- Lógica de Galería de Fotos ---
-    function handleImageUpload(e) {
-        const files = e.target.files;
-        if (!files) return;
-
-        if (currentImages.length + files.length > 5) {
-            alert('Puedes subir un máximo de 5 fotos.');
-            return;
-        }
-
-        for (const file of files) {
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                currentImages.push(reader.result);
-                renderImagePreviews();
-            };
-            reader.readAsDataURL(file);
-        }
-    }
-
-    function handleImageDelete(e) {
-        if (e.target.classList.contains('delete-img-btn')) {
-            const index = parseInt(e.target.dataset.index, 10);
-            currentImages.splice(index, 1);
-            renderImagePreviews();
-        }
-    }
-
-    function renderImagePreviews() {
-        fotosPreviewContainer.innerHTML = currentImages.map((imgSrc, index) => `
-            <div class="relative">
-                <img src="${imgSrc}" class="w-full h-24 object-cover rounded-md">
-                <button type="button" data-index="${index}" class="delete-img-btn absolute top-1 right-1 bg-red-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">&times;</button>
-            </div>
-        `).join('');
-    }
-
-    // --- Gestores de Eventos ---
     async function handleFormSubmit(e) {
         e.preventDefault();
+        
+        const submitBtn = form.querySelector('button[type="submit"]');
+        const originalText = submitBtn ? submitBtn.innerText : 'Guardar';
+        
+        if(submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
+        }
+
         const formData = new FormData(form);
         const data = Object.fromEntries(formData.entries());
+        
         data.imagenes_json = currentImages;
-        data.premios_json = currentProcesadoraPremios;
-        data.certificaciones_json = currentProcesadoraCerts;
+        data.certificaciones_json = currentCertifications;
+        data.premios_json = currentPremios;
+        
+        // Manejo de coordenadas (ya viene como string JSON desde updateCoordinatesInput)
+        if (!data.coordenadas || data.coordenadas.trim() === "") {
+             data.coordenadas = null;
+        } else {
+             try {
+                 JSON.parse(data.coordenadas);
+             } catch(e) {
+                 console.warn("Coordenadas inválidas, se limpian");
+                 data.coordenadas = null;
+             }
+        }
+
+        if(data.numero_trabajadores === "") delete data.numero_trabajadores;
 
         const editId = editIdInput.value;
+
         try {
             if (editId) {
                 await api(`/api/procesadoras/${editId}`, { method: 'PUT', body: JSON.stringify(data) });
             } else {
                 await api('/api/procesadoras', { method: 'POST', body: JSON.stringify(data) });
             }
+            
             resetForm();
             await loadProcesadoras();
+            alert('Procesadora guardada exitosamente.');
         } catch (error) {
             console.error("Error al guardar:", error);
-            alert('Error al guardar la procesadora.');
-        }
-    }
-
-    function handleProcesadoraListClick(e) {
-        const target = e.target;
-        if (target.classList.contains('edit-btn')) {
-            populateFormForEdit(target.dataset.id);
-        }
-        if (target.classList.contains('delete-btn')) {
-            const id = target.dataset.id;
-            if (confirm('¿Seguro que quieres eliminar esta procesadora?')) {
-                api(`/api/procesadoras/${id}`, { method: 'DELETE' }).then(loadProcesadoras);
+            alert('Error al guardar: ' + error.message);
+        } finally {
+            if(submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.innerText = originalText;
             }
         }
     }
 
-    function handleAddPremio() {
-        const premioId = parseInt(premioSelect.value, 10);
-        const ano = premioYearInput.value;
+    async function handleListClick(e) {
+        const btn = e.target.closest('button');
+        if (!btn) return;
+        const id = btn.dataset.id;
 
-        if (!premioId || !ano) {
-            alert('Por favor, selecciona un premio y especifica el año.');
-            return;
-        }
-
-        const premio = allPremios.find(p => p.id === premioId);
-        if (premio) {
-            // Verificar si ya existe el mismo premio en el mismo año
-            const yaExiste = currentProcesadoraPremios.some(p => p.id === premioId && p.ano === ano);
-            if (yaExiste) {
-                alert('Este premio ya ha sido añadido para el año especificado.');
-                return;
+        if (btn.classList.contains('delete-btn')) {
+            if (confirm("¿Eliminar procesadora?")) {
+                await api(`/api/procesadoras/${id}`, { method: 'DELETE' });
+                loadProcesadoras();
             }
+        }
+        if (btn.classList.contains('edit-btn')) {
+            populateForm(id);
+        }
+    }
 
-            currentProcesadoraPremios.push({ id: premioId, nombre: premio.nombre, logo_url: premio.logo_url, ano: ano });
+    async function populateForm(id) {
+        try {
+            const list = await api('/api/procesadoras');
+            const item = list.find(x => x.id === id);
+            if (!item) return;
+
+            resetForm();
+            editIdInput.value = item.id;
+            formTitle.textContent = "Editar Procesadora";
+            cancelEditBtn.classList.remove('hidden');
+            
+            const submitBtn = form.querySelector('button[type="submit"]');
+            if(submitBtn) submitBtn.textContent = "Actualizar";
+
+            // Campos Base
+            if(document.getElementById('ruc')) document.getElementById('ruc').value = item.ruc;
+            if(document.getElementById('razon_social')) document.getElementById('razon_social').value = item.razon_social;
+            if(document.getElementById('nombre_comercial')) document.getElementById('nombre_comercial').value = item.nombre_comercial || '';
+            if(document.getElementById('direccion')) document.getElementById('direccion').value = item.direccion || '';
+            if(document.getElementById('telefono')) document.getElementById('telefono').value = item.telefono || '';
+            if(document.getElementById('numero_trabajadores')) document.getElementById('numero_trabajadores').value = item.numero_trabajadores || '';
+            if(document.getElementById('ciudad')) document.getElementById('ciudad').value = item.ciudad || '';
+            if(document.getElementById('pais')) document.getElementById('pais').value = item.pais || '';
+
+            // Nuevos Campos
+            if(document.getElementById('departamento')) document.getElementById('departamento').value = item.departamento || '';
+            if(document.getElementById('provincia')) document.getElementById('provincia').value = item.provincia || '';
+            if(document.getElementById('distrito')) document.getElementById('distrito').value = item.distrito || '';
+
+            // Listas
+            currentImages = item.imagenes_json || [];
+            currentCertifications = item.certificaciones_json || [];
+            currentPremios = item.premios_json || [];
+            renderImages();
+            renderAddedCertifications();
             renderAddedPremios();
-            premioSelect.value = '';
-            premioYearInput.value = '';
+
+            // Mapa (Google Maps)
+            if (item.coordenadas && item.coordenadas.lat && map) {
+                const latLng = new google.maps.LatLng(item.coordenadas.lat, item.coordenadas.lng);
+                placeMarker(latLng);
+                map.setCenter(latLng);
+                map.setZoom(15);
+            }
+
+            form.scrollIntoView({ behavior: 'smooth' });
+        } catch(e) { console.error("Error populando form:", e); }
+    }
+
+    function resetForm() {
+        form.reset();
+        editIdInput.value = '';
+        currentImages = [];
+        currentCertifications = [];
+        currentPremios = [];
+        
+        // Limpiar mapa Google
+        if (marker) {
+            marker.setMap(null);
+            marker = null;
         }
+        if (map) {
+             map.setCenter({ lat: -9.19, lng: -75.015 });
+             map.setZoom(5);
+        }
+
+        document.getElementById('coordenadas').value = '';
+        renderImages();
+        renderAddedCertifications();
+        renderAddedPremios();
+        formTitle.textContent = "Nueva Procesadora";
+        const submitBtn = form.querySelector('button[type="submit"]');
+        if(submitBtn) submitBtn.textContent = "Guardar Procesadora";
+        cancelEditBtn.classList.add('hidden');
+    }
+
+    // --- Helpers de Carga de Datos ---
+    async function loadCertificationsData() {
+        const res = await fetch('/data/certifications.json');
+        if(!res.ok) throw new Error("Error loading certifications");
+        const data = await res.json();
+        allCertifications = data.certifications;
+        if(certSelect) certSelect.innerHTML = `<option value="">Seleccionar...</option>` + allCertifications.map(c => `<option value="${c.id}">${c.nombre}</option>`).join('');
     }
     
-    function handlePremioAction(e) {
-        if (e.target.classList.contains('delete-premio-btn')) {
-            const premioId = parseInt(e.target.dataset.id, 10);
-            const ano = e.target.dataset.year;
-            currentProcesadoraPremios = currentProcesadoraPremios.filter(p => !(p.id === premioId && p.ano === ano));
-            renderAddedPremios();
+    async function loadPremiosData() {
+        const res = await fetch('/data/premios.json');
+        if(!res.ok) throw new Error("Error loading premios");
+        const data = await res.json();
+        allPremios = data.premios;
+        const flatPremios = [...(allPremios.chocolate || []), ...(allPremios.cafe || []), ...(allPremios.miel || [])];
+        const uniquePremios = [...new Map(flatPremios.map(item => [item['nombre'], item])).values()];
+        
+        if(premioSelect) premioSelect.innerHTML = `<option value="">Seleccionar...</option>` + uniquePremios.map(p => `<option value="${p.nombre}">${p.nombre}</option>`).join('');
+    }
+
+    // --- Manejadores de Listas ---
+    
+    function handleImageUpload(e) {
+        const files = Array.from(e.target.files);
+        files.forEach(file => {
+            const reader = new FileReader();
+            reader.onload = () => { currentImages.push(reader.result); renderImages(); };
+            reader.readAsDataURL(file);
+        });
+        e.target.value = '';
+    }
+
+    function handleImageDelete(e) {
+        const btn = e.target.closest('.delete-img-btn');
+        if (btn) {
+            const index = parseInt(btn.dataset.index, 10);
+            currentImages.splice(index, 1);
+            renderImages();
         }
+    }
+
+    function renderImages() {
+        if(!fotosPreviewContainer) return;
+        fotosPreviewContainer.innerHTML = currentImages.map((img, i) => 
+            `<div class="relative group">
+                <img src="${img}" class="w-full h-24 object-cover rounded-lg">
+                <button type="button" data-index="${i}" class="delete-img-btn absolute top-1 right-1 bg-red-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition">&times;</button>
+             </div>`
+        ).join('');
     }
 
     function handleAddCertification() {
-        const certId = parseInt(certSelect.value, 10);
-        const expiryDate = certExpiryInput.value;
-
-        if (!certId || !expiryDate) {
-            alert('Por favor, selecciona una certificación y su fecha de vencimiento.');
-            return;
-        }
-        
-        if (currentProcesadoraCerts.some(c => c.id === certId)) {
-            alert('Esta certificación ya ha sido añadida.');
-            return;
-        }
-
-        const certification = allCertifications.find(c => c.id === certId);
-        if (certification) {
-            currentProcesadoraCerts.push({ id: certId, nombre: certification.nombre, logo_url: certification.logo_url, fecha_vencimiento: expiryDate });
+        const certId = parseInt(certSelect.value);
+        const expiry = certExpiryInput.value;
+        const certObj = allCertifications.find(c => c.id === certId);
+        if (certObj) {
+            currentCertifications.push({ ...certObj, expiry });
             renderAddedCertifications();
-            certSelect.value = '';
-            certExpiryInput.value = '';
         }
     }
-    
+
     function handleCertificationAction(e) {
-        if (e.target.classList.contains('delete-cert-btn')) {
-            const certId = parseInt(e.target.dataset.id, 10);
-            currentProcesadoraCerts = currentProcesadoraCerts.filter(c => c.id !== certId);
+        const btn = e.target.closest('.delete-cert-btn');
+        if (btn) {
+            const index = parseInt(btn.dataset.index, 10);
+            currentCertifications.splice(index, 1);
             renderAddedCertifications();
         }
     }
 
-    init();
-});
+    function renderAddedCertifications() {
+        if(!certsListContainer) return;
+        certsListContainer.innerHTML = currentCertifications.map((c, i) => 
+            `<div class="flex justify-between items-center bg-stone-100 p-2 rounded mb-2">
+                <span>${c.nombre}</span>
+                <button type="button" class="delete-cert-btn text-red-500 hover:text-red-700 font-bold" data-index="${i}">&times;</button>
+             </div>`
+        ).join('');
+    }
 
+    function handleAddPremio() {
+        const name = premioSelect.value;
+        const year = premioYearInput.value;
+        if (name && year) {
+            const pObj = allPremios.chocolate?.find(p => p.nombre === name) || { nombre: name, logo_url: '' };
+            currentPremios.push({ nombre: name, year, logo_url: pObj.logo_url });
+            renderAddedPremios();
+        }
+    }
+
+    function handlePremioAction(e) {
+        const btn = e.target.closest('.delete-premio-btn');
+        if (btn) {
+            const index = parseInt(btn.dataset.index, 10);
+            currentPremios.splice(index, 1);
+            renderAddedPremios();
+        }
+    }
+
+    function renderAddedPremios() {
+        if(!premiosListContainer) return;
+        premiosListContainer.innerHTML = currentPremios.map((p, i) => 
+            `<div class="flex justify-between items-center bg-stone-100 p-2 rounded mb-2">
+                <span>${p.nombre} (${p.year})</span>
+                <button type="button" class="delete-premio-btn text-red-500 hover:text-red-700 font-bold" data-index="${i}">&times;</button>
+             </div>`
+        ).join('');
+    }
+
+    // API Helper
+    async function api(url, options = {}) {
+        options.credentials = 'include';
+        options.headers = { ...options.headers, 'Content-Type': 'application/json' };
+        
+        const response = await fetch(url, options);
+        if (response.status === 401) {
+            window.location.href = '/login.html';
+            throw new Error('No autorizado');
+        }
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.error || `Error HTTP ${response.status}`);
+        }
+        return response.json();
+    }
+});

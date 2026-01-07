@@ -67,16 +67,17 @@ CREATE TABLE IF NOT EXISTS fincas (
 
 -- Tabla de Procesadoras
 CREATE TABLE IF NOT EXISTS procesadoras (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+        id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     ruc TEXT NOT NULL,
     razon_social TEXT NOT NULL,
     nombre_comercial TEXT,
+    -- tipo_empresa ELIMINADO
     pais TEXT,
-    departamento TEXT,
-    provincia TEXT,
-    distrito TEXT,
     ciudad TEXT,
+    departamento TEXT, -- NUEVO
+    provincia TEXT,    -- NUEVO
+    distrito TEXT,     -- NUEVO
     direccion TEXT,
     telefono TEXT,
     coordenadas JSONB,
@@ -136,10 +137,16 @@ CREATE TABLE IF NOT EXISTS lotes (
     producto_id UUID REFERENCES productos(id) ON DELETE SET NULL, -- Vinculación con el SKU final
     data JSONB NOT NULL,
     
-    -- Campos para Certificación
+    -- Campos Certificación Blockchain
     blockchain_hash TEXT,
     is_locked BOOLEAN DEFAULT FALSE,
+    
+    -- Analytics
     views INTEGER DEFAULT 0,
+    
+    -- Estados GS1 / Seguridad
+    status TEXT DEFAULT 'active', -- 'active', 'recall', 'expired', 'quarantine'
+    recall_reason TEXT,
     
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
