@@ -6,7 +6,7 @@ document.addEventListener('DOMContentLoaded', () => {
         lang: 'es' // Estado del idioma: 'es' o 'en'
     };
 
-    // Diccionario de Traducción
+    // Diccionario de Traducción (Mismo que antes)
     const I18N = {
         es: {
             nutritionFacts: "Información Nutricional",
@@ -36,7 +36,8 @@ document.addEventListener('DOMContentLoaded', () => {
             carbohydrates: "Hidratos de carbono",
             ofWhichSugars: "de los cuales azúcares",
             salt: "Sal",
-            per100g: "Por 100g"
+            per100g: "Por 100g",
+            nota: "La % de Valor Diario (VD) indica cuánto contribuye un nutriente en una porción de alimento a una dieta diaria. Se utilizan 2,000 calorías al día para consejos generales de nutrición."
         },
         en: {
             nutritionFacts: "Nutrition Facts",
@@ -66,15 +67,17 @@ document.addEventListener('DOMContentLoaded', () => {
             carbohydrates: "Carbohydrate",
             ofWhichSugars: "of which sugars",
             salt: "Salt",
-            per100g: "Per 100g"
+            per100g: "Per 100g",
+            nota: "* The % Daily Value (DV) tells you how much a nutrient in a serving of food contributes to a daily diet. 2,000 calories a day is used for general nutrition advice."
         }
     };
 
     // DOM Elements
     const recipeSelect = document.getElementById('recipe-select');
-    const usdaSearchInput = document.getElementById('usda-search'); // Nota: Aunque se llame usda en HTML, ahora busca en OFF
+    const usdaSearchInput = document.getElementById('usda-search'); 
     const searchBtn = document.getElementById('search-btn');
     const resultsList = document.getElementById('usda-results');
+    const resultsContainer = document.getElementById('search-results-container');
     const ingredientsList = document.getElementById('ingredients-list');
     const totalWeightEl = document.getElementById('total-weight');
     const labelToggles = document.querySelectorAll('.label-toggle');
@@ -83,12 +86,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const editRecipeBtn = document.getElementById('edit-recipe-btn');
     const updateRecipeBtn = document.getElementById('update-recipe-btn');
     const langToggleBtn = document.getElementById('lang-toggle-btn');
+    const recipeActions = document.getElementById('recipe-actions');
     
     const portionInput = document.getElementById('portion-size');
     const servingsInput = document.getElementById('servings-count');
     const saveRecipeChangesBtn = document.getElementById('save-recipe-changes-btn');
 
-    // Inicializar
     init();
 
     async function init() {
@@ -102,19 +105,19 @@ document.addEventListener('DOMContentLoaded', () => {
         createRecipeBtn.addEventListener('click', async () => {
             const name = document.getElementById('new-recipe-name').value;
             if (!name) return;
+            const btn = document.getElementById('create-recipe-btn');
+            const originalText = btn.innerText;
+            btn.innerText = '...'; btn.disabled = true;
             try {
-                const res = await api('/api/nutricion/recetas', {
-                    method: 'POST',
-                    body: JSON.stringify({ nombre: name })
-                });
+                const res = await api('/api/nutricion/recetas', { method: 'POST', body: JSON.stringify({ nombre: name }) });
                 document.getElementById('new-recipe-modal').close();
                 await loadRecipes();
                 recipeSelect.value = res.id;
                 loadRecipeDetails(res.id);
             } catch (e) { alert(e.message); }
+            finally { btn.innerText = originalText; btn.disabled = false; }
         });
         
-        // CRUD Receta: Editar Nombre
         editRecipeBtn.addEventListener('click', () => {
             if(!state.currentRecipe) return;
             document.getElementById('edit-recipe-name').value = state.currentRecipe.nombre;
@@ -135,42 +138,41 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
                 document.getElementById('edit-recipe-modal').close();
                 await loadRecipes();
-                recipeSelect.value = state.currentRecipe.id; // Mantener selección
+                recipeSelect.value = state.currentRecipe.id;
             } catch(e) { alert(e.message); }
         });
 
-        // CRUD Receta: Eliminar
         deleteRecipeBtn.addEventListener('click', async () => {
-            if(!confirm("¿Eliminar esta receta?")) return;
+            if(!confirm("¿Eliminar esta receta permanentemente?")) return;
             try {
                 await api(`/api/nutricion/recetas/${state.currentRecipe.id}`, { method: 'DELETE' });
                 state.currentRecipe = null;
                 await loadRecipes();
                 document.getElementById('recipe-details').classList.add('hidden');
-                editRecipeBtn.classList.add('hidden');
-                deleteRecipeBtn.classList.add('hidden');
+                recipeActions.style.opacity = '0';
             } catch(e) { alert(e.message); }
         });
 
-        // Actualizar detalles (porción)
         saveRecipeChangesBtn.addEventListener('click', async () => {
+            const btn = saveRecipeChangesBtn;
+            btn.innerText = 'Guardando...'; btn.disabled = true;
             try {
                  await api(`/api/nutricion/recetas/${state.currentRecipe.id}`, {
                     method: 'PUT',
                     body: JSON.stringify({ 
-                        nombre: state.currentRecipe.nombre, // Mantener nombre
+                        nombre: state.currentRecipe.nombre,
                         peso_porcion_gramos: portionInput.value,
                         porciones_envase: servingsInput.value
                     })
                 });
                 state.currentRecipe.peso_porcion_gramos = portionInput.value;
                 state.currentRecipe.porciones_envase = servingsInput.value;
-                saveRecipeChangesBtn.classList.add('hidden'); // Feedback visual
+                btn.classList.add('hidden');
                 calculateNutrition();
             } catch(e) { alert("Error guardando cambios"); }
+            finally { btn.innerText = 'Guardar Cambios de Configuración'; btn.disabled = false; }
         });
 
-        // Detectar cambios en inputs para mostrar botón guardar
         [portionInput, servingsInput].forEach(input => {
             input.addEventListener('input', () => {
                 saveRecipeChangesBtn.classList.remove('hidden');
@@ -185,30 +187,25 @@ document.addEventListener('DOMContentLoaded', () => {
             btn.addEventListener('click', () => {
                 labelToggles.forEach(b => {
                     b.classList.remove('bg-white', 'shadow-sm', 'text-amber-900');
-                    b.classList.add('text-stone-500');
+                    b.classList.add('text-slate-500');
                 });
-                btn.classList.remove('text-stone-500');
+                btn.classList.remove('text-slate-500');
                 btn.classList.add('bg-white', 'shadow-sm', 'text-amber-900');
                 document.querySelectorAll('.label-view').forEach(div => div.classList.add('hidden'));
                 document.getElementById(`label-${btn.dataset.type}`).classList.remove('hidden');
             });
         });
 
-        // Toggle Idioma
         langToggleBtn.addEventListener('click', () => {
             state.lang = state.lang === 'es' ? 'en' : 'es';
             const btnSpan = langToggleBtn.querySelector('span');
             btnSpan.innerText = state.lang.toUpperCase();
-            
-            // Re-renderizar etiquetas con el nuevo idioma
             calculateNutrition(); 
         });
 
         document.getElementById('download-png').addEventListener('click', () => downloadImage());
         document.getElementById('download-pdf').addEventListener('click', () => downloadPDF());
     }
-
-    // --- LÓGICA DE DATOS ---
 
     async function loadRecipes() {
         try {
@@ -224,8 +221,7 @@ document.addEventListener('DOMContentLoaded', () => {
             state.currentRecipe = null;
             state.ingredients = [];
             document.getElementById('recipe-details').classList.add('hidden');
-            editRecipeBtn.classList.add('hidden');
-            deleteRecipeBtn.classList.add('hidden');
+            recipeActions.style.opacity = '0';
             renderIngredients();
             return;
         }
@@ -234,165 +230,172 @@ document.addEventListener('DOMContentLoaded', () => {
         state.ingredients = recipe.ingredientes || [];
         
         document.getElementById('recipe-details').classList.remove('hidden');
-        editRecipeBtn.classList.remove('hidden');
-        deleteRecipeBtn.classList.remove('hidden');
+        recipeActions.style.opacity = '1';
         
         portionInput.value = recipe.peso_porcion_gramos || 100;
         servingsInput.value = recipe.porciones_envase || 1;
-        saveRecipeChangesBtn.classList.add('hidden'); // Resetear botón guardar
+        saveRecipeChangesBtn.classList.add('hidden');
         
         renderIngredients();
         calculateNutrition();
     }
 
-    // --- BUSCADOR OPEN FOOD FACTS ---
     async function searchIngredients() {
         const query = usdaSearchInput.value;
         if (!query) return;
         
         searchBtn.disabled = true;
         searchBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        resultsContainer.classList.remove('hidden');
 
         try {
-            // Llamada al nuevo endpoint unificado
-            const data = await api(`/api/nutricion/ingredientes/search?query=${encodeURIComponent(query)}`);
-            renderSearchResults(data.products || []);
-        } catch (e) {
-            console.error(e);
-            alert('Error buscando ingredientes. Verifica tu conexión.');
-        } finally {
-            searchBtn.disabled = false;
-            searchBtn.innerHTML = '<i class="fas fa-search"></i>';
+            // CAMBIO: Apuntar a proxy USDA
+            const data = await api(`/api/proxy/usda/search?query=${encodeURIComponent(query)}`);
+            // USDA devuelve array 'foods'
+            renderSearchResults(data.foods || []);
+        } catch (e) { 
+            console.error(e); 
+            resultsList.innerHTML = '<li class="p-2 text-red-500 text-xs text-center">Error de conexión con USDA</li>';
+        } finally { 
+            searchBtn.disabled = false; 
+            searchBtn.innerHTML = 'Buscar'; 
         }
     }
 
     function renderSearchResults(foods) {
         if (foods.length === 0) {
-            resultsList.innerHTML = '<li class="p-2 text-stone-500 text-center italic">No se encontraron resultados.</li>';
+            resultsList.innerHTML = '<li class="p-2 text-slate-400 text-center text-xs italic">No se encontraron resultados.</li>';
             return;
         }
 
         resultsList.innerHTML = foods.map(food => {
-            // Distintivo visual para saber si es Local (rápido) o Web (lento)
-            const icon = food.source === 'local' 
-                ? '<i class="fas fa-database text-amber-600 mr-1" title="Base de Datos Local"></i>' 
-                : '<i class="fas fa-cloud text-sky-500 mr-1" title="Open Food Facts"></i>';
+            // USDA no siempre tiene imagenes fáciles, usamos placeholder
+            const imgSrc = 'https://placehold.co/40x40?text=USDA';
+            const icon = '<i class="fas fa-leaf text-green-600 mr-1" title="USDA Data"></i>';
             
-            // Si es local, el ID es un UUID. Si es OFF, es el código de barras.
-            // Pasamos el 'source' al botón para que la función add sepa qué hacer.
             return `
-            <li class="flex justify-between items-center bg-stone-50 p-2 rounded hover:bg-stone-100 border-b border-stone-100">
-                <span class="truncate w-3/4 text-sm" title="${food.product_name}">
-                    ${icon} ${food.product_name || 'Sin nombre'}
-                </span>
-                <button class="text-xs bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded add-ing-btn transition" 
-                    data-id="${food._id || food.id}" 
-                    data-name="${food.product_name}"
-                    data-source="${food.source || 'off'}">
-                    Agregar
+            <li class="flex justify-between items-center p-2 hover:bg-slate-50 transition cursor-pointer group">
+                <div class="flex items-center gap-3 overflow-hidden">
+                    <img src="${imgSrc}" class="w-8 h-8 rounded object-cover border border-slate-100 flex-shrink-0">
+                    <span class="truncate text-xs font-medium text-slate-700" title="${food.description}">
+                        ${icon} ${food.description || 'Sin nombre'}
+                    </span>
+                </div>
+                <button class="text-xs bg-emerald-600 hover:bg-emerald-700 text-white px-2 py-1 rounded add-ing-btn shadow-sm transition transform active:scale-95 flex-shrink-0" 
+                    data-id="${food.fdcId}" 
+                    data-name="${food.description || 'Ingrediente'}"
+                    data-source="usda">
+                    <i class="fas fa-plus"></i>
                 </button>
             </li>
         `}).join('');
 
         document.querySelectorAll('.add-ing-btn').forEach(btn => {
-            btn.addEventListener('click', async () => {
-                // Feedback visual de carga en el botón
-                const originalText = btn.innerText;
-                btn.innerText = '...';
+            btn.addEventListener('click', async (e) => {
+                e.stopPropagation();
+                const originalContent = btn.innerHTML;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
                 btn.disabled = true;
-                
-                await addIngredientToRecipe(btn.dataset.id, btn.dataset.name, btn.dataset.source);
-                
-                btn.innerText = originalText;
-                btn.disabled = false;
+                // Pasamos 'usda' como source explícito
+                await addIngredientToRecipe(btn.dataset.id, btn.dataset.name, 'usda');
+                btn.innerHTML = originalContent;
             });
         });
     }
 
     async function addIngredientToRecipe(id, name, source) {
         if (!state.currentRecipe) return alert("Selecciona una receta primero");
-
         try {
-            // Obtener detalles (el backend decide si busca en local o en OFF según el source)
-            const data = await api(`/api/nutricion/ingredientes/details/${id}?source=${source}`);
-            
-            // Adaptador para estructura de respuesta
-            // Si es local, viene directo. Si es OFF, viene dentro de 'product'
-            const product = data.product || data;
-            const nutriments = product.nutriments || {};
+            // 1. Obtener detalles desde USDA Proxy
+            const details = await api(`/api/proxy/usda/food/${id}`);
+            const nutrients = details.foodNutrients || [];
 
-            const getVal = (key) => {
-                const val = parseFloat(nutriments[key]);
-                return isNaN(val) ? 0 : val;
+            // Helper para buscar nutriente por ID (USDA Nutrient Number)
+            const getVal = (num) => {
+                // Algunos endpoints devuelven nutrientNumber como string, otros como propiedad anidada
+                const n = nutrients.find(x => x.nutrientNumber === num || x.nutrient?.number === num);
+                return n ? n.amount : 0;
             };
 
-            // Mapeo robusto
+            // Mapeo USDA Nutrient IDs
             const nutrientsBase = {
-                energy: getVal('energy-kcal_100g') || getVal('energy_100g')/4.184, // Preferir Kcal
-                protein: getVal('proteins_100g'),
-                fat: getVal('fat_100g'),
-                carb: getVal('carbohydrates_100g'),
-                fiber: getVal('fiber_100g'),
-                sugar: getVal('sugars_100g'),
-                addedSugar: 0,
-                // Sodio: OFF suele dar gramos (salt_100g) o sodio en gramos. Convertimos a mg.
-                sodium: (getVal('sodium_100g') || getVal('salt_100g')/2.5) * 1000,
-                
-                satFat: getVal('saturated-fat_100g'),
-                transFat: getVal('trans-fat_100g'),
-                chol: getVal('cholesterol_100g') * 1000, 
-                
-                vitD: getVal('vitamin-d_100g') * 1000000,
-                calcium: getVal('calcium_100g') * 1000,
-                iron: getVal('iron_100g') * 1000,
-                potassium: getVal('potassium_100g') * 1000
+                energy: getVal('208') || getVal('1008'), // kcal
+                protein: getVal('203'),
+                fat: getVal('204'),
+                carb: getVal('205'),
+                fiber: getVal('291'),
+                sugar: getVal('269'),
+                addedSugar: 0, // Difícil de obtener consistentemente en USDA standard
+                sodium: getVal('307'), // mg
+                satFat: getVal('606'),
+                transFat: getVal('605'),
+                chol: getVal('601'), // mg
+                vitD: getVal('328'), // ug
+                calcium: getVal('301'), // mg
+                iron: getVal('303'), // mg
+                potassium: getVal('306') // mg
             };
 
-            // Enviar al backend incluyendo el 'source' para que sepa si debe cachearlo
+            // 2. Guardar en Backend
             const res = await api(`/api/nutricion/recetas/${state.currentRecipe.id}/ingredientes`, {
                 method: 'POST',
                 body: JSON.stringify({ 
-                    usda_id: id, // Guardamos el ID externo o local como referencia
+                    usda_id: id, 
                     nombre: name, 
                     peso_gramos: 100, 
                     nutrientes_base_json: nutrientsBase,
-                    source: source // Importante: Flag para activar el caché en backend
+                    source: source
                 })
             });
 
             state.ingredients.push({ id: res.id, nombre: name, peso_gramos: 100, nutrientes_base_json: nutrientsBase });
             renderIngredients();
             calculateNutrition();
-
+            resultsContainer.classList.add('hidden');
+            usdaSearchInput.value = '';
         } catch (e) { 
             console.error(e);
-            alert("Error agregando ingrediente. Intente nuevamente."); 
+            alert("Error agregando ingrediente USDA."); 
         }
     }
 
     function renderIngredients() {
-        // Calcular peso total para porcentajes
         const totalWeight = state.ingredients.reduce((sum, i) => sum + parseFloat(i.peso_gramos || 0), 0);
+
+        if (state.ingredients.length === 0) {
+            ingredientsList.innerHTML = `
+                <div class="flex flex-col items-center justify-center py-10 text-slate-300">
+                    <i class="fas fa-basket-shopping text-3xl mb-2 opacity-50"></i>
+                    <p class="text-sm font-medium">Tu receta está vacía.</p>
+                </div>
+            `;
+            return;
+        }
 
         ingredientsList.innerHTML = state.ingredients.map(ing => {
             const weight = parseFloat(ing.peso_gramos || 0);
-            // Calcular porcentaje (evitar división por cero)
             const percentage = totalWeight > 0 ? ((weight / totalWeight) * 100).toFixed(1) : '0.0';
 
             return `
-            <div class="flex justify-between items-center bg-stone-50 p-3 rounded border border-stone-100">
-                <div class="flex flex-col w-1/2 overflow-hidden">
-                    <span class="text-sm font-medium truncate" title="${ing.nombre}">${ing.nombre}</span>
-                    <span class="text-xs text-amber-700 font-semibold">${percentage}%</span>
+            <div class="group bg-white p-3 rounded-xl border border-slate-100 hover:border-slate-300 transition shadow-sm mb-2">
+                <div class="flex justify-between items-center mb-1">
+                    <span class="text-sm font-semibold text-slate-700 truncate w-2/3" title="${ing.nombre}">${ing.nombre}</span>
+                    <button class="text-slate-300 hover:text-red-500 delete-ing-btn transition" data-id="${ing.id}"><i class="fas fa-trash-alt"></i></button>
                 </div>
-                <div class="flex items-center gap-2">
-                    <input type="number" value="${ing.peso_gramos}" class="w-20 p-1 border rounded text-right text-sm ingredient-weight" data-id="${ing.id}">
-                    <span class="text-xs text-stone-500">g</span>
-                    <button class="text-red-500 hover:text-red-700 delete-ing-btn" data-id="${ing.id}">&times;</button>
+                <div class="flex items-center gap-3">
+                    <div class="flex-grow h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                        <div class="h-full bg-amber-400 rounded-full" style="width: ${percentage}%"></div>
+                    </div>
+                    <span class="text-xs text-amber-700 font-semibold min-w-[35px] text-right">${percentage}%</span>
+                    <div class="flex items-center gap-1">
+                        <input type="number" value="${ing.peso_gramos}" class="w-16 p-1 border border-slate-200 rounded text-right text-xs font-mono font-bold text-slate-800 focus:ring-1 focus:ring-amber-500 outline-none ingredient-weight" data-id="${ing.id}">
+                        <span class="text-xs text-slate-400">g</span>
+                    </div>
                 </div>
             </div>
         `}).join('');
 
+        // Listeners de cambio de peso
         document.querySelectorAll('.ingredient-weight').forEach(input => {
             input.addEventListener('change', async (e) => {
                 const id = e.target.dataset.id;
@@ -405,12 +408,13 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
 
+        // FIX: Listener borrar corregido para usar currentTarget
         document.querySelectorAll('.delete-ing-btn').forEach(btn => {
             btn.addEventListener('click', async (e) => {
-                const id = e.target.dataset.id;
+                const id = e.currentTarget.dataset.id; // Corrección aquí
                 await api(`/api/nutricion/ingredientes/${id}`, { method: 'DELETE' });
                 state.ingredients = state.ingredients.filter(i => i.id != id);
-                renderIngredients(); // Re-renderizar
+                renderIngredients();
                 calculateNutrition();
             });
         });
@@ -420,7 +424,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const totalWeight = state.ingredients.reduce((sum, i) => sum + parseFloat(i.peso_gramos), 0);
         totalWeightEl.innerText = totalWeight.toFixed(1) + 'g';
         
-        // Calcular totales brutos
         let totals = { energy:0, protein:0, fat:0, satFat:0, transFat:0, chol:0, sod:0, carb:0, fiber:0, sugar:0, addedSugar:0, vitD:0, calcium:0, iron:0, pot:0 };
         state.ingredients.forEach(ing => {
             const factor = parseFloat(ing.peso_gramos) / 100;
@@ -442,86 +445,157 @@ document.addEventListener('DOMContentLoaded', () => {
             totals.pot += (n.potassium || 0) * factor;
         });
 
-        // Render FDA
         const portionSize = parseFloat(portionInput.value) || 100;
         const servingsPerContainer = parseFloat(servingsInput.value) || 1;
+        
         const perServing = {};
         for(let key in totals) perServing[key] = totalWeight > 0 ? (totals[key] / totalWeight) * portionSize : 0;
         renderFDA(perServing, servingsPerContainer, portionSize);
 
-        // Render UE/OPS (Base 100g)
         const per100g = {};
         for(let key in totals) per100g[key] = totalWeight > 0 ? (totals[key] / totalWeight) * 100 : 0;
         renderEU(per100g);
         renderOPS(per100g);
+        renderNutriScore(per100g);
+    }
+
+    // --- NUEVO: RENDER NUTRI-SCORE ---
+    function renderNutriScore(val) {
+        // 1. Cálculo de Puntos (Algoritmo Simplificado FSAm-NPS)
+        // Energía (kJ)
+        const kj = val.energy * 4.184;
+        const getPoints = (v, arr) => {
+            for(let i = arr.length - 1; i >= 0; i--) if(v > arr[i]) return i + 1;
+            return 0;
+        };
+        
+        const pEnergy = getPoints(kj, [335, 670, 1005, 1340, 1675, 2010, 2345, 2680, 3015, 3350]); // 0-10
+        const pSugar = getPoints(val.sugar, [4.5, 9, 13.5, 18, 22.5, 27, 31, 36, 40, 45]); // 0-10
+        const pSatFat = getPoints(val.satFat, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]); // 0-10
+        const pSodium = getPoints(val.sod, [90, 180, 270, 360, 450, 540, 630, 720, 810, 900]); // 0-10
+        
+        const N = pEnergy + pSugar + pSatFat + pSodium;
+        
+        const pFiber = getPoints(val.fiber, [0.9, 1.9, 2.8, 3.7, 4.7]); // 0-5
+        const pProtein = getPoints(val.protein, [1.6, 3.2, 4.8, 6.4, 8.0]); // 0-5
+        
+        let score = N - (pFiber + pProtein); // Simplificación (asumiendo sólido general)
+        
+        // 2. Clasificación (A-E)
+        let grade = 'A';
+        let color = '#038141'; // Dark Green
+        if (score >= -1 && score <= 2) { grade = 'B'; color = '#85BB2F'; }
+        else if (score >= 3 && score <= 10) { grade = 'C'; color = '#FECB02'; }
+        else if (score >= 11 && score <= 18) { grade = 'D'; color = '#EE8100'; }
+        else if (score > 18) { grade = 'E'; color = '#E63E11'; }
+
+        // 3. Render Visual (HTML)
+        const container = document.getElementById('nutriscore-display');
+        if (!container) return;
+
+        // Estilos para las cajas
+        const boxes = [
+            { l: 'A', c: '#038141' },
+            { l: 'B', c: '#85BB2F' },
+            { l: 'C', c: '#FECB02' },
+            { l: 'D', c: '#EE8100' },
+            { l: 'E', c: '#E63E11' }
+        ];
+
+        const html = boxes.map(box => {
+            const isActive = box.l === grade;
+            // Escala grande si es activo, pequeña y opaca si no
+            const scaleClass = isActive ? 'scale-125 z-10 shadow-lg opacity-100 font-black' : 'scale-90 opacity-40 font-bold grayscale-[50%]';
+            
+            return `
+                <div class="flex flex-col items-center justify-center transition-all duration-500 transform ${scaleClass}" 
+                     style="background-color: ${box.c}; width: 60px; height: 70px; border-radius: 8px; color: white;">
+                    <span class="text-3xl leading-none">${box.l}</span>
+                </div>
+            `;
+        }).join('');
+
+        container.innerHTML = `<div class="flex gap-2 justify-center items-center h-24">${html}</div>`;
     }
 
     function renderFDA(val, servings, portion) {
-        const text = I18N[state.lang]; // Diccionario actual
-
-        // Actualizar textos estáticos FDA
+        const text = I18N[state.lang];
         const fdaEl = document.getElementById('label-fda');
-        fdaEl.querySelector('h1').innerText = text.nutritionFacts;
         
-        // Elementos dinámicos
-        document.getElementById('lbl-servings-container').innerText = servings;
-        document.getElementById('lbl-portion').innerText = portion + 'g';
-        document.getElementById('lbl-calories').innerText = Math.round(val.energy);
-        
-        // Helper corregido para manejar IDs de HTML específicos
-        const setVal = (eleId, v, unit, dvKey, customDvId) => {
-            const el = document.getElementById(eleId);
-            if(el) el.innerText = Math.round(v) + unit;
-            
-            // DV Calculation (Standard 2000 cal diet)
-            if (dvKey) {
-                const dvMap = { fat:78, satFat:20, chol:300, sod:2300, carb:275, fiber:28, addedSugar:50, vitD:20, calcium:1300, iron:18, pot:4700 };
-                const pct = Math.round((v / dvMap[dvKey]) * 100);
-                
-                // Usamos el ID personalizado si existe (ej: dv-sat-fat), sino el default (ej: dv-fat)
-                const targetId = customDvId || `dv-${dvKey}`;
-                const dvEl = document.getElementById(targetId);
-                
-                if (dvEl) dvEl.innerText = pct + '%';
-                else console.warn("Elemento DV no encontrado:", targetId);
-            }
+        // Helper para calcular % DV
+        const getPct = (v, k) => {
+            const dvMap = { fat:78, satFat:20, chol:300, sod:2300, carb:275, fiber:28, addedSugar:50, vitD:20, calcium:1300, iron:18, pot:4700 };
+            return Math.round((v / dvMap[k]) * 100) + '%';
         };
 
-        // Fat
-        setVal('lbl-fat', val.fat, 'g', 'fat');
+        const fdaHTML = `
+            <h1 class="border-b-1 pb-1">${text.nutritionFacts}</h1>
+            <div class="border-b-8 pb-1 mb-2">
+                <p class="text-base font-bold mb-1"> ${servings} ${text.servingsPerContainer}</p>
+                <div class="flex justify-between items-end font-bold text-lg border-t-4 border-black pt-1">
+                    <span>${text.servingSize}</span>
+                    <span>${portion}g</span>
+                </div>
+            </div>
+            <div class="border-b-4 pb-2 mb-2">
+                <p class="text-xs font-bold">${text.amountPerServing}</p>
+                <div class="flex justify-between items-end">
+                    <span class="text-3xl font-black">${text.calories}</span>
+                    <span class="text-5xl font-black">${Math.round(val.energy)}</span>
+                </div>
+            </div>
+            <div class="text-right text-sm font-bold border-b-1 pb-1 mb-1">${text.dailyValue}</div>
+            
+            <div class="text-sm">
+                 <div class="border-b-1 pb-1 mb-1 flex justify-between">
+                    <span><span class="font-bold">${text.totalFat}</span> ${Math.round(val.fat)}g</span>
+                    <span class="font-bold">${getPct(val.fat, 'fat')}</span>
+                </div>
+                <div class="border-b-1 pb-1 mb-1 pl-4 flex justify-between">
+                    <span>${text.saturatedFat} ${Math.round(val.satFat)}g</span>
+                    <span class="font-bold">${getPct(val.satFat, 'satFat')}</span>
+                </div>
+                 <div class="border-b-1 pb-1 mb-1 pl-4 flex justify-between">
+                    <span>${text.transFat} ${val.transFat.toFixed(1)}g</span>
+                </div>
+                <div class="border-b-1 pb-1 mb-1 flex justify-between">
+                    <span><span class="font-bold">${text.cholesterol}</span> ${Math.round(val.chol)}mg</span>
+                    <span class="font-bold">${getPct(val.chol, 'chol')}</span>
+                </div>
+                <div class="border-b-1 pb-1 mb-1 flex justify-between">
+                    <span><span class="font-bold">${text.sodium}</span> ${Math.round(val.sod)}mg</span>
+                    <span class="font-bold">${getPct(val.sod, 'sod')}</span>
+                </div>
+                <div class="border-b-1 pb-1 mb-1 flex justify-between">
+                    <span><span class="font-bold">${text.totalCarb}</span> ${Math.round(val.carb)}g</span>
+                    <span class="font-bold">${getPct(val.carb, 'carb')}</span>
+                </div>
+                 <div class="border-b-1 pb-1 mb-1 pl-4 flex justify-between">
+                    <span>${text.dietaryFiber} ${Math.round(val.fiber)}g</span>
+                    <span class="font-bold">${getPct(val.fiber, 'fiber')}</span>
+                </div>
+                <div class="border-b-1 pb-1 mb-1 pl-4 flex justify-between">
+                    <span>${text.totalSugars} ${Math.round(val.sugar)}g</span>
+                </div>
+                <div class="border-b-8 pb-1 mb-2 pl-4 flex justify-between">
+                    <span>${text.includes} ${Math.round(val.addedSugar)}g ${text.addedSugars}</span>
+                    <span class="font-bold">${getPct(val.addedSugar, 'addedSugar')}</span>
+                </div>
+                <div class="border-b-8 pb-1 mb-2 flex justify-between items-end">
+                    <span class="font-bold">${text.protein} <span class="font-normal">${Math.round(val.protein)}g</span></span>
+                </div>
+                
+                <div class="border-b-1 py-1 flex justify-between"><span>${text.vitaminD} ${Math.round(val.vitD)}mcg</span> <span>${getPct(val.vitD, 'vitD')}</span></div>
+                <div class="border-b-1 py-1 flex justify-between"><span>${text.calcium} ${Math.round(val.calcium)}mg</span> <span>${getPct(val.calcium, 'calcium')}</span></div>
+                <div class="border-b-1 py-1 flex justify-between"><span>${text.iron} ${Math.round(val.iron)}mg</span> <span>${getPct(val.iron, 'iron')}</span></div>
+                <div class="py-1 flex justify-between"><span>${text.potassium} ${Math.round(val.pot)}mg</span> <span>${getPct(val.pot, 'pot')}</span></div>
+            </div>
+            <div class="border-t-4 border-black mt-2 pt-1 text-[10px] leading-tight">
+                ${text.nota}
+            </div>
+        `;
         
-        // Saturated Fat (ID HTML: dv-sat-fat)
-        setVal('lbl-sat-fat', val.satFat, 'g', 'satFat', 'dv-sat-fat');
-        
-        // Trans Fat (No tiene DV)
-        document.getElementById('lbl-trans-fat').innerText = val.transFat.toFixed(1) + 'g';
-        
-        // Cholesterol
-        setVal('lbl-chol', val.chol, 'mg', 'chol');
-        
-        // Sodium (ID HTML: dv-sodium vs Key: sod)
-        setVal('lbl-sodium', val.sod, 'mg', 'sod', 'dv-sodium');
-        
-        // Carb
-        setVal('lbl-carb', val.carb, 'g', 'carb');
-        
-        // Fiber
-        setVal('lbl-fiber', val.fiber, 'g', 'fiber');
-        
-        // Sugars
-        document.getElementById('lbl-sugar').innerText = Math.round(val.sugar) + 'g';
-        
-        // Added Sugars (ID HTML: dv-added-sugar)
-        setVal('lbl-added-sugar', val.addedSugar, 'g', 'addedSugar', 'dv-added-sugar');
-        
-        // Protein
-        document.getElementById('lbl-protein').innerText = Math.round(val.protein) + 'g';
-
-        // Vitamins (IDs HTML específicos con guiones)
-        setVal('lbl-vit-d', val.vitD, 'mcg', 'vitD', 'dv-vit-d');
-        setVal('lbl-calcium', val.calcium, 'mg', 'calcium');
-        setVal('lbl-iron', val.iron, 'mg', 'iron');
-        setVal('lbl-potassium', val.pot, 'mg', 'pot', 'dv-potassium');
+        fdaEl.innerHTML = fdaHTML;
     }
 
     function renderEU(val) {
@@ -568,9 +642,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function renderOPS(val) {
-        // La lógica de advertencias se mantiene (los octógonos suelen ser estándar visual, aunque el texto podría traducirse "EXCESS SUGAR" si fuera necesario, pero OPS es Latam mayormente)
-        // Por simplicidad, mantenemos los octógonos en español ya que es norma regional.
-        
         const showOct = (id, show) => {
             const el = document.getElementById(id);
             if (show) el.classList.remove('hidden');
@@ -590,34 +661,92 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- UTILS ---
+    function getActiveLabelElement() {
+        if (!document.getElementById('label-fda').classList.contains('hidden')) return document.getElementById('label-fda');
+        if (!document.getElementById('label-eu').classList.contains('hidden')) return document.getElementById('label-eu');
+        if (!document.getElementById('label-ops').classList.contains('hidden')) return document.getElementById('label-ops');
+        if (!document.getElementById('label-ns').classList.contains('hidden')) return document.getElementById('label-ns');
+        return document.getElementById('label-canvas-container'); // Fallback
+    }
+    
     async function api(url, options = {}) {
         options.credentials = 'include';
         options.headers = { ...options.headers, 'Content-Type': 'application/json' };
         const res = await fetch(url, options);
         if(!res.ok) throw new Error("Error API");
+        if (res.status === 204) return null;
         return res.json();
     }
 
-    function downloadImage() {
-        const element = document.getElementById('label-canvas-container');
-        html2canvas(element).then(canvas => {
-            const link = document.createElement('a');
-            link.download = `etiqueta_${state.currentRecipe.nombre}.png`;
-            link.href = canvas.toDataURL();
-            link.click();
+    async function downloadImage() {
+        const element = getActiveLabelElement();
+        
+        // Configuración para alta calidad (Impresión)
+        const canvas = await html2canvas(element, {
+            scale: 4, // Mayor escala para impresión (aprox 300 DPI)
+            useCORS: true,
+            backgroundColor: '#ffffff', // Asegurar fondo blanco
+            logging: false,
+            onclone: (clonedDoc) => {
+                const clonedEl = clonedDoc.getElementById(element.id);
+                if(clonedEl) {
+                   clonedEl.style.margin = '0'; 
+                   clonedEl.style.transform = 'none'; 
+                }
+            }
         });
+
+        const link = document.createElement('a');
+        link.download = `etiqueta_${state.currentRecipe?.nombre || 'nutricional'}.png`;
+        link.href = canvas.toDataURL('image/png');
+        link.click();
     }
 
-    function downloadPDF() {
-        const element = document.getElementById('label-canvas-container');
-        html2canvas(element, { scale: 2 }).then(canvas => {
-            const imgData = canvas.toDataURL('image/png');
-            const { jsPDF } = window.jspdf;
-            const pdf = new jsPDF();
-            const width = pdf.internal.pageSize.getWidth();
-            const height = (canvas.height * width) / canvas.width;
-            pdf.addImage(imgData, 'PNG', 0, 0, width, height);
-            pdf.save(`etiqueta_${state.currentRecipe.nombre}.pdf`);
+    async function downloadPDF() {
+        const element = getActiveLabelElement();
+        
+        // Generar canvas de alta resolución
+        const canvas = await html2canvas(element, {
+            scale: 4, 
+            useCORS: true,
+            backgroundColor: '#ffffff',
+            onclone: (clonedDoc) => {
+                const clonedEl = clonedDoc.getElementById(element.id);
+                if(clonedEl) {
+                   clonedEl.style.transform = 'none'; 
+                }
+            }
         });
+
+        const imgData = canvas.toDataURL('image/png');
+        const { jsPDF } = window.jspdf;
+        
+        // Crear PDF A4
+        const pdf = new jsPDF('p', 'mm', 'a4');
+        
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const pdfHeight = pdf.internal.pageSize.getHeight();
+        
+        const imgProps = pdf.getImageProperties(imgData);
+        
+        // Calcular dimensiones para ajustar al ancho de página con margen
+        const margin = 10;
+        const availableWidth = pdfWidth - (margin * 2);
+        const imgHeight = (imgProps.height * availableWidth) / imgProps.width;
+        
+        let finalWidth = availableWidth;
+        let finalHeight = imgHeight;
+        
+        // Si es muy alto, ajustar por alto
+        if (finalHeight > (pdfHeight - margin * 2)) {
+             finalHeight = pdfHeight - (margin * 2);
+             finalWidth = (imgProps.width * finalHeight) / imgProps.height;
+        }
+
+        const x = (pdfWidth - finalWidth) / 2;
+        const y = margin; 
+
+        pdf.addImage(imgData, 'PNG', x, y, finalWidth, finalHeight);
+        pdf.save(`etiqueta_${state.currentRecipe?.nombre || 'nutricional'}.pdf`);
     }
 });

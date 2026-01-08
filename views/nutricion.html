@@ -3,134 +3,173 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Calculadora Nutricional - Ruru Lab</title>
+    <title>Calculadora Nutricional - Rurulab</title>
+    <script src="/auth.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Librerías para exportar a imagen/pdf -->
+    
+    <!-- Librerías -->
     <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="/auth.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+    <!-- Chart.js eliminado según solicitud -->
+    
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Inter', sans-serif; background-color: #fdfaf6; }
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
         .font-display { font-family: 'Playfair Display', serif; }
         
-        /* Estilos específicos para la Etiqueta FDA */
-        .label-fda { font-family: 'Helvetica', 'Arial', sans-serif; border: 2px solid black; padding: 10px; width: 320px; background: white; color: black; }
-        .label-fda h1 { font-weight: 900; margin: 0; font-size: 30px; line-height: 1; }
-        .label-fda .border-b-1 { border-bottom: 1px solid black; }
-        .label-fda .border-b-4 { border-bottom: 4px solid black; }
-        .label-fda .border-b-8 { border-bottom: 8px solid black; }
+        /* Estilos Etiqueta FDA (Pixel perfect) */
+        .label-fda { font-family: 'Helvetica', 'Arial', sans-serif; border: 2px solid black; padding: 12px; width: 320px; background: white; color: black; margin: 0 auto; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
+        .label-fda h1 { font-weight: 900; margin: 0; font-size: 34px; line-height: 1; border-bottom: 10px solid black; padding-bottom: 4px; }
+        .label-fda .border-b-1 { border-bottom: 1px solid #888; }
+        .label-fda .border-b-4 { border-bottom: 5px solid black; }
+        .label-fda .border-b-8 { border-bottom: 10px solid black; }
         
-        /* Estilos OPS Octógonos */
+        /* Octógonos */
         .octagon {
-            width: 90px; height: 90px; background: black; color: white;
+            width: 85px; height: 85px; background: black; color: white;
             clip-path: polygon(30% 0%, 70% 0%, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0% 70%, 0% 30%);
             display: flex; flex-direction: column; justify-content: center; align-items: center;
-            text-align: center; font-weight: bold; font-size: 11px; line-height: 1.1; padding: 2px;
+            text-align: center; font-weight: bold; font-size: 10px; line-height: 1.2; padding: 4px;
         }
+
+        /* Scrollbars bonitos */
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
     </style>
 </head>
-<body class="text-stone-800 antialiased">
+<body class="text-slate-800 antialiased bg-slate-50 min-h-screen flex flex-col">
     <div id="nav-placeholder"></div>
 
-    <div class="container mx-auto px-4 py-8">
-        <header class="mb-8 flex justify-between items-center">
-            <div>
-                <h1 class="text-3xl font-bold text-amber-900 font-display">Calculadora Nutricional</h1>
-                <p class="text-stone-600">Crea etiquetas FDA, UE y OPS basadas en tus recetas.</p>
+    <div class="flex-grow container mx-auto px-4 py-6 max-w-7xl">
+        <!-- Header -->
+        <header class="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
+            <div class="flex items-center gap-4 w-full md:w-auto">
+                <div class="h-12 w-12 bg-amber-100 rounded-xl flex items-center justify-center text-amber-800 flex-shrink-0">
+                    <i class="fas fa-calculator text-2xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-2xl md:text-3xl font-bold text-slate-900 font-display">Calculadora Nutricional</h1>
+                    <p class="text-xs md:text-sm text-slate-500">Diseña, calcula y exporta etiquetas.</p>
+                </div>
             </div>
-            <div class="flex gap-2">
-                <!-- Toggle de Idioma -->
-                <button id="lang-toggle-btn" class="bg-stone-200 text-stone-700 px-4 py-2 rounded-xl hover:bg-stone-300 font-bold shadow flex items-center gap-2" data-lang="es">
-                    <i class="fas fa-language"></i> <span>ES</span>
+            <div class="flex gap-3 w-full md:w-auto justify-end">
+                 <!-- Toggle de Idioma -->
+                 <button id="lang-toggle-btn" class="bg-white border border-slate-200 text-slate-600 px-4 py-2 rounded-lg hover:bg-slate-50 font-bold text-sm flex items-center gap-2 transition shadow-sm" data-lang="es">
+                    <i class="fas fa-globe"></i> <span>ES</span>
                 </button>
-                <button onclick="document.getElementById('new-recipe-modal').showModal()" class="bg-amber-800 text-white px-6 py-2 rounded-xl hover:bg-amber-900 font-bold shadow">
-                    <i class="fas fa-plus mr-2"></i> Nueva Receta
+                <button onclick="document.getElementById('new-recipe-modal').showModal()" class="bg-amber-800 text-white px-5 py-2.5 rounded-lg hover:bg-amber-900 font-bold shadow-sm flex items-center gap-2 text-sm transition transform hover:-translate-y-0.5">
+                    <i class="fas fa-plus"></i> <span class="hidden sm:inline">Nueva Receta</span>
                 </button>
             </div>
         </header>
 
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        <!-- Layout Principal (Responsive: Stack en móvil, Grid en desktop) -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
             
-            <!-- COLUMNA IZQUIERDA: GESTIÓN DE RECETA (4 cols) -->
-            <div class="lg:col-span-4 space-y-6">
+            <!-- COLUMNA IZQUIERDA: GESTIÓN -->
+            <div class="lg:col-span-5 space-y-6">
                 
-                <!-- Selector de Recetas -->
-                <div class="bg-white p-6 rounded-2xl shadow-sm border border-stone-200">
-                    <div class="flex justify-between items-center mb-2">
-                        <label class="block text-sm font-bold text-stone-700">Receta Activa</label>
-                        <div class="flex gap-1">
-                             <button id="edit-recipe-btn" class="text-sky-600 hover:text-sky-800 text-xs hidden" title="Editar Nombre"><i class="fas fa-pen"></i></button>
-                             <button id="delete-recipe-btn" class="text-red-600 hover:text-red-800 text-xs hidden" title="Eliminar Receta"><i class="fas fa-trash"></i></button>
+                <!-- 1. Configuración de Receta -->
+                <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+                    <div class="flex justify-between items-center mb-3">
+                        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider">Receta Activa</label>
+                        <div class="flex gap-2" id="recipe-actions">
+                             <button id="edit-recipe-btn" class="text-sky-600 hover:bg-sky-50 p-1.5 rounded hidden" title="Editar Nombre"><i class="fas fa-pen"></i></button>
+                             <button id="delete-recipe-btn" class="text-red-500 hover:bg-red-50 p-1.5 rounded hidden" title="Eliminar Receta"><i class="fas fa-trash"></i></button>
                         </div>
                     </div>
-                    <select id="recipe-select" class="w-full p-2 border rounded-lg bg-stone-50 mb-4"></select>
+                    
+                    <select id="recipe-select" class="w-full p-3 border border-slate-300 rounded-lg bg-slate-50 text-sm font-medium mb-4 focus:ring-2 focus:ring-amber-500 outline-none transition"></select>
                     
                     <div id="recipe-details" class="hidden">
-                        <div class="grid grid-cols-2 gap-2 mb-4">
+                        <div class="grid grid-cols-2 gap-4 bg-amber-50/50 p-4 rounded-lg border border-amber-100">
                             <div>
-                                <label class="text-xs text-stone-500">Porción (g)</label>
-                                <input type="number" id="portion-size" class="w-full p-2 border rounded text-sm">
+                                <label class="text-xs text-amber-800 font-bold mb-1 block">Tamaño Porción (g)</label>
+                                <input type="number" id="portion-size" class="w-full p-2 border border-amber-200 rounded-md text-sm text-center font-bold text-amber-900 focus:ring-2 focus:ring-amber-500 outline-none">
                             </div>
                             <div>
-                                <label class="text-xs text-stone-500">Porciones/Env.</label>
-                                <input type="number" id="servings-count" class="w-full p-2 border rounded text-sm">
+                                <label class="text-xs text-amber-800 font-bold mb-1 block">Raciones / Envase</label>
+                                <input type="number" id="servings-count" class="w-full p-2 border border-amber-200 rounded-md text-sm text-center font-bold text-amber-900 focus:ring-2 focus:ring-amber-500 outline-none">
                             </div>
                         </div>
-                        <button id="save-recipe-changes-btn" class="w-full bg-stone-100 text-stone-600 text-xs py-1 rounded hover:bg-stone-200 hidden">Guardar Cambios de Porción</button>
+                        <button id="save-recipe-changes-btn" class="w-full mt-2 bg-amber-100 text-amber-800 text-xs py-2 rounded-md font-bold hover:bg-amber-200 hidden transition">Guardar Cambios</button>
                     </div>
                 </div>
 
-                <!-- Buscador USDA -->
-                <div class="bg-white p-6 rounded-2xl shadow-sm border border-stone-200">
-                    <h3 class="font-bold text-amber-800 mb-4"><i class="fas fa-search mr-2"></i>Agregar Ingrediente (USDA)</h3>
-                    <div class="flex gap-2 mb-4">
-                        <input type="text" id="usda-search" placeholder="Ej: Cacao powder, Sugar..." class="w-full p-2 border rounded-lg text-sm">
-                        <button id="search-btn" class="bg-stone-200 hover:bg-stone-300 px-3 rounded-lg"><i class="fas fa-search"></i></button>
+                <!-- 2. Buscador de Ingredientes -->
+                <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+                    <h3 class="text-sm font-bold text-slate-700 mb-3 flex items-center gap-2">
+                        <span class="bg-green-100 text-green-700 w-6 h-6 rounded-full flex items-center justify-center text-xs"><i class="fas fa-search"></i></span>
+                        Agregar Ingredientes
+                    </h3>
+                    <div class="relative">
+                        <input type="text" id="usda-search" placeholder="Buscar ingrediente (ej: Cacao)..." class="w-full pl-10 pr-20 py-3 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-green-500 outline-none shadow-sm transition">
+                        <i class="fas fa-search absolute left-3.5 top-3.5 text-slate-400"></i>
+                        <button id="search-btn" class="absolute right-1 top-1 bottom-1 bg-slate-100 hover:bg-slate-200 text-slate-600 px-4 rounded-lg text-xs font-bold transition">Buscar</button>
                     </div>
-                    <ul id="usda-results" class="space-y-2 max-h-60 overflow-y-auto text-sm"></ul>
+                    
+                    <!-- Resultados de Búsqueda -->
+                    <div id="search-results-container" class="mt-2 hidden">
+                        <ul id="usda-results" class="space-y-1 max-h-48 overflow-y-auto custom-scrollbar border border-slate-200 rounded-xl bg-white divide-y divide-slate-100 shadow-lg"></ul>
+                    </div>
                 </div>
 
-                <!-- Lista de Ingredientes -->
-                <div class="bg-white p-6 rounded-2xl shadow-sm border border-stone-200">
-                    <h3 class="font-bold text-amber-800 mb-4">Ingredientes en la Mezcla</h3>
-                    <div id="ingredients-list" class="space-y-3">
-                        <p class="text-stone-400 text-sm italic text-center">No hay ingredientes.</p>
+                <!-- 3. Lista de Ingredientes (Mezcla) -->
+                <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-sm font-bold text-slate-700 flex items-center gap-2">
+                            <span class="bg-blue-100 text-blue-700 w-6 h-6 rounded-full flex items-center justify-center text-xs"><i class="fas fa-layer-group"></i></span>
+                            Mezcla Actual
+                        </h3>
+                        <div class="bg-slate-100 px-3 py-1 rounded-full text-xs font-mono font-bold text-slate-600">
+                            Total: <span id="total-weight" class="text-blue-600">0g</span>
+                        </div>
                     </div>
-                    <div class="mt-4 pt-4 border-t border-stone-100 flex justify-between items-center">
-                        <span class="text-sm font-bold">Peso Total:</span>
-                        <span id="total-weight" class="text-amber-800 font-mono">0g</span>
+
+                    <div id="ingredients-list" class="space-y-2 max-h-[400px] overflow-y-auto custom-scrollbar">
+                        <div class="flex flex-col items-center justify-center py-10 text-slate-400">
+                            <i class="fas fa-basket-shopping text-3xl mb-2 opacity-50"></i>
+                            <p class="text-sm">Tu receta está vacía.</p>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <!-- COLUMNA DERECHA: VISUALIZACIÓN (8 cols) -->
-            <div class="lg:col-span-8">
-                <div class="bg-white p-8 rounded-2xl shadow-lg border border-stone-200 min-h-[600px]">
-                    
-                    <!-- Controles de Visualización -->
-                    <div class="flex flex-col md:flex-row justify-between items-center mb-8 gap-4 border-b pb-4">
-                        <div class="flex gap-2 bg-stone-100 p-1 rounded-lg">
-                            <button class="label-toggle px-4 py-2 rounded-md text-sm font-bold bg-white shadow-sm text-amber-900" data-type="fda">🇺🇸 FDA</button>
-                            <button class="label-toggle px-4 py-2 rounded-md text-sm font-bold text-stone-500 hover:bg-white/50" data-type="eu">🇪🇺 Unión Europea</button>
-                            <button class="label-toggle px-4 py-2 rounded-md text-sm font-bold text-stone-500 hover:bg-white/50" data-type="ops">🌎 OPS/Latam</button>
-                        </div>
-                        <div class="flex gap-2">
-                             <button id="download-png" class="text-stone-600 hover:text-stone-900 text-sm font-medium"><i class="fas fa-image mr-1"></i> PNG</button>
-                             <button id="download-pdf" class="text-red-600 hover:text-red-800 text-sm font-medium"><i class="fas fa-file-pdf mr-1"></i> PDF</button>
-                        </div>
+            <!-- COLUMNA DERECHA: VISUALIZACIÓN (Etiqueta) -->
+            <div class="lg:col-span-7 space-y-6">
+                
+                <!-- Barra de Herramientas -->
+                <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-wrap gap-4 justify-between items-center sticky top-0 z-10">
+                    <div class="flex bg-slate-100 p-1 rounded-lg">
+                        <button class="label-toggle px-3 py-1.5 rounded-md text-xs font-bold bg-white shadow-sm text-slate-800 transition-all" data-type="fda">🇺🇸 FDA</button>
+                        <button class="label-toggle px-3 py-1.5 rounded-md text-xs font-bold text-slate-500 hover:text-slate-700 transition-all" data-type="eu">🇪🇺 UE</button>
+                        <button class="label-toggle px-3 py-1.5 rounded-md text-xs font-bold text-slate-500 hover:text-slate-700 transition-all" data-type="ns">🥗 Nutri-Score</button>
+                        <button class="label-toggle px-3 py-1.5 rounded-md text-xs font-bold text-slate-500 hover:text-slate-700 transition-all" data-type="ops">🌎 OPS</button>
                     </div>
+                    <div class="flex gap-2">
+                         <button id="download-png" class="flex items-center gap-2 bg-slate-50 hover:bg-slate-100 text-slate-600 px-3 py-1.5 rounded-lg border border-slate-200 text-sm font-medium transition shadow-sm">
+                             <i class="fas fa-image"></i> PNG
+                         </button>
+                         <button id="download-pdf" class="flex items-center gap-2 bg-slate-50 hover:bg-slate-100 text-red-600 px-3 py-1.5 rounded-lg border border-slate-200 text-sm font-medium transition shadow-sm">
+                             <i class="fas fa-file-pdf"></i> PDF
+                         </button>
+                    </div>
+                </div>
 
-                    <!-- Canvas de Renderizado -->
-                    <div class="flex justify-center items-start bg-stone-50 p-8 rounded-xl border border-dashed border-stone-300" id="label-canvas-container">
+                <!-- Contenedor de la Etiqueta (Canvas visual) -->
+                <!-- Agregamos overflow-x-auto para que en móviles la etiqueta no rompa el layout si es muy ancha -->
+                <div class="bg-white p-8 rounded-xl shadow-lg border border-slate-200 flex justify-center overflow-x-auto min-h-[500px]" id="label-container-wrapper">
+                    <div id="label-canvas-container" class="bg-white p-4 inline-block">
                         
                         <!-- 1. ETIQUETA FDA -->
-                        <div id="label-fda" class="label-view label-fda">
+                        <div id="label-fda" class="label-view label-fda transform transition-all duration-300">
                             <h1 class="border-b-1 pb-1">Nutrition Facts</h1>
                             <div class="border-b-8 pb-1 mb-2">
-                                <p class="text-sm"> <span id="lbl-servings-container">__</span> servings per container</p>
-                                <div class="flex justify-between items-end font-bold">
+                                <p class="text-base font-bold mb-1"> <span id="lbl-servings-container">__</span> servings per container</p>
+                                <div class="flex justify-between items-end font-bold text-lg border-t-4 border-black pt-1">
                                     <span>Serving size</span>
                                     <span id="lbl-portion">100g</span>
                                 </div>
@@ -139,129 +178,151 @@
                                 <p class="text-xs font-bold">Amount per serving</p>
                                 <div class="flex justify-between items-end">
                                     <span class="text-3xl font-black">Calories</span>
-                                    <span class="text-4xl font-black" id="lbl-calories">0</span>
+                                    <span class="text-5xl font-black" id="lbl-calories">0</span>
                                 </div>
                             </div>
-                            <div class="text-right text-xs font-bold border-b-1 pb-1 mb-1">% Daily Value*</div>
+                            <div class="text-right text-sm font-bold border-b-1 pb-1 mb-1">% Daily Value*</div>
                             
-                            <div class="border-b-1 pb-1 mb-1 text-sm">
-                                <span class="font-bold">Total Fat</span> <span id="lbl-fat">0g</span>
-                                <span class="float-right font-bold" id="dv-fat">0%</span>
+                            <!-- Nutrientes -->
+                            <div id="fda-nutrients-list" class="text-sm">
+                                 <div class="border-b-1 pb-1 mb-1 flex justify-between">
+                                    <span><span class="font-bold">Total Fat</span> <span id="lbl-fat">0g</span></span>
+                                    <span class="font-bold" id="dv-fat">0%</span>
+                                </div>
+                                <div class="border-b-1 pb-1 mb-1 pl-4 flex justify-between">
+                                    <span>Saturated Fat <span id="lbl-sat-fat">0g</span></span>
+                                    <span class="font-bold" id="dv-sat-fat">0%</span>
+                                </div>
+                                 <div class="border-b-1 pb-1 mb-1 pl-4 flex justify-between">
+                                    <span>Trans Fat <span id="lbl-trans-fat">0g</span></span>
+                                </div>
+                                <div class="border-b-1 pb-1 mb-1 flex justify-between">
+                                    <span><span class="font-bold">Cholesterol</span> <span id="lbl-chol">0mg</span></span>
+                                    <span class="font-bold" id="dv-chol">0%</span>
+                                </div>
+                                <div class="border-b-1 pb-1 mb-1 flex justify-between">
+                                    <span><span class="font-bold">Sodium</span> <span id="lbl-sodium">0mg</span></span>
+                                    <span class="font-bold" id="dv-sodium">0%</span>
+                                </div>
+                                <div class="border-b-1 pb-1 mb-1 flex justify-between">
+                                    <span><span class="font-bold">Total Carbohydrate</span> <span id="lbl-carb">0g</span></span>
+                                    <span class="font-bold" id="dv-carb">0%</span>
+                                </div>
+                                 <div class="border-b-1 pb-1 mb-1 pl-4 flex justify-between">
+                                    <span>Dietary Fiber <span id="lbl-fiber">0g</span></span>
+                                    <span class="font-bold" id="dv-fiber">0%</span>
+                                </div>
+                                <div class="border-b-1 pb-1 mb-1 pl-4 flex justify-between">
+                                    <span>Total Sugars <span id="lbl-sugar">0g</span></span>
+                                </div>
+                                <div class="border-b-8 pb-1 mb-2 pl-4 flex justify-between">
+                                    <span>Includes <span id="lbl-added-sugar">0g</span> Added Sugars</span>
+                                    <span class="font-bold" id="dv-added-sugar">0%</span>
+                                </div>
+                                <div class="border-b-8 pb-1 mb-2 flex justify-between items-end">
+                                    <span class="font-bold">Protein <span id="lbl-protein" class="font-normal">0g</span></span>
+                                </div>
+                                
+                                <!-- Vitaminas -->
+                                <div class="border-b-1 py-1 flex justify-between"><span>Vitamin D <span id="lbl-vit-d">0mcg</span></span> <span id="dv-vit-d">0%</span></div>
+                                <div class="border-b-1 py-1 flex justify-between"><span>Calcium <span id="lbl-calcium">0mg</span></span> <span id="dv-calcium">0%</span></div>
+                                <div class="border-b-1 py-1 flex justify-between"><span>Iron <span id="lbl-iron">0mg</span></span> <span id="dv-iron">0%</span></div>
+                                <div class="py-1 flex justify-between"><span>Potassium <span id="lbl-potassium">0mg</span></span> <span id="dv-potassium">0%</span></div>
                             </div>
-                            <div class="border-b-1 pb-1 mb-1 text-sm pl-4">
-                                Saturated Fat <span id="lbl-sat-fat">0g</span>
-                                <span class="float-right font-bold" id="dv-sat-fat">0%</span>
-                            </div>
-                             <div class="border-b-1 pb-1 mb-1 text-sm pl-4">
-                                Trans Fat <span id="lbl-trans-fat">0g</span>
-                            </div>
-                            <div class="border-b-1 pb-1 mb-1 text-sm">
-                                <span class="font-bold">Cholesterol</span> <span id="lbl-chol">0mg</span>
-                                <span class="float-right font-bold" id="dv-chol">0%</span>
-                            </div>
-                            <div class="border-b-1 pb-1 mb-1 text-sm">
-                                <span class="font-bold">Sodium</span> <span id="lbl-sodium">0mg</span>
-                                <span class="float-right font-bold" id="dv-sodium">0%</span>
-                            </div>
-                            <div class="border-b-1 pb-1 mb-1 text-sm">
-                                <span class="font-bold">Total Carbohydrate</span> <span id="lbl-carb">0g</span>
-                                <span class="float-right font-bold" id="dv-carb">0%</span>
-                            </div>
-                             <div class="border-b-1 pb-1 mb-1 text-sm pl-4">
-                                Dietary Fiber <span id="lbl-fiber">0g</span>
-                                <span class="float-right font-bold" id="dv-fiber">0%</span>
-                            </div>
-                            <div class="border-b-1 pb-1 mb-1 text-sm pl-4">
-                                Total Sugars <span id="lbl-sugar">0g</span>
-                            </div>
-                            <div class="border-b-8 pb-1 mb-2 text-sm pl-8">
-                                Includes <span id="lbl-added-sugar">0g</span> Added Sugars
-                                <span class="float-right font-bold" id="dv-added-sugar">0%</span>
-                            </div>
-                            <div class="border-b-4 pb-1 mb-2 text-sm">
-                                <span class="font-bold">Protein</span> <span id="lbl-protein">0g</span>
-                            </div>
-                            <!-- Vitaminas -->
-                            <div class="text-sm">
-                                <div class="border-b-1 py-1">Vitamin D <span id="lbl-vit-d">0mcg</span> <span class="float-right" id="dv-vit-d">0%</span></div>
-                                <div class="border-b-1 py-1">Calcium <span id="lbl-calcium">0mg</span> <span class="float-right" id="dv-calcium">0%</span></div>
-                                <div class="border-b-1 py-1">Iron <span id="lbl-iron">0mg</span> <span class="float-right" id="dv-iron">0%</span></div>
-                                <div class="py-1">Potassium <span id="lbl-potassium">0mg</span> <span class="float-right" id="dv-potassium">0%</span></div>
+                            <div class="border-t-4 border-black mt-2 pt-1 text-[10px] leading-tight">
+                                * The % Daily Value (DV) tells you how much a nutrient in a serving of food contributes to a daily diet. 2,000 calories a day is used for general nutrition advice.
                             </div>
                         </div>
 
-                        <!-- 2. ETIQUETA UE (Tabla) -->
-                        <div id="label-eu" class="label-view hidden w-[350px] bg-white text-black font-sans border border-black p-4">
-                            <h3 class="font-bold mb-2">Información Nutricional</h3>
-                            <div class="flex justify-between text-sm border-b border-black py-1">
+                        <!-- 2. ETIQUETA UE (Tabla Clean) -->
+                        <div id="label-eu" class="label-view hidden w-[360px] bg-white text-slate-800 font-sans border border-slate-300 p-6 shadow-sm rounded-sm">
+                            <h3 class="font-bold text-lg mb-4 text-slate-900 border-b-2 border-black pb-2">Información Nutricional</h3>
+                            <div class="flex justify-end text-xs font-bold text-slate-500 mb-2">
                                 <span>Por 100g</span>
                             </div>
-                            <div class="flex justify-between py-1 border-b border-gray-300">
-                                <strong>Valor Energético</strong>
-                                <span><span id="eu-kj">0</span> kJ / <span id="eu-kcal">0</span> kcal</span>
-                            </div>
-                            <div class="flex justify-between py-1 border-b border-gray-300">
-                                <strong>Grasas</strong>
-                                <span id="eu-fat">0 g</span>
-                            </div>
-                             <div class="flex justify-between py-1 border-b border-gray-300 pl-4 text-sm">
-                                de las cuales saturadas
-                                <span id="eu-sat-fat">0 g</span>
-                            </div>
-                             <div class="flex justify-between py-1 border-b border-gray-300">
-                                <strong>Hidratos de carbono</strong>
-                                <span id="eu-carb">0 g</span>
-                            </div>
-                            <div class="flex justify-between py-1 border-b border-gray-300 pl-4 text-sm">
-                                de los cuales azúcares
-                                <span id="eu-sugar">0 g</span>
-                            </div>
-                             <div class="flex justify-between py-1 border-b border-gray-300">
-                                <strong>Proteínas</strong>
-                                <span id="eu-protein">0 g</span>
-                            </div>
-                             <div class="flex justify-between py-1 border-b-2 border-black">
-                                <strong>Sal</strong>
-                                <span id="eu-salt">0 g</span>
+                            <div class="space-y-0 text-sm">
+                                <div class="flex justify-between py-2 border-t border-slate-200">
+                                    <strong>Valor Energético</strong>
+                                    <span><span id="eu-kj">0</span> kJ / <span id="eu-kcal">0</span> kcal</span>
+                                </div>
+                                <div class="flex justify-between py-2 border-t border-slate-200">
+                                    <strong>Grasas</strong>
+                                    <span id="eu-fat">0 g</span>
+                                </div>
+                                 <div class="flex justify-between py-1 pl-4 text-slate-600 text-xs">
+                                    de las cuales saturadas
+                                    <span id="eu-sat-fat">0 g</span>
+                                </div>
+                                 <div class="flex justify-between py-2 border-t border-slate-200">
+                                    <strong>Hidratos de carbono</strong>
+                                    <span id="eu-carb">0 g</span>
+                                </div>
+                                <div class="flex justify-between py-1 pl-4 text-slate-600 text-xs">
+                                    de los cuales azúcares
+                                    <span id="eu-sugar">0 g</span>
+                                </div>
+                                 <div class="flex justify-between py-2 border-t border-slate-200">
+                                    <strong>Proteínas</strong>
+                                    <span id="eu-protein">0 g</span>
+                                </div>
+                                 <div class="flex justify-between py-2 border-t-2 border-black font-bold">
+                                    <strong>Sal</strong>
+                                    <span id="eu-salt">0 g</span>
+                                </div>
                             </div>
                         </div>
+                        <div id="label-ns" class="label-view hidden w-[400px] bg-white p-8 rounded-xl border border-slate-200 flex flex-col items-center">
+                            <h3 class="font-bold text-2xl text-slate-800 mb-6">Nutri-Score</h3>
+                            <div id="nutriscore-display" class="w-full">
+                                <!-- Se renderiza via JS -->
+                            </div>
+                            <p class="text-xs text-slate-400 mt-6 text-center">Cálculo estimado basado en algoritmo Nutri-Score (v1.0)</p>
+                        </div>
 
-                        <!-- 3. ETIQUETA OPS (Octógonos) -->
-                        <div id="label-ops" class="label-view hidden w-[400px] bg-white p-4">
-                            <h3 class="font-bold text-center mb-6 text-xl">ADVERTENCIAS (OPS/Latam)</h3>
+                        <!-- 3. ETIQUETA OPS (Visual) -->
+                        <div id="label-ops" class="label-view hidden w-[400px] bg-white p-8 rounded-xl border border-slate-200">
+                            <h3 class="font-black text-center mb-8 text-2xl text-slate-900 tracking-tight">ADVERTENCIAS</h3>
                             <div id="octagons-container" class="flex flex-wrap justify-center gap-4">
-                                <!-- Se inyectan dinámicamente -->
                                 <div class="octagon hidden" id="oct-cal">EXCESO<br>CALORÍAS</div>
                                 <div class="octagon hidden" id="oct-sugar">EXCESO<br>AZÚCARES</div>
                                 <div class="octagon hidden" id="oct-sat">EXCESO<br>GRASAS<br>SATURADAS</div>
                                 <div class="octagon hidden" id="oct-sodium">EXCESO<br>SODIO</div>
                             </div>
-                            <p id="no-warnings" class="text-center text-green-600 font-bold mt-4 hidden">Este producto no presenta sellos de advertencia.</p>
-                            <p class="text-xs text-center mt-6 text-gray-500">Cálculo basado en 100g según Modelo de Perfil de Nutrientes de la OPS.</p>
+                            <div id="no-warnings" class="hidden flex flex-col items-center py-8 text-emerald-600">
+                                <i class="fas fa-shield-heart text-5xl mb-3"></i>
+                                <p class="font-bold text-lg">Sin sellos de advertencia</p>
+                            </div>
+                            <p class="text-[10px] text-center mt-8 text-slate-400 max-w-xs mx-auto">Análisis basado en el Modelo de Perfil de Nutrientes de la OPS/OMS (2016) para 100g de producto sólido.</p>
                         </div>
-
                     </div>
                 </div>
+
             </div>
         </div>
     </div>
 
     <!-- Modal Nueva Receta -->
-    <dialog id="new-recipe-modal" class="p-6 rounded-xl shadow-xl w-96 backdrop:bg-black/50">
-        <h3 class="text-xl font-bold text-amber-900 mb-4">Nueva Receta</h3>
-        <input type="text" id="new-recipe-name" placeholder="Nombre (Ej: Chocolate 70%)" class="w-full p-2 border rounded mb-4">
-        <div class="flex justify-end gap-2">
-            <button onclick="this.closest('dialog').close()" class="text-gray-500 font-bold px-4">Cancelar</button>
-            <button id="create-recipe-btn" class="bg-amber-800 text-white px-4 py-2 rounded-lg font-bold">Crear</button>
+    <dialog id="new-recipe-modal" class="p-0 rounded-2xl shadow-2xl w-full max-w-sm backdrop:bg-slate-900/50">
+        <div class="bg-white p-6">
+            <h3 class="text-xl font-bold text-amber-900 mb-1">Nueva Receta</h3>
+            <p class="text-sm text-slate-500 mb-4">Dale un nombre para empezar a formular.</p>
+            <input type="text" id="new-recipe-name" placeholder="Ej: Chocolate Dark 70%" class="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none mb-6">
+            <div class="flex justify-end gap-3">
+                <button onclick="this.closest('dialog').close()" class="text-slate-500 font-bold px-4 py-2 hover:bg-slate-50 rounded-lg">Cancelar</button>
+                <button id="create-recipe-btn" class="bg-amber-800 text-white px-6 py-2 rounded-xl font-bold hover:bg-amber-900 shadow-md">Crear</button>
+            </div>
         </div>
     </dialog>
-
-    <dialog id="edit-recipe-modal" class="p-6 rounded-xl shadow-xl w-96 backdrop:bg-black/50">
-        <h3 class="text-xl font-bold text-amber-900 mb-4">Editar Receta</h3>
-        <input type="text" id="edit-recipe-name" placeholder="Nuevo nombre" class="w-full p-2 border rounded mb-4">
-        <div class="flex justify-end gap-2">
-            <button onclick="this.closest('dialog').close()" class="text-gray-500 font-bold px-4">Cancelar</button>
-            <button id="update-recipe-btn" class="bg-amber-800 text-white px-4 py-2 rounded-lg font-bold">Actualizar</button>
+    
+    <!-- Modal Editar Nombre -->
+    <dialog id="edit-recipe-modal" class="p-0 rounded-2xl shadow-2xl w-full max-w-sm backdrop:bg-slate-900/50">
+        <div class="bg-white p-6">
+            <h3 class="text-xl font-bold text-amber-900 mb-4">Renombrar Receta</h3>
+            <input type="text" id="edit-recipe-name" class="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none mb-6">
+            <div class="flex justify-end gap-3">
+                <button onclick="this.closest('dialog').close()" class="text-slate-500 font-bold px-4 py-2 hover:bg-slate-50 rounded-lg">Cancelar</button>
+                <button id="update-recipe-btn" class="bg-amber-800 text-white px-6 py-2 rounded-xl font-bold hover:bg-amber-900 shadow-md">Guardar</button>
+            </div>
         </div>
     </dialog>
 

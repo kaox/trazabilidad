@@ -303,20 +303,18 @@ app.delete('/api/admin/blog/:id', authenticateApi, checkAdmin, db.deleteBlogPost
 // Vistas
 app.get('/app/nutricion', authenticatePage, checkSubscription('profesional'), (req, res) => res.sendFile(path.join(__dirname, 'views', 'nutricion.html')));
 
-// API Recetas
+// MÓDULO NUTRICIÓN (API)
 app.get('/api/nutricion/recetas', authenticateApi, db.getRecetasNutricionales);
 app.post('/api/nutricion/recetas', authenticateApi, db.createRecetaNutricional);
 app.put('/api/nutricion/recetas/:id', authenticateApi, db.updateRecetaNutricional);
 app.delete('/api/nutricion/recetas/:id', authenticateApi, db.deleteReceta);
-
-// API Ingredientes
 app.post('/api/nutricion/recetas/:receta_id/ingredientes', authenticateApi, db.addIngredienteReceta);
 app.put('/api/nutricion/ingredientes/:id', authenticateApi, db.updateIngredientePeso);
 app.delete('/api/nutricion/ingredientes/:id', authenticateApi, db.deleteIngrediente);
 
-// API Búsqueda Inteligente (Local + Proxy)
-app.get('/api/nutricion/ingredientes/search', authenticateApi, db.searchIngredientsUnified);
-app.get('/api/nutricion/ingredientes/details/:id', authenticateApi, db.getIngredientDetails);
+// PROXY USDA API
+app.get('/api/proxy/usda/search', authenticateApi, db.searchUSDA);
+app.get('/api/proxy/usda/food/:fdcId', authenticateApi, db.getUSDADetails);
 
 // Iniciar Servidor
 app.listen(PORT, () => {
