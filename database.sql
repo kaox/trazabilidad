@@ -253,3 +253,17 @@ CREATE TABLE IF NOT EXISTS ingredientes_receta (
     nutrientes_base_json JSONB NOT NULL, 
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
+
+-- Tabla Maestra de Ingredientes (Caché Local)
+CREATE TABLE IF NOT EXISTS ingredientes_catalogo (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    nombre TEXT NOT NULL,
+    origen TEXT DEFAULT 'off', -- 'local', 'off' (OpenFoodFacts), 'usda'
+    codigo_externo TEXT, -- El código de barras o ID externo para evitar duplicados
+    nutrientes_json JSONB NOT NULL, -- Guardamos la info nutricional completa aquí
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(codigo_externo) -- Evitar guardar el mismo producto de OFF dos veces
+);
+
+-- Índice para búsquedas rápidas por nombre
+CREATE INDEX IF NOT EXISTS idx_ingredientes_nombre ON ingredientes_catalogo(nombre);

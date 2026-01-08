@@ -1737,6 +1737,94 @@ const getBatchByGtinAndLot = async (gtin, loteId) => {
 
 // --- MÓDULO DE NUTRICIÓN ---
 
+// 1. Búsqueda Unificada (Local + Remota)
+const searchIngredientsUnified = async (req, res) => {
+    const { query } = req.query;
+    if (!query) return res.json({ products: [] });
+
+    try {
+        // A. Buscar en Base de Datos Local (Catálogo)
+        // Usamos ILIKE para búsqueda insensible a mayúsculas (Postgres) o LIKE (SQLite)
+        const localResults = await all(
+            `SELECT id, nombre as product_name, codigo_externo as _id, 'local' as source 
+             FROM ingredientes_catalogo 
+             WHERE nombre ILIKE ? LIMIT 10`, 
+            [`%${query}%`]
+        );
+
+        console.log(localResults);
+
+        // B. Si tenemos pocos resultados locales (< 5), consultamos la API externa
+        let remoteResults = [];
+        if (localResults.length < 5) {
+            try {
+                const url = `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(query)}&search_simple=1&action=process&json=1&page_size=10&fields=product_name,_id,nutriments`;
+                const response = await fetch(url);
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.products) {
+                        // Marcamos el origen como 'off' para saber que hay que guardarlos si se usan
+                        remoteResults = data.products.map(p => ({
+                            ...p,
+                            source: 'off'
+                        }));
+                    }
+                }
+            } catch (apiError) {
+                console.warn("Fallo Open Food Facts, mostrando solo resultados locales:", apiError.message);
+                // No fallamos el request completo, solo seguimos con lo local
+            }
+        }
+
+        // C. Combinar resultados (Locales primero)
+        // Filtramos duplicados remotos que ya tengamos en local (por código)
+        const localIds = new Set(localResults.map(l => l._id));
+        const filteredRemote = remoteResults.filter(r => !localIds.has(r._id));
+        
+        res.json({ products: [...localResults, ...filteredRemote] });
+
+    } catch (err) {
+        console.error("Error en búsqueda unificada:", err);
+        res.status(500).json({ error: "Error buscando ingredientes." });
+    }
+};
+
+// 2. Obtener Detalles (Proxy Inteligente)
+const getIngredientDetails = async (req, res) => {
+    const { id } = req.params; // Puede ser un UUID (local) o un Barcode (remoto)
+    const { source } = req.query;
+
+    try {
+        if (source === 'local') {
+            // Buscar en nuestra DB
+            const item = await get('SELECT * FROM ingredientes_catalogo WHERE id = ?', [id]);
+            if (!item) return res.status(404).json({ error: "Ingrediente local no encontrado" });
+            
+            // Devolver formato compatible con el frontend (simulando estructura OFF simplificada)
+            res.json({
+                product: {
+                    product_name: item.nombre,
+                    _id: item.codigo_externo,
+                    nutriments: safeJSONParse(item.nutrientes_json)
+                },
+                source: 'local'
+            });
+
+        } else {
+            // Buscar en Open Food Facts
+            const url = `https://world.openfoodfacts.org/api/v0/product/${id}.json`;
+            const response = await fetch(url);
+            const data = await response.json();
+            
+            if (data.status === 0) return res.status(404).json({ error: "Producto no encontrado en OFF" });
+            
+            res.json(data);
+        }
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};
+
 const getRecetasNutricionales = async (req, res) => {
     const userId = req.user.id;
     try {
@@ -1793,19 +1881,40 @@ const updateRecetaNutricional = async (req, res) => {
     }
 };
 
-// 3. Agregar Ingrediente a Receta
+// 3. Agregar Ingrediente a Receta (con Auto-Cache)
 const addIngredienteReceta = async (req, res) => {
     const { receta_id } = req.params;
-    const { usda_id, nombre, peso_gramos, nutrientes_base_json } = req.body;
+    const { usda_id, nombre, peso_gramos, nutrientes_base_json, source } = req.body;
     const id = require('crypto').randomUUID();
 
     try {
+        // ESTRATEGIA DE CACHÉ:
+        // Si el ingrediente viene de 'off' (API externa), lo guardamos en nuestro catálogo
+        // para que la próxima vez sea 'local'.
+        if (source === 'off' && usda_id) {
+            // Verificar si ya existe para no duplicar (por si acaso)
+            const existing = await get('SELECT id FROM ingredientes_catalogo WHERE codigo_externo = ?', [usda_id]);
+            
+            if (!existing) {
+                const catId = require('crypto').randomUUID();
+                await run(
+                    'INSERT INTO ingredientes_catalogo (id, nombre, origen, codigo_externo, nutrientes_json) VALUES (?, ?, ?, ?, ?)',
+                    [catId, nombre, 'off', usda_id, JSON.stringify(nutrientes_base_json)]
+                );
+                console.log(`[Cache] Ingrediente '${nombre}' guardado localmente.`);
+            }
+        }
+
+        // Insertar en la receta (Referenciando los datos nutricionales directamente en la instancia)
+        // Esto mantiene la receta inmutable aunque cambie el catálogo, lo cual es bueno para trazabilidad.
         await run(
             'INSERT INTO ingredientes_receta (id, receta_id, usda_id, nombre, peso_gramos, nutrientes_base_json) VALUES (?, ?, ?, ?, ?, ?)',
             [id, receta_id, usda_id, nombre, peso_gramos, JSON.stringify(nutrientes_base_json)]
         );
         res.status(201).json({ message: "Ingrediente agregado", id });
+
     } catch (err) {
+        console.error("Error agregando ingrediente:", err);
         res.status(500).json({ error: err.message });
     }
 };
@@ -1906,6 +2015,7 @@ module.exports = {
     getBlogPosts, getBlogPostBySlug, createBlogPost, updateBlogPost, deleteBlogPost, getAdminBlogPosts, getBlogPostById,
     getProductos, createProducto, updateProducto, deleteProducto,
     validateDeforestation, getBatchByGtinAndLot,
-    getRecetasNutricionales, createRecetaNutricional, addIngredienteReceta, updateIngredientePeso, deleteIngrediente, deleteRecetaNutricional, updateRecetaNutricional,
+    searchIngredientsUnified, getIngredientDetails, addIngredienteReceta, updateIngredientePeso, 
+    getRecetasNutricionales, createRecetaNutricional, deleteIngrediente, deleteRecetaNutricional, updateRecetaNutricional,
     searchOpenFoodFacts, getOpenFoodFactsDetails
 };

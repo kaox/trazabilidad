@@ -249,85 +249,124 @@ document.addEventListener('DOMContentLoaded', () => {
     async function searchIngredients() {
         const query = usdaSearchInput.value;
         if (!query) return;
+        
         searchBtn.disabled = true;
         searchBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+
         try {
-            // Cambio de endpoint: Ahora apunta al proxy de Open Food Facts
-            const data = await api(`/api/proxy/off/search?query=${query}`);
-            renderSearchResults(data.products || []); // OFF devuelve { count: ..., products: [] }
-        } catch (e) { alert('Error buscando en Open Food Facts'); } 
-        finally { searchBtn.disabled = false; searchBtn.innerHTML = '<i class="fas fa-search"></i>'; }
+            // Llamada al nuevo endpoint unificado
+            const data = await api(`/api/nutricion/ingredientes/search?query=${encodeURIComponent(query)}`);
+            renderSearchResults(data.products || []);
+        } catch (e) {
+            console.error(e);
+            alert('Error buscando ingredientes. Verifica tu conexión.');
+        } finally {
+            searchBtn.disabled = false;
+            searchBtn.innerHTML = '<i class="fas fa-search"></i>';
+        }
     }
 
     function renderSearchResults(foods) {
-        resultsList.innerHTML = foods.map(food => `
-            <li class="flex justify-between items-center bg-stone-50 p-2 rounded hover:bg-stone-100">
-                <span class="truncate w-3/4" title="${food.product_name}">${food.product_name || 'Sin nombre'}</span>
-                <!-- OFF usa _id o code para el código de barras -->
-                <button class="text-xs bg-green-600 text-white px-2 py-1 rounded add-ing-btn" data-barcode="${food._id}" data-name="${food.product_name}">Agregar</button>
+        if (foods.length === 0) {
+            resultsList.innerHTML = '<li class="p-2 text-stone-500 text-center italic">No se encontraron resultados.</li>';
+            return;
+        }
+
+        resultsList.innerHTML = foods.map(food => {
+            // Distintivo visual para saber si es Local (rápido) o Web (lento)
+            const icon = food.source === 'local' 
+                ? '<i class="fas fa-database text-amber-600 mr-1" title="Base de Datos Local"></i>' 
+                : '<i class="fas fa-cloud text-sky-500 mr-1" title="Open Food Facts"></i>';
+            
+            // Si es local, el ID es un UUID. Si es OFF, es el código de barras.
+            // Pasamos el 'source' al botón para que la función add sepa qué hacer.
+            return `
+            <li class="flex justify-between items-center bg-stone-50 p-2 rounded hover:bg-stone-100 border-b border-stone-100">
+                <span class="truncate w-3/4 text-sm" title="${food.product_name}">
+                    ${icon} ${food.product_name || 'Sin nombre'}
+                </span>
+                <button class="text-xs bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded add-ing-btn transition" 
+                    data-id="${food._id || food.id}" 
+                    data-name="${food.product_name}"
+                    data-source="${food.source || 'off'}">
+                    Agregar
+                </button>
             </li>
-        `).join('');
+        `}).join('');
+
         document.querySelectorAll('.add-ing-btn').forEach(btn => {
-            btn.addEventListener('click', async () => await addIngredientToRecipe(btn.dataset.barcode, btn.dataset.name));
+            btn.addEventListener('click', async () => {
+                // Feedback visual de carga en el botón
+                const originalText = btn.innerText;
+                btn.innerText = '...';
+                btn.disabled = true;
+                
+                await addIngredientToRecipe(btn.dataset.id, btn.dataset.name, btn.dataset.source);
+                
+                btn.innerText = originalText;
+                btn.disabled = false;
+            });
         });
     }
 
-    async function addIngredientToRecipe(barcode, name) {
+    async function addIngredientToRecipe(id, name, source) {
         if (!state.currentRecipe) return alert("Selecciona una receta primero");
-        try {
-            // Llamada al proxy de OFF para detalles del producto
-            const data = await api(`/api/proxy/off/product/${barcode}`);
-            const product = data.product;
-            const nutriments = product.nutriments;
 
-            // Helper seguro para obtener valores nutricionales (fallback a 0)
+        try {
+            // Obtener detalles (el backend decide si busca en local o en OFF según el source)
+            const data = await api(`/api/nutricion/ingredientes/details/${id}?source=${source}`);
+            
+            // Adaptador para estructura de respuesta
+            // Si es local, viene directo. Si es OFF, viene dentro de 'product'
+            const product = data.product || data;
+            const nutriments = product.nutriments || {};
+
             const getVal = (key) => {
                 const val = parseFloat(nutriments[key]);
                 return isNaN(val) ? 0 : val;
             };
 
-            // Mapeo de campos OFF a nuestra estructura interna
+            // Mapeo robusto
             const nutrientsBase = {
-                energy: getVal('energy-kcal_100g'), // OFF suele tener energy-kcal_100g
+                energy: getVal('energy-kcal_100g') || getVal('energy_100g')/4.184, // Preferir Kcal
                 protein: getVal('proteins_100g'),
                 fat: getVal('fat_100g'),
                 carb: getVal('carbohydrates_100g'),
                 fiber: getVal('fiber_100g'),
                 sugar: getVal('sugars_100g'),
-                addedSugar: 0, // OFF no siempre tiene azúcares añadidos fiables, default 0 o intentar parsing
-                sodium: getVal('sodium_100g') * 1000, // Convertir g a mg si OFF da g? OFF sodium_100g suele ser gramos.
-                // Corrección: OFF sodium_100g es en GRAMOS. App espera MG para sodio.
-                // Pero verifiquemos. USDA sodium es mg. OFF sodium_100g suele ser gramos (ej 0.4g). 
-                // Multiplicamos por 1000.
+                addedSugar: 0,
+                // Sodio: OFF suele dar gramos (salt_100g) o sodio en gramos. Convertimos a mg.
+                sodium: (getVal('sodium_100g') || getVal('salt_100g')/2.5) * 1000,
                 
                 satFat: getVal('saturated-fat_100g'),
                 transFat: getVal('trans-fat_100g'),
-                chol: getVal('cholesterol_100g') * 1000, // OFF g -> mg
+                chol: getVal('cholesterol_100g') * 1000, 
                 
-                vitD: getVal('vitamin-d_100g') * 1000000, // OFF g -> mcg (µg)
-                calcium: getVal('calcium_100g') * 1000, // OFF g -> mg
-                iron: getVal('iron_100g') * 1000, // OFF g -> mg
-                potassium: getVal('potassium_100g') * 1000 // OFF g -> mg
+                vitD: getVal('vitamin-d_100g') * 1000000,
+                calcium: getVal('calcium_100g') * 1000,
+                iron: getVal('iron_100g') * 1000,
+                potassium: getVal('potassium_100g') * 1000
             };
 
-            // Corrección específica para Sodio si OFF lo da muy bajo (a veces es unidad incorrecta en user input)
-            // Asumimos OFF standard que es gramos.
-            // Si sodium es 0, intentar calcular desde sal: salt / 2.5
-            if (nutrientsBase.sodium === 0 && getVal('salt_100g') > 0) {
-                nutrientsBase.sodium = (getVal('salt_100g') / 2.5) * 1000;
-            }
-
+            // Enviar al backend incluyendo el 'source' para que sepa si debe cachearlo
             const res = await api(`/api/nutricion/recetas/${state.currentRecipe.id}/ingredientes`, {
                 method: 'POST',
-                body: JSON.stringify({ usda_id: barcode, nombre: name, peso_gramos: 100, nutrientes_base_json: nutrientsBase })
+                body: JSON.stringify({ 
+                    usda_id: id, // Guardamos el ID externo o local como referencia
+                    nombre: name, 
+                    peso_gramos: 100, 
+                    nutrientes_base_json: nutrientsBase,
+                    source: source // Importante: Flag para activar el caché en backend
+                })
             });
 
             state.ingredients.push({ id: res.id, nombre: name, peso_gramos: 100, nutrientes_base_json: nutrientsBase });
             renderIngredients();
             calculateNutrition();
+
         } catch (e) { 
             console.error(e);
-            alert("Error agregando ingrediente de Open Food Facts."); 
+            alert("Error agregando ingrediente. Intente nuevamente."); 
         }
     }
 

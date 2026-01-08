@@ -276,6 +276,19 @@ async function initializeDatabase() {
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     FOREIGN KEY (receta_id) REFERENCES recetas_nutricionales(id) ON DELETE CASCADE
                 )`);
+            
+            // 10. CATÁLOGO DE INGREDIENTES (CACHE LOCAL) <-- NUEVO
+            // Esta tabla almacena los ingredientes obtenidos de APIs externas para no depender siempre de ellas.
+            await runQuery(db, `
+                CREATE TABLE IF NOT EXISTS ingredientes_catalogo (
+                    id TEXT PRIMARY KEY,
+                    nombre TEXT NOT NULL,
+                    origen TEXT DEFAULT 'off', -- 'local', 'off'
+                    codigo_externo TEXT, -- ID externo para evitar duplicados
+                    nutrientes_json TEXT NOT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    UNIQUE(codigo_externo)
+                )`);
 
             try {
                 await runQuery(db, `ALTER TABLE lotes ADD COLUMN producto_id TEXT REFERENCES productos(id) ON DELETE SET NULL`);

@@ -306,17 +306,17 @@ app.get('/app/nutricion', authenticatePage, checkSubscription('profesional'), (r
 // API Recetas
 app.get('/api/nutricion/recetas', authenticateApi, db.getRecetasNutricionales);
 app.post('/api/nutricion/recetas', authenticateApi, db.createRecetaNutricional);
-app.delete('/api/nutricion/recetas/:id', authenticateApi, db.deleteRecetaNutricional);
 app.put('/api/nutricion/recetas/:id', authenticateApi, db.updateRecetaNutricional);
+app.delete('/api/nutricion/recetas/:id', authenticateApi, db.deleteReceta);
 
 // API Ingredientes
 app.post('/api/nutricion/recetas/:receta_id/ingredientes', authenticateApi, db.addIngredienteReceta);
 app.put('/api/nutricion/ingredientes/:id', authenticateApi, db.updateIngredientePeso);
 app.delete('/api/nutricion/ingredientes/:id', authenticateApi, db.deleteIngrediente);
 
-// API Proxy Open Food Facts (ACTUALIZADO)
-app.get('/api/proxy/off/search', authenticateApi, db.searchOpenFoodFacts);
-app.get('/api/proxy/off/product/:barcode', authenticateApi, db.getOpenFoodFactsDetails);
+// API Búsqueda Inteligente (Local + Proxy)
+app.get('/api/nutricion/ingredientes/search', authenticateApi, db.searchIngredientsUnified);
+app.get('/api/nutricion/ingredientes/details/:id', authenticateApi, db.getIngredientDetails);
 
 // Iniciar Servidor
 app.listen(PORT, () => {
