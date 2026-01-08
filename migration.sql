@@ -102,3 +102,17 @@ ALTER TABLE procesadoras ADD COLUMN distrito TEXT;
 
 -- Eliminar tipo_empresa (PostgreSQL)
 ALTER TABLE procesadoras DROP COLUMN tipo_empresa;
+
+-- Agregar campos de ubicación ISO 3166 a la tabla fincas
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='fincas' AND column_name='departamento') THEN
+        ALTER TABLE fincas ADD COLUMN departamento TEXT;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='fincas' AND column_name='provincia') THEN
+        ALTER TABLE fincas ADD COLUMN provincia TEXT;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='fincas' AND column_name='distrito') THEN
+        ALTER TABLE fincas ADD COLUMN distrito TEXT;
+    END IF;
+END $$;

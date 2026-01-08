@@ -49,7 +49,10 @@ CREATE TABLE IF NOT EXISTS fincas (
     dni_ruc TEXT,
     nombre_finca TEXT NOT NULL,
     pais TEXT,
-    ciudad TEXT,
+    departamento TEXT, -- Estado/Region
+    provincia TEXT,    -- Ciudad/Provincia
+    distrito TEXT,     -- Municipio/Localidad
+    ciudad TEXT,       -- (Campo legacy o ciudad principal)
     altura INTEGER,
     superficie NUMERIC,
     coordenadas JSONB,

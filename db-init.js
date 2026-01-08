@@ -49,12 +49,15 @@ async function initializeDatabase() {
             await runQuery(db, `
                 CREATE TABLE IF NOT EXISTS fincas (
                     id TEXT PRIMARY KEY,
-                    user_id INTEGER NOT NULL,
+                    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
                     propietario TEXT,
                     dni_ruc TEXT,
                     nombre_finca TEXT NOT NULL,
                     pais TEXT,
-                    ciudad TEXT,
+                    departamento TEXT, -- Estado/Region
+                    provincia TEXT,    -- Ciudad/Provincia
+                    distrito TEXT,     -- Municipio/Localidad
+                    ciudad TEXT,       -- (Campo legacy o ciudad principal)
                     altura INTEGER,
                     superficie REAL,
                     coordenadas TEXT,

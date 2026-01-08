@@ -351,10 +351,12 @@ document.addEventListener('DOMContentLoaded', () => {
             <div class="p-4 border rounded-xl bg-stone-50">
                 <div class="flex justify-between items-start">
                     <div>
-                        <h3 class="font-bold text-lg text-amber-900">${finca.nombre_finca}</h3>
-                        <p class="text-sm text-stone-600">${finca.propietario} - ${finca.dni_ruc}</p>
-                        <p class="text-sm text-stone-500">${finca.ciudad || 'N/A'}, ${finca.pais || 'N/A'} - ${finca.altura || 'S/A'} msnm</p>
-                        <p class="text-sm text-stone-500">Tel: ${finca.telefono || 'N/A'}</p>
+                        <h3 class="font-bold text-amber-900 text-lg">${finca.nombre_finca}</h3>
+                        <p class="text-sm text-stone-600">${finca.propietario}</p>
+                        <p class="text-xs text-stone-500">
+                            ${finca.distrito || ''}, ${finca.provincia || ''}, ${finca.departamento || ''} 
+                            ${finca.pais ? `(${finca.pais})` : ''}
+                        </p>
                     </div>
                     <div class="flex gap-2 flex-shrink-0">
                         <button data-id="${finca.id}" class="edit-btn text-sm bg-sky-600 hover:bg-sky-700 text-white px-3 py-1 rounded-lg">Editar</button>
@@ -367,6 +369,10 @@ document.addEventListener('DOMContentLoaded', () => {
     function resetForm() {
         form.reset();
         editIdInput.value = '';
+        document.getElementById('departamento').value = '';
+        document.getElementById('provincia').value = '';
+        document.getElementById('distrito').value = '';
+        document.getElementById('ciudad').value = '';
         currentImages = [];
         currentFincaCertifications = [];
         currentFincaPremios = [];
@@ -400,7 +406,11 @@ document.addEventListener('DOMContentLoaded', () => {
             form.dni_ruc.value = finca.dni_ruc || '';
             form.nombre_finca.value = finca.nombre_finca || '';
             form.pais.value = finca.pais || '';
-            form.ciudad.value = finca.ciudad || '';
+            form.departamento.value = finca.departamento || '';
+            form.provincia.value = finca.provincia || '';
+            form.distrito.value = finca.distrito || '';
+            form.ciudad.value = finca.ciudad || ''; // Legacy/Referencia
+
             form.altura.value = finca.altura || '';
             form.superficie.value = finca.superficie || '';
             form.telefono.value = finca.telefono || '';
