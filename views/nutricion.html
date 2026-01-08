@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora Nutricional - Ruru Lab</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Librerías para exportar a imagen/pdf -->
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="/auth.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #fdfaf6; }
+        .font-display { font-family: 'Playfair Display', serif; }
+        
+        /* Estilos específicos para la Etiqueta FDA */
+        .label-fda { font-family: 'Helvetica', 'Arial', sans-serif; border: 2px solid black; padding: 10px; width: 320px; background: white; color: black; }
+        .label-fda h1 { font-weight: 900; margin: 0; font-size: 30px; line-height: 1; }
+        .label-fda .border-b-1 { border-bottom: 1px solid black; }
+        .label-fda .border-b-4 { border-bottom: 4px solid black; }
+        .label-fda .border-b-8 { border-bottom: 8px solid black; }
+        
+        /* Estilos OPS Octógonos */
+        .octagon {
+            width: 90px; height: 90px; background: black; color: white;
+            clip-path: polygon(30% 0%, 70% 0%, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0% 70%, 0% 30%);
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            text-align: center; font-weight: bold; font-size: 11px; line-height: 1.1; padding: 2px;
+        }
+    </style>
+</head>
+<body class="text-stone-800 antialiased">
+    <div id="nav-placeholder"></div>
+
+    <div class="container mx-auto px-4 py-8">
+        <header class="mb-8 flex justify-between items-center">
+            <div>
+                <h1 class="text-3xl font-bold text-amber-900 font-display">Calculadora Nutricional</h1>
+                <p class="text-stone-600">Crea etiquetas FDA, UE y OPS basadas en tus recetas.</p>
+            </div>
+            <div class="flex gap-2">
+                <!-- Toggle de Idioma -->
+                <button id="lang-toggle-btn" class="bg-stone-200 text-stone-700 px-4 py-2 rounded-xl hover:bg-stone-300 font-bold shadow flex items-center gap-2" data-lang="es">
+                    <i class="fas fa-language"></i> <span>ES</span>
+                </button>
+                <button onclick="document.getElementById('new-recipe-modal').showModal()" class="bg-amber-800 text-white px-6 py-2 rounded-xl hover:bg-amber-900 font-bold shadow">
+                    <i class="fas fa-plus mr-2"></i> Nueva Receta
+                </button>
+            </div>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            
+            <!-- COLUMNA IZQUIERDA: GESTIÓN DE RECETA (4 cols) -->
+            <div class="lg:col-span-4 space-y-6">
+                
+                <!-- Selector de Recetas -->
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-stone-200">
+                    <div class="flex justify-between items-center mb-2">
+                        <label class="block text-sm font-bold text-stone-700">Receta Activa</label>
+                        <div class="flex gap-1">
+                             <button id="edit-recipe-btn" class="text-sky-600 hover:text-sky-800 text-xs hidden" title="Editar Nombre"><i class="fas fa-pen"></i></button>
+                             <button id="delete-recipe-btn" class="text-red-600 hover:text-red-800 text-xs hidden" title="Eliminar Receta"><i class="fas fa-trash"></i></button>
+                        </div>
+                    </div>
+                    <select id="recipe-select" class="w-full p-2 border rounded-lg bg-stone-50 mb-4"></select>
+                    
+                    <div id="recipe-details" class="hidden">
+                        <div class="grid grid-cols-2 gap-2 mb-4">
+                            <div>
+                                <label class="text-xs text-stone-500">Porción (g)</label>
+                                <input type="number" id="portion-size" class="w-full p-2 border rounded text-sm">
+                            </div>
+                            <div>
+                                <label class="text-xs text-stone-500">Porciones/Env.</label>
+                                <input type="number" id="servings-count" class="w-full p-2 border rounded text-sm">
+                            </div>
+                        </div>
+                        <button id="save-recipe-changes-btn" class="w-full bg-stone-100 text-stone-600 text-xs py-1 rounded hover:bg-stone-200 hidden">Guardar Cambios de Porción</button>
+                    </div>
+                </div>
+
+                <!-- Buscador USDA -->
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-stone-200">
+                    <h3 class="font-bold text-amber-800 mb-4"><i class="fas fa-search mr-2"></i>Agregar Ingrediente (USDA)</h3>
+                    <div class="flex gap-2 mb-4">
+                        <input type="text" id="usda-search" placeholder="Ej: Cacao powder, Sugar..." class="w-full p-2 border rounded-lg text-sm">
+                        <button id="search-btn" class="bg-stone-200 hover:bg-stone-300 px-3 rounded-lg"><i class="fas fa-search"></i></button>
+                    </div>
+                    <ul id="usda-results" class="space-y-2 max-h-60 overflow-y-auto text-sm"></ul>
+                </div>
+
+                <!-- Lista de Ingredientes -->
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-stone-200">
+                    <h3 class="font-bold text-amber-800 mb-4">Ingredientes en la Mezcla</h3>
+                    <div id="ingredients-list" class="space-y-3">
+                        <p class="text-stone-400 text-sm italic text-center">No hay ingredientes.</p>
+                    </div>
+                    <div class="mt-4 pt-4 border-t border-stone-100 flex justify-between items-center">
+                        <span class="text-sm font-bold">Peso Total:</span>
+                        <span id="total-weight" class="text-amber-800 font-mono">0g</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- COLUMNA DERECHA: VISUALIZACIÓN (8 cols) -->
+            <div class="lg:col-span-8">
+                <div class="bg-white p-8 rounded-2xl shadow-lg border border-stone-200 min-h-[600px]">
+                    
+                    <!-- Controles de Visualización -->
+                    <div class="flex flex-col md:flex-row justify-between items-center mb-8 gap-4 border-b pb-4">
+                        <div class="flex gap-2 bg-stone-100 p-1 rounded-lg">
+                            <button class="label-toggle px-4 py-2 rounded-md text-sm font-bold bg-white shadow-sm text-amber-900" data-type="fda">🇺🇸 FDA</button>
+                            <button class="label-toggle px-4 py-2 rounded-md text-sm font-bold text-stone-500 hover:bg-white/50" data-type="eu">🇪🇺 Unión Europea</button>
+                            <button class="label-toggle px-4 py-2 rounded-md text-sm font-bold text-stone-500 hover:bg-white/50" data-type="ops">🌎 OPS/Latam</button>
+                        </div>
+                        <div class="flex gap-2">
+                             <button id="download-png" class="text-stone-600 hover:text-stone-900 text-sm font-medium"><i class="fas fa-image mr-1"></i> PNG</button>
+                             <button id="download-pdf" class="text-red-600 hover:text-red-800 text-sm font-medium"><i class="fas fa-file-pdf mr-1"></i> PDF</button>
+                        </div>
+                    </div>
+
+                    <!-- Canvas de Renderizado -->
+                    <div class="flex justify-center items-start bg-stone-50 p-8 rounded-xl border border-dashed border-stone-300" id="label-canvas-container">
+                        
+                        <!-- 1. ETIQUETA FDA -->
+                        <div id="label-fda" class="label-view label-fda">
+                            <h1 class="border-b-1 pb-1">Nutrition Facts</h1>
+                            <div class="border-b-8 pb-1 mb-2">
+                                <p class="text-sm"> <span id="lbl-servings-container">__</span> servings per container</p>
+                                <div class="flex justify-between items-end font-bold">
+                                    <span>Serving size</span>
+                                    <span id="lbl-portion">100g</span>
+                                </div>
+                            </div>
+                            <div class="border-b-4 pb-2 mb-2">
+                                <p class="text-xs font-bold">Amount per serving</p>
+                                <div class="flex justify-between items-end">
+                                    <span class="text-3xl font-black">Calories</span>
+                                    <span class="text-4xl font-black" id="lbl-calories">0</span>
+                                </div>
+                            </div>
+                            <div class="text-right text-xs font-bold border-b-1 pb-1 mb-1">% Daily Value*</div>
+                            
+                            <div class="border-b-1 pb-1 mb-1 text-sm">
+                                <span class="font-bold">Total Fat</span> <span id="lbl-fat">0g</span>
+                                <span class="float-right font-bold" id="dv-fat">0%</span>
+                            </div>
+                            <div class="border-b-1 pb-1 mb-1 text-sm pl-4">
+                                Saturated Fat <span id="lbl-sat-fat">0g</span>
+                                <span class="float-right font-bold" id="dv-sat-fat">0%</span>
+                            </div>
+                             <div class="border-b-1 pb-1 mb-1 text-sm pl-4">
+                                Trans Fat <span id="lbl-trans-fat">0g</span>
+                            </div>
+                            <div class="border-b-1 pb-1 mb-1 text-sm">
+                                <span class="font-bold">Cholesterol</span> <span id="lbl-chol">0mg</span>
+                                <span class="float-right font-bold" id="dv-chol">0%</span>
+                            </div>
+                            <div class="border-b-1 pb-1 mb-1 text-sm">
+                                <span class="font-bold">Sodium</span> <span id="lbl-sodium">0mg</span>
+                                <span class="float-right font-bold" id="dv-sodium">0%</span>
+                            </div>
+                            <div class="border-b-1 pb-1 mb-1 text-sm">
+                                <span class="font-bold">Total Carbohydrate</span> <span id="lbl-carb">0g</span>
+                                <span class="float-right font-bold" id="dv-carb">0%</span>
+                            </div>
+                             <div class="border-b-1 pb-1 mb-1 text-sm pl-4">
+                                Dietary Fiber <span id="lbl-fiber">0g</span>
+                                <span class="float-right font-bold" id="dv-fiber">0%</span>
+                            </div>
+                            <div class="border-b-1 pb-1 mb-1 text-sm pl-4">
+                                Total Sugars <span id="lbl-sugar">0g</span>
+                            </div>
+                            <div class="border-b-8 pb-1 mb-2 text-sm pl-8">
+                                Includes <span id="lbl-added-sugar">0g</span> Added Sugars
+                                <span class="float-right font-bold" id="dv-added-sugar">0%</span>
+                            </div>
+                            <div class="border-b-4 pb-1 mb-2 text-sm">
+                                <span class="font-bold">Protein</span> <span id="lbl-protein">0g</span>
+                            </div>
+                            <!-- Vitaminas -->
+                            <div class="text-sm">
+                                <div class="border-b-1 py-1">Vitamin D <span id="lbl-vit-d">0mcg</span> <span class="float-right" id="dv-vit-d">0%</span></div>
+                                <div class="border-b-1 py-1">Calcium <span id="lbl-calcium">0mg</span> <span class="float-right" id="dv-calcium">0%</span></div>
+                                <div class="border-b-1 py-1">Iron <span id="lbl-iron">0mg</span> <span class="float-right" id="dv-iron">0%</span></div>
+                                <div class="py-1">Potassium <span id="lbl-potassium">0mg</span> <span class="float-right" id="dv-potassium">0%</span></div>
+                            </div>
+                        </div>
+
+                        <!-- 2. ETIQUETA UE (Tabla) -->
+                        <div id="label-eu" class="label-view hidden w-[350px] bg-white text-black font-sans border border-black p-4">
+                            <h3 class="font-bold mb-2">Información Nutricional</h3>
+                            <div class="flex justify-between text-sm border-b border-black py-1">
+                                <span>Por 100g</span>
+                            </div>
+                            <div class="flex justify-between py-1 border-b border-gray-300">
+                                <strong>Valor Energético</strong>
+                                <span><span id="eu-kj">0</span> kJ / <span id="eu-kcal">0</span> kcal</span>
+                            </div>
+                            <div class="flex justify-between py-1 border-b border-gray-300">
+                                <strong>Grasas</strong>
+                                <span id="eu-fat">0 g</span>
+                            </div>
+                             <div class="flex justify-between py-1 border-b border-gray-300 pl-4 text-sm">
+                                de las cuales saturadas
+                                <span id="eu-sat-fat">0 g</span>
+                            </div>
+                             <div class="flex justify-between py-1 border-b border-gray-300">
+                                <strong>Hidratos de carbono</strong>
+                                <span id="eu-carb">0 g</span>
+                            </div>
+                            <div class="flex justify-between py-1 border-b border-gray-300 pl-4 text-sm">
+                                de los cuales azúcares
+                                <span id="eu-sugar">0 g</span>
+                            </div>
+                             <div class="flex justify-between py-1 border-b border-gray-300">
+                                <strong>Proteínas</strong>
+                                <span id="eu-protein">0 g</span>
+                            </div>
+                             <div class="flex justify-between py-1 border-b-2 border-black">
+                                <strong>Sal</strong>
+                                <span id="eu-salt">0 g</span>
+                            </div>
+                        </div>
+
+                        <!-- 3. ETIQUETA OPS (Octógonos) -->
+                        <div id="label-ops" class="label-view hidden w-[400px] bg-white p-4">
+                            <h3 class="font-bold text-center mb-6 text-xl">ADVERTENCIAS (OPS/Latam)</h3>
+                            <div id="octagons-container" class="flex flex-wrap justify-center gap-4">
+                                <!-- Se inyectan dinámicamente -->
+                                <div class="octagon hidden" id="oct-cal">EXCESO<br>CALORÍAS</div>
+                                <div class="octagon hidden" id="oct-sugar">EXCESO<br>AZÚCARES</div>
+                                <div class="octagon hidden" id="oct-sat">EXCESO<br>GRASAS<br>SATURADAS</div>
+                                <div class="octagon hidden" id="oct-sodium">EXCESO<br>SODIO</div>
+                            </div>
+                            <p id="no-warnings" class="text-center text-green-600 font-bold mt-4 hidden">Este producto no presenta sellos de advertencia.</p>
+                            <p class="text-xs text-center mt-6 text-gray-500">Cálculo basado en 100g según Modelo de Perfil de Nutrientes de la OPS.</p>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Nueva Receta -->
+    <dialog id="new-recipe-modal" class="p-6 rounded-xl shadow-xl w-96 backdrop:bg-black/50">
+        <h3 class="text-xl font-bold text-amber-900 mb-4">Nueva Receta</h3>
+        <input type="text" id="new-recipe-name" placeholder="Nombre (Ej: Chocolate 70%)" class="w-full p-2 border rounded mb-4">
+        <div class="flex justify-end gap-2">
+            <button onclick="this.closest('dialog').close()" class="text-gray-500 font-bold px-4">Cancelar</button>
+            <button id="create-recipe-btn" class="bg-amber-800 text-white px-4 py-2 rounded-lg font-bold">Crear</button>
+        </div>
+    </dialog>
+
+    <dialog id="edit-recipe-modal" class="p-6 rounded-xl shadow-xl w-96 backdrop:bg-black/50">
+        <h3 class="text-xl font-bold text-amber-900 mb-4">Editar Receta</h3>
+        <input type="text" id="edit-recipe-name" placeholder="Nuevo nombre" class="w-full p-2 border rounded mb-4">
+        <div class="flex justify-end gap-2">
+            <button onclick="this.closest('dialog').close()" class="text-gray-500 font-bold px-4">Cancelar</button>
+            <button id="update-recipe-btn" class="bg-amber-800 text-white px-4 py-2 rounded-lg font-bold">Actualizar</button>
+        </div>
+    </dialog>
+
+    <script src="/js/nav-loader.js"></script>
+    <script src="/js/nutricion-app.js"></script>
+</body>
+</html>
