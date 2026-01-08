@@ -1735,6 +1735,154 @@ const getBatchByGtinAndLot = async (gtin, loteId) => {
     }
 };
 
+// --- MÓDULO DE NUTRICIÓN ---
+
+const getRecetasNutricionales = async (req, res) => {
+    const userId = req.user.id;
+    try {
+        const recetas = await all('SELECT * FROM recetas_nutricionales WHERE user_id = ? ORDER BY created_at DESC', [userId]);
+        // Para cada receta, obtenemos sus ingredientes
+        const recetasCompletas = await Promise.all(recetas.map(async (r) => {
+            const ingredientes = await all('SELECT * FROM ingredientes_receta WHERE receta_id = ?', [r.id]);
+            return {
+                ...r,
+                ingredientes: ingredientes.map(i => ({
+                    ...i,
+                    nutrientes_base_json: safeJSONParse(i.nutrientes_base_json)
+                }))
+            };
+        }));
+        res.status(200).json(recetasCompletas);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};
+
+// 2. Crear Receta
+const createRecetaNutricional = async (req, res) => {
+    const userId = req.user.id;
+    const { nombre, descripcion, peso_porcion_gramos, porciones_envase } = req.body;
+    const id = require('crypto').randomUUID();
+
+    try {
+        await run(
+            'INSERT INTO recetas_nutricionales (id, user_id, nombre, descripcion, peso_porcion_gramos, porciones_envase) VALUES (?, ?, ?, ?, ?, ?)',
+            [id, userId, nombre, descripcion, peso_porcion_gramos || 100, porciones_envase || 1]
+        );
+        res.status(201).json({ message: "Receta creada", id });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};
+
+// 2.1 Actualizar Receta (Nuevo para CRUD completo)
+const updateRecetaNutricional = async (req, res) => {
+    const userId = req.user.id;
+    const { id } = req.params;
+    const { nombre, descripcion, peso_porcion_gramos, porciones_envase } = req.body;
+
+    try {
+        const result = await run(
+            'UPDATE recetas_nutricionales SET nombre = ?, descripcion = ?, peso_porcion_gramos = ?, porciones_envase = ? WHERE id = ? AND user_id = ?',
+            [nombre, descripcion, peso_porcion_gramos, porciones_envase, id, userId]
+        );
+        if (result.changes === 0) return res.status(404).json({ error: "Receta no encontrada" });
+        res.status(200).json({ message: "Receta actualizada" });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};
+
+// 3. Agregar Ingrediente a Receta
+const addIngredienteReceta = async (req, res) => {
+    const { receta_id } = req.params;
+    const { usda_id, nombre, peso_gramos, nutrientes_base_json } = req.body;
+    const id = require('crypto').randomUUID();
+
+    try {
+        await run(
+            'INSERT INTO ingredientes_receta (id, receta_id, usda_id, nombre, peso_gramos, nutrientes_base_json) VALUES (?, ?, ?, ?, ?, ?)',
+            [id, receta_id, usda_id, nombre, peso_gramos, JSON.stringify(nutrientes_base_json)]
+        );
+        res.status(201).json({ message: "Ingrediente agregado", id });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};
+
+// 4. Actualizar Peso de Ingrediente
+const updateIngredientePeso = async (req, res) => {
+    const { id } = req.params;
+    const { peso_gramos } = req.body;
+    try {
+        await run('UPDATE ingredientes_receta SET peso_gramos = ? WHERE id = ?', [peso_gramos, id]);
+        res.status(200).json({ message: "Peso actualizado" });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};
+
+// 5. Eliminar Ingrediente
+const deleteIngrediente = async (req, res) => {
+    const { id } = req.params;
+    try {
+        await run('DELETE FROM ingredientes_receta WHERE id = ?', [id]);
+        res.status(204).send();
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};
+
+// 6. Eliminar Receta Completa
+const deleteRecetaNutricional = async (req, res) => {
+    const { id } = req.params;
+    try {
+        await run('DELETE FROM recetas_nutricionales WHERE id = ?', [id]);
+        res.status(204).send();
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};
+
+// --- PROXY OPEN FOOD FACTS (Reemplaza a USDA) ---
+const searchOpenFoodFacts = async (req, res) => {
+    const { query } = req.query;
+    
+    try {
+        // Usamos la API de búsqueda de OFF
+        const url = `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(query)}&search_simple=1&action=process&json=1&page_size=10&fields=product_name,_id,nutriments`;
+        
+        const response = await fetch(url);
+        const data = await response.json();
+        
+        res.json(data);
+    } catch (error) {
+        console.error("Error OFF Search:", error);
+        res.status(500).json({ error: "Error conectando con Open Food Facts" });
+    }
+};
+
+const getOpenFoodFactsDetails = async (req, res) => {
+    const { barcode } = req.params;
+
+    try {
+        // Obtenemos el producto específico por código de barras
+        const url = `https://world.openfoodfacts.org/api/v0/product/${barcode}.json`;
+        
+        const response = await fetch(url);
+        const data = await response.json();
+        
+        if (data.status === 0) {
+            return res.status(404).json({ error: "Producto no encontrado" });
+        }
+        
+        res.json(data);
+    } catch (error) {
+        console.error("Error OFF Details:", error);
+        res.status(500).json({ error: "Error obteniendo detalles del alimento" });
+    }
+};
+
 module.exports = {
     registerUser, loginUser, logoutUser, handleGoogleLogin,
     getFincas, createFinca, updateFinca, deleteFinca,
@@ -1757,5 +1905,7 @@ module.exports = {
     getReviews, submitReview,
     getBlogPosts, getBlogPostBySlug, createBlogPost, updateBlogPost, deleteBlogPost, getAdminBlogPosts, getBlogPostById,
     getProductos, createProducto, updateProducto, deleteProducto,
-    validateDeforestation, getBatchByGtinAndLot
+    validateDeforestation, getBatchByGtinAndLot,
+    getRecetasNutricionales, createRecetaNutricional, addIngredienteReceta, updateIngredientePeso, deleteIngrediente, deleteRecetaNutricional, updateRecetaNutricional,
+    searchOpenFoodFacts, getOpenFoodFactsDetails
 };

@@ -299,6 +299,25 @@ app.post('/api/admin/blog', authenticateApi, checkAdmin, db.createBlogPost);
 app.put('/api/admin/blog/:id', authenticateApi, checkAdmin, db.updateBlogPost);
 app.delete('/api/admin/blog/:id', authenticateApi, checkAdmin, db.deleteBlogPost);
 
+// --- MÓDULO NUTRICIÓN ---
+// Vistas
+app.get('/app/nutricion', authenticatePage, checkSubscription('profesional'), (req, res) => res.sendFile(path.join(__dirname, 'views', 'nutricion.html')));
+
+// API Recetas
+app.get('/api/nutricion/recetas', authenticateApi, db.getRecetasNutricionales);
+app.post('/api/nutricion/recetas', authenticateApi, db.createRecetaNutricional);
+app.delete('/api/nutricion/recetas/:id', authenticateApi, db.deleteRecetaNutricional);
+app.put('/api/nutricion/recetas/:id', authenticateApi, db.updateRecetaNutricional);
+
+// API Ingredientes
+app.post('/api/nutricion/recetas/:receta_id/ingredientes', authenticateApi, db.addIngredienteReceta);
+app.put('/api/nutricion/ingredientes/:id', authenticateApi, db.updateIngredientePeso);
+app.delete('/api/nutricion/ingredientes/:id', authenticateApi, db.deleteIngrediente);
+
+// API Proxy Open Food Facts (ACTUALIZADO)
+app.get('/api/proxy/off/search', authenticateApi, db.searchOpenFoodFacts);
+app.get('/api/proxy/off/product/:barcode', authenticateApi, db.getOpenFoodFactsDetails);
+
 // Iniciar Servidor
 app.listen(PORT, () => {
     console.log(`Servidor corriendo en modo [${process.env.NODE_ENV || 'development'}] en http://localhost:${PORT}`);

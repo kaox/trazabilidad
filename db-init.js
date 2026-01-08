@@ -253,6 +253,30 @@ async function initializeDatabase() {
                 )`);
             console.log("Tabla 'productos' lista (Estructura Actualizada).");
 
+            await runQuery(db, `
+                CREATE TABLE IF NOT EXISTS recetas_nutricionales (
+                    id TEXT PRIMARY KEY,
+                    user_id INTEGER NOT NULL,
+                    nombre TEXT NOT NULL,
+                    descripcion TEXT,
+                    peso_porcion_gramos REAL DEFAULT 100,
+                    porciones_envase REAL DEFAULT 1,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+                )`);
+
+            await runQuery(db, `
+                CREATE TABLE IF NOT EXISTS ingredientes_receta (
+                    id TEXT PRIMARY KEY,
+                    receta_id TEXT NOT NULL,
+                    usda_id TEXT,
+                    nombre TEXT NOT NULL,
+                    peso_gramos REAL NOT NULL,
+                    nutrientes_base_json TEXT NOT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (receta_id) REFERENCES recetas_nutricionales(id) ON DELETE CASCADE
+                )`);
+
             try {
                 await runQuery(db, `ALTER TABLE lotes ADD COLUMN producto_id TEXT REFERENCES productos(id) ON DELETE SET NULL`);
 

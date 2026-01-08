@@ -230,3 +230,26 @@ CREATE TABLE IF NOT EXISTS blog_posts (
     published_at TIMESTAMP,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
+
+-- 15. MODULO NUTRICIÓN: RECETAS
+CREATE TABLE IF NOT EXISTS recetas_nutricionales (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    nombre TEXT NOT NULL,
+    descripcion TEXT,
+    peso_porcion_gramos NUMERIC DEFAULT 100, -- Tamaño de porción
+    porciones_envase NUMERIC DEFAULT 1,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 16. MODULO NUTRICIÓN: INGREDIENTES DE RECETA
+CREATE TABLE IF NOT EXISTS ingredientes_receta (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    receta_id UUID NOT NULL REFERENCES recetas_nutricionales(id) ON DELETE CASCADE,
+    usda_id TEXT, -- ID oficial de la USDA FoodData Central
+    nombre TEXT NOT NULL,
+    peso_gramos NUMERIC NOT NULL,
+    -- Guardamos la data nutricional base (por 100g) en JSON para no depender de la API siempre
+    nutrientes_base_json JSONB NOT NULL, 
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
