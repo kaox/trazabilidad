@@ -1,3 +1,5 @@
+window.initMap = function() { };
+
 document.addEventListener('DOMContentLoaded', () => {
     // --- Selectores del DOM ---
     const buscarBtn = document.getElementById('buscarBtn');
@@ -27,6 +29,11 @@ document.addEventListener('DOMContentLoaded', () => {
     if (typeof ChartDataLabels !== 'undefined') {
         Chart.register(ChartDataLabels);
     }
+
+    // Configurar initMap real
+    window.initMap = function() {
+        // Callback de Google Maps (si se necesita lógica global)
+    };
 
     // --- Lógica Principal ---
 
@@ -676,63 +683,66 @@ document.addEventListener('DOMContentLoaded', () => {
     
     function initializeMap(containerId, coords) {
         const mapContainer = document.getElementById(containerId);
-        if (!mapContainer) return;
+        if (!mapContainer || typeof google === 'undefined') return;
 
-        // Limpia instancias previas del mapa en este contenedor
-        if (chartInstances && chartInstances[containerId]) {
-            chartInstances[containerId].remove();
-        }
+        // Limpiar mapa previo si existe en este contenedor
+        // (Nota: Google Maps no tiene un método .remove() directo como Leaflet, 
+        // simplemente sobrescribimos la referencia o limpiamos el div si fuera necesario, 
+        // pero aquí sobrescribimos chartInstances[containerId])
 
         try {
-            // --- Detección de tipo de coordenada ---
-            const isPoint = coords && typeof coords.lat === 'number' && typeof coords.lng === 'number';
-            const isPolygon = Array.isArray(coords) && coords.length > 0;
-
-            if (!isPoint && !isPolygon) {
-                throw new Error("Coordenadas inválidas. Deben ser un {lat, lng} o un array de [lat, lng].");
+            let map;
+            
+            // Detección: Punto vs Polígono
+            // Coordenadas pueden venir como {lat, lng} o [[lat, lng], ...]
+            
+            // Caso 1: Punto
+            if (coords && typeof coords.lat === 'number') {
+                const latLng = { lat: coords.lat, lng: coords.lng };
+                
+                map = new google.maps.Map(mapContainer, {
+                    zoom: 15,
+                    center: latLng,
+                    mapTypeId: 'satellite',
+                    streetViewControl: false
+                });
+                
+                new google.maps.Marker({
+                    position: latLng,
+                    map: map
+                });
+            }
+            // Caso 2: Polígono (Array de arrays)
+            else if (Array.isArray(coords) && coords.length > 0) {
+                // Convertir array de arrays a objetos LatLngLiteral
+                const polygonPath = coords.map(p => ({ lat: p[0], lng: p[1] }));
+                
+                // Calcular centro para inicializar
+                const bounds = new google.maps.LatLngBounds();
+                polygonPath.forEach(p => bounds.extend(p));
+                
+                map = new google.maps.Map(mapContainer, {
+                    zoom: 15,
+                    center: bounds.getCenter(),
+                    mapTypeId: 'satellite',
+                    streetViewControl: false
+                });
+                
+                const polygon = new google.maps.Polygon({
+                    paths: polygonPath,
+                    strokeColor: '#8D6E63',
+                    strokeOpacity: 0.8,
+                    strokeWeight: 2,
+                    fillColor: '#8D6E63',
+                    fillOpacity: 0.35,
+                    map: map
+                });
+                
+                map.fitBounds(bounds);
             }
 
-            requestAnimationFrame(() => {
-                let map;
+            chartInstances[containerId] = map;
 
-                // --- Lógica para un PUNTO ---
-                if (isPoint) {
-                    const latLngArray = [coords.lat, coords.lng];
-                    
-                    // 1. Crea el mapa y lo centra en el punto con un zoom fijo
-                    map = L.map(mapContainer).setView(latLngArray, 15);
-                    
-                    // 2. Añade la capa de tiles
-                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-                    
-                    // 3. Añade un MARCADOR en lugar de un polígono
-                    L.marker(latLngArray).addTo(map);
-                }
-                // --- Lógica para un POLÍGONO (la original) ---
-                else if (isPolygon) {
-                    // 1. Crea el mapa centrado temporalmente en el primer punto
-                    map = L.map(mapContainer).setView(coords[0], 15);
-                    
-                    // 2. Añade la capa de tiles
-                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-                    
-                    // 3. Añade el POLÍGONO
-                    const polygon = L.polygon(coords, { color: '#8D6E63' }).addTo(map);
-                    
-                    // 4. Ajusta el zoom para que el polígono quepa en la vista
-                    map.fitBounds(polygon.getBounds());
-                }
-
-                // --- Lógica común ---
-                
-                // Refresca el tamaño del mapa (útil si está en un contenedor oculto)
-                setTimeout(() => map.invalidateSize(), 100);
-                
-                // Guarda la instancia del mapa
-                if (chartInstances) {
-                    chartInstances[containerId] = map;
-                }
-            });
         } catch (e) {
             console.error("Error al renderizar mapa:", e);
         }
@@ -1051,148 +1061,155 @@ document.addEventListener('DOMContentLoaded', () => {
         return points;
     }
 
-    // Nueva función refactorizada que renderiza el mapa y sus elementos
+    // --- GOOGLE MAPS: Mapa de Ruta (Línea de Tiempo) ---
     function initializeRouteMap(containerId, routePoints) {
         const mapContainer = document.getElementById(containerId);
-        
-        // 1. Validar el contenedor y los datos de entrada
-        if (!mapContainer || !routePoints) return;
+        if (!mapContainer || typeof google === 'undefined' || !routePoints) return;
 
-        // 2. --> NORMALIZACIÓN: Asegurar que 'pointsArray' sea siempre un array
-        //    Si routePoints NO es un array (es un solo objeto), lo envuelve en uno.
         const pointsArray = Array.isArray(routePoints) ? routePoints : [routePoints];
-
-        // 3. Validar que el array (ya normalizado) no esté vacío
         if (pointsArray.length === 0) return;
 
-        // Extraer las coordenadas [lat, lng]
-        const coordinates = pointsArray.map(p => p.latlng);
+        // Convertir puntos a LatLng de Google
+        // routePoints viene como [{ latlng: [lat, lng], name, ... }]
+        const coordinates = pointsArray.map(p => ({ lat: p.latlng[0], lng: p.latlng[1] }));
 
-        // 4. Si el mapa ya existe (refresco/resize)
+        // Si ya existe, redimensionar
         if (chartInstances[containerId]) {
-            const map = chartInstances[containerId]; // Usar 'map' para claridad
-            setTimeout(() => {
-                map.invalidateSize();
-                
-                // --> Lógica condicional para el refresco
-                if (coordinates.length > 1) {
-                    map.fitBounds(coordinates, { padding: [50, 50] });
-                } else if (coordinates.length === 1) {
-                    map.setView(coordinates[0], 13); // Centrar en el único punto
-                }
-            }, 100);
+            const map = chartInstances[containerId];
+            google.maps.event.trigger(map, 'resize');
+            
+            const bounds = new google.maps.LatLngBounds();
+            coordinates.forEach(c => bounds.extend(c));
+            
+            if (coordinates.length > 1) map.fitBounds(bounds);
+            else map.setCenter(coordinates[0]);
+            
             return;
         }
 
-        // 5. Si es un mapa nuevo (creación)
         try {
-            let routeLayers = L.layerGroup();
-            let map; // Declarar 'map'
-
-            // 5.1. Crea la instancia del mapa y añade la capa de tiles
-            map = L.map(containerId);
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-
-            // 5.2. --> Ajusta la vista (Bounds si es ruta, View si es punto único)
-            if (coordinates.length > 1) {
-                map.fitBounds(coordinates, { padding: [50, 50] });
-            } else {
-                // El 'setView' original que tenías se mueve aquí, para el caso de 1 solo punto
-                map.setView(coordinates[0], 13); 
-            }
-            
-            // 5.3. Añade los marcadores (Esto funciona igual para 1 o N puntos)
-            //    Usamos 'pointsArray' que sabemos que siempre es un array.
-            pointsArray.forEach(point => {
-                const marker = L.marker(point.latlng);
-                
-                marker.bindTooltip(`<b>${point.stageName}</b><br>${point.date}<br>${point.name}`, {
-                    permanent: true,
-                    direction: 'top',
-                    className: 'my-leaflet-tooltip'
-                });
-                
-                marker.bindPopup(`<b>${point.stageName}</b><br>${point.name}<br>Fecha: ${point.date}`);
-
-                routeLayers.addLayer(marker);
+            const map = new google.maps.Map(mapContainer, {
+                zoom: 13,
+                center: coordinates[0],
+                mapTypeId: 'roadmap',
+                streetViewControl: false
             });
 
-            map.addLayer(routeLayers);
-            
-            // 5.4. --> Inicia la animación SÓLO SI hay más de un punto
+            const bounds = new google.maps.LatLngBounds();
+
+            // Marcadores
+            pointsArray.forEach(point => {
+                const pos = { lat: point.latlng[0], lng: point.latlng[1] };
+                bounds.extend(pos);
+                
+                const marker = new google.maps.Marker({
+                    position: pos,
+                    map: map,
+                    label: {
+                        text: (Array.isArray(pointsArray) ? (pointsArray.indexOf(point) + 1).toString() : "1"),
+                        color: "white",
+                        fontWeight: "bold"
+                    },
+                    title: `${point.stageName} - ${point.name}`
+                });
+
+                // InfoWindow para detalles
+                const infoWindow = new google.maps.InfoWindow({
+                    content: `
+                        <div class="p-2">
+                            <h3 class="font-bold text-amber-900">${point.stageName}</h3>
+                            <p class="text-sm">${point.name}</p>
+                            <p class="text-xs text-stone-500">${point.date}</p>
+                        </div>
+                    `
+                });
+
+                marker.addListener("click", () => {
+                    infoWindow.open(map, marker);
+                });
+            });
+
             if (coordinates.length > 1) {
-                // Asumiendo que 'animateRoute' existe en el scope
-                animateRoute(coordinates, routeLayers); 
+                map.fitBounds(bounds);
+                animateRoute(coordinates, map);
+            } else {
+                map.setCenter(coordinates[0]);
+                map.setZoom(14);
             }
 
-            // Almacena la instancia
             chartInstances[containerId] = map;
 
         } catch(e) { console.error("Error al renderizar mapa de ruta:", e); }
     }
     
-    // 4. Animación de la Ruta
-    function animateRoute(coordinates, routeLayers) {
-        let currentAnimation;
+    // --- GOOGLE MAPS: Animación de Ruta ---
+    function animateRoute(coordinates, map) {
+        // Línea base (ruta estática)
+        const lineSymbol = {
+            path: google.maps.SymbolPath.CIRCLE,
+            scale: 6,
+            strokeColor: '#3B82F6', // Blue-500
+            fillColor: '#3B82F6',
+            fillOpacity: 1
+        };
 
-        // Detiene cualquier animación en curso antes de empezar una nueva
-        if (currentAnimation) {
-            cancelAnimationFrame(currentAnimation);
-        }
-
-        // Limpia cualquier trazo o marcador animado anterior
-        routeLayers.eachLayer(layer => {
-            if (layer instanceof L.Polyline || (layer.options.icon && layer.options.icon.options.className === 'moving-icon')) {
-                routeLayers.removeLayer(layer);
-            }
+        const polyline = new google.maps.Polyline({
+            path: coordinates,
+            geodesic: true,
+            strokeColor: '#9CA3AF', // Gray line
+            strokeOpacity: 0.6,
+            strokeWeight: 4,
+            map: map
         });
 
-        let polyline = L.polyline([], { color: 'blue', weight: 5, opacity: 0.8 }).addTo(routeLayers);
-        let animatedMarker = L.marker(coordinates[0], {
-            icon: L.divIcon({
-                className: 'moving-icon',
-                html: '<div class="w-4 h-4 bg-blue-500 rounded-full border-2 border-white shadow-lg"></div>',
-                iconSize: [16, 16],
-                iconAnchor: [8, 8]
-            })
-        }).addTo(routeLayers);
-
-        let i = 0;
-        let j = 0;
-        const totalSteps = 100; // Pasos entre cada punto para una animación más suave
+        // Marcador animado (simulando movimiento)
+        // En Google Maps V3, la animación compleja sobre Polyline requiere librerías externas o 
+        // manipulación de iconos. Una forma sencilla nativa es usar un 'Icon' que se mueve.
         
-        function move() {
-            if (i >= coordinates.length - 1) { // Animación completada
-                cancelAnimationFrame(currentAnimation);
-                return;
-            }
+        // Versión simplificada: Dibujar una línea 'progresiva' o mover un marcador
+        // Aquí usaremos un marcador que se mueve
+        
+        const animatedMarker = new google.maps.Marker({
+            position: coordinates[0],
+            map: map,
+            icon: {
+                path: google.maps.SymbolPath.CIRCLE,
+                scale: 5,
+                fillColor: "#F59E0B", // Amber
+                fillOpacity: 1,
+                strokeColor: "white",
+                strokeWeight: 2,
+            },
+            zIndex: 100
+        });
 
-            const start = L.latLng(coordinates[i]);
-            const end = L.latLng(coordinates[i+1]);
-            
-            // Añadir el punto actual a la polilínea
-            polyline.addLatLng(start);
-            
-            // Mover el marcador animado
-            const lat = start.lat + (end.lat - start.lat) * (j / totalSteps);
-            const lng = start.lng + (end.lng - start.lng) * (j / totalSteps);
-            animatedMarker.setLatLng([lat, lng]);
+        let step = 0;
+        let numSteps = 100; // Pasos entre puntos
+        let index = 0;
 
-            j++;
-            if (j > totalSteps) {
-                j = 0;
-                i++;
-                if (i === coordinates.length - 1) {
-                    // Asegurarse de que termine en el punto final exacto
-                    polyline.addLatLng(coordinates[i]);
-                    animatedMarker.setLatLng(coordinates[i]);
-                }
+        function animate() {
+            if (index >= coordinates.length - 1) return; // Fin
+
+            const start = coordinates[index];
+            const end = coordinates[index + 1];
+
+            step++;
+            const progress = step / numSteps;
+            
+            const lat = start.lat + (end.lat - start.lat) * progress;
+            const lng = start.lng + (end.lng - start.lng) * progress;
+            
+            animatedMarker.setPosition({ lat, lng });
+
+            if (step >= numSteps) {
+                step = 0;
+                index++;
             }
             
-            currentAnimation = requestAnimationFrame(move);
+            requestAnimationFrame(animate);
         }
-        
-        move();
+
+        animate();
     }
 
     function renderReviewsSection(reviews) {

@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Trazabilidad del Producto - Ruru Lab</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Leaflet.js para el mapa interactivo -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAM37iJTRcIoSAxESlDzB2DxlNJWKasW5U&callback=initMap&v=weekly" defer></script>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -189,6 +189,7 @@
             <img id="modalImage" src="" alt="Imagen de la finca" class="w-full h-auto max-h-[80vh] object-contain rounded-md">
         </div>
     </div>
+    <!-- Modal de ubicación (Google Maps) -->
     <div id="locationModal" class="fixed inset-0 bg-black/70 z-[1050] flex items-center justify-center hidden p-4">
         <div class="bg-white p-6 rounded-lg shadow-xl max-w-3xl w-full relative max-h-[90vh] overflow-y-auto">
              <button class="close-location-modal absolute top-4 right-4 text-stone-600 hover:text-stone-900 text-2xl">&times;</button>
