@@ -629,14 +629,34 @@ const getBatchesTree = async (req, res) => {
 };
 
 const checkBatchOwnership = async (batchId, userId) => {
-    const owner = await get(`
-        WITH RECURSIVE ancestry AS (
-            SELECT id, parent_id, user_id FROM lotes WHERE id = ?
-            UNION ALL
-            SELECT l.id, l.parent_id, l.user_id FROM lotes l JOIN ancestry a ON l.id = a.parent_id
-        )
-        SELECT user_id FROM ancestry WHERE user_id IS NOT NULL`, [batchId]);
-    return owner && owner.user_id == userId;
+    // 1. Obtener el lote objetivo directamente
+    const targetLote = await get('SELECT id, user_id, parent_id, is_locked FROM lotes WHERE id = ?', [batchId]);
+    
+    if (!targetLote) return null; // El lote no existe
+
+    // 2. Determinar quién es el dueño
+    let ownerId = targetLote.user_id;
+
+    // Si el lote no tiene user_id (es hijo), buscamos al ancestro raíz
+    if (!ownerId) {
+        const root = await get(`
+            WITH RECURSIVE ancestry AS (
+                SELECT id, parent_id, user_id FROM lotes WHERE id = ?
+                UNION ALL
+                SELECT l.id, l.parent_id, l.user_id FROM lotes l JOIN ancestry a ON l.id = a.parent_id
+            )
+            SELECT user_id FROM ancestry WHERE user_id IS NOT NULL LIMIT 1`, [batchId]);
+            
+        if (root) ownerId = root.user_id;
+    }
+
+    // 3. Verificar si el usuario actual es el dueño encontrado
+    if (ownerId == userId) {
+        // Devolvemos el lote OBJETIVO (no el raíz), para que se valide si ESTE lote está bloqueado
+        return targetLote; 
+    }
+
+    return null; // No es el dueño o cadena rota
 };
 
 // --- Lotes (con Generación de ID en Backend) ---
