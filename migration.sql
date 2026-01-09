@@ -116,3 +116,11 @@ BEGIN
         ALTER TABLE fincas ADD COLUMN distrito TEXT;
     END IF;
 END $$;
+
+-- Vincular Productos con Recetas Nutricionales
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='productos' AND column_name='receta_nutricional_id') THEN
+        ALTER TABLE productos ADD COLUMN receta_nutricional_id UUID REFERENCES recetas_nutricionales(id) ON DELETE SET NULL;
+    END IF;
+END $$;

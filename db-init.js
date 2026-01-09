@@ -243,12 +243,15 @@ async function initializeDatabase() {
                     descripcion TEXT,
                     tipo_producto TEXT,
                     peso TEXT,
-                    gtin TEXT, 
+                    gtin TEXT,
                     is_formal_gtin BOOLEAN DEFAULT 0,
-                    imagenes_json TEXT,
+                    imagen_url TEXT, 
+                    imagenes_json TEXT, 
                     ingredientes TEXT,
                     premios_json TEXT,
+                    receta_nutricional_id TEXT REFERENCES recetas_nutricionales(id) ON DELETE SET NULL, -- NUEVO CAMPO
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
                     UNIQUE(user_id, gtin)
                 )`);
             console.log("Tabla 'productos' lista (Estructura Actualizada).");

@@ -71,6 +71,15 @@
                         </div>
                     </div>
 
+                    <div class="bg-amber-50 p-4 rounded-xl border border-amber-100">
+                        <label class="block text-sm font-bold text-amber-900 mb-2"><i class="fas fa-utensils mr-1"></i> Información Nutricional</label>
+                        <select id="receta_nutricional" class="w-full p-3 border border-amber-200 rounded-xl bg-white focus:ring-2 focus:ring-amber-500 outline-none">
+                            <option value="">-- Sin información nutricional --</option>
+                            <!-- Se llena dinámicamente -->
+                        </select>
+                        <p class="text-xs text-amber-800/60 mt-1">Vincula una receta creada en la Calculadora Nutricional para generar la etiqueta.</p>
+                    </div>
+
                     <!-- GTIN -->
                     <div class="bg-stone-50 p-4 rounded-xl border border-stone-200">
                         <div class="flex justify-between items-start mb-2">
@@ -138,12 +147,28 @@
         let currentImages = [];
         let currentAwards = [];
         let productsCache = [];
+        let nutritionalRecipes = [];
         let awardsConfig = {}; // Se cargará desde premios.json
 
         document.addEventListener('DOMContentLoaded', () => {
             loadProducts();
             loadAwardsConfig();
+            loadNutritionalRecipes();
         });
+
+        async function loadNutritionalRecipes() {
+            try {
+                const recipes = await api('/api/nutricion/recetas');
+                nutritionalRecipes = recipes;
+                const select = document.getElementById('receta_nutricional');
+                
+                // Mantener la opción default y agregar las nuevas
+                select.innerHTML = '<option value="">-- Sin información nutricional --</option>' + 
+                    recipes.map(r => `<option value="${r.id}">${r.nombre}</option>`).join('');
+            } catch (e) {
+                console.warn("No se pudieron cargar las recetas nutricionales (quizás no tienes suscripción profesional)", e);
+            }
+        }
 
         // --- CARGAR CONFIGURACIÓN DE PREMIOS ---
         async function loadAwardsConfig() {
@@ -311,6 +336,10 @@
                         </div>
                         
                         <div class="flex-grow">
+                             ${p.receta_nutricional_nombre ? 
+                                `<div class="mb-2 text-xs text-green-700 bg-green-50 px-2 py-1 rounded border border-green-100 inline-block"><i class="fas fa-utensils mr-1"></i> Info. Nutricional Vinculada</div>` : ''
+                             }
+
                              ${p.premios_json && p.premios_json.length > 0 ? 
                                 `<div class="mb-3 flex flex-wrap gap-1">
                                     ${p.premios_json.slice(0, 2).map(prem => `<span class="text-[10px] bg-yellow-50 text-yellow-700 px-2 py-0.5 rounded-full border border-yellow-100 flex items-center gap-1">
@@ -363,6 +392,8 @@
                     tipoSelect.value = p.tipo_producto || '';
                     tipoSelect.dispatchEvent(new Event('change'));
 
+                    document.getElementById('receta_nutricional').value = p.receta_nutricional_id || '';
+
                     // Cargar arrays
                     currentImages = p.imagenes_json || [];
                     currentAwards = p.premios_json || [];
@@ -403,6 +434,7 @@
                 ingredientes: document.getElementById('ingredientes').value,
                 peso: document.getElementById('peso').value,
                 tipo_producto: document.getElementById('tipo_producto').value,
+                receta_nutricional_id: document.getElementById('receta_nutricional').value,
                 imagenes_json: currentImages,
                 premios_json: currentAwards
             };

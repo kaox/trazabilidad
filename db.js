@@ -1525,7 +1525,16 @@ const getBlogPostById = async (req, res) => {
 const getProductos = async (req, res) => {
     const userId = req.user.id;
     try {
-        const rows = await all('SELECT * FROM productos WHERE user_id = ? ORDER BY created_at DESC', [userId]);
+        // Hacemos JOIN para traer el nombre de la receta nutricional vinculada
+        const sql = `
+            SELECT p.*, r.nombre as receta_nutricional_nombre 
+            FROM productos p
+            LEFT JOIN recetas_nutricionales r ON p.receta_nutricional_id = r.id
+            WHERE p.user_id = ? 
+            ORDER BY p.created_at DESC
+        `;
+        const rows = await all(sql, [userId]);
+        
         const productos = rows.map(p => ({
             ...p,
             imagenes_json: safeJSONParse(p.imagenes_json || '[]'),
@@ -1539,20 +1548,22 @@ const getProductos = async (req, res) => {
 
 const createProducto = async (req, res) => {
     const userId = req.user.id;
-    const { nombre, descripcion, gtin, is_formal_gtin, imagenes_json, ingredientes, tipo_producto, peso, premios_json } = req.body;
+    // Agregamos receta_nutricional_id
+    const { nombre, descripcion, gtin, is_formal_gtin, imagenes_json, ingredientes, tipo_producto, peso, premios_json, receta_nutricional_id } = req.body;
     const id = require('crypto').randomUUID();
 
-    // Generador de GTIN Interno si no se provee uno
     let finalGtin = gtin;
     if (!finalGtin) {
-        // Prefijo 999 + random
         finalGtin = '999' + Math.floor(10000000000 + Math.random() * 90000000000); 
     }
+    
+    // Sanitizar receta_id (si viene vacío, es null)
+    const recetaId = (receta_nutricional_id && receta_nutricional_id.trim() !== "") ? receta_nutricional_id : null;
 
     try {
         await run(
-            'INSERT INTO productos (id, user_id, nombre, descripcion, gtin, is_formal_gtin, imagenes_json, ingredientes, tipo_producto, peso, premios_json) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-            [id, userId, nombre, descripcion, finalGtin, is_formal_gtin || false, JSON.stringify(imagenes_json || []), ingredientes, tipo_producto, peso, JSON.stringify(premios_json || [])]
+            'INSERT INTO productos (id, user_id, nombre, descripcion, gtin, is_formal_gtin, imagenes_json, ingredientes, tipo_producto, peso, premios_json, receta_nutricional_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            [id, userId, nombre, descripcion, finalGtin, is_formal_gtin || false, JSON.stringify(imagenes_json || []), ingredientes, tipo_producto, peso, JSON.stringify(premios_json || []), recetaId]
         );
         res.status(201).json({ message: "Producto creado", id });
     } catch (err) {
@@ -1564,20 +1575,21 @@ const createProducto = async (req, res) => {
 const updateProducto = async (req, res) => {
     const userId = req.user.id;
     const { id } = req.params;
-    const { nombre, descripcion, gtin, imagenes_json, ingredientes, tipo_producto, peso, premios_json } = req.body;
+    // Agregamos receta_nutricional_id
+    const { nombre, descripcion, gtin, imagenes_json, ingredientes, tipo_producto, peso, premios_json, receta_nutricional_id } = req.body;
+
+    const recetaId = (receta_nutricional_id && receta_nutricional_id.trim() !== "") ? receta_nutricional_id : null;
 
     try {
         await run(
-            'UPDATE productos SET nombre = ?, descripcion = ?, gtin = ?, imagenes_json = ?, ingredientes = ?, tipo_producto = ?, peso = ?, premios_json = ? WHERE id = ? AND user_id = ?',
-            [nombre, descripcion, gtin, JSON.stringify(imagenes_json || []), ingredientes, tipo_producto, peso, JSON.stringify(premios_json || []), id, userId]
+            'UPDATE productos SET nombre = ?, descripcion = ?, gtin = ?, imagenes_json = ?, ingredientes = ?, tipo_producto = ?, peso = ?, premios_json = ?, receta_nutricional_id = ? WHERE id = ? AND user_id = ?',
+            [nombre, descripcion, gtin, JSON.stringify(imagenes_json || []), ingredientes, tipo_producto, peso, JSON.stringify(premios_json || []), recetaId, id, userId]
         );
         res.status(200).json({ message: "Producto actualizado" });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
 };
-
-// ... (deleteProducto y resto del archivo se mantiene igual) ...
 
 const deleteProducto = async (req, res) => {
     const userId = req.user.id;
