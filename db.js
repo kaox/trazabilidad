@@ -676,24 +676,40 @@ const generateUniqueLoteId = async (prefix) => {
 
 const createBatch = async (req, res) => {
     const userId = req.user.id;
-    const { plantilla_id, etapa_id, parent_id, data } = req.body;
+    // Aceptamos parámetros de resolución automática
+    let { plantilla_id, etapa_id, parent_id, data, producto_id, system_template_name, stage_name, stage_order } = req.body;
     
     try {
+        // --- LÓGICA DE AUTO-RESOLUCIÓN (JIT) ---
+        if ((!plantilla_id || !etapa_id) && system_template_name && stage_name) {
+            const resolvedIDs = await ensureTemplateAndStageExists(userId, system_template_name, stage_name, stage_order);
+            plantilla_id = resolvedIDs.plantilla_id;
+            etapa_id = resolvedIDs.etapa_id;
+        }
+        // ---------------------------------------
+
+        if (!plantilla_id || !etapa_id) {
+            return res.status(400).json({ error: "No se pudieron determinar la plantilla o la etapa." });
+        }
+
         const stage = await get('SELECT nombre_etapa FROM etapas_plantilla WHERE id = ?', [etapa_id]);
         if (!stage) return res.status(404).json({ error: "Etapa no encontrada." });
         
         const prefix = stage.nombre_etapa.substring(0, 3).toUpperCase();
         const newId = await generateUniqueLoteId(prefix);
         data.id = newId;
-        console.log(data);
-        // NUEVO: Verificar si se seleccionó un producto final para vincularlo en la DB
-        const productoId = data.productoFinal && typeof data.productoFinal === 'object' ? data.productoFinal.value : null;
-        console.log(productoId);
+
+        let finalProductId = null;
+        if (producto_id && producto_id.trim() !== "") {
+            finalProductId = producto_id;
+        } else if (data.productoFinal && typeof data.productoFinal === 'object' && data.productoFinal.value) {
+            finalProductId = data.productoFinal.value;
+        }
 
         let sql, params;
         if (!parent_id) {
             sql = 'INSERT INTO lotes (id, user_id, plantilla_id, etapa_id, parent_id, data, producto_id) VALUES (?, ?, ?, ?, ?, ?, ?)';
-            params = [data.id, userId, plantilla_id, etapa_id, null, JSON.stringify(data), productoId];
+            params = [data.id, userId, plantilla_id, etapa_id, null, JSON.stringify(data), finalProductId];
         } else {
             const ownerInfo = await checkBatchOwnership(parent_id, userId);
             if (!ownerInfo) return res.status(403).json({ error: "No tienes permiso para añadir a este lote." });
@@ -702,11 +718,12 @@ const createBatch = async (req, res) => {
             if (!parentLote) return res.status(404).json({ error: "Lote padre no encontrado." });
 
             sql = 'INSERT INTO lotes (id, plantilla_id, etapa_id, parent_id, data, producto_id) VALUES (?, ?, ?, ?, ?, ?)';
-            params = [data.id, parentLote.plantilla_id, etapa_id, parent_id, JSON.stringify(data), productoId];
+            params = [data.id, parentLote.plantilla_id, etapa_id, parent_id, JSON.stringify(data), finalProductId];
         }
         await run(sql, params);
-        res.status(201).json({ message: "Lote creado" });
+        res.status(201).json({ message: "Lote creado", id: data.id }); // Devolvemos ID
     } catch (err) {
+        console.error("Error en createBatch:", err);
         res.status(500).json({ error: err.message });
     }
 };
@@ -1904,6 +1921,68 @@ const getUSDADetails = async (req, res) => {
     } catch (error) {
         console.error("Error USDA Details:", error);
         res.status(500).json({ error: "Error obteniendo detalles del alimento" });
+    }
+};
+
+// --- HELPER INTERNO: Garantizar existencia de Plantilla ---
+const ensureTemplateAndStageExists = async (userId, systemTemplateName, stageName, stageOrder) => {
+    try {
+        // 1. Buscar si la plantilla ya existe para el usuario
+        let template = await get('SELECT id FROM plantillas_proceso WHERE user_id = ? AND nombre_producto = ?', [userId, systemTemplateName]);
+        
+        let templateId;
+
+        if (template) {
+            templateId = template.id;
+        } else {
+            // 2. Si no existe, CLONAR desde el JSON (Lógica JIT)
+            console.log(`[Auto-Clone] Plantilla '${systemTemplateName}' no existe para usuario ${userId}. Creando...`);
+            
+            const catalogPath = path.join(__dirname, 'default-templates.json');
+            const catalogData = JSON.parse(fs.readFileSync(catalogPath, 'utf8'));
+            const templateToClone = catalogData.templates.find(t => t.nombre_producto === systemTemplateName);
+
+            if (!templateToClone) throw new Error(`Plantilla del sistema '${systemTemplateName}' no encontrada.`);
+
+            const templateResult = await run(
+                'INSERT INTO plantillas_proceso (user_id, nombre_producto, descripcion) VALUES (?, ?, ?)',
+                [userId, templateToClone.nombre_producto, templateToClone.descripcion]
+            );
+            templateId = templateResult.lastID;
+
+            // Insertar etapas (Acopio + Proceso)
+            const allStages = [...(templateToClone.acopio || []), ...(templateToClone.etapas || [])];
+            
+            for (const stage of allStages) {
+                // Determinar fase
+                const fase = (templateToClone.acopio && templateToClone.acopio.includes(stage)) ? 'acopio' : 'procesamiento';
+                
+                await run(
+                    'INSERT INTO etapas_plantilla (plantilla_id, nombre_etapa, descripcion, orden, campos_json, fase) VALUES (?, ?, ?, ?, ?, ?)',
+                    [templateId, stage.nombre_etapa, stage.descripcion, stage.orden, JSON.stringify(stage.campos_json), fase]
+                );
+            }
+        }
+
+        // 3. Buscar el ID de la etapa específica
+        // Buscamos por nombre Y orden para ser precisos (ya que Cosecha podría repetirse en otro contexto, aunque no debería)
+        let stageSql = 'SELECT id FROM etapas_plantilla WHERE plantilla_id = ? AND nombre_etapa = ?';
+        let stageParams = [templateId, stageName];
+        
+        if (stageOrder) {
+            stageSql += ' AND orden = ?';
+            stageParams.push(stageOrder);
+        }
+
+        const stage = await get(stageSql, stageParams);
+        
+        if (!stage) throw new Error(`Etapa '${stageName}' no encontrada en la plantilla '${systemTemplateName}'.`);
+
+        return { plantilla_id: templateId, etapa_id: stage.id };
+
+    } catch (error) {
+        console.error("Error en ensureTemplateAndStageExists:", error);
+        throw error;
     }
 };
 

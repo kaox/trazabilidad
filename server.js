@@ -191,6 +191,8 @@ app.get('/app/cms', authenticatePage, (req, res) => res.sendFile(path.join(__dir
 app.get('/app/costos', authenticatePage, checkSubscription('profesional'), (req, res) => res.sendFile(path.join(__dirname, 'views', 'costos.html')));
 app.get('/app/trazabilidad-inmutable', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'trazabilidad-inmutable.html')));
 app.get('/app/productos', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'productos.html')));
+app.get('/app/acopio', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'acopio.html'))); // <-- NUEVA RUTA DE ACOPIO
+
 
 // --- NUEVAS RUTAS VISTAS ADMIN BLOG ---
 app.get('/app/admin-blog', authenticatePage, checkAdmin, (req, res) => res.sendFile(path.join(__dirname, 'views', 'admin-blog-list.html')));

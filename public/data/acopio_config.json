@@ -1,0 +1,99 @@
+{
+  "acopios": [
+    {
+      "nombre_producto": "Cacao",
+      "color": "amber",
+      "acopio": [
+        {
+            "nombre_acopio": "Baba de Cacao",
+            "icono": "fas fa-tint",
+            "etapas_acopio": [1],
+            "campos": [
+                {"label": "Peso Granos en Baba (kg)", "name": "pesoGranosBaba", "type": "number"},
+                {"label": "Precio Unitario (USD/kg)", "name": "precioUnitario", "type": "number"}
+            ]
+        },
+        {
+            "nombre_acopio": "Grano Seco",
+            "icono": "fas fa-leaf",
+            "etapas_acopio": [1, 2, 3],
+            "campos": [
+                {"label": "Peso Grano Seco (kg)", "name": "pesoSeco", "type": "number"},
+                {"label": "Precio Unitario (USD/kg)", "name": "precioUnitario", "type": "number"}
+            ]
+        }
+      ]
+    },
+    {
+      "nombre_producto": "Café",
+      "color": "rose",
+      "acopio": [
+        {
+            "nombre_acopio": "Café Cereza",
+            "icono": "fas fa-circle",
+            "etapas_acopio": [1],
+            "campos": [
+                {"label": "Peso Cerezas (kg)", "name": "pesoCerezas", "type": "number"},
+                {"label": "Precio Unitario (USD/kg)", "name": "precioUnitario", "type": "number"}
+            ]
+        },
+        {
+            "nombre_acopio": "Café Pergamino",
+            "icono": "fas fa-scroll",
+            "tipo_acopio": [
+                {
+                    "nombre": "Lavado",
+                    "descripcion": "Café pergamino lavado, donde la pulpa ha sido removida mediante un proceso de lavado con agua.",
+                    "icono": "fas fa-tint",
+                    "etapas_acopio": [1, 2, 3, 4, 5]
+                },
+                {
+                    "nombre": "Honey",
+                    "descripcion": "Café pergamino honey, un método intermedio donde parte de la pulpa se deja en el grano durante el secado.",
+                    "icono": "fas fa-cloud-sun",
+                    "etapas_acopio": [1, 2, 5]
+                },
+                {
+                    "nombre": "Natural",
+                    "descripcion": "Café pergamino natural, donde las cerezas se secan al sol sin remover la pulpa.",
+                    "icono": "fas fa-sun",
+                    "etapas_acopio": [1, 5]
+                }
+            ],
+            "campos": [
+                {"label": "Peso Pergamino (kg)", "name": "pesoPergamino", "type": "number"},
+                {"label": "Precio Unitario (USD/kg)", "name": "precioUnitario", "type": "number"}
+            ]
+        },
+        {
+            "nombre_acopio": "Café Verde",
+            "icono": "fas fa-seedling",
+            "tipo_acopio": [
+                {
+                    "nombre": "Lavado",
+                    "descripcion": "Café verde lavado.",
+                    "icono": "fas fa-tint",
+                    "etapas_acopio": [1, 2, 3, 4, 5, 6]
+                },
+                {
+                    "nombre": "Honey",
+                    "descripcion": "Café verde honey.",
+                    "icono": "fas fa-cloud-sun",
+                    "etapas_acopio": [1, 2, 5, 6]
+                },
+                {
+                    "nombre": "Natural",
+                    "descripcion": "Café verde natural.",
+                    "icono": "fas fa-sun",
+                    "etapas_acopio": [1, 5, 6]
+                }
+            ],
+            "campos": [
+                {"label": "Peso Café Verde (kg)", "name": "pesoCafeVerde", "type": "number"},
+                {"label": "Precio Unitario (USD/kg)", "name": "precioUnitario", "type": "number"}
+            ]
+        }
+      ]
+    }
+  ]
+}

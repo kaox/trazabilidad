@@ -124,3 +124,12 @@ BEGIN
         ALTER TABLE productos ADD COLUMN receta_nutricional_id UUID REFERENCES recetas_nutricionales(id) ON DELETE SET NULL;
     END IF;
 END $$;
+
+-- Agregar columna 'fase' a etapas_plantilla
+-- Valores esperados: 'acopio', 'procesamiento'
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='etapas_plantilla' AND column_name='fase') THEN
+        ALTER TABLE etapas_plantilla ADD COLUMN fase TEXT DEFAULT 'procesamiento';
+    END IF;
+END $$;
