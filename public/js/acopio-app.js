@@ -610,7 +610,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
                 <div class="pt-3 border-t border-stone-100 flex justify-between items-center">
                     <span class="text-xs font-mono text-stone-300">ID: ${acop.id}</span>
-                    <a href="/app/trazabilidad#acopio=${acop.id}" class="text-sm font-bold text-green-700 hover:text-green-900 flex items-center gap-1 transition">
+                    <a href="/app/procesamiento#acopio=${acop.id}" class="text-sm font-bold text-green-700 hover:text-green-900 flex items-center gap-1 transition">
                         Iniciar Proceso <i class="fas fa-arrow-right text-xs transform group-hover:translate-x-1 transition-transform"></i>
                     </a>
                 </div>

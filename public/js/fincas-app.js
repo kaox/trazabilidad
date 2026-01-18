@@ -612,7 +612,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             resetForm();
             await loadFincas();
-            alert('Finca guardada exitosamente.');
         } catch (error) { 
             console.error("Error al guardar:", error);
             alert('Error al guardar la finca.'); 

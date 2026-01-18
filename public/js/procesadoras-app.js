@@ -297,7 +297,6 @@ document.addEventListener('DOMContentLoaded', () => {
             
             resetForm();
             await loadProcesadoras();
-            alert('Procesadora guardada exitosamente.');
         } catch (error) {
             console.error("Error al guardar:", error);
             alert('Error al guardar: ' + error.message);

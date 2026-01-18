@@ -1450,7 +1450,7 @@ const getReviews = async (req, res) => {
     const { lote_id } = req.params;
     try {
         const reviews = await all(
-            'SELECT * FROM product_reviews WHERE lote_id = ? ORDER BY created_at DESC',
+            'SELECT * FROM product_reviews WHERE batch_id = ? ORDER BY created_at DESC',
             [lote_id]
         );
         res.status(200).json(reviews);
@@ -1486,7 +1486,7 @@ const submitReview = async (req, res) => {
 
     try {
         await run(
-            'INSERT INTO product_reviews (lote_id, user_email, rating, comment) VALUES (?, ?, ?, ?)',
+            'INSERT INTO product_reviews (batch_id, user_email, rating, comment) VALUES (?, ?, ?, ?)',
             [lote_id, user_email, rating, comment]
         );
         res.status(201).json({ message: 'Reseña guardada con éxito.' });
