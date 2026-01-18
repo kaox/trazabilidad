@@ -279,24 +279,24 @@ async function initializeDatabase() {
 
             await runQuery(db, `
                 CREATE TABLE IF NOT EXISTS lote_costs (
-                    lote_id TEXT PRIMARY KEY,
+                    batch_id TEXT PRIMARY KEY,
                     user_id INTEGER NOT NULL,
                     cost_data JSONB NOT NULL,
-                    FOREIGN KEY (lote_id) REFERENCES lotes(id) ON DELETE CASCADE
+                    FOREIGN KEY (batch_id) REFERENCES batches(id) ON DELETE CASCADE
                 )`);
             console.log("Tabla 'lote_costs' lista.");
 
             await runQuery(db, `
                 CREATE TABLE IF NOT EXISTS product_reviews (
                     id SERIAL PRIMARY KEY,
-                    batch_id TEXT NOT NULL REFERENCES lotes(id) ON DELETE CASCADE,
+                    batch_id TEXT NOT NULL REFERENCES batches(id) ON DELETE CASCADE,
                     user_email TEXT NOT NULL,
                     rating INTEGER NOT NULL CHECK (rating >= 1 AND rating <= 5),
                     comment TEXT,
                     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
                     UNIQUE(batch_id, user_email)
                 )`);
-            console.log("Tabla 'plantillas_proceso' lista.");
+            console.log("Tabla 'product_reviews' lista.");
 
             await runQuery(db, `
                 CREATE TABLE IF NOT EXISTS blog_posts (

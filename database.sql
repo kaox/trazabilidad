@@ -324,6 +324,13 @@ CREATE TABLE IF NOT EXISTS blog_posts (
     FOREIGN KEY (author_id) REFERENCES users(id)
 );
 
+CREATE TABLE IF NOT EXISTS lote_costs (
+    batch_id TEXT PRIMARY KEY,
+    user_id INTEGER NOT NULL,
+    cost_data JSONB NOT NULL,
+    FOREIGN KEY (batch_id) REFERENCES batches(id) ON DELETE CASCADE
+);
+
 -- ÍNDICES DE RENDIMIENTO
 CREATE INDEX IF NOT EXISTS idx_batches_user ON batches(user_id);
 CREATE INDEX IF NOT EXISTS idx_batches_parent ON batches(parent_id);

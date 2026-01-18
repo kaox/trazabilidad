@@ -1288,7 +1288,7 @@ const getAdminDashboardData = async (req, res) => {
 const getLoteCosts = async (req, res) => {
     const { lote_id } = req.params;
     try {
-        const costs = await get('SELECT cost_data FROM lote_costs WHERE lote_id = ?', [lote_id]);
+        const costs = await get('SELECT cost_data FROM lote_costs WHERE batch_id = ?', [lote_id]);
         if (!costs) return res.status(404).json({ message: "No se encontraron costos para este lote." });
         res.status(200).json(safeJSONParse(costs.cost_data));
     } catch (err) {
@@ -1300,11 +1300,11 @@ const saveLoteCosts = async (req, res) => {
     const { lote_id } = req.params;
     const { cost_data } = req.body;
     try {
-        const existing = await get('SELECT lote_id FROM lote_costs WHERE lote_id = ?', [lote_id]);
+        const existing = await get('SELECT batch_id FROM lote_costs WHERE batch_id = ?', [lote_id]);
         if (existing) {
-            await run('UPDATE lote_costs SET cost_data = ? WHERE lote_id = ?', [JSON.stringify(cost_data), lote_id]);
+            await run('UPDATE lote_costs SET cost_data = ? WHERE batch_id = ?', [JSON.stringify(cost_data), lote_id]);
         } else {
-            await run('INSERT INTO lote_costs (lote_id, user_id, cost_data) VALUES (?, ?, ?)', [lote_id, req.user.id, JSON.stringify(cost_data)]);
+            await run('INSERT INTO lote_costs (batch_id, user_id, cost_data) VALUES (?, ?, ?)', [lote_id, req.user.id, JSON.stringify(cost_data)]);
         }
         res.status(200).json({ message: "Costos guardados exitosamente." });
     } catch (err) {
