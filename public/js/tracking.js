@@ -35,6 +35,15 @@ document.addEventListener('DOMContentLoaded', () => {
         // Callback de Google Maps (si se necesita lógica global)
     };
 
+    window.openImageModal = (src) => {
+        const modal = document.getElementById('imageModal');
+        const img = document.getElementById('modalImage');
+        if(modal && img) {
+            img.src = src;
+            modal.classList.remove('hidden');
+        }
+    };
+
     // --- Lógica Principal ---
 
     async function handleSearch() {
@@ -93,73 +102,200 @@ document.addEventListener('DOMContentLoaded', () => {
         setupTabs(routePoints.length >= 1);
         setupGallery();
         setupIntersectionObserver();
+
+        // Mapa Finca
         if (h.fincaData?.coordenadas) {
-            initializeMap('finca-map-container', h.fincaData.coordenadas);
+            setTimeout(() => {
+                initializeMap('finca-map-container', h.fincaData.coordenadas);
+            }, 100);
         }
-        if (h.perfilSensorialData) {
-            renderFlavorProfile(h.perfilSensorialData);
-            initializePerfilChart('sensory-profile-chart', h.perfilSensorialData);
-        }
+        
+        // Inicializar Pestañas de Producto y Gráficos
+        setupProductTabs();
+
+        // Inicializar Gráficos con retardo para asegurar dimensiones del DOM
+        setTimeout(() => {
+            if (h.perfilSensorialData) {
+                initializePerfilChart('sensory-profile-chart', h.perfilSensorialData);
+            }
+        }, 200);
     }
 
     function createProductDetailsSection(h) {
-        // Verificar si el backend devolvió info del producto (SKU)
         const p = h.productoFinal;
-        console.log(p);
         if (!p) return ''; 
 
         const mainImage = (p.imagenes_json && p.imagenes_json.length > 0) ? p.imagenes_json[0] : null;
         
+        // Tabs de Navegación
+        const hasSensory = h.perfilSensorialData ? true : false;
+        const hasWheel = h.ruedaSaborData ? true : false;
+        const hasNutrition = h.nutritionalData ? true : false;
+
+        let tabsNav = `
+            <div class="flex border-b border-stone-200 mb-6 overflow-x-auto">
+                <button class="product-tab-btn active px-4 py-2 text-sm font-bold text-amber-900 border-b-2 border-amber-900 transition whitespace-nowrap" data-target="tab-story">
+                    Detalle
+                </button>
+                ${hasSensory ? `
+                <button class="product-tab-btn px-4 py-2 text-sm font-bold text-stone-500 hover:text-stone-800 border-b-2 border-transparent hover:border-stone-300 transition whitespace-nowrap" data-target="tab-sensory">
+                    Perfil Sensorial
+                </button>` : ''}
+                ${hasNutrition ? `
+                <button class="product-tab-btn px-4 py-2 text-sm font-bold text-stone-500 hover:text-stone-800 border-b-2 border-transparent hover:border-stone-300 transition whitespace-nowrap" data-target="tab-nutrition">
+                    Nutrición
+                </button>` : ''}
+            </div>
+        `;
+
+        // Contenido Tab 1: Historia (Info General)
         let awardsHtml = '';
         if (p.premios_json && p.premios_json.length > 0) {
-            awardsHtml = `<div class="flex flex-wrap gap-2 mt-4">
+            awardsHtml = `<div class="flex flex-wrap gap-3 mt-6 mb-6">
                 ${p.premios_json.map(prem => 
-                    `<span class="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-yellow-50 text-yellow-800 border border-yellow-200 shadow-sm">
-                        ${prem.logo_url ? `<img src="${prem.logo_url}" class="w-6 h-6 object-contain" alt="">` : '<i class="fas fa-trophy text-amber-500"></i>'} ${prem.name} ${prem.year ? `(${prem.year})` : ''}
-                    </span>`
+                    `<div class="flex items-center gap-3 bg-gradient-to-r from-amber-50 to-yellow-50 border border-amber-200 px-4 py-2 rounded-xl shadow-sm transform hover:scale-105 transition-transform cursor-default">
+                        <div class="bg-white p-1.5 rounded-full shadow-inner text-amber-500">
+                            ${prem.logo_url ? `<img src="${prem.logo_url}" class="h-6 w-6 object-contain">` : `<i class="fas fa-trophy text-lg"></i>`}
+                        </div>
+                        <div class="flex flex-col">
+                            <span class="font-bold text-amber-900 text-sm leading-none">${prem.name}</span>
+                            ${prem.year ? `<span class="text-xs text-amber-700 font-medium">${prem.year}</span>` : ''}
+                        </div>
+                    </div>`
                 ).join('')}
             </div>`;
         }
+
+        const tabStory = `
+            <div id="tab-story" class="product-tab-content animate-fade-in">
+                ${p.descripcion ? `<p class="text-stone-600 text-lg leading-relaxed mb-6 font-light border-l-4 border-amber-500 pl-4">${p.descripcion}</p>` : ''}
+                
+                ${p.ingredientes ? `
+                <div class="mb-6">
+                    <h4 class="text-xs font-bold text-stone-400 uppercase tracking-widest mb-1">Ingredientes</h4>
+                    <p class="text-stone-700 text-sm font-medium">${p.ingredientes}</p>
+                </div>` : ''}
+
+                <div class="flex flex-wrap items-center justify-between mt-auto pt-6 border-t border-stone-100 w-full">
+                    ${awardsHtml}
+                </div>
+            </div>
+        `;
+
+        // Contenido Tab 2: Perfil Sensorial (Radar)
+        const tabSensory = `
+            <div id="tab-sensory" class="product-tab-content hidden animate-fade-in">
+                <div class="flex flex-col items-center justify-center h-full min-h-[300px]">
+                    <div class="w-full max-w-sm h-80 relative">
+                        <canvas id="sensory-profile-chart"></canvas>
+                    </div>
+                    <p class="text-xs text-stone-400 mt-4 text-center">Análisis de intensidad por atributo.</p>
+                </div>
+            </div>
+        `;
+
+        // Contenido Tab 3: Rueda de Sabor (Gráfico)
+        const tabWheel = `
+            <div id="tab-wheel" class="product-tab-content hidden animate-fade-in">
+                <div class="flex flex-col items-center justify-center h-full min-h-[300px]">
+                    <div class="w-full max-w-sm h-80 relative">
+                        <canvas id="flavor-wheel-chart"></canvas>
+                    </div>
+                    <p class="text-xs text-stone-400 mt-4 text-center">Pasa el mouse para ver notas específicas.</p>
+                </div>
+            </div>
+        `;
+
+        // Contenido Tab 4: Nutrición (Etiqueta Generada)
+        const tabNutrition = hasNutrition ? `
+            <div id="tab-nutrition" class="product-tab-content hidden animate-fade-in">
+                <div class="flex justify-center py-4">
+                    <!-- Inyectamos la etiqueta directamente -->
+                    ${generateNutritionalLabelHTML(h.nutritionalData)}
+                </div>
+            </div>
+        ` : '';
 
         return `
             <section class="bg-white rounded-3xl shadow-sm border border-stone-200 overflow-hidden mb-12 animate-fade-in mx-4 md:mx-0">
                 <div class="flex flex-col md:flex-row">
                     ${mainImage ? `
-                    <div class="md:w-2/5 relative min-h-[300px] bg-stone-100">
+                    <div class="md:w-2/5 relative min-h-[300px] md:min-h-[500px] bg-stone-100">
                         <img src="${mainImage}" class="absolute inset-0 w-full h-full object-cover" alt="${p.nombre}">
                     </div>
                     ` : ''}
-                    <div class="${mainImage ? 'md:w-3/5' : 'w-full'} p-8 md:p-12 flex flex-col justify-center">
-                        <div class="mb-3 flex items-center gap-3">
+                    <div class="${mainImage ? 'md:w-3/5' : 'w-full'} p-8 md:p-10 flex flex-col">
+                        <div class="mb-4 flex items-center gap-3">
                             <span class="px-3 py-1 rounded-full bg-amber-100 text-amber-800 text-xs font-bold uppercase tracking-wider border border-amber-200">
-                                ${p.tipo_producto || 'Producto de Origen'}
+                                ${p.tipo_producto || 'Producto'}
                             </span>
-                            ${p.gtin ? `<span class="text-xs font-mono text-stone-400 bg-stone-50 px-2 py-0.5 rounded border border-stone-100" title="Código GTIN"><i class="fas fa-barcode mr-1"></i>${p.gtin}</span>` : ''}
+                            ${p.gtin ? `<span class="text-xs font-mono text-stone-400 bg-stone-50 px-2 py-0.5 rounded border border-stone-100"><i class="fas fa-barcode mr-1"></i>${p.gtin}</span>` : ''}
                         </div>
                         
-                        <h2 class="text-3xl md:text-5xl font-display font-bold text-stone-900 mb-4 leading-tight">${p.nombre}</h2>
-                        
-                        ${p.descripcion ? `<p class="text-stone-600 text-lg leading-relaxed mb-6 font-light border-l-4 border-amber-500 pl-4">${p.descripcion}</p>` : ''}
-                        
-                        ${p.ingredientes ? `
-                        <div class="mb-6">
-                            <h4 class="text-xs font-bold text-stone-400 uppercase tracking-widest mb-1">Ingredientes</h4>
-                            <p class="text-stone-700 text-sm font-medium">${p.ingredientes}</p>
-                        </div>
-                        ` : ''}
+                        <h2 class="text-3xl md:text-4xl font-display font-bold text-stone-900 mb-6 leading-tight">
+                            ${p.nombre} ${p.peso ? `<div class="text-stone-800 font-bold text-lg">${p.peso}</div>` : '<div></div>'}
+                        </h2>
 
-                        <div class="flex flex-wrap items-center justify-between mt-auto pt-6 border-t border-stone-100 w-full">
-                            ${p.peso ? `<div class="text-stone-800 font-bold text-lg"><i class="fas fa-scale-balanced mr-2 text-stone-400"></i>${p.peso}</div>` : '<div></div>'}
-                            ${awardsHtml}
-                        </div>
+                        <!-- TABS NAVEGACIÓN -->
+                        ${tabsNav}
+
+                        <!-- TABS CONTENIDO -->
+                        ${tabStory}
+                        ${hasSensory ? tabSensory : ''}
+                        ${hasWheel ? tabWheel : ''}
+                        ${tabNutrition}
+
                     </div>
                 </div>
             </section>
         `;
     }
 
+    // --- LÓGICA DE PESTAÑAS ---
+    function setupProductTabs() {
+        const tabs = document.querySelectorAll('.product-tab-btn');
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                // Reset estilos tabs
+                tabs.forEach(t => {
+                    t.classList.remove('active', 'text-amber-900', 'border-amber-900');
+                    t.classList.add('text-stone-500', 'border-transparent');
+                });
+                // Activar actual
+                tab.classList.add('active', 'text-amber-900', 'border-amber-900');
+                tab.classList.remove('text-stone-500', 'border-transparent');
+
+                // Mostrar contenido
+                const targetId = tab.dataset.target;
+                document.querySelectorAll('.product-tab-content').forEach(content => {
+                    content.classList.add('hidden');
+                });
+                document.getElementById(targetId).classList.remove('hidden');
+            });
+        });
+    }
+
+    function renderFlavorWheel(ruedaData, containerId) {
+        const container = document.getElementById(containerId);
+        if (!container) return;
+        let notesHtml = '';
+        const notas = ruedaData.notas_json || {};
+        for (const [categoria, subnotas] of Object.entries(notas)) {
+            if (Array.isArray(subnotas) && subnotas.length > 0) {
+                let colorClass = 'bg-stone-100 text-stone-700';
+                if (categoria.match(/frut/i)) colorClass = 'bg-red-50 text-red-700 border-red-100';
+                if (categoria.match(/flor/i)) colorClass = 'bg-pink-50 text-pink-700 border-pink-100';
+                if (categoria.match(/nuez|cacao|choc/i)) colorClass = 'bg-amber-50 text-amber-800 border-amber-100';
+                if (categoria.match(/especi|herb/i)) colorClass = 'bg-green-50 text-green-700 border-green-100';
+                const chips = subnotas.map(n => `<span class="inline-block bg-white px-2 py-1 rounded border border-black/5 text-xs shadow-sm">${n}</span>`).join('');
+                notesHtml += `<div class="mb-3 ${colorClass} p-3 rounded-xl border"><h5 class="font-bold text-xs uppercase mb-2 flex items-center gap-2">${categoria}</h5><div class="flex flex-wrap gap-1">${chips}</div></div>`;
+            }
+        }
+        if (!notesHtml) notesHtml = '<div class="text-center py-8"><i class="fas fa-cookie-bite text-stone-200 text-4xl mb-2"></i><p class="text-stone-400 italic text-sm">Sin notas de sabor registradas.</p></div>';
+        container.innerHTML = notesHtml;
+    }
+
     function renderBlockchainCertificate(h) {
-        console.log(blockchainContainer, hashDisplay);
         if (!blockchainContainer || !hashDisplay) return;
 
         // Resetear estado (ocultar por defecto)
@@ -188,10 +324,20 @@ document.addEventListener('DOMContentLoaded', () => {
         let daysSinceRoasting = null;
         let isExpired = false;
         let expirationDateString = '';
+        let isEudrCompliant = false;
 
         // 1. Recolectar todas las ubicaciones únicas del proceso
         if (h.fincaData) {
             locations.add(h.fincaData.nombre_finca);
+            
+            // Verificar si la finca tiene certificación EUDR/GEE
+            if (h.fincaData.certificaciones_json && Array.isArray(h.fincaData.certificaciones_json)) {
+                isEudrCompliant = h.fincaData.certificaciones_json.some(c => {
+                    // Buscar strings como "EUDR", "GEE", "Deforestation" en el nombre de la certificación
+                    const name = (typeof c === 'string' ? c : (c.nombre || '')).toUpperCase();
+                    return name.includes('EUDR') || name.includes('GEE') || name.includes('DEFORESTATION');
+                });
+            }
         }
         h.stages.forEach(stage => {
             const locationName = getFieldValue(stage.data.procesadora) || getFieldValue(stage.data.finca);
@@ -247,11 +393,31 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
-        return { totalWorkers, daysSinceRoasting, isExpired, expirationDateString };
+        return { totalWorkers, daysSinceRoasting, isExpired, expirationDateString, isEudrCompliant };
     }
 
     function renderHighlightsSection(highlights) {
         let contentHtml = '';
+
+        // HIGHLIGHT 1: EUDR (Prioridad Alta)
+        if (highlights.isEudrCompliant) {
+            contentHtml += `
+            <div class="bg-emerald-50 p-6 rounded-lg shadow-md text-center border-b-4 border-emerald-500 flex-1 min-w-[200px] animate-fade-in relative overflow-hidden group hover:-translate-y-1 transition-transform duration-300">
+                <div class="absolute -right-4 -top-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                    <i class="fas fa-globe-americas text-8xl text-emerald-700"></i>
+                </div>
+                <div class="flex justify-center mb-3 relative z-10">
+                    <span class="bg-white text-emerald-600 rounded-full p-3 shadow-sm border border-emerald-100">
+                        <i class="fas fa-satellite text-3xl"></i>
+                    </span>
+                </div>
+                <p class="text-lg font-bold font-display text-emerald-900 leading-tight mb-1 relative z-10">EUDR Compliant</p>
+                <div class="flex items-center justify-center gap-1 text-xs text-emerald-700 font-bold relative z-10">
+                    <i class="fas fa-check-circle"></i> <span>GEE Verified</span>
+                </div>
+                <p class="text-[10px] text-emerald-600/70 mt-2 relative z-10 uppercase tracking-widest font-bold">100% Libre de Deforestación</p>
+            </div>`;
+        }
 
         // Tarjeta de Trabajadores (Existente)
         if (highlights.totalWorkers > 0) {
@@ -355,7 +521,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div class="flex border-b border-stone-200 mb-4">
                         <button class="tab-button active flex-1 flex items-center justify-center gap-2 p-4 border-b-2" data-tab="terroir"><i class="fa-solid fa-cloud-sun"></i> Terroir</button>
                         <button class="tab-button flex-1 flex items-center justify-center gap-2 p-4 border-b-2 border-transparent" data-tab="productor"><i class="fas fa-leaf"></i> Productor</button>
-                        ${perfilSensorialData ? `<button class="tab-button flex-1 flex items-center justify-center gap-2 p-4 border-b-2 border-transparent" data-tab="perfil"><i class="fas fa-chart-pie"></i> Perfil</button>` : ''}
                         ${routePoints.length >= 1 ? `<button class="tab-button flex-1 flex items-center justify-center gap-2 p-4 border-b-2 border-transparent" data-tab="ruta"><i class="fas fa-route"></i> Ruta</button>` : ''}
                     </div>
                     <div class="bg-white p-6 rounded-lg shadow-md">
@@ -373,14 +538,6 @@ document.addEventListener('DOMContentLoaded', () => {
                             ${premiosHtml ? `<div><strong class="block mb-2"><i class="fa-solid fa-trophy"></i> Premios:</strong><div class="flex flex-wrap gap-2">${premiosHtml}</div></div>` : ''}
                             <div id="finca-gallery" class="grid grid-cols-3 gap-2 mt-4"></div>
                         </div>
-                        ${perfilSensorialData ? `
-                        <div id="tab-perfil" class="tab-panel hidden space-y-6">
-                            <div>
-                                <h4 class="font-bold text-lg mb-2 text-center">Perfil Sensorial del Cacao</h4>
-                                <div class="w-full max-w-sm mx-auto"><canvas id="sensory-profile-chart"></canvas></div>
-                            </div>
-                        </div>
-                        ` : ''}
                         ${routePoints.length >= 1 ? `<div id="tab-ruta" class="tab-panel hidden"><div id="route-map-container" class="w-full h-96 rounded-md border"></div></div>` : ''}
                     </div>
                 </div>
@@ -679,6 +836,130 @@ document.addEventListener('DOMContentLoaded', () => {
         else if (lowerCaseStageName.includes('molienda')) { details.icon = 'fa-mortar-pestle'; details.narrative = `Molienda finalizada, resultando en <strong>${getFieldValue(data.pesoProductoFinal)} kg</strong> de <strong>${getFieldValue(data.productoFinal)}</strong>.`; }
         
         return details;
+    }
+
+    // --- GENERADOR DE HTML ETIQUETA NUTRICIONAL ---
+    function generateNutritionalLabelHTML(data) {
+        const ingredients = data.ingredientes || [];
+        const totalWeight = ingredients.reduce((sum, i) => sum + parseFloat(i.peso_gramos), 0);
+        if (totalWeight === 0) return '<p class="text-center text-stone-500">Información no disponible</p>';
+
+        let totals = { energy:0, protein:0, fat:0, satFat:0, transFat:0, chol:0, sod:0, carb:0, fiber:0, sugar:0, addedSugar:0, vitD:0, calcium:0, iron:0, pot:0 };
+        ingredients.forEach(ing => {
+            const factor = parseFloat(ing.peso_gramos) / 100; const n = ing.nutrientes_base_json;
+            totals.energy += (n.energy || 0) * factor; totals.protein += (n.protein || 0) * factor; totals.fat += (n.fat || 0) * factor; totals.satFat += (n.satFat || 0) * factor; totals.transFat += (n.transFat || 0) * factor; totals.chol += (n.chol || 0) * factor; totals.sod += (n.sodium || 0) * factor; totals.carb += (n.carb || 0) * factor; totals.fiber += (n.fiber || 0) * factor; totals.sugar += (n.sugar || 0) * factor; totals.addedSugar += (n.addedSugar || 0) * factor; totals.vitD += (n.vitD || 0) * factor; totals.calcium += (n.calcium || 0) * factor; totals.iron += (n.iron || 0) * factor; totals.pot += (n.potassium || 0) * factor;
+        });
+        const portionSize = data.peso_porcion_gramos || 100; const servings = data.porciones_envase || 1; const val = {};
+        for(let key in totals) val[key] = (totals[key] / totalWeight) * portionSize;
+        
+        // Helper %DV (Valores Diarios estándar FDA 2000 cal)
+        const getPct = (v, k) => { const dvMap = { fat:78, satFat:20, chol:300, sod:2300, carb:275, fiber:28, addedSugar:50, vitD:20, calcium:1300, iron:18, pot:4700 }; return Math.round((v / dvMap[k]) * 100) + '%'; };
+
+        // Estilos Inline para garantizar el look FDA independientemente de Tailwind externo
+        const sContainer = 'font-family: Helvetica, Arial, sans-serif; border: 2px solid black; padding: 10px; background: white; max-width: 300px; margin: 0 auto; color: black;';
+        const sTitle = 'font-weight: 900; font-size: 38px; line-height: 1; margin: 0;';
+        const sLineHeavy = 'border-bottom: 10px solid black;';
+        const sLineMedium = 'border-bottom: 5px solid black;';
+        const sLineLight = 'border-bottom: 1px solid #888;';
+        const sFlexBetween = 'display: flex; justify-content: space-between; align-items: flex-end;';
+        const sBold = 'font-weight: 900;';
+        const sIndent = 'padding-left: 15px;';
+
+        return `
+            <div style="${sContainer}">
+                <h1 style="${sTitle}">Nutrition Facts</h1>
+                <div style="${sLineLight}; margin-bottom: 6px;">
+                    <p style="font-size: 16px; margin: 0; font-weight: bold;">${servings} servings per container</p>
+                    <div style="${sFlexBetween} font-weight: 900; font-size: 18px; padding-bottom: 4px; border-top: 4px solid black;">
+                        <span>Serving size</span>
+                        <span>${portionSize}g</span>
+                    </div>
+                </div>
+                <div style="${sLineHeavy}"></div>
+                
+                <div style="${sFlexBetween} padding-top: 4px; padding-bottom: 4px;">
+                    <div>
+                        <span style="font-weight: 900; font-size: 14px;">Amount per serving</span><br>
+                        <span style="font-weight: 900; font-size: 26px;">Calories</span>
+                    </div>
+                    <span style="font-weight: 900; font-size: 42px; line-height: 1;">${Math.round(val.energy)}</span>
+                </div>
+                
+                <div style="${sLineMedium}"></div>
+                
+                <div style="text-align: right; font-size: 13px; font-weight: bold; border-bottom: 1px solid black; padding: 2px 0;">
+                    % Daily Value*
+                </div>
+
+                <div style="${sLineLight} padding: 3px 0; font-size: 14px; display: flex; justify-content: space-between;">
+                    <span><span style="${sBold}">Total Fat</span> ${Math.round(val.fat)}g</span>
+                    <span style="${sBold}">${getPct(val.fat, 'fat')}</span>
+                </div>
+                
+                <div style="${sLineLight} padding: 3px 0; font-size: 14px; display: flex; justify-content: space-between; ${sIndent}">
+                    <span>Saturated Fat ${Math.round(val.satFat)}g</span>
+                    <span style="${sBold}">${getPct(val.satFat, 'satFat')}</span>
+                </div>
+                
+                <div style="${sLineLight} padding: 3px 0; font-size: 14px; display: flex; justify-content: space-between; ${sIndent}">
+                    <span>Trans Fat ${val.transFat.toFixed(1)}g</span>
+                </div>
+                
+                <div style="${sLineLight} padding: 3px 0; font-size: 14px; display: flex; justify-content: space-between;">
+                    <span><span style="${sBold}">Cholesterol</span> ${Math.round(val.chol)}mg</span>
+                    <span style="${sBold}">${getPct(val.chol, 'chol')}</span>
+                </div>
+                
+                <div style="${sLineLight} padding: 3px 0; font-size: 14px; display: flex; justify-content: space-between;">
+                    <span><span style="${sBold}">Sodium</span> ${Math.round(val.sod)}mg</span>
+                    <span style="${sBold}">${getPct(val.sod, 'sod')}</span>
+                </div>
+                
+                <div style="${sLineLight} padding: 3px 0; font-size: 14px; display: flex; justify-content: space-between;">
+                    <span><span style="${sBold}">Total Carbohydrate</span> ${Math.round(val.carb)}g</span>
+                    <span style="${sBold}">${getPct(val.carb, 'carb')}</span>
+                </div>
+                
+                <div style="${sLineLight} padding: 3px 0; font-size: 14px; display: flex; justify-content: space-between; ${sIndent}">
+                    <span>Dietary Fiber ${Math.round(val.fiber)}g</span>
+                    <span style="${sBold}">${getPct(val.fiber, 'fiber')}</span>
+                </div>
+                
+                <div style="${sLineLight} padding: 3px 0; font-size: 14px; display: flex; justify-content: space-between; ${sIndent}">
+                    <span>Total Sugars ${Math.round(val.sugar)}g</span>
+                </div>
+                
+                <div style="${sLineLight} padding: 3px 0; font-size: 14px; display: flex; justify-content: space-between; ${sIndent}">
+                    <span>Includes ${Math.round(val.addedSugar)}g Added Sugars</span>
+                    <span style="${sBold}">${getPct(val.addedSugar, 'addedSugar')}</span>
+                </div>
+                
+                <div style="${sLineHeavy} padding: 3px 0; font-size: 14px; display: flex; justify-content: space-between;">
+                    <span style="${sBold}">Protein <span style="font-weight: normal;">${Math.round(val.protein)}g</span></span>
+                </div>
+
+                <div style="${sLineLight} padding: 3px 0; font-size: 14px; display: flex; justify-content: space-between;">
+                    <span>Vitamin D ${Math.round(val.vitD)}mcg</span>
+                    <span>${getPct(val.vitD, 'vitD')}</span>
+                </div>
+                <div style="${sLineLight} padding: 3px 0; font-size: 14px; display: flex; justify-content: space-between;">
+                    <span>Calcium ${Math.round(val.calcium)}mg</span>
+                    <span>${getPct(val.calcium, 'calcium')}</span>
+                </div>
+                <div style="${sLineLight} padding: 3px 0; font-size: 14px; display: flex; justify-content: space-between;">
+                    <span>Iron ${Math.round(val.iron)}mg</span>
+                    <span>${getPct(val.iron, 'iron')}</span>
+                </div>
+                <div style="${sLineMedium} padding: 3px 0; font-size: 14px; display: flex; justify-content: space-between;">
+                    <span>Potassium ${Math.round(val.pot)}mg</span>
+                    <span>${getPct(val.pot, 'pot')}</span>
+                </div>
+
+                <div style="font-size: 10px; margin-top: 6px; line-height: 1.3;">
+                    * The % Daily Value (DV) tells you how much a nutrient in a serving of food contributes to a daily diet. 2,000 calories a day is used for general nutrition advice.
+                </div>
+            </div>
+        `;
     }
     
     function initializeMap(containerId, coords) {

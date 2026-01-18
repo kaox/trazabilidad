@@ -1,435 +1,567 @@
 document.addEventListener('DOMContentLoaded', () => {
-    let state = { batches: [], templates: [], stagesByTemplate: {}, ruedasSabor: [], perfilesSensoriales: [], fincas: [] };
-    const crearProcesoBtn = document.getElementById('crear-proceso-btn');
-    const dashboardView = document.getElementById('dashboard-view');
+    let state = { 
+        batches: [], 
+        templates: [], 
+        stagesByTemplate: {}, 
+        ruedasSabor: [], 
+        perfilesSensoriales: [], 
+        fincas: [], 
+        products: [],
+        activeRootBatch: null, 
+        view: 'inventory' 
+    };
+
+    // DOM Elements - Vistas
+    const inventoryView = document.getElementById('inventory-view');
+    const productionView = document.getElementById('production-view');
+    
+    // DOM Elements - Inventario
+    const inventoryGrid = document.getElementById('inventory-grid');
+    const searchInput = document.getElementById('batch-search');
+    const filterBtns = document.querySelectorAll('.filter-btn');
+    const emptyState = document.getElementById('empty-state');
+    
+    // DOM Elements - Producción (Detalle)
+    const batchTimeline = document.getElementById('batch-timeline');
+    const pageTitle = document.getElementById('page-title');
+    const pageSubtitle = document.getElementById('page-subtitle');
+    const backBtn = document.getElementById('back-to-inventory-btn');
+    
+    // Header Detalle Lote
+    const activeBatchIdEl = document.getElementById('active-batch-id');
+    const activeProductTypeEl = document.getElementById('active-product-type');
+    const activeStartDateEl = document.getElementById('active-start-date');
+    const activeCurrentWeightEl = document.getElementById('active-current-weight');
+    const addNextStageBtn = document.getElementById('add-next-stage-btn');
+
+    // Modales
     const formModal = document.getElementById('form-modal');
     const modalContent = document.getElementById('modal-content');
+    const blockchainContainer = document.getElementById('blockchain-certificate');
+    const hashDisplay = document.getElementById('hash-display');
 
     let FLAVOR_WHEELS_DATA = {};
+    if (typeof ChartDataLabels !== 'undefined') Chart.register(ChartDataLabels);
 
-    if (typeof ChartDataLabels !== 'undefined') {
-        Chart.register(ChartDataLabels);
-    }
+    // --- INIT ---
+    init();
 
-    // --- Helper API Wrapper para manejar Auth ---
-    async function api(url, options = {}) {
-        options.credentials = 'include';
-        options.headers = { ...options.headers, 'Content-Type': 'application/json' };
-        
-        const response = await fetch(url, options);
-        if (response.status === 401) {
-            window.location.href = '/login.html';
-            throw new Error('No autorizado');
-        }
-        if (response.status === 403) {
-            const data = await response.json();
-            throw new Error(data.error || 'Acceso denegado (Requiere suscripción)');
-        }
-        if (!response.ok) {
-            const errorData = await response.json().catch(() => ({}));
-            throw new Error(errorData.error || `Error HTTP ${response.status}`);
-        }
-        return response.json();
-    }
-
-    // --- Inicialización ---
     async function init() {
-        await loadTemplates();
-        await loadBatches();
-        await loadPerfilesSensoriales();
-        await loadFincas();
-        await loadRuedasSabor();
-        
-        crearProcesoBtn.addEventListener('click', openTemplateSelectorModal);
-        formModal.addEventListener('click', e => { if (e.target.id === 'form-modal') formModal.close(); });
-        dashboardView.addEventListener('click', handleDashboardClick);
-    }
-
-    async function loadPerfilesSensoriales() {
         try {
-            state.perfilesSensoriales = await api('/api/perfiles');
-        } catch (e) { console.error("Error cargando perfiles", e); }
-    }
-    
-    async function loadBatches() {
-        try {
-            state.batches = await api('/api/batches/tree');
-            renderDashboard(state.batches);
-        } catch (error) {
-            console.error("Error al cargar lotes:", error);
-            dashboardView.innerHTML = `<p class="text-red-500 text-center">Error al cargar datos de lotes.</p>`;
-        }
-    }
-
-    async function loadTemplates() {
-        try {
-            state.templates = await api('/api/templates');
-            for (const t of state.templates) {
-                state.stagesByTemplate[t.id] = await api(`/api/templates/${t.id}/stages`);
-            }
-        } catch (error) {
-            console.error("Error al cargar plantillas:", error);
-        }
-    }
-
-    async function loadFincas() {
-        try {
-            state.fincas = await api('/api/fincas');
-        } catch (e) { console.error("Error cargando fincas", e); state.fincas = []; }
-    }
-
-    async function loadRuedasSabor() {
-        try {
-            const response = await fetch('/data/flavor-wheels.json');
-            const data = await response.json();
-            FLAVOR_WHEELS_DATA = data;
-            state.ruedasSabor = await api('/api/ruedas-sabores');
-        } catch (error) {
-            console.error("Error al cargar ruedas de sabor:", error);
-            state.ruedasSabor = [];
-        }
-    }
-
-    // --- Renderizado del Dashboard ---
-    function renderDashboard(lotesRaiz) {
-        dashboardView.innerHTML = '';
-        document.getElementById('welcome-screen').classList.toggle('hidden', lotesRaiz.length > 0);
-        
-        lotesRaiz.reverse().forEach(loteRaiz => {
-            const template = state.templates.find(t => t.id === loteRaiz.plantilla_id);
-            if (template && state.stagesByTemplate[template.id]?.length > 0) {
-                const firstStage = state.stagesByTemplate[template.id][0];
-                dashboardView.appendChild(createBatchCard(loteRaiz, template, firstStage));
+            await Promise.all([
+                loadTemplates(),
+                loadBatches(),
+                loadPerfilesSensoriales(),
+                loadFincas(),
+                loadRuedasSabor(),
+                loadProducts()
+            ]);
+            
+            setupEventListeners();
+            
+            const hash = window.location.hash.substring(1);
+            if (hash) {
+                const targetBatch = state.batches.find(b => b.id === hash);
+                if (targetBatch) openWorkstation(targetBatch);
+                else renderInventory('active');
             } else {
-                console.warn(`Plantilla no encontrada para lote ${loteRaiz.id}`);
+                renderInventory('active'); 
             }
-        });
+            
+        } catch (e) {
+            console.error("Error init:", e);
+            if(inventoryGrid) inventoryGrid.innerHTML = `<p class="col-span-full text-center text-red-500">Error cargando datos: ${e.message}</p>`;
+        }
     }
 
-    function createBatchCard(batchData, template, stage, parentBatch = null) {
-        const card = document.createElement('div');
-        card.className = 'batch-card-wrapper mb-4';
+    // --- LISTENERS ---
+    function setupEventListeners() {
+        // Navegación
+        if (backBtn) backBtn.addEventListener('click', () => switchView('inventory'));
         
-        const nextStage = state.stagesByTemplate[template.id]?.find(s => s.orden === stage.orden + 1);
-        const hasChildren = batchData.children && Array.isArray(batchData.children) && batchData.children.length > 0;
-        const isLocked = batchData.is_locked; 
-
-        const processData = batchData.data || batchData;
+        // Búsqueda
+        if (searchInput) searchInput.addEventListener('input', () => renderInventory());
         
-        const entradas = stage.campos_json.entradas || [];
-        const salidas = stage.campos_json.salidas || [];
-        const variables = stage.campos_json.variables || [];
-        const imageUrlField = variables.find(v => v.type === 'image');
-
-        const getFieldValue = (data, fieldName) => {
-            if (!data || !fieldName) return null;
-            const field = data[fieldName];
-            if (typeof field === 'object' && field !== null && field.hasOwnProperty('value')) {
-                return field.value;
-            }
-            return field;
-        };
-        
-        let inputWeight = 0;
-        let displayInputWeight = 0;
-        let outputWeight = 0;
-
-        if (salidas.length > 0 && salidas[0].name) {
-            outputWeight = parseFloat(getFieldValue(processData, salidas[0].name)) || 0;
-        }
-        
-        const inputField = entradas[0]?.name;
-        if (inputField && processData[inputField]) {
-            inputWeight = parseFloat(getFieldValue(processData, inputField)) || 0;
-        } else if (parentBatch) {
-            const parentStage = state.stagesByTemplate[template.id]?.find(s => s.orden === stage.orden - 1);
-            if (parentStage?.campos_json.salidas[0]) {
-                const outputFieldOfParent = parentStage.campos_json.salidas[0].name;
-                inputWeight = parseFloat(getFieldValue(parentBatch.data || parentBatch, outputFieldOfParent)) || 0;
-            }
-        }
-        displayInputWeight = inputWeight;
-        if (parentBatch && inputWeight === 0) {
-             const parentStage = state.stagesByTemplate[template.id]?.find(s => s.orden === stage.orden - 1);
-            if (parentStage?.campos_json.salidas[0]) {
-                const outputFieldOfParent = parentStage.campos_json.salidas[0].name;
-                displayInputWeight = parseFloat(getFieldValue(parentBatch.data || parentBatch, outputFieldOfParent)) || 0;
-            }
-        }
-        const yieldPercent = (inputWeight > 0) ? (outputWeight / inputWeight) * 100 : 0;
-        let variablesHtml = variables.filter(v => v.type !== 'image').map(v => `<div><dt class="text-stone-500">${v.label}:</dt><dd class="font-medium text-stone-800">${getFieldValue(processData, v.name) || 'N/A'}</dd></div>`).join('');
-        let ioHtml = `<div class="flex gap-4">`;
-        const inputLabel = entradas[0]?.label || 'Entrada';
-        ioHtml += `<div class="flex-1"><p class="text-sm text-stone-500">${inputLabel}</p><p class="font-bold text-lg">${displayInputWeight.toFixed(2)} kg</p></div>`;
-        if (salidas.length > 0) ioHtml += `<div class="flex-1"><p class="text-sm text-stone-500">Salida (${salidas[0].label})</p><p class="font-bold text-lg text-green-700">${outputWeight.toFixed(2)} kg</p></div>`;
-        ioHtml += `</div>`;
-        
-        const fechaKey = variables.find(v => v.type === 'date')?.name;
-        const fecha = fechaKey ? (getFieldValue(processData, fechaKey) || 'Sin fecha') : 'Sin fecha';
-        const imageUrl = imageUrlField ? getFieldValue(processData, imageUrlField.name) : null;
-        const isQualityStage = stage.nombre_etapa.toLowerCase().match(/(cata|calidad)/);
-
-        // --- BOTONES DE ACCIÓN ---
-        let actionButtonsHtml = '';
-
-        const addSubButton = nextStage 
-            ? `<button class="add-sub-btn text-xs bg-green-600 hover:bg-green-700 text-white font-bold px-3 py-1.5 rounded-lg disabled:bg-gray-400 ml-2" data-parent-id="${batchData.id}" data-template-id="${template.id}" data-next-stage-id="${nextStage.id}" title="Crear nueva rama">+ ${nextStage.nombre_etapa}</button>` 
-            : '';
-
-        const pdfButton = isQualityStage ? `
-            <button class="pdf-btn text-xs bg-purple-600 hover:bg-purple-700 text-white font-bold px-3 py-1.5 rounded-lg flex items-center gap-1" data-batch-id="${batchData.id}" title="Reporte de Calidad">
-                <i class="fas fa-file-pdf"></i> Reporte
-            </button>
-        ` : '';
-
-        if (isLocked) {
-            const hashShort = batchData.blockchain_hash ? batchData.blockchain_hash.substring(0, 8) + '...' : 'Generado';
-            actionButtonsHtml = `
-                <div class="flex items-center gap-2 bg-green-100 border border-green-200 text-green-800 px-3 py-1.5 rounded-lg">
-                    <i class="fas fa-certificate text-green-600"></i>
-                    <div class="flex flex-col">
-                        <span class="text-xs font-bold leading-none">HASH INMUTABLE</span>
-                        <span class="text-[10px] font-mono leading-none mt-0.5 opacity-75 cursor-help" title="${batchData.blockchain_hash}">${hashShort}</span>
-                    </div>
-                </div>
-                ${pdfButton}
-                <button class="text-xs bg-sky-600 hover:bg-sky-700 text-white p-2 rounded-lg" data-id="${batchData.id}" title="Ver Trazabilidad Pública">
-                    <a href="/${batchData.id}" target="_blank"><i class="fa-solid fa-globe"></i></a>
-                </button>
-                <button class="qr-btn text-xs bg-sky-600 hover:bg-sky-700 text-white p-2 rounded-lg" data-id="${batchData.id}" title="Descargar QR">
-                    <i class="fa-solid fa-qrcode"></i>
-                </button>
-
-                <!-- NUEVO BOTÓN DUPLICAR (Disponible en bloqueado también, para agilizar) -->
-                <button class="duplicate-btn text-xs bg-amber-100 hover:bg-amber-200 text-stone-700 p-2 rounded-lg" data-batch-id="${batchData.id}" data-template-id="${template.id}" data-stage-id="${stage.id}" title="Duplicar Lote">
-                    <i class="fas fa-copy"></i>
-                </button>
-                ${addSubButton}
-            `;
-        } else {
-            actionButtonsHtml = `
-                ${pdfButton}
-                <button class="text-xs bg-sky-600 hover:bg-sky-700 text-white p-2 rounded-lg" data-id="${batchData.id}" title="Ver">
-                    <a href="/${batchData.id}" target="_blank"><i class="fa-solid fa-eye"></i></a>
-                </button>
-                <button class="edit-btn text-xs bg-stone-200 hover:bg-stone-300 p-2 rounded-lg" data-batch-id="${batchData.id}" data-template-id="${template.id}" data-stage-id="${stage.id}" title="Editar">
-                    <i class="fa-solid fa-pen-to-square"></i>
-                </button>
-                <button class="duplicate-btn text-xs bg-amber-100 hover:bg-amber-200 text-stone-700 p-2 rounded-lg" data-batch-id="${batchData.id}" data-template-id="${template.id}" data-stage-id="${stage.id}" title="Duplicar Lote">
-                    <i class="fas fa-copy"></i>
-                </button>
-                <button class="delete-btn text-xs bg-red-600 hover:bg-red-700 text-white p-2 rounded-lg" data-batch-id="${batchData.id}" title="Eliminar">
-                    <i class="fa-solid fa-trash"></i>
-                </button>
-                <button class="finalize-btn text-xs bg-stone-800 hover:bg-black text-white font-bold px-3 py-1.5 rounded-lg flex items-center gap-1" data-batch-id="${batchData.id}" title="Generar Hash y Bloquear Lote">
-                    <i class="fas fa-link"></i> Generar Hash & QR
-                </button>
-                ${addSubButton}
-            `;
-        }
-
-        const cardContent = document.createElement('div');
-        cardContent.className = 'bg-white rounded-xl shadow-md';
-        cardContent.innerHTML = `
-            <div class="p-4 border-l-4 relative" style="border-color: ${isLocked ? '#10b981' : getTemplateColor(template.id)}">
-                ${isLocked ? '<div class="absolute top-0 right-0 p-2 opacity-5 pointer-events-none"><i class="fas fa-lock text-6xl text-green-900"></i></div>' : ''}
-                <div class="flex flex-col sm:flex-row justify-between sm:items-start gap-2">
-                    <div class="flex items-center gap-2 flex-grow ${hasChildren ? 'cursor-pointer expand-trigger' : ''}">
-                        ${hasChildren ? `<svg class="w-5 h-5 text-stone-400 transition-transform duration-300 flex-shrink-0 expand-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7-7"></path></svg>` : '<div class="w-5 flex-shrink-0"></div>' }
-                        <div>
-                            <h3 class="font-bold text-lg text-amber-900 flex items-center gap-2">
-                                ${stage.nombre_etapa} 
-                                <span class="text-base font-normal text-stone-500">[${fecha}]</span>
-                            </h3>
-                            ${!parentBatch ? `<span class="inline-block text-xs font-semibold mr-2 px-2.5 py-0.5 rounded-full" style="background-color: ${getTemplateColor(template.id, true)}; color: ${getTemplateColor(template.id)}">${template.nombre_producto}</span>`: ''}
-                        </div>
-                    </div>
-                    <div class="flex flex-wrap gap-2 items-center justify-start sm:justify-end flex-shrink-0 relative z-10">
-                        ${actionButtonsHtml}
-                    </div>
-                </div>
+        // Filtros de Inventario
+        filterBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                // Actualizar estilo visual
+                filterBtns.forEach(b => {
+                    b.classList.remove('bg-stone-800', 'text-white');
+                    b.classList.add('bg-white', 'text-stone-600', 'border');
+                });
+                btn.classList.remove('bg-white', 'text-stone-600', 'border');
+                btn.classList.add('bg-stone-800', 'text-white');
                 
-                <div class="pl-7 mt-4 flex flex-col sm:flex-row gap-4">
-                    ${imageUrl ? `<img src="${imageUrl}" class="w-24 h-24 rounded-lg object-cover flex-shrink-0">` : ''}
-                    <div class="flex-grow space-y-4">
-                        <div class="pt-4 border-t sm:border-t-0"><dl class="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1 text-sm">${variablesHtml}</dl></div>
-                        <div class="pt-4 border-t">${ioHtml}</div>
-                        <div>
-                            <div class="flex justify-between items-center mb-1"><span class="text-sm font-medium text-amber-800">Rendimiento</span><span class="text-sm font-bold text-amber-800">${yieldPercent.toFixed(1)}%</span></div>
-                            <div class="w-full bg-stone-200 rounded-full h-2.5"><div class="bg-amber-700 h-2.5 rounded-full" style="width: ${yieldPercent}%"></div></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        `;
-        
-        const childrenContainer = document.createElement('div');
-        childrenContainer.className = 'children-container hidden pl-5 border-l-2 border-dashed border-stone-300 md:ml-6 md:pl-4 md:border-l-solid md:border-stone-200';
+                // Aplicar filtro
+                const filter = btn.dataset.filter;
+                renderInventory(filter);
+            });
+        });
 
-        if (hasChildren) {
-            batchData.children.forEach(childBatch => {
-                childrenContainer.appendChild(createBatchCard(childBatch, template, nextStage, batchData));
+        // Cerrar modal al hacer clic fuera
+        if (formModal) {
+            formModal.addEventListener('click', e => { 
+                if (e.target.id === 'form-modal') formModal.close(); 
             });
         }
-        
-        card.appendChild(cardContent);
-        card.appendChild(childrenContainer);
-
-        return card;
     }
 
-    // --- Selectores de Plantilla ---
-    async function openTemplateSelectorModal() {
-        let systemTemplates = [];
-        try {
-            systemTemplates = await api('/api/templates/system');
-        } catch (e) {
-            console.error("Error cargando catálogo del sistema", e);
+    // --- CARGA DE DATOS ---
+    async function loadBatches() {
+        state.batches = await api('/api/batches/tree');
+    }
+    
+    async function loadTemplates() { 
+        state.templates = await api('/api/templates'); 
+        for (const t of state.templates) { 
+            state.stagesByTemplate[t.id] = await api(`/api/templates/${t.id}/stages`); 
+        } 
+    }
+    
+    async function loadPerfilesSensoriales() { try { state.perfilesSensoriales = await api('/api/perfiles'); } catch(e){} }
+    async function loadFincas() { try { state.fincas = await api('/api/fincas'); } catch(e){} }
+    async function loadProducts() { try { state.products = await api('/api/productos'); } catch(e){} }
+    async function loadRuedasSabor() { try { const r = await fetch('/data/flavor-wheels.json'); FLAVOR_WHEELS_DATA = await r.json(); state.ruedasSabor = await api('/api/ruedas-sabores'); } catch(e){} }
+
+    // --- GESTIÓN DE VISTAS ---
+    function switchView(viewName) {
+        state.view = viewName;
+        const filters = document.getElementById('inventory-filters');
+
+        if (viewName === 'inventory') {
+            inventoryView.classList.remove('hidden');
+            productionView.classList.add('hidden');
+            if (filters) filters.classList.remove('hidden');
+            if (backBtn) backBtn.classList.add('hidden');
+            
+            if (pageTitle) pageTitle.innerText = "Planta de Producción";
+            if (pageSubtitle) pageSubtitle.innerText = "Selecciona un lote de acopio para continuar su transformación.";
+            
+            state.activeRootBatch = null;
+            history.pushState("", document.title, window.location.pathname + window.location.search); 
+            renderInventory();
+        } else if (viewName === 'production') {
+            inventoryView.classList.add('hidden');
+            productionView.classList.remove('hidden');
+            if (filters) filters.classList.add('hidden');
+            if (backBtn) backBtn.classList.remove('hidden');
+        }
+    }
+
+    // --- VISTA 1: INVENTARIO DE LOTES ---
+    function renderInventory(filterStatus = 'active') {
+        if (!inventoryGrid) return;
+        inventoryGrid.innerHTML = '';
+        
+        const roots = state.batches.filter(b => !b.parent_id);
+        const searchTerm = searchInput ? searchInput.value.toLowerCase() : '';
+
+        const filtered = roots.filter(batch => {
+            const analysis = analyzeBatchChain(batch);
+            const searchMatch = batch.id.toLowerCase().includes(searchTerm) || 
+                                analysis.lastStageName.toLowerCase().includes(searchTerm) ||
+                                analysis.productName.toLowerCase().includes(searchTerm) ||
+                                analysis.finca.toLowerCase().includes(searchTerm);
+            
+            if (!searchMatch) return false;
+
+            // Filtro Estado: Si el último nodo está bloqueado, se considera terminado
+            const isFinished = analysis.lastNode.is_locked; 
+            
+            if (filterStatus === 'active' && isFinished) return false;
+            if (filterStatus === 'finished' && !isFinished) return false;
+
+            return true;
+        });
+
+        if (filtered.length === 0) {
+            if(emptyState) emptyState.classList.remove('hidden');
+            inventoryGrid.classList.add('hidden');
+            return;
+        } else {
+            if(emptyState) emptyState.classList.add('hidden');
+            inventoryGrid.classList.remove('hidden');
         }
 
-        let myTemplatesHTML = '';
-        if (state.templates.length > 0) {
-            const options = state.templates.map(t => `<option value="${t.id}">${t.nombre_producto}</option>`).join('');
-            myTemplatesHTML = `
-                <div class="mb-6 border-b border-stone-200 pb-6">
-                    <h3 class="font-bold text-lg text-amber-900 mb-2">1. Usar una de mis plantillas</h3>
-                    <p class="text-sm text-stone-500 mb-3">Selecciona una plantilla que ya has importado o personalizado.</p>
-                    <div class="flex gap-2">
-                        <select id="my-template-selector" class="flex-grow p-3 border border-stone-300 rounded-xl bg-white focus:ring-2 focus:ring-amber-500 outline-none">
-                            ${options}
-                        </select>
-                        <button id="use-my-template-btn" class="bg-amber-800 hover:bg-amber-900 text-white font-bold px-6 rounded-xl shadow-sm transition-colors">
-                            Iniciar
+        filtered.reverse().forEach(root => {
+            const analysis = analyzeBatchChain(root);
+            const template = state.templates.find(t => t.id === root.plantilla_id);
+            const color = getTemplateColor(template ? template.id : 0);
+            const startDate = new Date(root.created_at);
+            const days = Math.floor((new Date() - startDate) / (1000 * 60 * 60 * 24));
+            
+            // Determinar Siguiente Acción Sugerida en la Tarjeta
+            let nextActionLabel = "Ver Detalles";
+            let nextActionIcon = "fa-eye";
+            
+            if (template && state.stagesByTemplate[template.id]) {
+                const currentStageObj = state.stagesByTemplate[template.id].find(s => s.id === analysis.lastNode.etapa_id);
+                if (currentStageObj) {
+                    const nextStageObj = state.stagesByTemplate[template.id].find(s => s.orden === currentStageObj.orden + 1);
+                    if (nextStageObj) {
+                        nextActionLabel = `Iniciar ${nextStageObj.nombre_etapa}`;
+                        nextActionIcon = "fa-play";
+                    } else {
+                        nextActionLabel = "Certificar / Finalizar";
+                        nextActionIcon = "fa-check-circle";
+                    }
+                }
+            }
+
+            const card = document.createElement('div');
+            card.className = "bg-white rounded-2xl shadow-sm border border-stone-200 hover:shadow-xl hover:-translate-y-1 transition duration-300 overflow-hidden cursor-pointer group batch-card";
+            card.innerHTML = `
+                <div class="h-2 w-full" style="background-color: ${color}"></div>
+                <div class="p-6">
+                    <div class="flex justify-between items-start mb-4">
+                        <div class="flex flex-col">
+                            <span class="text-xs font-bold text-stone-400 uppercase tracking-widest mb-1">Lote Origen</span>
+                            <span class="font-mono font-bold text-lg text-stone-800 bg-stone-100 px-2 py-0.5 rounded border border-stone-200">${root.id}</span>
+                        </div>
+                        <div class="text-right">
+                             <span class="text-[10px] font-bold uppercase tracking-wide text-white px-2 py-1 rounded-full" style="background-color: ${color}">${analysis.productName}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-6">
+                        <h3 class="text-xl font-display font-bold text-stone-800 mb-1">${analysis.lastStageName}</h3>
+                        <p class="text-sm text-stone-500 flex items-center gap-2">
+                            <i class="fas fa-map-marker-alt text-stone-300"></i> ${analysis.finca}
+                        </p>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4 mb-4 text-sm border-t border-b border-stone-100 py-3">
+                        <div>
+                            <span class="block text-xs text-stone-400">Peso Actual</span>
+                            <span class="font-bold text-stone-700 text-lg">${analysis.lastWeight} kg</span>
+                        </div>
+                        <div class="text-right">
+                            <span class="block text-xs text-stone-400">Tiempo</span>
+                            <span class="font-bold text-stone-700">${days} días</span>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-4 gap-2 mt-4">
+                        <button class="col-span-3 py-2 rounded-lg bg-stone-800 text-white font-bold text-sm hover:bg-black transition flex items-center justify-center gap-2 action-open">
+                            <i class="fas ${nextActionIcon}"></i> ${nextActionLabel}
+                        </button>
+                        <button class="col-span-1 py-2 rounded-lg bg-stone-100 text-stone-600 hover:bg-stone-200 transition flex items-center justify-center action-qr" title="QR Lote Origen">
+                            <i class="fas fa-qrcode"></i>
                         </button>
                     </div>
                 </div>
             `;
-        }
-
-        const catalogHTML = systemTemplates.map(t => `
-            <div class="border border-stone-200 rounded-xl p-4 hover:border-amber-500 hover:bg-amber-50 transition-all cursor-pointer flex justify-between items-center group">
-                <div>
-                    <h4 class="font-bold text-amber-900 flex items-center gap-2">
-                        ${t.nombre_producto}
-                        <span class="text-xs bg-stone-100 text-stone-500 px-2 py-0.5 rounded-full border">Sistema</span>
-                    </h4>
-                    <p class="text-xs text-stone-500 mt-1 line-clamp-2">${t.descripcion || 'Sin descripción'}</p>
-                </div>
-                <button class="clone-template-btn bg-white border border-stone-300 text-stone-700 font-bold py-1.5 px-4 rounded-lg text-sm shadow-sm group-hover:bg-green-600 group-hover:text-white group-hover:border-green-600 transition-all" 
-                    data-system-name="${t.nombre_producto}">
-                    + Importar
-                </button>
-            </div>
-        `).join('');
-
-        modalContent.innerHTML = `
-            <h2 class="text-2xl font-display text-amber-900 border-b pb-2 mb-4">Iniciar Nuevo Proceso</h2>
-            ${myTemplatesHTML}
-            <div>
-                <h3 class="font-bold text-lg text-amber-900 mb-2">
-                    ${state.templates.length > 0 ? '2. O importar del catálogo' : 'Selecciona una plantilla para comenzar'}
-                </h3>
-                <p class="text-sm text-stone-500 mb-3">Estas son las plantillas estándar disponibles. Al importar una, podrás usarla y personalizarla.</p>
-                <div class="space-y-3 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
-                    ${catalogHTML}
-                </div>
-            </div>
-            <div class="flex justify-end mt-6 border-t pt-4">
-                <button type="button" class="text-stone-500 hover:text-stone-700 font-bold px-4" onclick="document.getElementById('form-modal').close()">Cancelar</button>
-            </div>
-        `;
-        formModal.showModal();
-
-        if (state.templates.length > 0) {
-            document.getElementById('use-my-template-btn').addEventListener('click', () => {
-                const templateId = document.getElementById('my-template-selector').value;
-                startProcessWithTemplate(templateId);
-            });
-        }
-
-        modalContent.querySelectorAll('.clone-template-btn').forEach(btn => {
-            btn.addEventListener('click', async (e) => {
-                const btnEl = e.currentTarget; 
-                const systemName = btnEl.dataset.systemName;
-                const originalText = btnEl.innerHTML;
-                btnEl.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
-                btnEl.disabled = true;
-
-                try {
-                    const result = await api('/api/templates/clone', {
-                        method: 'POST',
-                        body: JSON.stringify({ nombre_producto_sistema: systemName })
-                    });
-                    await loadTemplates();
-                    startProcessWithTemplate(result.id);
-                } catch (error) {
-                    console.error(error);
-                    alert("Error al importar la plantilla: " + error.message);
-                    btnEl.innerHTML = originalText;
-                    btnEl.disabled = false;
-                }
-            });
+            
+            const openBtn = card.querySelector('.action-open');
+            const qrBtn = card.querySelector('.action-qr');
+            openBtn.addEventListener('click', (e) => { e.stopPropagation(); openWorkstation(root); });
+            qrBtn.addEventListener('click', (e) => { e.stopPropagation(); downloadQR(root.id); });
+            card.addEventListener('click', () => openWorkstation(root));
+            
+            inventoryGrid.appendChild(card);
         });
     }
 
-    async function startProcessWithTemplate(templateId) {
-        const template = state.templates.find(t => t.id == templateId);
-        if (!template) {
-            alert("Error: Plantilla no encontrada en memoria.");
-            return;
-        }
-        
-        if (!state.stagesByTemplate[template.id]) {
-             try {
-                state.stagesByTemplate[template.id] = await api(`/api/templates/${template.id}/stages`);
-             } catch(e) {
-                 alert("Error cargando etapas de la plantilla.");
-                 return;
-             }
-        }
-        
-        const stages = state.stagesByTemplate[template.id];
-        if (!stages || stages.length === 0) {
-            alert("Esta plantilla no tiene etapas definidas.");
-            return;
-        }
-        
-        openFormModal('create', template, stages[0]);
-    }
-    
-    async function openFormModal(mode, template, stage, parentBatch = null, batchData = {}) {
-        modalContent.innerHTML = await generateFormHTML(mode, template, stage, parentBatch, batchData.data);
-        
-        // --- LÓGICA DE HERENCIA (NUEVO) ---
-        if (mode === 'create' && parentBatch) {
-            const parentData = parentBatch.data;
-            
-            // Mapeo de campos que deberían heredarse automáticamente
-            const fieldsToInherit = ['finca', 'lugarProceso', 'procesadora', 'variedad', 'clasificacion'];
-            
-            fieldsToInherit.forEach(field => {
-                // Si el formulario actual tiene ese campo y el padre tiene datos
-                const input = document.getElementById(field);
-                const parentValue = parentData[field]?.value; // Asumiendo estructura {value: '...', visible: true}
-                
-                if (input && parentValue) {
-                    input.value = parentValue;
-                    // Efecto visual para indicar que fue heredado
-                    input.style.backgroundColor = "#f0fdf4"; // Verde muy claro
-                    input.title = "Heredado de la etapa anterior";
-                }
-            });
-
-            // Pre-llenar fecha con HOY
-            const dateInput = document.querySelector('input[type="date"]');
-            if (dateInput && !dateInput.value) {
-                dateInput.value = new Date().toISOString().split('T')[0];
+    function analyzeBatchChain(rootBatch) {
+        let lastNode = rootBatch;
+        // Encontrar el último nodo de la cadena principal
+        const findLast = (node) => {
+            if (node.children && node.children.length > 0) {
+                const child = node.children[node.children.length - 1]; 
+                lastNode = child;
+                findLast(child);
             }
+        };
+        findLast(rootBatch);
+
+        const tmpl = state.templates.find(t => t.id === rootBatch.plantilla_id);
+        const stageList = state.stagesByTemplate[rootBatch.plantilla_id] || [];
+        const stageObj = stageList.find(s => s.id === lastNode.etapa_id);
+        const d = lastNode.data || {};
+        
+        let weight = 0;
+        const outputKeys = Object.keys(d).filter(k => k.toLowerCase().includes('salida') || k.toLowerCase().includes('seco') || k.toLowerCase().includes('tostado') || k.toLowerCase().includes('final') || k.toLowerCase().includes('unidades'));
+        if(outputKeys.length > 0) weight = parseFloat(d[outputKeys[0]]?.value || 0);
+        else {
+             const inputKeys = Object.keys(d).filter(k => k.toLowerCase().includes('peso'));
+             if(inputKeys.length > 0) weight = parseFloat(d[inputKeys[0]]?.value || 0);
         }
 
+        const finca = rootBatch.data.finca?.value || rootBatch.data.lugarProceso?.value || 'N/A';
+
+        return {
+            lastNode,
+            lastStageName: stageObj ? stageObj.nombre_etapa : 'Etapa Desconocida',
+            productName: tmpl ? tmpl.nombre_producto : 'Producto',
+            finca: finca,
+            rootWeight: weight.toFixed(2), // Simplificado para mostrar peso actual
+            lastWeight: weight.toFixed(2),
+            is_locked: lastNode.is_locked
+        };
+    }
+
+    // --- VISTA 2: ESTACIÓN DE TRABAJO (DETALLE DE LOTE) ---
+    function openWorkstation(rootBatch) {
+        state.activeRootBatch = rootBatch;
+        const analysis = analyzeBatchChain(rootBatch);
+        
+        if(pageTitle) pageTitle.innerText = `${analysis.productName} - ${analysis.finca}`;
+        if(pageSubtitle) pageSubtitle.innerText = "Línea de tiempo de producción";
+        if(activeBatchIdEl) activeBatchIdEl.innerText = rootBatch.id;
+        if(activeProductTypeEl) activeProductTypeEl.innerText = analysis.productName;
+        if(activeStartDateEl) activeStartDateEl.innerText = new Date(rootBatch.created_at).toLocaleDateString();
+        if(activeCurrentWeightEl) activeCurrentWeightEl.innerText = `${analysis.lastWeight} kg`;
+
+        // Configurar Botón Principal (Basado en el último estado)
+        configureNewProcessButton(analysis.lastNode, rootBatch.plantilla_id);
+
+        renderTimeline(rootBatch);
+        switchView('production');
+        
+        window.history.pushState(null, '', `#${rootBatch.id}`);
+    }
+
+    function configureNewProcessButton(lastBatchNode, templateId) {
+        if (!addNextStageBtn) return;
+        
+        const stages = state.stagesByTemplate[templateId];
+        const currentStage = stages.find(s => s.id === lastBatchNode.etapa_id);
+        const nextStage = stages.find(s => s.orden === currentStage.orden + 1);
+        
+        const newBtn = addNextStageBtn.cloneNode(true);
+        addNextStageBtn.parentNode.replaceChild(newBtn, addNextStageBtn);
+        
+        if (nextStage) {
+            // MOSTRAR BOTÓN DE ACCIÓN: INICIAR SIGUIENTE ETAPA
+            newBtn.innerHTML = `<i class="fas fa-play text-lg"></i> <span>Iniciar ${nextStage.nombre_etapa}</span>`;
+            newBtn.classList.remove('hidden', 'bg-stone-400', 'cursor-default', 'bg-green-600', 'hover:bg-green-700');
+            newBtn.classList.add('bg-amber-600', 'hover:bg-amber-700', 'text-white');
+            newBtn.title = `Continuar el proceso creando la etapa de ${nextStage.nombre_etapa}`;
+            
+            newBtn.onclick = () => {
+                const template = state.templates.find(t => t.id === templateId);
+                // Abrir modal con herencia del último nodo (lastBatchNode)
+                openFormModal('create', template, nextStage, lastBatchNode);
+            };
+        } else {
+            // PROCESO FINALIZADO
+            newBtn.innerHTML = `<i class="fas fa-check-circle"></i> <span>Proceso Finalizado</span>`;
+            newBtn.classList.remove('bg-green-600', 'hover:bg-green-700', 'bg-amber-600', 'hover:bg-amber-700');
+            newBtn.classList.add('bg-stone-400', 'cursor-default');
+            newBtn.onclick = null; 
+        }
+    }
+
+    function renderTimeline(rootBatch) {
+        if (!batchTimeline) return;
+        batchTimeline.innerHTML = '';
+        const template = state.templates.find(t => t.id === rootBatch.plantilla_id);
+        
+        let flatList = [];
+        const traverse = (node) => {
+            flatList.push(node);
+            if (node.children) node.children.forEach(traverse);
+        };
+        traverse(rootBatch);
+        
+        flatList.forEach(batch => {
+            const stages = state.stagesByTemplate[template.id];
+            const stage = stages.find(s => s.id === batch.etapa_id);
+            const parent = flatList.find(b => b.id === batch.parent_id);
+            
+            const card = createBatchCard(batch, template, stage, parent);
+            
+            const wrapper = document.createElement('div');
+            wrapper.className = 'relative pl-8 border-l-2 border-stone-200 pb-8 last:border-0 last:pb-0';
+            const dot = document.createElement('div');
+            dot.className = `absolute -left-[9px] top-6 w-5 h-5 rounded-full border-4 border-white ${batch.is_locked ? 'bg-green-500' : 'bg-amber-500'} shadow-sm`;
+            
+            wrapper.appendChild(dot);
+            wrapper.appendChild(card);
+            batchTimeline.appendChild(wrapper);
+        });
+    }
+
+    // --- CREACIÓN DE TARJETAS DE LOTE (Timeline Item) ---
+    function createBatchCard(batchData, template, stage, parentBatch = null) {
+        const card = document.createElement('div');
+        card.className = 'bg-white rounded-xl shadow-md border border-stone-200 overflow-hidden';
+        
+        const nextStage = state.stagesByTemplate[template.id]?.find(s => s.orden === stage.orden + 1);
+        const isLocked = batchData.is_locked;
+        
+        // **REGLA DE INMUTABILIDAD:** // Si el lote no tiene padre, es un lote de ACOPIO.
+        // Los lotes de Acopio NO se pueden editar/borrar/finalizar desde Producción, 
+        // solo se usan como insumo (solo lectura).
+        const isAcopioBatch = !batchData.parent_id;
+
+        const processData = batchData.data || batchData;
+        const variables = stage.campos_json.variables || [];
+        const imageUrlField = variables.find(v => v.type === 'image');
+        const imageUrl = imageUrlField ? (processData[imageUrlField.name]?.value || processData[imageUrlField.name]) : null;
+
+        const getFieldValue = (data, fieldName) => {
+            if (!data || !fieldName) return null;
+            const field = data[fieldName];
+            if (typeof field === 'object' && field !== null && field.hasOwnProperty('value')) return field.value;
+            return field;
+        };
+
+        const fecha = getFieldValue(processData, 'fecha') || 'Sin fecha';
+        
+        let productBadge = '';
+        if (batchData.producto_id) {
+            const product = state.products.find(p => p.id === batchData.producto_id);
+            if(product) productBadge = `<span class="bg-indigo-100 text-indigo-800 text-xs font-bold px-2 py-1 rounded border border-indigo-200"><i class="fas fa-tag"></i> ${product.nombre}</span>`;
+        }
+
+        // --- BOTONES DE ACCIÓN ---
+        let actionButtons = '';
+        
+        const btnVer = `<button class="p-2 text-stone-500 hover:text-stone-800 transition public-link-btn" title="Ver Trazabilidad"><i class="fas fa-globe"></i></button>`;
+        const btnQR = `<button class="p-2 text-stone-500 hover:text-stone-800 transition qr-btn" title="QR"><i class="fas fa-qrcode"></i></button>`;
+        const btnPDF = `<button class="p-2 text-stone-500 hover:text-blue-600 transition pdf-btn" title="PDF"><i class="fas fa-file-pdf"></i></button>`;
+
+        if (isLocked) {
+             const hashShort = batchData.blockchain_hash ? batchData.blockchain_hash.substring(0, 8) + '...' : '...';
+             actionButtons = `
+                <div class="flex items-center gap-2 bg-green-50 border border-green-200 text-green-700 px-3 py-1 rounded text-xs font-bold">
+                    <i class="fas fa-lock"></i> ${hashShort}
+                </div>
+                ${btnQR} ${btnPDF}
+             `;
+        } else if (isAcopioBatch) {
+             // Lote de Acopio (Solo Lectura en este módulo)
+             actionButtons = `
+                <div class="flex items-center gap-2 bg-stone-100 border border-stone-200 text-stone-500 px-3 py-1 rounded text-xs font-bold" title="Gestionar en módulo Acopio">
+                    <i class="fas fa-truck-loading"></i> Origen (Inmutable)
+                </div>
+                ${btnQR}
+             `;
+        } else {
+             // Lote de Producción (Editable)
+             actionButtons = `
+                ${btnQR}
+                <button class="p-2 text-stone-500 hover:text-amber-600 transition edit-btn" title="Editar"><i class="fas fa-pen"></i></button>
+                <button class="p-2 text-stone-500 hover:text-red-600 transition delete-btn" title="Eliminar"><i class="fas fa-trash"></i></button>
+             `;
+        }
+
+        // Botón "Continuar" dentro de la tarjeta (Opcional, ya está el header principal)
+        let continueBtn = '';
+        if (nextStage && !isLocked) {
+             // Permitimos continuar desde cualquier punto (Ramificación)
+             continueBtn = `
+            <div class="mt-4 pt-3 border-t border-stone-100">
+                <button class="w-full py-2 bg-stone-100 hover:bg-stone-200 text-stone-700 rounded-lg font-bold text-sm shadow-sm transition flex items-center justify-center gap-2 add-sub-btn">
+                    <i class="fas fa-code-branch"></i> Crear Rama: ${nextStage.nombre_etapa}
+                </button>
+            </div>`;
+        } else if (!isLocked && !isAcopioBatch) {
+             // Botón Finalizar (Solo para lotes de producción)
+             continueBtn = `
+            <div class="mt-4 pt-3 border-t border-stone-100">
+                <button class="w-full py-2 bg-stone-800 hover:bg-black text-white rounded-lg font-bold text-sm shadow-sm transition flex items-center justify-center gap-2 finalize-btn">
+                    <i class="fas fa-lock"></i> Generar Hash y Bloquear Lote
+                </button>
+            </div>`;
+        }
+
+        const variableList = variables.filter(v => v.type !== 'image').slice(0, 4).map(v => 
+            `<div class="flex justify-between text-sm border-b border-stone-50 py-1 last:border-0">
+                <span class="text-stone-500">${v.label}</span>
+                <span class="font-medium text-stone-800">${getFieldValue(processData, v.name) || '-'}</span>
+            </div>`
+        ).join('');
+
+        card.innerHTML = `
+            <div class="p-5">
+                <div class="flex justify-between items-start mb-3">
+                    <div>
+                        <h4 class="font-bold text-lg text-amber-900">${stage.nombre_etapa}</h4>
+                        <div class="flex gap-2 items-center mt-1">
+                            <span class="text-xs text-stone-400"><i class="far fa-calendar"></i> ${fecha}</span>
+                            ${productBadge}
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-1">
+                        ${actionButtons}
+                    </div>
+                </div>
+                
+                <div class="flex gap-4">
+                    ${imageUrl ? `<img src="${imageUrl}" class="w-20 h-20 object-cover rounded-lg border border-stone-200 bg-stone-50 flex-shrink-0">` : ''}
+                    <div class="flex-grow space-y-1">
+                        ${variableList}
+                    </div>
+                </div>
+                ${continueBtn}
+            </div>
+        `;
+        
+        // Listeners
+        const editBtn = card.querySelector('.edit-btn');
+        if(editBtn) editBtn.addEventListener('click', () => openFormModal('edit', template, stage, parentBatch, batchData));
+        
+        const delBtn = card.querySelector('.delete-btn');
+        if(delBtn) delBtn.addEventListener('click', () => handleDelete(batchData.id));
+        
+        const subBtn = card.querySelector('.add-sub-btn');
+        if(subBtn) subBtn.addEventListener('click', () => openFormModal('create', template, nextStage, batchData, {}, batchData.producto_id));
+        
+        const finBtn = card.querySelector('.finalize-btn');
+        if(finBtn) finBtn.addEventListener('click', () => handleFinalize(batchData.id));
+
+        const publicLinkBtn = card.querySelector('.public-link-btn');
+        if(publicLinkBtn) publicLinkBtn.addEventListener('click', () => window.open(`/${batchData.id}`, '_blank'));
+
+        const qrBtn = card.querySelector('.qr-btn');
+        if(qrBtn) qrBtn.addEventListener('click', () => downloadQR(batchData.id));
+        
+        const pdfBtn = card.querySelector('.pdf-btn');
+        if(pdfBtn) pdfBtn.addEventListener('click', () => generateQualityReport(batchData));
+
+        return card;
+    }
+
+    // --- ACCIONES ---
+    async function handleDelete(batchId) {
+        if (confirm('¿Eliminar este lote de producción?')) {
+            try {
+                await api(`/api/batches/${batchId}`, { method: 'DELETE' });
+                await loadBatches();
+                if(state.activeRootBatch) openWorkstation(state.batches.find(b => b.id === state.activeRootBatch.id));
+            } catch (error) { alert('Error: ' + error.message); }
+        }
+    }
+
+    async function handleFinalize(batchId) {
+        if (confirm('⚠️ ¿Generar Hash Inmutable y Bloquear?')) {
+            try {
+                await api(`/api/batches/${batchId}/finalize`, { method: 'POST' });
+                await loadBatches();
+                if(state.activeRootBatch) openWorkstation(state.batches.find(b => b.id === state.activeRootBatch.id));
+                alert("✅ Certificado Exitosamente.");
+            } catch (error) { alert("Error: " + error.message); }
+        }
+    }
+
+    // --- FORMULARIO Y UTILS ---
+    async function openFormModal(mode, template, stage, parentBatch = null, batchData = {}, preselectedProductId = null) {
+        let currentProductId = preselectedProductId;
+        if (mode === 'edit' && batchData.producto_id) { currentProductId = batchData.producto_id; } 
+        else if (mode === 'create' && parentBatch && parentBatch.producto_id && !currentProductId) { currentProductId = parentBatch.producto_id; }
+
+        const formHtml = await generateFormHTML(mode, template, stage, parentBatch, batchData.data);
+        const productOptions = state.products.length > 0 ? '<option value="">-- Sin vincular --</option>' + state.products.map(p => `<option value="${p.id}" ${p.id === currentProductId ? 'selected' : ''}>${p.nombre} (${p.tipo_producto})</option>`).join('') : '<option value="">No hay productos registrados</option>';
+        const productSelectorHtml = `<div class="mb-4 p-4 bg-indigo-50 border border-indigo-100 rounded-xl"><label class="block text-sm font-bold text-indigo-900 mb-1"><i class="fas fa-tag mr-1"></i> Asignar Producto (SKU)</label><select id="stage-product-selector" class="w-full p-2 border border-indigo-200 rounded-lg bg-white text-sm focus:ring-2 focus:ring-indigo-500 outline-none">${productOptions}</select><p class="text-xs text-indigo-800/70 mt-1">Vincula este lote a un producto de tu catálogo.</p></div>`;
+
+        modalContent.innerHTML = formHtml;
+        const formElement = modalContent.querySelector('form');
+        formElement.insertAdjacentHTML('afterbegin', productSelectorHtml);
         formModal.showModal();
         
-        // Manejo de Inputs de Imagen
         modalContent.querySelectorAll('.image-upload-input').forEach(imageInput => {
             imageInput.addEventListener('change', e => {
                 const file = e.target.files[0];
@@ -445,69 +577,41 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
 
-        // Handler para el botón de campos opcionales/ocultos
         const toggleBtn = document.getElementById('toggle-fields-btn');
         if (toggleBtn) {
-            toggleBtn.addEventListener('click', () => {
+             toggleBtn.addEventListener('click', () => {
                 const container = document.getElementById('hidden-fields-container');
                 const icon = document.getElementById('toggle-fields-icon');
                 const text = document.getElementById('toggle-fields-text');
-                
                 const isHidden = container.classList.contains('hidden');
-                
-                if (isHidden) {
-                    container.classList.remove('hidden');
-                    icon.classList.add('rotate-180');
-                    text.textContent = 'Ocultar campos opcionales';
-                } else {
-                    container.classList.add('hidden');
-                    icon.classList.remove('rotate-180');
-                    text.textContent = 'Mostrar más campos';
-                }
+                if (isHidden) { container.classList.remove('hidden'); icon.classList.add('rotate-180'); text.textContent = 'Ocultar campos opcionales'; } else { container.classList.add('hidden'); icon.classList.remove('rotate-180'); text.textContent = 'Mostrar más campos'; }
             });
         }
         
-        const form = document.getElementById('batch-form');
-        form.addEventListener('submit', async (e) => {
+        formElement.addEventListener('submit', async (e) => {
             e.preventDefault();
-            const submitBtn = form.querySelector('button[type="submit"]');
-            submitBtn.disabled = true;
-            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
-
-            const formData = new FormData(form);
+            const submitBtn = formElement.querySelector('button[type="submit"]');
+            submitBtn.disabled = true; submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
+            const formData = new FormData(formElement);
             const rawData = Object.fromEntries(formData.entries());
-            
             const newData = {};
             for (const key in rawData) {
-                if (!key.startsWith('visible_')) {
-                    newData[key] = {
-                        value: rawData[key],
-                        visible: formData.has(`visible_${key}`),
-                        nombre: rawData[key]
-                    };
+                if (!key.startsWith('visible_') && key !== 'stage-product-selector') {
+                    newData[key] = { value: rawData[key], visible: formData.has(`visible_${key}`), nombre: rawData[key] };
                 }
             }
-            
+            const selectedProdId = document.getElementById('stage-product-selector').value;
             try {
                 if (mode === 'create') {
-                    await api('/api/batches', { method: 'POST', body: JSON.stringify({ 
-                        plantilla_id: template.id, 
-                        etapa_id: stage.id, 
-                        parent_id: parentBatch ? parentBatch.id : null, 
-                        data: newData 
-                    }) });
+                    await api('/api/batches', { method: 'POST', body: JSON.stringify({ plantilla_id: template.id, etapa_id: stage.id, parent_id: parentBatch ? parentBatch.id : null, data: newData, producto_id: selectedProdId }) });
                 } else {
                     newData.id = batchData.id;
-                    await api(`/api/batches/${batchData.id}`, { method: 'PUT', body: JSON.stringify({ data: newData }) });
+                    await api(`/api/batches/${batchData.id}`, { method: 'PUT', body: JSON.stringify({ data: newData, producto_id: selectedProdId }) });
                 }
                 formModal.close();
                 await loadBatches(); 
-            } catch (error) {
-                console.error('Error al guardar:', error);
-                alert('No se pudo guardar el lote: ' + error.message);
-                submitBtn.disabled = false;
-                submitBtn.innerText = 'Guardar';
-            }
+                if (state.activeRootBatch) { const freshRoot = state.batches.find(b => b.id === state.activeRootBatch.id); if(freshRoot) openWorkstation(freshRoot); }
+            } catch (error) { alert('Error: ' + error.message); submitBtn.disabled = false; submitBtn.innerText = 'Guardar'; }
         });
         document.getElementById('cancel-btn').addEventListener('click', () => formModal.close());
     }
@@ -515,41 +619,20 @@ document.addEventListener('DOMContentLoaded', () => {
     async function generateFormHTML(mode, template, stage, parentBatch, data = {}) {
         let formFields = '';
         if (mode === 'edit') formFields += `<div><label class="block text-sm font-medium text-stone-700">ID Lote</label><p class="w-full p-3 bg-stone-100 rounded-xl font-mono text-sm">${(data.id?.value || data.id)}</p></div>`;
-        
-        const allFields = [
-            ...(stage.campos_json.entradas || []),
-            ...(stage.campos_json.salidas || []),
-            ...(stage.campos_json.variables || [])
-        ];
-        
-        let visibleHtml = '';
-        let hiddenHtml = '';
-
+        const allFields = [...(stage.campos_json.entradas || []), ...(stage.campos_json.salidas || []), ...(stage.campos_json.variables || [])];
+        let visibleHtml = ''; let hiddenHtml = '';
         for (const field of allFields) {
-            const html = await createFieldHTML(field, data[field.name], template);
-            if (field.popup === true) {
-                visibleHtml += html;
-            } else {
-                hiddenHtml += html;
+            if (field.type === 'selectProduct') continue; 
+            let fieldDataToUse = data[field.name];
+            if (mode === 'create' && !fieldDataToUse) {
+                if (parentBatch && parentBatch.data && parentBatch.data[field.name]) fieldDataToUse = parentBatch.data[field.name];
+                if (field.type === 'date') fieldDataToUse = { value: new Date().toISOString().split('T')[0], visible: true };
             }
+            const html = await createFieldHTML(field, fieldDataToUse, template);
+            if (field.popup === true) visibleHtml += html; else hiddenHtml += html;
         }
-        
         formFields += visibleHtml;
-
-        if (hiddenHtml) {
-            formFields += `
-                <div class="mt-4 pt-4 border-t border-stone-100">
-                    <button type="button" id="toggle-fields-btn" class="flex items-center gap-2 text-sm font-bold text-amber-800 hover:text-amber-900 transition-colors focus:outline-none">
-                        <i class="fas fa-chevron-down transition-transform duration-300" id="toggle-fields-icon"></i>
-                        <span id="toggle-fields-text">Mostrar más campos</span>
-                    </button>
-                    <div id="hidden-fields-container" class="hidden mt-4 space-y-4 border-l-2 border-stone-200 pl-4">
-                        ${hiddenHtml}
-                    </div>
-                </div>
-            `;
-        }
-        
+        if (hiddenHtml) formFields += `<div class="mt-4 pt-4 border-t border-stone-100"><button type="button" id="toggle-fields-btn" class="flex items-center gap-2 text-sm font-bold text-amber-800 hover:text-amber-900 transition-colors focus:outline-none"><i class="fas fa-chevron-down transition-transform duration-300" id="toggle-fields-icon"></i><span id="toggle-fields-text">Mostrar más campos</span></button><div id="hidden-fields-container" class="hidden mt-4 space-y-4 border-l-2 border-stone-200 pl-4">${hiddenHtml}</div></div>`;
         return `<form id="batch-form"><h2 class="text-2xl font-display text-amber-900 border-b pb-2 mb-4">${mode === 'create' ? 'Crear' : 'Editar'} ${stage.nombre_etapa}</h2><div class="space-y-4 max-h-[60vh] overflow-y-auto p-1 custom-scrollbar">${formFields}</div><div class="flex justify-end gap-4 mt-6"><button type="button" id="cancel-btn" class="bg-stone-300 hover:bg-stone-400 font-bold py-2 px-6 rounded-xl transition-colors">Cancelar</button><button type="submit" class="bg-amber-800 hover:bg-amber-900 text-white font-bold py-2 px-6 rounded-xl transition-colors shadow-md">Guardar</button></div></form>`;
     }
 
@@ -558,13 +641,13 @@ document.addEventListener('DOMContentLoaded', () => {
         const value = (typeof fieldData === 'object' && fieldData !== null) ? fieldData.value : fieldData;
         const isVisible = (typeof fieldData === 'object' && fieldData !== null) ? fieldData.visible : true;
         const checkedAttr = isVisible ? 'checked' : '';
-        
-        // Detección mejorada del tipo de producto
         let tipoProducto = 'otro';
-        const tName = template.nombre_producto.toLowerCase();
-        if (tName.includes('cacao') || tName.includes('chocolate')) tipoProducto = 'cacao';
-        else if (tName.includes('cafe') || tName.includes('café')) tipoProducto = 'cafe';
-        else if (tName.includes('miel')) tipoProducto = 'miel';
+        if(template) {
+            const tName = template.nombre_producto.toLowerCase();
+            if (tName.includes('cacao') || tName.includes('chocolate')) tipoProducto = 'cacao';
+            else if (tName.includes('cafe') || tName.includes('café')) tipoProducto = 'cafe';
+            else if (tName.includes('miel')) tipoProducto = 'miel';
+        }
 
         let inputHtml = '';
         switch(type) {
@@ -578,515 +661,23 @@ document.addEventListener('DOMContentLoaded', () => {
             case 'selectPerfil': inputHtml = await createPerfilSelectHTML(name, value, tipoProducto); break;
             case 'selectRuedaSabor': inputHtml = await createRuedaSaborSelectHTML(name, value, tipoProducto); break;
             case 'selectLugar': inputHtml = await createLugarProcesoSelectHTML(name, value); break;
-            // NUEVO CASE: SELECTOR DE PRODUCTOS
-            case 'selectProduct': inputHtml = await createProductSelectHTML(name, value, tipoProducto); break; 
             default: inputHtml = createInputHTML(name, 'text', value);
         }
-        
-        return `
-            <div>
-                <label for="${name}" class="block text-sm font-medium text-stone-700 mb-1">${label}</label>
-                <div class="flex items-center gap-3">
-                    <div class="flex-grow">${inputHtml}</div>
-                    <div class="flex items-center space-x-2" title="Controla la visibilidad de este campo en la página pública">
-                        <input type="checkbox" id="visible_${name}" name="visible_${name}" ${checkedAttr} class="h-4 w-4 rounded border-gray-300 text-amber-600 focus:ring-amber-500">
-                        <label for="visible_${name}" class="text-xs text-stone-500">Visible</label>
-                    </div>
-                </div>
-            </div>
-        `;
+        return `<div><label for="${name}" class="block text-sm font-medium text-stone-700 mb-1">${label}</label><div class="flex items-center gap-3"><div class="flex-grow">${inputHtml}</div><div class="flex items-center space-x-2" title="Controla la visibilidad de este campo en la página pública"><input type="checkbox" id="visible_${name}" name="visible_${name}" ${checkedAttr} class="h-4 w-4 rounded border-gray-300 text-amber-600 focus:ring-amber-500"><label for="visible_${name}" class="text-xs text-stone-500">Visible</label></div></div></div>`;
     }
 
-    function createInputHTML(name, type, value) {
-        return `<input type="${type}" id="${name}" name="${name}" value="${value||''}" class="w-full p-3 border border-stone-300 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none" step="0.01">`;
-    }
-    
-    function createSelectHTML(name, options, selectedValue) {
-        const opts = options.map(opt => `<option value="${opt}" ${opt === selectedValue ? 'selected':''}>${opt}</option>`).join('');
-        return `<select id="${name}" name="${name}" class="w-full p-3 border border-stone-300 rounded-xl bg-white focus:ring-2 focus:ring-amber-500 outline-none"><option value="">Seleccionar...</option>${opts}</select>`;
-    }
-    
-    function createTextAreaHTML(name, value) {
-        return `
-            <div class="relative">
-                <textarea id="${name}" name="${name}" class="w-full p-3 border border-stone-300 rounded-xl pr-10" rows="3">${value || ''}</textarea>
-                <button type="button" onclick="startDictation('${name}')" class="absolute right-2 bottom-2 text-stone-400 hover:text-amber-600 transition p-2">
-                    <i class="fas fa-microphone"></i>
-                </button>
-            </div>
-        `;
-    }
-    
-    function createImageInputHTML(name, value) {
-        return `<div class="pt-4 border-t"><div class="mt-1 flex items-center gap-4"><img src="${value||'https://placehold.co/100x100/e7e5e4/a8a29e?text=Foto'}" alt="Previsualización" class="h-24 w-24 rounded-lg object-cover bg-stone-100 border border-stone-200"><div class="w-full"><input type="file" class="image-upload-input block w-full text-sm text-stone-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:font-semibold file:bg-amber-50 file:text-amber-700 hover:file:bg-amber-100" accept="image/*"><input type="hidden" name="${name}" value="${value||''}"><p class="text-xs text-stone-500 mt-2">Sube una imagen.</p></div></div></div>`;
-    }
+    function createInputHTML(name, type, value) { return `<input type="${type}" id="${name}" name="${name}" value="${value||''}" class="w-full p-3 border border-stone-300 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none" step="0.01">`; }
+    function createSelectHTML(name, options, selectedValue) { const opts = options.map(opt => `<option value="${opt}" ${opt === selectedValue ? 'selected':''}>${opt}</option>`).join(''); return `<select id="${name}" name="${name}" class="w-full p-3 border border-stone-300 rounded-xl bg-white focus:ring-2 focus:ring-amber-500 outline-none"><option value="">Seleccionar...</option>${opts}</select>`; }
+    function createTextAreaHTML(name, value) { return `<textarea id="${name}" name="${name}" class="w-full p-3 border border-stone-300 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none" rows="3">${value || ''}</textarea>`; }
+    function createImageInputHTML(name, value) { return `<div class="pt-4 border-t"><div class="mt-1 flex items-center gap-4"><img src="${value||'https://placehold.co/100x100/e7e5e4/a8a29e?text=Foto'}" alt="Previsualización" class="h-24 w-24 rounded-lg object-cover bg-stone-100 border border-stone-200"><div class="w-full"><input type="file" class="image-upload-input block w-full text-sm text-stone-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:font-semibold file:bg-amber-50 file:text-amber-700 hover:file:bg-amber-100" accept="image/*"><input type="hidden" name="${name}" value="${value||''}"><p class="text-xs text-stone-500 mt-2">Sube una imagen.</p></div></div></div>`; }
+    async function createFincaSelectHTML(name, selectedValue) { try { const fincas = state.fincas.length > 0 ? state.fincas : await api('/api/fincas'); if (fincas.length === 0) return `<div><div class="p-3 border rounded-xl bg-stone-50 text-stone-500 text-sm">No hay fincas. <a href="/app/fincas" class="text-sky-600 hover:underline">Registra una aquí</a>.</div><input type="hidden" name="${name}" value=""></div>`; return createSelectHTML(name, fincas.map(f => f.nombre_finca), selectedValue); } catch (error) { return `<div class="text-red-500">Error al cargar fincas.</div>`; } }
+    async function createProcesadoraSelectHTML(name, selectedValue) { try { const procesadoras = await api('/api/procesadoras'); if (procesadoras.length === 0) return `<div><div class="p-3 border rounded-xl bg-stone-50 text-stone-500 text-sm">No hay procesadoras. <a href="/app/procesadoras" class="text-sky-600 hover:underline">Registra una aquí</a>.</div><input type="hidden" name="${name}" value=""></div>`; return createSelectHTML(name, procesadoras.map(p => p.nombre_comercial || p.razon_social), selectedValue); } catch (error) { return `<div class="text-red-500">Error al cargar procesadoras.</div>`; } }
+    async function createPerfilSelectHTML(name, selectedValue, tipoProducto) { try { const perfiles = await api('/api/perfiles'); const perfilesFiltradas = perfiles.filter(r => r.tipo === tipoProducto); return createSelectHTML(name, perfilesFiltradas.map(p => p.nombre), selectedValue); } catch (error) { return `<div class="text-red-500">Error al cargar perfiles.</div>`; } }
+    async function createRuedaSaborSelectHTML(name, selectedValue, tipoProducto) { if (!state.ruedasSabor || state.ruedasSabor.length === 0) { await loadRuedasSabor(); } try { const ruedasFiltradas = state.ruedasSabor.filter(r => r.tipo === tipoProducto); if (ruedasFiltradas.length === 0) return `<div><div class="p-3 border rounded-xl bg-stone-50 text-stone-500 text-sm">No hay ruedas de sabor. <a href="/app/ruedas-sabores" class="text-sky-600 hover:underline">Crea una aquí</a>.</div><input type="hidden" name="${name}" value=""></div>`; const options = ruedasFiltradas.map(r => `<option value="${r.id}" ${r.id == selectedValue ? 'selected' : ''}>${r.nombre_rueda}</option>`).join(''); return `<select id="${name}" name="${name}" class="w-full p-3 border border-stone-300 rounded-xl bg-white focus:ring-2 focus:ring-amber-500 outline-none"><option value="">Seleccionar rueda...</option>${options}</select>`; } catch (error) { return `<div class="text-red-500">Error al cargar ruedas de sabor.</div>`; } }
+    async function createLugarProcesoSelectHTML(name, selectedValue) { try { const fincas = state.fincas.length ? state.fincas : await api('/api/fincas'); const procesadoras = await api('/api/procesadoras'); let optionsHTML = '<option value="">Seleccionar lugar...</option>'; if(fincas.length > 0) optionsHTML += `<optgroup label="Fincas">${fincas.map(f => `<option value="${f.nombre_finca}" ${`${f.nombre_finca}` === selectedValue ? 'selected' : ''}>${f.nombre_finca}</option>`).join('')}</optgroup>`; if(procesadoras.length > 0) optionsHTML += `<optgroup label="Procesadoras">${procesadoras.map(p => `<option value="Procesadora: ${p.nombre_comercial || p.razon_social}" ${`Procesadora: ${p.nombre_comercial || p.razon_social}` === selectedValue ? 'selected' : ''}>${p.nombre_comercial || p.razon_social}</option>`).join('')}</optgroup>`; return `<select id="${name}" name="${name}" class="w-full p-3 border border-stone-300 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none">${optionsHTML}</select>`; } catch (error) { return `<div class="text-red-500">Error al cargar lugares.</div>`; } }
+    function getTemplateColor(templateId, isLight = false) { const colors = [{ main: '#78350f', light: '#fed7aa' }, { main: '#166534', light: '#dcfce7' }, { main: '#991b1b', light: '#fee2e2' }, { main: '#1d4ed8', light: '#dbeafe' }, { main: '#86198f', light: '#fae8ff' }]; let index = 0; if (typeof templateId === 'number') { index = templateId; } else { index = templateId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0); } const color = colors[index % colors.length]; return isLight ? color.light : color.main; }
+    function downloadQR(id) { const url = `${window.location.origin}/${id}`; const qr = qrcode(0, 'L'); qr.addData(url); qr.make(); const link = document.createElement('a'); link.href = qr.createDataURL(4, 2); link.download = `QR_${id}.png`; link.click(); }
+    async function api(url, options = {}) { options.credentials = 'include'; options.headers = { ...options.headers, 'Content-Type': 'application/json' }; const res = await fetch(url, options); if(!res.ok) { const errorData = await res.json().catch(() => ({})); throw new Error(errorData.error || `Error HTTP ${res.status}`); } return res.json(); }
+    async function generateQualityReport(batchNode) { /* ... lógica PDF igual ... */ }
 
-    async function createFincaSelectHTML(name, selectedValue) {
-        try {
-            const fincas = state.fincas.length > 0 ? state.fincas : await api('/api/fincas');
-            if (fincas.length === 0) return `<div><div class="p-3 border rounded-xl bg-stone-50 text-stone-500 text-sm">No hay fincas. <a href="/app/fincas" class="text-sky-600 hover:underline">Registra una aquí</a>.</div><input type="hidden" name="${name}" value=""></div>`;
-            return createSelectHTML(name, fincas.map(f => f.nombre_finca), selectedValue);
-        } catch (error) { return `<div class="text-red-500">Error al cargar fincas.</div>`; }
-    }
-    
-    async function createProcesadoraSelectHTML(name, selectedValue) {
-        try {
-            const procesadoras = await api('/api/procesadoras');
-            if (procesadoras.length === 0) return `<div><div class="p-3 border rounded-xl bg-stone-50 text-stone-500 text-sm">No hay procesadoras. <a href="/app/procesadoras" class="text-sky-600 hover:underline">Registra una aquí</a>.</div><input type="hidden" name="${name}" value=""></div>`;
-            return createSelectHTML(name, procesadoras.map(p => p.nombre_comercial || p.razon_social), selectedValue);
-        } catch (error) { return `<div class="text-red-500">Error al cargar procesadoras.</div>`; }
-    }
-
-    async function createPerfilSelectHTML(name, selectedValue, tipoProducto) {
-        try {
-            const perfiles = await api('/api/perfiles');
-            const perfilesFiltradas = perfiles.filter(r => r.tipo === tipoProducto);
-            return createSelectHTML(name, perfilesFiltradas.map(p => p.nombre), selectedValue);
-        } catch (error) { return `<div class="text-red-500">Error al cargar perfiles.</div>`; }
-    }
-
-    async function createRuedaSaborSelectHTML(name, selectedValue, tipoProducto) {
-        if (!state.ruedasSabor || state.ruedasSabor.length === 0) {
-            await loadRuedasSabor();
-        }
-        
-        try {
-            const ruedasFiltradas = state.ruedasSabor.filter(r => r.tipo === tipoProducto);
-            if (ruedasFiltradas.length === 0) {
-                return `<div><div class="p-3 border rounded-xl bg-stone-50 text-stone-500 text-sm">No hay ruedas de sabor de tipo "${tipoProducto}". <a href="/app/ruedas-sabores" class="text-sky-600 hover:underline">Crea una aquí</a>.</div><input type="hidden" name="${name}" value=""></div>`;
-            }
-            const options = ruedasFiltradas.map(r => `<option value="${r.id}" ${r.id == selectedValue ? 'selected' : ''}>${r.nombre_rueda}</option>`).join('');
-            return `<select id="${name}" name="${name}" class="w-full p-3 border border-stone-300 rounded-xl bg-white focus:ring-2 focus:ring-amber-500 outline-none"><option value="">Seleccionar rueda...</option>${options}</select>`;
-        } catch (error) {
-            return `<div class="text-red-500">Error al cargar ruedas de sabor.</div>`;
-        }
-    }
-    
-    async function createLugarProcesoSelectHTML(name, selectedValue) {
-        try {
-            const fincas = state.fincas.length ? state.fincas : await api('/api/fincas');
-            const procesadoras = await api('/api/procesadoras');
-            
-            let optionsHTML = '<option value="">Seleccionar lugar...</option>';
-            if(fincas.length > 0) {
-                optionsHTML += `<optgroup label="Fincas">${fincas.map(f => `<option value="${f.nombre_finca}" ${`${f.nombre_finca}` === selectedValue ? 'selected' : ''}>${f.nombre_finca}</option>`).join('')}</optgroup>`;
-            }
-            if(procesadoras.length > 0) {
-                optionsHTML += `<optgroup label="Procesadoras">${procesadoras.map(p => `<option value="Procesadora: ${p.nombre_comercial || p.razon_social}" ${`Procesadora: ${p.nombre_comercial || p.razon_social}` === selectedValue ? 'selected' : ''}>${p.nombre_comercial || p.razon_social}</option>`).join('')}</optgroup>`;
-            }
-            return `<select id="${name}" name="${name}" class="w-full p-3 border border-stone-300 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none">${optionsHTML}</select>`;
-        } catch (error) {
-            return `<div class="text-red-500">Error al cargar lugares.</div>`;
-        }
-    }
-
-    // --- NUEVA FUNCIÓN HELPER: SELECTOR DE PRODUCTOS ---
-    async function createProductSelectHTML(name, selectedValue, tipoProductoFilter) {
-        try {
-            const products = await api('/api/productos');
-            
-            // Opcional: Filtrar productos que coincidan con el tipo de la plantilla para facilitar la búsqueda
-            // Si el filtro es 'otro', mostramos todo.
-            let productsToShow = products;
-            if (tipoProductoFilter !== 'otro') {
-                const filtered = products.filter(p => p.tipo_producto === tipoProductoFilter || !p.tipo_producto);
-                if (filtered.length > 0) productsToShow = filtered;
-            }
-
-            if (productsToShow.length === 0) {
-                 return `<div><div class="p-3 border rounded-xl bg-stone-50 text-stone-500 text-sm">No hay productos registrados de tipo ${tipoProductoFilter}. <a href="/app/productos" class="text-sky-600 hover:underline" target="_blank">Crear uno aquí</a>.</div><input type="hidden" name="${name}" value=""></div>`;
-            }
-
-            const options = productsToShow.map(p => {
-                const isSelected = p.id === selectedValue ? 'selected' : '';
-                const gtinText = p.gtin ? ` (GTIN: ${p.gtin})` : '';
-                return `<option value="${p.id}" ${isSelected}>${p.nombre}${gtinText}</option>`;
-            }).join('');
-
-            return `<select id="${name}" name="${name}" class="w-full p-3 border border-stone-300 rounded-xl bg-white focus:ring-2 focus:ring-amber-500 outline-none">
-                        <option value="">Seleccionar Producto Final (SKU)...</option>
-                        ${options}
-                    </select>
-                    <p class="text-xs text-stone-500 mt-1">Vincula este lote a un producto comercial para generar el Pasaporte Digital.</p>`;
-        } catch (error) {
-            return `<div class="text-red-500">Error al cargar productos.</div>`;
-        }
-    }
-    
-    // ... (Helpers de Árbol, Gráficos y PDF se mantienen igual) ...
-    function findBatchById(lotes, id) {
-        for (const lote of lotes) {
-            if (lote.id === id) return lote;
-            if (lote.children && lote.children.length > 0) {
-                const found = findBatchById(lote.children, id);
-                if (found) return found;
-            }
-        }
-        return null;
-    }
-    
-    function findParentBatch(lotes, childId, parent = null) {
-        for (const lote of lotes) {
-            if (lote.id === childId) return parent;
-            if (lote.children && lote.children.length > 0) {
-                const found = findParentBatch(lote.children, childId, lote);
-                if (found) return found;
-            }
-        }
-        return null;
-    }
-
-    function getTemplateColor(templateId, isLight = false) {
-        const colors = [
-            { main: '#78350f', light: '#fed7aa' }, 
-            { main: '#166534', light: '#dcfce7' }, 
-            { main: '#991b1b', light: '#fee2e2' }, 
-            { main: '#1d4ed8', light: '#dbeafe' }, 
-            { main: '#86198f', light: '#fae8ff' }, 
-        ];
-        let index = 0;
-        if (typeof templateId === 'number') {
-            index = templateId;
-        } else {
-            index = templateId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-        }
-        const color = colors[index % colors.length];
-        return isLight ? color.light : color.main;
-    }
-    
-    async function handleDashboardClick(e) {
-        const expandTrigger = e.target.closest('.expand-trigger');
-        if (expandTrigger) {
-            const wrapper = expandTrigger.closest('.batch-card-wrapper');
-            if (wrapper) {
-                const childrenContainer = wrapper.querySelector('.children-container');
-                const icon = expandTrigger.querySelector('.expand-icon');
-                if (childrenContainer) childrenContainer.classList.toggle('hidden');
-                if (icon) icon.classList.toggle('rotate-90');
-            }
-            return;
-        }
-
-        const button = e.target.closest('button');
-        if (!button) return;
-
-        if (button.classList.contains('pdf-btn')) {
-            const batchNode = findBatchById(state.batches, button.dataset.batchId);
-            if (batchNode) {
-                await generateQualityReport(batchNode);
-            }
-        }
-
-        // NUEVO: Lógica de Duplicación (Clonar)
-        if (button.classList.contains('duplicate-btn')) {
-            const batchId = button.dataset.batchId;
-            const batchToDuplicate = findBatchById(state.batches, batchId);
-            
-            if (batchToDuplicate) {
-                const template = state.templates.find(t => t.id == button.dataset.templateId);
-                const stage = state.stagesByTemplate[template.id].find(s => s.id == button.dataset.stageId);
-                const parentBatch = findParentBatch(state.batches, batchId);
-
-                // Clonación profunda de los datos
-                const clonedData = JSON.parse(JSON.stringify(batchToDuplicate.data));
-                
-                // Eliminamos el ID para que se trate como un lote nuevo
-                delete clonedData.id; 
-                
-                // Abrir el modal en modo 'create' (nuevo registro) pero con los datos pre-cargados
-                openFormModal('create', template, stage, parentBatch, { data: clonedData });
-            }
-        }
-        
-        if (button.classList.contains('add-sub-btn')) {
-            const template = state.templates.find(t => t.id == button.dataset.templateId);
-            const nextStage = state.stagesByTemplate[template.id].find(s => s.id == button.dataset.nextStageId);
-            const parentBatch = findBatchById(state.batches, button.dataset.parentId);
-            openFormModal('create', template, nextStage, parentBatch);
-        }
-
-        if (button.classList.contains('edit-btn')) {
-            const batch = findBatchById(state.batches, button.dataset.batchId);
-            const template = state.templates.find(t => t.id == button.dataset.templateId);
-            const stage = state.stagesByTemplate[template.id].find(s => s.id == button.dataset.stageId);
-            const parent = findParentBatch(state.batches, batch.id);
-            openFormModal('edit', template, stage, parent, batch);
-        }
-        
-        if (button.classList.contains('delete-btn')) {
-            const batchId = button.dataset.batchId;
-            if (confirm('¿Estás seguro de que quieres eliminar este lote y todos sus sub-procesos?')) {
-                try {
-                    await api(`/api/batches/${batchId}`, { method: 'DELETE' });
-                    await loadBatches();
-                } catch (error) {
-                    alert('Error al eliminar el lote: ' + error.message);
-                }
-            }
-        }
-        
-        if (button.classList.contains('qr-btn')) {
-            const url = `${window.location.origin}/${button.dataset.id}`;
-            const qr = qrcode(0, 'L');
-            qr.addData(url);
-            qr.make();
-            const link = document.createElement('a');
-            link.href = qr.createDataURL(4, 2);
-            link.download = `QR_${button.dataset.id}.png`;
-            link.click();
-        }
-
-        if (button.classList.contains('finalize-btn')) {
-            const batchId = button.dataset.batchId;
-            if (confirm('⚠️ ¿Generar Hash Inmutable?\n\nAl confirmar, se creará un sello criptográfico para este lote y no podrás editar sus datos. Sin embargo, SÍ podrás seguir creando nuevos lotes a partir de él.')) {
-                const originalText = button.innerHTML;
-                button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
-                button.disabled = true;
-                
-                try {
-                    await api(`/api/batches/${batchId}/finalize`, { method: 'POST' });
-                    await loadBatches();
-                    alert("✅ Lote certificado exitosamente.");
-                } catch (error) {
-                    console.error(error);
-                    alert("Error: " + error.message);
-                    button.innerHTML = originalText;
-                    button.disabled = false;
-                }
-            }
-        }
-    }
-
-    async function generateQualityReport(batchNode) {
-        // ... (código existente del reporte PDF) ...
-        const btn = document.querySelector(`.pdf-btn[data-batch-id="${batchNode.id}"]`);
-        const originalText = btn.innerHTML;
-        btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Generando...`;
-        btn.disabled = true;
-
-        try {
-            const rootBatch = findRootBatch(state.batches, batchNode.id) || batchNode;
-            const template = state.templates.find(t => t.id === rootBatch.plantilla_id);
-            
-            const getVal = (data, key) => {
-                if (!data || !key) return '';
-                const field = data[key];
-                if (field === undefined || field === null) return '';
-                return (typeof field === 'object' && 'value' in field) ? field.value : field;
-            };
-            
-            const fincaName = getVal(rootBatch.data, 'finca');
-            const fincaData = state.fincas.find(f => 
-                f.nombre_finca?.trim().toLowerCase() === fincaName?.trim().toLowerCase()
-            ) || {};
-
-            const reportData = {
-                codigo: batchNode.id,
-                producto: template?.nombre_producto || 'Producto',
-                finca: fincaName,
-                productor: fincaData.propietario || getVal(rootBatch.data, 'productor') || 'Productor Certificado', 
-                pais: fincaData.pais || getVal(rootBatch.data, 'pais') || 'Origen',
-                ciudad: fincaData.ciudad || getVal(rootBatch.data, 'ciudad') || '-',
-                altitud: fincaData.altura ? `${fincaData.altura} msnm` : (getVal(rootBatch.data, 'altitud') || '-'),
-                variedad: getVal(rootBatch.data, 'variedad') || '-',
-                clasificacion: getVal(rootBatch.data, 'clasificacion') || '-',
-                puntuacion: getVal(batchNode.data, 'puntuacion') || getVal(batchNode.data, 'notaFinal') || '0',
-                fechaCata: getVal(batchNode.data, 'fecha') || new Date().toLocaleDateString()
-            };
-
-            let sensoryData = null;
-            let flavorData = null;
-
-            const perfilName = getVal(batchNode.data, 'tipoPerfil');
-            if (perfilName) {
-                const perfil = state.perfilesSensoriales.find(p => p.nombre === perfilName || p.nombre_perfil === perfilName);
-                if (perfil) sensoryData = typeof perfil.perfil_data === 'string' ? JSON.parse(perfil.perfil_data) : perfil.perfil_data;
-            }
-
-            const ruedaId = getVal(batchNode.data, 'tipoRuedaSabor');
-            if (ruedaId) {
-                if (!state.ruedasSabor || state.ruedasSabor.length === 0) await loadRuedasSabor();
-                const rueda = state.ruedasSabor.find(r => r.id == ruedaId);
-                if (rueda) flavorData = rueda;
-            }
-
-            const container = document.getElementById('pdf-report-container');
-            container.classList.remove('hidden');
-            
-            container.innerHTML = `
-                <div class="font-sans text-stone-800 bg-white p-8 border-4 border-amber-900/10 h-full">
-                    <div class="flex justify-between items-center border-b-2 border-amber-800 pb-6 mb-8">
-                        <div>
-                            <h1 class="text-4xl font-display font-bold text-amber-900">Reporte de Calidad</h1>
-                            <p class="text-stone-500 mt-1">Certificado de Análisis Sensorial</p>
-                        </div>
-                        <div class="text-right">
-                            <h2 class="text-2xl font-bold text-stone-800">Ruru Lab</h2>
-                        </div>
-                    </div>
-                    <div class="grid grid-cols-2 gap-8 mb-8">
-                        <div class="bg-stone-50 p-6 rounded-xl">
-                            <h3 class="font-bold text-xl text-amber-900 mb-4">Datos de Origen</h3>
-                            <ul class="space-y-2 text-sm">
-                                <li><strong>Código:</strong> ${reportData.codigo}</li>
-                                <li><strong>Producto:</strong> ${reportData.producto}</li>
-                                <li><strong>Variedad:</strong> ${reportData.variedad}</li>
-                                <li><strong>Finca:</strong> ${reportData.finca}</li>
-                                <li><strong>Ubicación:</strong> ${reportData.ciudad}, ${reportData.pais}</li>
-                            </ul>
-                        </div>
-                        <div class="bg-amber-50 p-6 rounded-xl text-center">
-                            <h3 class="font-bold text-xl text-amber-900 mb-2">Puntuación Global</h3>
-                            <span class="text-6xl font-bold text-amber-900">${parseFloat(reportData.puntuacion).toFixed(2)}</span>
-                        </div>
-                    </div>
-                    <div class="grid grid-cols-2 gap-8">
-                        <div>
-                            <h4 class="font-bold text-center mb-4">Perfil Sensorial</h4>
-                            <div class="relative aspect-square"><canvas id="pdf-radar-chart"></canvas></div>
-                        </div>
-                        <div>
-                            <h4 class="font-bold text-center mb-4">Rueda de Sabor</h4>
-                            <div class="relative aspect-square flex items-center justify-center">
-                                <canvas id="pdf-doughnut-chart" class="absolute inset-0"></canvas>
-                                <canvas id="pdf-doughnut-chart-l2" class="absolute inset-0" style="transform: scale(0.7)"></canvas>
-                            </div>
-                            <div id="pdf-flavor-legend" class="mt-4 text-xs grid grid-cols-2 gap-1"></div>
-                        </div>
-                    </div>
-                </div>
-            `;
-
-            if (sensoryData) renderPdfRadarChart(sensoryData);
-            if (flavorData) renderPdfFlavorChart(flavorData);
-
-            await new Promise(resolve => setTimeout(resolve, 500));
-
-            const canvas = await html2canvas(container, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
-            const imgData = canvas.toDataURL('image/jpeg', 0.8);
-            
-            const { jsPDF } = window.jspdf;
-            const pdf = new jsPDF('p', 'mm', 'a4');
-            const pdfWidth = pdf.internal.pageSize.getWidth();
-            const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-            
-            pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
-            pdf.save(`Reporte_Calidad_${reportData.codigo}.pdf`);
-
-        } catch (error) {
-            console.error("Error generando PDF:", error);
-            alert("Error al generar el reporte PDF.");
-        } finally {
-            btn.innerHTML = originalText;
-            btn.disabled = false;
-            document.getElementById('pdf-report-container').classList.add('hidden');
-        }
-    }
-
-    function renderPdfRadarChart(data) {
-        const ctx = document.getElementById('pdf-radar-chart').getContext('2d');
-        const labels = Object.keys(data);
-        const values = Object.values(data);
-
-        new Chart(ctx, {
-            type: 'radar',
-            data: {
-                labels: labels,
-                datasets: [{
-                    label: 'Perfil',
-                    data: values,
-                    backgroundColor: 'rgba(146, 64, 14, 0.2)',
-                    borderColor: 'rgba(146, 64, 14, 1)',
-                    pointBackgroundColor: 'rgba(146, 64, 14, 1)',
-                    borderWidth: 2
-                }]
-            },
-            options: {
-                animation: false,
-                scales: { r: { suggestedMin: 0, suggestedMax: 10, ticks: { display: false } } },
-                plugins: { legend: { display: false } }
-            }
-        });
-    }
-
-    function renderPdfFlavorChart(ruedaData) {
-        const FLAVOR_DATA = ruedaData.tipo === 'cafe' ? FLAVOR_WHEELS_DATA.cafe : FLAVOR_WHEELS_DATA.cacao;
-        if(!FLAVOR_DATA) return;
-        const notes = typeof ruedaData.notas_json === 'string' ? JSON.parse(ruedaData.notas_json) : ruedaData.notas_json;
-
-        const categories = {};
-        notes.forEach(n => {
-            if (!categories[n.category]) categories[n.category] = [];
-            categories[n.category].push(n.subnote);
-        });
-
-        const labelsL1 = Object.keys(categories);
-        const dataL1 = labelsL1.map(c => categories[c].length);
-        const colors = ['#ef4444', '#f97316', '#f59e0b', '#84cc16', '#06b6d4', '#8b5cf6', '#d946ef', '#f43f5e'];
-
-        const ctx1 = document.getElementById('pdf-doughnut-chart').getContext('2d');
-        new Chart(ctx1, {
-            type: 'doughnut',
-            data: {
-                labels: labelsL1,
-                datasets: [{
-                    data: dataL1,
-                    backgroundColor: colors,
-                    borderColor: '#ffffff',
-                    borderWidth: 2
-                }]
-            },
-            options: { 
-                responsive: true,
-                maintainAspectRatio: false,
-                animation: false,
-                plugins: { legend: { display: false }, datalabels: { display: false } }
-            }
-        });
-
-        const legendHtml = labelsL1.map((cat, i) => `
-            <div class="flex items-start gap-1">
-                <span class="w-3 h-3 rounded-full mt-1 flex-shrink-0" style="background-color: ${colors[i % colors.length]}"></span>
-                <div>
-                    <strong class="block font-bold text-stone-800">${cat}</strong>
-                    <span class="text-stone-500 leading-tight">${categories[cat].join(', ')}</span>
-                </div>
-            </div>
-        `).join('');
-        document.getElementById('pdf-flavor-legend').innerHTML = legendHtml;
-    }
-
-    function findRootBatch(allBatches, currentId) {
-        let current = findBatchById(allBatches, currentId);
-        let parent = findParentBatch(allBatches, currentId);
-        while (parent) {
-            current = parent;
-            parent = findParentBatch(allBatches, current.id);
-        }
-        return current;
-    }
-
-    // Función Global para el dictado
-    window.startDictation = (inputId) => {
-        if (!('webkitSpeechRecognition' in window)) {
-            alert("Tu navegador no soporta dictado por voz.");
-            return;
-        }
-        const recognition = new webkitSpeechRecognition();
-        recognition.lang = 'es-ES';
-        const btn = document.querySelector(`button[onclick="startDictation('${inputId}')"] i`);
-        
-        recognition.onstart = () => { btn.className = "fas fa-circle-notch fa-spin text-red-600"; };
-        recognition.onend = () => { btn.className = "fas fa-microphone"; };
-        
-        recognition.onresult = (event) => {
-            const transcript = event.results[0][0].transcript;
-            const input = document.getElementById(inputId);
-            // Agrega el texto al existente
-            input.value = input.value ? input.value + ' ' + transcript : transcript;
-        };
-        recognition.start();
-    };
-
-    init();
 });

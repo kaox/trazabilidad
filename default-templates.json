@@ -44,7 +44,6 @@
           "descripcion": "Una danza bajo el sol. Los granos se mueven con rastrillos de madera hasta que el viento se lleva la humedad y crujen como hojas secas.",
           "orden": 3,
           "campos_json": {
-            "entradas": [{"label": "Peso Granos Fermentados (kg)", "name": "pesoEntrada", "type": "number"}],
             "salidas": [{"label": "Peso Cacao Seco (kg)", "name": "pesoSeco", "type": "number"}],
             "variables": [
                 {"label": "Lugar del Proceso", "name": "lugarProceso", "type": "selectLugar", "popup": true},
@@ -62,7 +61,6 @@
           "descripcion": "El fuego es nuestro pincel: un tostado preciso despierta el alma del cacao. Aquí se revela el aroma profundo y se define la personalidad única de tu chocolate.",
           "orden": 4,
           "campos_json": {
-            "entradas": [{"label": "Peso Cacao Seco (kg)", "name": "pesoEntrada", "type": "number"}],
             "salidas": [{"label": "Peso Cacao Tostado (kg)", "name": "pesoTostado", "type": "number"}],
             "variables": [
                 {"label": "Procesadora", "name": "procesadora", "type": "selectProcesadora", "popup": true},
@@ -82,8 +80,7 @@
           "descripcion": "Partimos los granos tostadas para liberar su corazón: los nibs. Al molerlos, la fricción los transforma mágicamente en el alma líquida del cacao: un intenso licor que es la base de todo.",
           "orden": 5,
           "campos_json": {
-            "entradas": [{"label": "Peso Entrada (kg)", "name": "pesoEntrada", "type": "number"}],
-            "salidas": [{"label": "Peso Producto Final (kg)", "name": "pesoProductoFinal", "type": "number"}, {"label": "Peso Cascarilla (kg)", "name": "pesoCascarilla", "type": "number"}],
+            "salidas": [{"label": "Peso Nibs/Licor de Cacao (kg)", "name": "pesoProductoFinal", "type": "number"}, {"label": "Peso Cascarilla (kg)", "name": "pesoCascarilla", "type": "number"}],
             "variables": [
                 {"label": "Procesadora", "name": "procesadora", "type": "selectProcesadora", "popup": true},
                 {"label": "Fecha", "name": "fecha", "type": "date", "popup": true},
@@ -99,7 +96,6 @@
           "descripcion": "El licor se transforma. Añadimos ingredientes selectos y refinamos la mezcla pacientemente (conchado) hasta alcanzar la textura sedosa y aterciopelada que se derrite en tu boca.",
           "orden": 6,
           "campos_json": {
-            "entradas": [{"label": "Peso Entrada (kg)", "name": "pesoEntrada", "type": "number"}],
             "salidas": [{"label": "Número de Unidades", "name": "unidades", "type": "number"}],
             "variables": [
               {"label": "Procesadora", "name": "procesadora", "type": "selectProcesadora", "popup": true},
@@ -119,33 +115,13 @@
           "descripcion": "Moldeamos y enfriamos el chocolate, preservando su brillo. Envolvemos cada tableta con cuidado para proteger su aroma y frescura. Este empaque es el guardián de la historia que acabas de leer.",
           "orden": 7,
           "campos_json": {
-            "entradas": [{"label": "Número de Unidades", "name": "pesoEntrada", "type": "number"}],
-            "salidas": [{"label": "Número de Unidades", "name": "unidades", "type": "number"}],
+            "salidas": [{"label": "Número de Unidades Producidas", "name": "unidades", "type": "number"}],
             "variables": [
               {"label": "Procesadora", "name": "procesadora", "type": "selectProcesadora", "popup": true},
-              {"label": "Producto (SKU)", "name": "productoFinal", "type": "selectProduct", "popup": true},
               {"label": "Fecha Empaque", "name": "fecha", "type": "date", "popup": true},
               {"label": "Numero de Lote", "name": "numeroLote", "type": "text"},
               {"label": "Fecha Vencimiento", "name": "vencimiento", "type": "date", "popup": true}
             ]
-          }
-        },
-        {
-          "nombre_etapa": "Calidad / Cata",
-          "descripcion": "Rompe la barra. Ese crack es el sonido final. Deja que se funda en tu lengua: lo que saboreas es la luz del sol de un lugar lejano.",
-          "orden": 8,
-          "campos_json": {
-            "entradas": [{"label": "Peso Muestra (g)", "name": "pesoMuestra", "type": "number"}],
-            "salidas": [],
-            "variables": [
-                {"label": "Fecha de Catación", "name": "fecha", "type": "date", "popup": true},
-                {"label": "Catador", "name": "nombreCatador", "type": "text", "popup": true},
-                {"label": "Puntuación Final", "name": "puntuacion", "type": "number", "step": "0.25"},
-                {"label": "Perfil Sensorial", "name": "tipoPerfil", "type": "selectPerfil", "popup": true},
-                {"label": "Rueda de Sabor", "name": "tipoRuedaSabor", "type": "selectRuedaSabor", "popup": true},
-                {"label": "Perfil de Sabor", "name": "perfilSabor", "type": "textarea", "placeholder": "Ej: Notas a panela, cítricos como mandarina, cuerpo medio, acidez brillante..."},
-                {"label": "Foto", "name": "imageUrl", "type": "image", "popup": true}
-                ]
           }
         }
       ]

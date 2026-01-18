@@ -3,63 +3,126 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Trazabilidad de Procesos</title>
-    <script src="/auth.js"></script>
+    <title>Módulo de Producción - Rurulab</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
     <script src="https://cdn.jsdelivr.net/npm/qrcode-generator/qrcode.js"></script>
-    <!-- LIBRERÍAS PARA PDF Y GRÁFICOS -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
-    <!-- FontAwesome para los iconos en el PDF -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
-
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <script src="/auth.js"></script>
+    
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet">
-    <script src="/js/analytics-loader.js" defer></script>
+    
     <style>
         body { font-family: 'Inter', sans-serif; background-color: #fdfaf6; }
-        h1, h2, h3, .font-display { font-family: 'Playfair Display', serif; }
-        dialog::backdrop { background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(2px); }
-        .rotate-90 { transform: rotate(90deg); }
+        .font-display { font-family: 'Playfair Display', serif; }
+        
+        /* Estilos para las tarjetas de inventario */
+        .batch-card { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .batch-card:hover { transform: translateY(-4px); box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1); }
+        
+        .timeline-line::before {
+            content: ''; position: absolute; top: 0; left: 1.25rem; height: 100%; width: 2px; background-color: #e5e7eb; z-index: 0;
+        }
     </style>
 </head>
 <body class="text-stone-800 antialiased">
+    
     <div id="nav-placeholder"></div>
-    <div id="app" class="container mx-auto p-4 md:p-8 max-w-6xl">
-        <header class="text-center mb-8 mt-4">
-            <h1 class="text-4xl md:text-5xl font-bold text-amber-900 mb-2">Trazabilidad de Procesos</h1>
-            <p class="text-stone-600">Gestión jerárquica de lotes, desde el origen hasta el producto final.</p>
-        </header>
-        <div class="bg-white p-6 rounded-2xl shadow-lg mb-8">
-            <div class="flex justify-center">
-                <button id="crear-proceso-btn" class="bg-amber-800 hover:bg-amber-900 text-white font-bold py-3 px-6 rounded-xl shadow-md">
-                    + Iniciar Nuevo Proceso
+
+    <div class="container mx-auto px-6 py-8 max-w-7xl">
+        
+        <!-- Header Dinámico -->
+        <header class="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
+            <div class="flex items-center gap-4 w-full">
+                <button id="back-to-inventory-btn" class="hidden bg-white border border-stone-300 p-2 rounded-xl hover:bg-stone-50 transition text-stone-600">
+                    <i class="fas fa-arrow-left"></i>
                 </button>
+                <div>
+                    <div class="flex items-center gap-2">
+                        <div class="bg-amber-100 p-2 rounded-lg text-amber-800"><i class="fas fa-industry text-xl"></i></div>
+                        <h1 class="text-3xl font-bold text-amber-900 font-display" id="page-title">Planta de Producción</h1>
+                    </div>
+                    <p class="text-stone-600 text-sm mt-1" id="page-subtitle">Selecciona un lote de acopio para continuar su transformación.</p>
+                </div>
+            </div>
+
+            <!-- Filtros de Inventario (Solo visibles en modo inventario) -->
+            <div id="inventory-filters" class="flex gap-2 w-full md:w-auto overflow-x-auto pb-2">
+                <button class="filter-btn active bg-stone-800 text-white px-4 py-2 rounded-lg text-sm font-bold whitespace-nowrap shadow-md" data-filter="active">En Proceso</button>
+                <button class="filter-btn bg-white border border-stone-200 text-stone-600 px-4 py-2 rounded-lg text-sm font-bold hover:bg-stone-50 whitespace-nowrap" data-filter="finished">Terminados</button>
+            </div>
+        </header>
+
+        <!-- VISTA 1: INVENTARIO DE LOTES (GRID) -->
+        <div id="inventory-view" class="animate-fade-in">
+            <!-- Barra de Búsqueda -->
+            <div class="mb-8 relative">
+                <input type="text" id="batch-search" placeholder="Buscar por ID de lote, tipo de producto o finca..." class="w-full p-4 pl-12 border border-stone-200 rounded-2xl shadow-sm focus:ring-2 focus:ring-amber-500 outline-none text-stone-700 bg-white">
+                <i class="fas fa-search absolute left-5 top-5 text-stone-400"></i>
+            </div>
+
+            <div id="inventory-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div class="col-span-full text-center py-20">
+                    <i class="fas fa-circle-notch fa-spin text-4xl text-amber-200 mb-4"></i>
+                    <p class="text-stone-500">Cargando inventario de lotes...</p>
+                </div>
+            </div>
+            
+            <div id="empty-state" class="hidden col-span-full text-center py-16 bg-white rounded-3xl border-2 border-dashed border-stone-200">
+                <div class="bg-stone-50 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4 text-stone-300">
+                    <i class="fas fa-boxes text-3xl"></i>
+                </div>
+                <h3 class="text-xl font-bold text-stone-700 mb-2">No hay lotes en proceso</h3>
+                <p class="text-stone-500 mb-6">Registra una entrada en el módulo de Acopio para comenzar.</p>
+                <a href="/app/acopio" class="text-amber-700 font-bold hover:underline">Ir a Acopio &rarr;</a>
             </div>
         </div>
-        <main id="dashboard-view"></main>
-        <div id="welcome-screen" class="text-center bg-white p-8 rounded-2xl shadow-lg hidden">
-            <img src="https://placehold.co/150x150/854d0e/ffffff?text=📋" alt="Icono de Proceso" class="mx-auto mb-4 rounded-full">
-            <h2 class="text-3xl font-display text-amber-900 mb-2">Bienvenido</h2>
-            <p class="text-stone-600">Inicia un nuevo proceso para comenzar a registrar tus lotes.</p>
+
+        <!-- VISTA 2: ÁREA DE TRABAJO (DETALLE DEL LOTE) -->
+        <div id="production-view" class="hidden animate-fade-in">
+            <!-- Info del Lote Activo (Sticky header) -->
+            <div class="bg-white p-6 rounded-2xl shadow-md border border-stone-100 mb-8 sticky top-4 z-20 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div>
+                    <div class="flex items-center gap-3 mb-1">
+                        <span class="bg-amber-100 text-amber-800 text-xs font-bold px-2 py-1 rounded uppercase" id="active-product-type">CACAO</span>
+                        <h2 class="text-2xl font-bold text-stone-900 font-mono" id="active-batch-id">LOTE-001</h2>
+                    </div>
+                    <p class="text-sm text-stone-500 flex items-center gap-2">
+                        <i class="fas fa-clock"></i> Iniciado: <span id="active-start-date">-</span>
+                        <span class="text-stone-300">|</span>
+                        <i class="fas fa-weight-hanging"></i> <span id="active-current-weight">-</span>
+                    </p>
+                </div>
+                
+                <div class="flex gap-2">
+                    <!-- Botón Principal de Acción -->
+                    <button id="add-next-stage-btn" class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-xl shadow-lg flex items-center gap-2 transform hover:-translate-y-1 transition">
+                        <i class="fas fa-plus-circle text-lg"></i>
+                        <span>Siguiente Etapa</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Línea de Tiempo de Producción -->
+            <div id="batch-timeline" class="space-y-6 relative timeline-line pl-8 md:pl-10">
+                <!-- Se inyectan las tarjetas aquí -->
+            </div>
         </div>
+
     </div>
 
-    <!-- CONTENEDOR OCULTO PARA LA GENERACIÓN DEL REPORTE PDF -->
-    <div id="pdf-report-container" class="fixed top-0 left-0 -z-50 w-[800px] bg-white p-8 hidden">
-        <!-- El contenido se inyectará dinámicamente aquí -->
-    </div>
-
-    <dialog id="form-modal" class="p-0 rounded-2xl shadow-2xl w-11/12 max-w-xl">
-        <div id="modal-content" class="p-6"></div>
+    <!-- Modales -->
+    <dialog id="form-modal" class="p-0 rounded-2xl shadow-2xl w-11/12 max-w-2xl backdrop:bg-black/60">
+        <div id="modal-content" class="p-6 bg-white"></div>
     </dialog>
-    <div id="qr-code-container" style="display: none;"></div>
+    
+    <!-- Contenedor PDF oculto -->
+    <div id="pdf-report-container" class="fixed top-0 left-0 -z-50 w-[800px] bg-white p-8 hidden"></div>
 
+    <script src="/js/nav-loader.js"></script>
     <script src="/js/trazabilidad-app.js"></script>
-    <script src="/js/nav-loader.js" defer></script>
 </body>
 </html>
-

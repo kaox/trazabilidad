@@ -65,6 +65,7 @@ CREATE TABLE IF NOT EXISTS fincas (
     numero_trabajadores INTEGER,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP, -- Soft Delete
     UNIQUE(user_id, nombre_finca)
 );
 
@@ -90,6 +91,7 @@ CREATE TABLE IF NOT EXISTS procesadoras (
     numero_trabajadores INTEGER,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP, -- Soft Delete
     UNIQUE(user_id, ruc)
 );
 
@@ -115,19 +117,84 @@ CREATE TABLE IF NOT EXISTS etapas_plantilla (
 -- Tabla de Productos Comerciales (SKUs)
 -- Esta tabla define las presentaciones finales (ej. Tableta 70%, Café Tostado 250g)
 CREATE TABLE IF NOT EXISTS productos (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    id TEXT PRIMARY KEY, -- UUID
+    user_id INTEGER NOT NULL,
     nombre TEXT NOT NULL,
     descripcion TEXT,
-    tipo_producto TEXT, -- 'cacao', 'cafe', 'miel', 'otro'
-    peso TEXT, -- Ej: '250g'
-    gtin TEXT, -- Código de barras
-    is_formal_gtin BOOLEAN DEFAULT FALSE,
-    imagenes_json JSONB DEFAULT '[]', -- Array de strings Base64
+    tipo_producto TEXT, -- 'cacao', 'cafe', etc.
+    peso TEXT,
+    gtin TEXT, -- Código de barras global (GS1)
+    is_formal_gtin BOOLEAN DEFAULT 0,
+    imagen_url TEXT, -- Legacy
+    imagenes_json TEXT, -- Array de URLs
     ingredientes TEXT,
-    premios_json JSONB DEFAULT '[]', -- Array de objetos premio
-    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    premios_json TEXT,
+    receta_nutricional_id TEXT, -- Vinculación con Módulo Nutrición
+    deleted_at TIMESTAMP, -- Soft Delete
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (receta_nutricional_id) REFERENCES recetas_nutricionales(id) ON DELETE SET NULL,
     UNIQUE(user_id, gtin)
+);
+
+CREATE TABLE IF NOT EXISTS acquisitions (
+    id TEXT PRIMARY KEY, -- Ej: ACP-XXXX
+    user_id INTEGER NOT NULL,
+    nombre_producto TEXT NOT NULL, -- 'Cacao', 'Café'
+    tipo_acopio TEXT NOT NULL, -- 'Baba', 'Grano Seco'
+    subtipo TEXT, -- 'Lavado', 'Honey'
+    fecha_acopio DATE,
+    peso_kg REAL,
+    precio_unitario REAL,
+    finca_origen TEXT,
+    observaciones TEXT,
+    imagenes_json TEXT,
+    data_adicional JSONB, -- Campos dinámicos del formulario
+    estado TEXT DEFAULT 'disponible', -- 'disponible', 'procesado', 'agotado'
+    deleted_at TIMESTAMP, -- Soft Delete
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- 11. MÓDULO DE PROCESAMIENTO (LOTES/BATCHES)
+CREATE TABLE IF NOT EXISTS batches (
+    id TEXT PRIMARY KEY, -- Ej: TOS-XXXX (ID del lote de transformación)
+    plantilla_id INTEGER,
+    etapa_id INTEGER NOT NULL,
+    user_id INTEGER, -- Usuario dueño del proceso
+    parent_id TEXT, -- ID del lote padre (si es continuación)
+    producto_id TEXT, -- Vinculación opcional a un SKU comercial
+    acquisition_id TEXT, -- Vinculación al Acopio de origen (Materia Prima)
+    data TEXT NOT NULL, -- Datos técnicos del proceso (Temp, Humedad, etc.)
+    -- Blockchain y Seguridad
+    blockchain_hash TEXT,
+    is_locked BOOLEAN DEFAULT 0,
+    views INTEGER DEFAULT 0,
+    status TEXT DEFAULT 'active',
+    recall_reason TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (plantilla_id) REFERENCES plantillas_proceso(id) ON DELETE CASCADE,
+    FOREIGN KEY (etapa_id) REFERENCES etapas_plantilla(id) ON DELETE CASCADE,
+    FOREIGN KEY (parent_id) REFERENCES batches(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (producto_id) REFERENCES productos(id) ON DELETE SET NULL,
+    FOREIGN KEY (acquisition_id) REFERENCES acquisitions(id) ON DELETE SET NULL
+);
+
+-- 12. TABLA OPTIMIZADA DE LECTURA (TRAZABILIDAD PÚBLICA)
+CREATE TABLE IF NOT EXISTS traceability_registry (
+    id TEXT PRIMARY KEY, -- Mismo ID que el lote final
+    batch_id TEXT,
+    user_id INTEGER,
+    nombre_producto TEXT,
+    gtin TEXT,
+    fecha_finalizacion DATE,
+    snapshot_data TEXT NOT NULL, -- JSON con toda la historia pre-calculada
+    blockchain_hash TEXT,
+    views INTEGER DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (batch_id) REFERENCES batches(id),
+    FOREIGN KEY (user_id) REFERENCES users(id)
 );
 
 -- Tabla de Lotes
@@ -162,6 +229,7 @@ CREATE TABLE IF NOT EXISTS perfiles (
     tipo TEXT NOT NULL, -- 'cacao', 'cafe', 'miel', etc.
     perfil_data JSONB NOT NULL,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP,
     UNIQUE(user_id, nombre, tipo)
 );
 
@@ -173,6 +241,7 @@ CREATE TABLE IF NOT EXISTS ruedas_sabores (
     tipo TEXT NOT NULL,
     notas_json JSONB NOT NULL,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP,
     UNIQUE(user_id, nombre_rueda)
 );
 
@@ -239,7 +308,8 @@ CREATE TABLE IF NOT EXISTS recetas_nutricionales (
     descripcion TEXT,
     peso_porcion_gramos NUMERIC DEFAULT 100, -- Tamaño de porción
     porciones_envase NUMERIC DEFAULT 1,
-    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP
 );
 
 -- 16. MODULO NUTRICIÓN: INGREDIENTES DE RECETA
@@ -267,3 +337,5 @@ CREATE TABLE IF NOT EXISTS ingredientes_catalogo (
 
 -- Índice para búsquedas rápidas por nombre
 CREATE INDEX IF NOT EXISTS idx_ingredientes_nombre ON ingredientes_catalogo(nombre);
+CREATE INDEX IF NOT EXISTS idx_trace_public_id ON traceability_registry(id);
+CREATE INDEX IF NOT EXISTS idx_trace_gtin ON traceability_registry(gtin);

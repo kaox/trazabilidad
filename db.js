@@ -94,6 +94,21 @@ const createSlug = (text) => {
         + '-' + Math.floor(Math.random() * 1000); // Añadir sufijo aleatorio para unicidad
 };
 
+// --- Helper para Generar ID de Lote/Batch Único ---
+const generateUniqueBatchId = async (prefix) => {
+    let id;
+    let isUnique = false;
+    while (!isUnique) {
+        const randomPart = Math.random().toString(36).substring(2, 10).toUpperCase();
+        id = `${prefix}-${randomPart}`;
+        const existing = await get('SELECT id FROM batches WHERE id = ?', [id]);
+        if (!existing) {
+            isUnique = true;
+        }
+    }
+    return id;
+};
+
 // --- Lógica de la API (usa las funciones adaptadoras) ---
 const registerUser = async (req, res) => {
     const { usuario, password, nombre, apellido, dni, ruc, empresa, company_logo, celular, correo } = req.body;
@@ -453,55 +468,53 @@ const cloneTemplate = async (req, res) => {
         if (!templateToClone) return res.status(404).json({ error: "Plantilla no encontrada en el catálogo." });
 
         // VERIFICAR SI YA EXISTE (Lógica Upsert)
+        let templateId;
         const existingTemplate = await get('SELECT id FROM plantillas_proceso WHERE user_id = ? AND nombre_producto = ?', [userId, templateToClone.nombre_producto]);
 
         if (existingTemplate) {
-            // --- MODO ACTUALIZACIÓN ---
-            console.log(`Actualizando plantilla existente: ${templateToClone.nombre_producto}`);
-            
-            // 1. Actualizar info base
-            await run('UPDATE plantillas_proceso SET descripcion = ? WHERE id = ?', [templateToClone.descripcion, existingTemplate.id]);
-            
-            // 2. Actualizar o Insertar etapas
-            for (const stage of templateToClone.etapas) {
-                const existingStage = await get('SELECT id FROM etapas_plantilla WHERE plantilla_id = ? AND nombre_etapa = ?', [existingTemplate.id, stage.nombre_etapa]);
-                
-                if (existingStage) {
-                    await run(
-                        'UPDATE etapas_plantilla SET descripcion = ?, orden = ?, campos_json = ? WHERE id = ?',
-                        [stage.descripcion, stage.orden, JSON.stringify(stage.campos_json), existingStage.id]
-                    );
-                } else {
-                    await run(
-                        'INSERT INTO etapas_plantilla (plantilla_id, nombre_etapa, descripcion, orden, campos_json) VALUES (?, ?, ?, ?, ?)',
-                        [existingTemplate.id, stage.nombre_etapa, stage.descripcion, stage.orden, JSON.stringify(stage.campos_json)]
-                    );
-                }
-            }
-            return res.status(200).json({ 
-                message: "Plantilla actualizada con las nuevas definiciones.", 
-                id: existingTemplate.id,
-                nombre_producto: templateToClone.nombre_producto
-            });
+            templateId = existingTemplate.id;
+            await run('UPDATE plantillas_proceso SET descripcion = ? WHERE id = ?', [templateToClone.descripcion, templateId]);
+        } else {
+            const templateResult = await run(
+                'INSERT INTO plantillas_proceso (user_id, nombre_producto, descripcion) VALUES (?, ?, ?)',
+                [userId, templateToClone.nombre_producto, templateToClone.descripcion]
+            );
+            templateId = templateResult.lastID;
         }
 
-        // --- MODO INSERCIÓN (NUEVA) ---
-        const templateResult = await run(
-            'INSERT INTO plantillas_proceso (user_id, nombre_producto, descripcion) VALUES (?, ?, ?)',
-            [userId, templateToClone.nombre_producto, templateToClone.descripcion]
-        );
-        const newTemplateId = templateResult.lastID;
+        // Helper para insertar/actualizar etapas
+        const upsertStage = async (stage, fase) => {
+             const existingStage = await get('SELECT id FROM etapas_plantilla WHERE plantilla_id = ? AND nombre_etapa = ?', [templateId, stage.nombre_etapa]);
+             if (existingStage) {
+                 await run(
+                     'UPDATE etapas_plantilla SET descripcion = ?, orden = ?, campos_json = ?, fase = ? WHERE id = ?',
+                     [stage.descripcion, stage.orden, JSON.stringify(stage.campos_json), fase, existingStage.id]
+                 );
+             } else {
+                 await run(
+                     'INSERT INTO etapas_plantilla (plantilla_id, nombre_etapa, descripcion, orden, campos_json, fase) VALUES (?, ?, ?, ?, ?, ?)',
+                     [templateId, stage.nombre_etapa, stage.descripcion, stage.orden, JSON.stringify(stage.campos_json), fase]
+                 );
+             }
+        };
 
-        for (const stage of templateToClone.etapas) {
-            await run(
-                'INSERT INTO etapas_plantilla (plantilla_id, nombre_etapa, descripcion, orden, campos_json) VALUES (?, ?, ?, ?, ?)',
-                [newTemplateId, stage.nombre_etapa, stage.descripcion, stage.orden, JSON.stringify(stage.campos_json)]
-            );
+        // 1. Procesar etapas de ACOPIO (si existen en el JSON)
+        if (templateToClone.acopio) {
+            for (const stage of templateToClone.acopio) {
+                await upsertStage(stage, 'acopio');
+            }
+        }
+
+        // 2. Procesar etapas de TRANSFORMACIÓN (si existen en el JSON)
+        if (templateToClone.etapas) {
+            for (const stage of templateToClone.etapas) {
+                await upsertStage(stage, 'procesamiento');
+            }
         }
 
         res.status(201).json({ 
-            message: "Plantilla importada correctamente.", 
-            id: newTemplateId,
+            message: "Plantilla importada/actualizada correctamente.", 
+            id: templateId,
             nombre_producto: templateToClone.nombre_producto
         });
 
@@ -598,65 +611,28 @@ const deleteStage = async (req, res) => {
 const getBatchesTree = async (req, res) => {
     const userId = req.user.id;
     try {
-        const allLotes = await all('SELECT * FROM lotes', []);
-        const lotesProcesados = allLotes.map(lote => ({
-            ...lote,
-            data: safeJSONParse(lote.data),
-            children: [] 
-        }));
-
-        const loteMap = {};
-        lotesProcesados.forEach(lote => {
-            loteMap[lote.id] = lote;
-        });
-
+        const allBatches = await all('SELECT * FROM batches', []);
+        const batchesProcessed = allBatches.map(b => ({ ...b, data: safeJSONParse(b.data), is_locked: !!b.is_locked, children: [] }));
+        const batchMap = {};
+        batchesProcessed.forEach(b => { batchMap[b.id] = b; });
         const allRoots = [];
-        lotesProcesados.forEach(lote => {
-            if (lote.parent_id && loteMap[lote.parent_id]) {
-                loteMap[lote.parent_id].children.push(lote);
-            } else {
-                allRoots.push(lote);
-            }
+        batchesProcessed.forEach(b => {
+            if (b.parent_id && batchMap[b.parent_id]) { batchMap[b.parent_id].children.push(b); } else { allRoots.push(b); }
         });
-
         const userRoots = allRoots.filter(root => root.user_id === userId);
-        
         res.status(200).json(userRoots);
-    } catch (err) {
-        console.error("Error en getBatchesTree:", err);
-        res.status(500).json({ error: "Error interno del servidor al construir el árbol de lotes." });
-    }
+    } catch (err) { res.status(500).json({ error: "Error batches." }); }
 };
 
 const checkBatchOwnership = async (batchId, userId) => {
-    // 1. Obtener el lote objetivo directamente
-    const targetLote = await get('SELECT id, user_id, parent_id, is_locked FROM lotes WHERE id = ?', [batchId]);
-    
-    if (!targetLote) return null; // El lote no existe
-
-    // 2. Determinar quién es el dueño
-    let ownerId = targetLote.user_id;
-
-    // Si el lote no tiene user_id (es hijo), buscamos al ancestro raíz
+    const targetBatch = await get('SELECT id, user_id, parent_id, is_locked FROM batches WHERE id = ?', [batchId]);
+    if (!targetBatch) return null;
+    let ownerId = targetBatch.user_id;
     if (!ownerId) {
-        const root = await get(`
-            WITH RECURSIVE ancestry AS (
-                SELECT id, parent_id, user_id FROM lotes WHERE id = ?
-                UNION ALL
-                SELECT l.id, l.parent_id, l.user_id FROM lotes l JOIN ancestry a ON l.id = a.parent_id
-            )
-            SELECT user_id FROM ancestry WHERE user_id IS NOT NULL LIMIT 1`, [batchId]);
-            
+        const root = await get(`WITH RECURSIVE ancestry AS (SELECT id, parent_id, user_id FROM batches WHERE id = ? UNION ALL SELECT b.id, b.parent_id, b.user_id FROM batches b JOIN ancestry a ON b.id = a.parent_id) SELECT user_id FROM ancestry WHERE user_id IS NOT NULL LIMIT 1`, [batchId]);
         if (root) ownerId = root.user_id;
     }
-
-    // 3. Verificar si el usuario actual es el dueño encontrado
-    if (ownerId == userId) {
-        // Devolvemos el lote OBJETIVO (no el raíz), para que se valide si ESTE lote está bloqueado
-        return targetLote; 
-    }
-
-    return null; // No es el dueño o cadena rota
+    return ownerId == userId ? targetBatch : null;
 };
 
 // --- Lotes (con Generación de ID en Backend) ---
@@ -666,7 +642,7 @@ const generateUniqueLoteId = async (prefix) => {
     while (!isUnique) {
         const randomPart = Math.random().toString(36).substring(2, 10).toUpperCase();
         id = `${prefix}-${randomPart}`;
-        const existing = await get('SELECT id FROM lotes WHERE id = ?', [id]);
+        const existing = await get('SELECT id FROM batches WHERE id = ?', [id]);
         if (!existing) {
             isUnique = true;
         }
@@ -674,294 +650,371 @@ const generateUniqueLoteId = async (prefix) => {
     return id;
 };
 
-const createBatch = async (req, res) => {
+// --- ACOPIOS (NUEVO MÓDULO) ---
+
+const getAcquisitions = async (req, res) => {
     const userId = req.user.id;
-    // Aceptamos parámetros de resolución automática
-    let { plantilla_id, etapa_id, parent_id, data, producto_id, system_template_name, stage_name, stage_order } = req.body;
+    try {
+        // MODIFICADO: Filtrar solo registros activos (no borrados lógicamente)
+        const rows = await all('SELECT * FROM acquisitions WHERE user_id = ? AND deleted_at IS NULL ORDER BY created_at DESC', [userId]);
+        const result = rows.map(r => ({
+            ...r,
+            imagenes_json: safeJSONParse(r.imagenes_json || '[]'),
+            data_adicional: safeJSONParse(r.data_adicional || '{}')
+        }));
+        res.status(200).json(result);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+};
+
+const createAcquisition = async (req, res) => {
+    const userId = req.user.id;
+    const { nombre_producto, tipo_acopio, subtipo, fecha_acopio, peso_kg, precio_unitario, finca_origen, observaciones, imagenes_json, data_adicional } = req.body;
+    
+    // Generar ID único para el acopio (Ej: ACP-X821)
+    const randomPart = Math.random().toString(36).substring(2, 6).toUpperCase();
+    const id = `ACP-${randomPart}`;
+
+    try {
+        await run(
+            'INSERT INTO acquisitions (id, user_id, nombre_producto, tipo_acopio, subtipo, fecha_acopio, peso_kg, precio_unitario, finca_origen, observaciones, imagenes_json, data_adicional) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            [id, userId, nombre_producto, tipo_acopio, subtipo, fecha_acopio, peso_kg, precio_unitario, finca_origen, observaciones, JSON.stringify(imagenes_json), JSON.stringify(data_adicional)]
+        );
+        res.status(201).json({ message: "Acopio registrado", id });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+};
+
+const deleteAcquisition = async (req, res) => {
+    const userId = req.user.id;
+    const { id } = req.params;
     
     try {
-        // --- LÓGICA DE AUTO-RESOLUCIÓN (JIT) ---
-        if ((!plantilla_id || !etapa_id) && system_template_name && stage_name) {
-            const resolvedIDs = await ensureTemplateAndStageExists(userId, system_template_name, stage_name, stage_order);
-            plantilla_id = resolvedIDs.plantilla_id;
-            etapa_id = resolvedIDs.etapa_id;
-        }
-        // ---------------------------------------
+        // 1. Verificar si el acopio ya fue usado en algún lote de producción
+        const usageCheck = await get('SELECT id FROM batches WHERE acquisition_id = ? LIMIT 1', [id]);
 
-        if (!plantilla_id || !etapa_id) {
-            return res.status(400).json({ error: "No se pudieron determinar la plantilla o la etapa." });
+        if (usageCheck) {
+            // CASO A: Tiene historial -> Eliminación Lógica (Soft Delete)
+            await run('UPDATE acquisitions SET deleted_at = CURRENT_TIMESTAMP WHERE id = ? AND user_id = ?', [id, userId]);
+            res.status(200).json({ 
+                message: "El acopio tiene procesos vinculados. Se ha archivado (eliminación lógica) para mantener la trazabilidad.", 
+                type: 'soft' 
+            });
+        } else {
+            // CASO B: No tiene historial -> Eliminación Física (Hard Delete)
+            const result = await run('DELETE FROM acquisitions WHERE id = ? AND user_id = ?', [id, userId]);
+            if (result.changes === 0) return res.status(404).json({ error: "Acopio no encontrado." });
+            res.status(204).send(); // No content
+        }
+    } catch (err) { 
+        console.error("Error deleteAcquisition:", err);
+        res.status(500).json({ error: err.message }); 
+    }
+};
+
+const updateAcquisition = async (req, res) => {
+    const userId = req.user.id;
+    const { id } = req.params;
+    const { nombre_producto, tipo_acopio, subtipo, fecha_acopio, peso_kg, precio_unitario, finca_origen, observaciones, imagenes_json, data_adicional } = req.body;
+
+    try {
+        const result = await run(
+            'UPDATE acquisitions SET nombre_producto = ?, tipo_acopio = ?, subtipo = ?, fecha_acopio = ?, peso_kg = ?, precio_unitario = ?, finca_origen = ?, observaciones = ?, imagenes_json = ?, data_adicional = ? WHERE id = ? AND user_id = ?',
+            [nombre_producto, tipo_acopio, subtipo, fecha_acopio, peso_kg, precio_unitario, finca_origen, observaciones, JSON.stringify(imagenes_json), JSON.stringify(data_adicional), id, userId]
+        );
+        
+        if (result.changes === 0) return res.status(404).json({ error: "Acopio no encontrado o sin permisos." });
+        
+        res.status(200).json({ message: "Acopio actualizado correctamente" });
+    } catch (err) { 
+        res.status(500).json({ error: err.message }); 
+    }
+};
+
+const createBatch = async (req, res) => {
+    const userId = req.user.id;
+    let { plantilla_id, etapa_id, parent_id, data, producto_id, acquisition_id, system_template_name, stage_name, stage_order } = req.body;
+    
+    try {
+        // JIT Template
+        if ((!plantilla_id || !etapa_id) && system_template_name && stage_name) {
+            const resolved = await ensureTemplateAndStageExists(userId, system_template_name, stage_name, stage_order);
+            plantilla_id = resolved.plantilla_id;
+            etapa_id = resolved.etapa_id;
         }
 
         const stage = await get('SELECT nombre_etapa FROM etapas_plantilla WHERE id = ?', [etapa_id]);
         if (!stage) return res.status(404).json({ error: "Etapa no encontrada." });
         
         const prefix = stage.nombre_etapa.substring(0, 3).toUpperCase();
-        const newId = await generateUniqueLoteId(prefix);
+        const newId = await generateUniqueBatchId(prefix);
         data.id = newId;
 
         let finalProductId = null;
-        if (producto_id && producto_id.trim() !== "") {
-            finalProductId = producto_id;
-        } else if (data.productoFinal && typeof data.productoFinal === 'object' && data.productoFinal.value) {
-            finalProductId = data.productoFinal.value;
-        }
+        if (producto_id) finalProductId = producto_id;
+        else if (data.productoFinal?.value) finalProductId = data.productoFinal.value;
+
+        if (acquisition_id) await run("UPDATE acquisitions SET estado = 'procesado' WHERE id = ? AND user_id = ?", [acquisition_id, userId]);
 
         let sql, params;
         if (!parent_id) {
-            sql = 'INSERT INTO lotes (id, user_id, plantilla_id, etapa_id, parent_id, data, producto_id) VALUES (?, ?, ?, ?, ?, ?, ?)';
-            params = [data.id, userId, plantilla_id, etapa_id, null, JSON.stringify(data), finalProductId];
+            sql = 'INSERT INTO batches (id, user_id, plantilla_id, etapa_id, parent_id, data, producto_id, acquisition_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)';
+            params = [data.id, userId, plantilla_id, etapa_id, null, JSON.stringify(data), finalProductId, acquisition_id || null];
         } else {
             const ownerInfo = await checkBatchOwnership(parent_id, userId);
-            if (!ownerInfo) return res.status(403).json({ error: "No tienes permiso para añadir a este lote." });
-            
-            const parentLote = await get('SELECT plantilla_id FROM lotes WHERE id = ?', [parent_id]);
-            if (!parentLote) return res.status(404).json({ error: "Lote padre no encontrado." });
-
-            sql = 'INSERT INTO lotes (id, plantilla_id, etapa_id, parent_id, data, producto_id) VALUES (?, ?, ?, ?, ?, ?)';
-            params = [data.id, parentLote.plantilla_id, etapa_id, parent_id, JSON.stringify(data), finalProductId];
+            if (!ownerInfo) return res.status(403).json({ error: "No tienes permiso." });
+            const parentBatch = await get('SELECT plantilla_id FROM batches WHERE id = ?', [parent_id]);
+            sql = 'INSERT INTO batches (id, plantilla_id, etapa_id, parent_id, data, producto_id) VALUES (?, ?, ?, ?, ?, ?)';
+            params = [data.id, parentBatch.plantilla_id, etapa_id, parent_id, JSON.stringify(data), finalProductId];
         }
         await run(sql, params);
-        res.status(201).json({ message: "Lote creado", id: data.id }); // Devolvemos ID
-    } catch (err) {
-        console.error("Error en createBatch:", err);
-        res.status(500).json({ error: err.message });
-    }
+        res.status(201).json({ message: "Lote creado", id: data.id });
+    } catch (err) { console.error(err); res.status(500).json({ error: err.message }); }
 };
 
 const updateBatch = async (req, res) => {
-    const { id } = req.params;
-    const { data } = req.body;
-    
-    const ownerInfo = await checkBatchOwnership(id, req.user.id);
-    if (!ownerInfo) return res.status(403).json({ error: "No tienes permiso para modificar este lote." });
-    
-    if (ownerInfo.is_locked) return res.status(409).json({ error: "Lote certificado y bloqueado. No se permiten modificaciones." });
+    const { id } = req.params; const { data, producto_id } = req.body;
+    const targetBatch = await checkBatchOwnership(id, req.user.id);
+    if (!targetBatch) return res.status(403).json({ error: "Sin permiso." });
+    if (targetBatch.is_locked) return res.status(409).json({ error: "Lote bloqueado." });
 
-    // NUEVO: Verificar si hay producto vinculado para actualizarlo
-    const productoId = data.productoFinal && typeof data.productoFinal === 'object' ? data.productoFinal.value : null;
+    let finalProductId = undefined;
+    if (producto_id !== undefined) finalProductId = producto_id === "" ? null : producto_id;
+    else if (data && data.productoFinal?.value) finalProductId = data.productoFinal.value;
 
     try {
-        if (productoId) {
-             await run('UPDATE lotes SET data = ?, producto_id = ? WHERE id = ?', [JSON.stringify(data), productoId, id]);
-        } else {
-             await run('UPDATE lotes SET data = ? WHERE id = ?', [JSON.stringify(data), id]);
-        }
+        if (finalProductId !== undefined) await run('UPDATE batches SET data = ?, producto_id = ? WHERE id = ?', [JSON.stringify(data), finalProductId, id]);
+        else await run('UPDATE batches SET data = ? WHERE id = ?', [JSON.stringify(data), id]);
         res.status(200).json({ message: "Lote actualizado" });
     } catch (err) { res.status(500).json({ error: err.message }); }
 };
 
 const deleteBatch = async (req, res) => {
     const { id } = req.params;
-    const ownerInfo = await checkBatchOwnership(id, req.user.id);
-    if (!ownerInfo) return res.status(403).json({ error: "No tienes permiso para eliminar este lote." });
-    
-    // VALIDACIÓN: No borrar si está bloqueado
-    if (ownerInfo.is_locked) return res.status(409).json({ error: "Lote certificado y bloqueado. No se puede eliminar." });
-
-    try {
-        await run('DELETE FROM lotes WHERE id = ?', [id]);
-        res.status(204).send();
-    } catch (err) { res.status(500).json({ error: err.message }); }
+    const targetBatch = await checkBatchOwnership(id, req.user.id);
+    if (!targetBatch) return res.status(403).json({ error: "Sin permiso." });
+    if (targetBatch.is_locked) return res.status(409).json({ error: "Lote bloqueado." });
+    try { await run('DELETE FROM batches WHERE id = ?', [id]); res.status(204).send(); } catch (err) { res.status(500).json({ error: err.message }); }
 };
 
 const finalizeBatch = async (req, res) => {
-    const { id } = req.params;
-    const userId = req.user.id;
-
-    // 1. Verificar propiedad y estado actual
-    const ownerInfo = await checkBatchOwnership(id, userId);
-    if (!ownerInfo) return res.status(403).json({ error: "No tienes permiso." });
-    if (ownerInfo.is_locked) return res.status(409).json({ error: "El lote ya ha sido finalizado previamente." });
+    const { id } = req.params; const userId = req.user.id;
+    const targetBatch = await checkBatchOwnership(id, userId);
+    if (!targetBatch) return res.status(403).json({ error: "Sin permiso." });
+    if (targetBatch.is_locked) return res.status(409).json({ error: "Ya finalizado." });
 
     try {
-        // 2. Obtener datos completos del lote para el Hash
-        const lote = await get('SELECT * FROM lotes WHERE id = ?', [id]);
-        if (!lote) return res.status(404).json({ error: 'Lote no encontrado' });
+        const rows = await all(`WITH RECURSIVE trace AS (SELECT * FROM batches WHERE id = ? UNION ALL SELECT b.* FROM batches b INNER JOIN trace t ON b.id = t.parent_id) SELECT * FROM trace;`, [id]);
+        if (rows.length === 0) return res.status(404).json({ error: 'Lote no encontrado' });
 
-        // 3. Crear el "Contenido Digital" a firmar
-        const dataToHash = {
-            lote_id: lote.id,
-            user_id: userId,
-            data: safeJSONParse(lote.data),
-            parent_id: lote.parent_id,
-            timestamp: new Date().toISOString(),
-            salt: crypto.randomBytes(16).toString('hex') // Añadir aleatoriedad
-        };
+        const rootBatch = rows.find(r => !r.parent_id);
+        const [templateInfo, allStages, ownerInfo, acopioData, productoInfo] = await Promise.all([
+            get('SELECT nombre_producto FROM plantillas_proceso WHERE id = ?', [rootBatch.plantilla_id]),
+            all('SELECT id, nombre_etapa, descripcion, orden, campos_json, fase FROM etapas_plantilla WHERE plantilla_id = ? ORDER BY orden', [rootBatch.plantilla_id]),
+            get('SELECT empresa, company_logo, subscription_tier FROM users WHERE id = ?', [rootBatch.user_id]),
+            rootBatch.acquisition_id ? get('SELECT * FROM acquisitions WHERE id = ?', [rootBatch.acquisition_id]) : null,
+            targetBatch.producto_id ? get('SELECT * FROM productos WHERE id = ?', [targetBatch.producto_id]) : null
+        ]);
 
-        // 4. Generar Hash SHA-256
-        const hash = crypto.createHash('sha256').update(JSON.stringify(dataToHash)).digest('hex');
+        const historySnapshot = { productName: templateInfo.nombre_producto, ownerInfo, stages: [], fincaData: null, acopioData: acopioData ? { ...acopioData, data_adicional: safeJSONParse(acopioData.data_adicional) } : null, productoFinal: null, nutritionalData: null, perfilSensorialData: null, ruedaSaborData: null, maridajesRecomendados: {}, generatedAt: new Date().toISOString() };
 
-        // 5. Guardar Hash y Bloquear Lote (y ancestros)
-        // Bloquear el actual
-        await run('UPDATE lotes SET blockchain_hash = ?, is_locked = TRUE WHERE id = ?', [hash, id]);
-
-        // Bloquear recursivamente hacia arriba (padres)
-        let curr = lote.parent_id;
-        while(curr) {
-             await run('UPDATE lotes SET is_locked = TRUE WHERE id = ?', [curr]);
-             const p = await get('SELECT parent_id FROM lotes WHERE id = ?', [curr]);
-             curr = p ? p.parent_id : null;
+        if (productoInfo) {
+             historySnapshot.productoFinal = { ...productoInfo, imagenes_json: safeJSONParse(productoInfo.imagenes_json), premios_json: safeJSONParse(productoInfo.premios_json) };
+             if (productoInfo.receta_nutricional_id) {
+                 const receta = await get('SELECT * FROM recetas_nutricionales WHERE id = ?', [productoInfo.receta_nutricional_id]);
+                 if(receta) { const ing = await all('SELECT * FROM ingredientes_receta WHERE receta_id = ?', [receta.id]); historySnapshot.nutritionalData = { ...receta, ingredientes: ing.map(i => ({...i, nutrientes_base_json: safeJSONParse(i.nutrientes_base_json)})) }; }
+             }
         }
 
-        console.log(`Lote ${id} finalizado y cadena bloqueada. Hash: ${hash}`);
-        res.status(200).json({ message: "Trazabilidad finalizada y certificada.", hash: hash });
+        // --- DESGLOSE ACOPIO ---
+        if (historySnapshot.acopioData) {
+            const ad = historySnapshot.acopioData.data_adicional || {};
+            const imgs = safeJSONParse(acopioData.imagenes_json || '{}'); // Cargar mapa de imágenes
 
-    } catch (err) {
-        console.error("Error finalizando lote:", err);
-        res.status(500).json({ error: err.message });
-    }
+            if (acopioData.finca_origen) {
+                 const finca = await get('SELECT * FROM fincas WHERE nombre_finca = ? AND user_id = ?', [acopioData.finca_origen, userId]);
+                 if(finca) historySnapshot.fincaData = { ...finca, coordenadas: safeJSONParse(finca.coordenadas), imagenes_json: safeJSONParse(finca.imagenes_json), certificaciones_json: safeJSONParse(finca.certificaciones_json), premios_json: safeJSONParse(finca.premios_json) };
+            }
+            const acopioStagesDef = allStages.filter(s => s.fase === 'acopio' || (s.orden <= 3 && s.nombre_etapa.match(/(cosecha|ferment|secado)/i)));
+            acopioStagesDef.forEach(stageDef => {
+                const suffix = `__${stageDef.orden}`;
+                let stageData = {}; let dataFound = false;
+
+                // Datos
+                Object.keys(ad).forEach(key => { if (key.endsWith(suffix)) { stageData[key.split('__')[0]] = ad[key]; dataFound = true; } });
+                const fields = safeJSONParse(stageDef.campos_json);
+                [...(fields.entradas||[]), ...(fields.variables||[]), ...(fields.salidas||[])].map(f => f.name).forEach(fname => { if (!stageData[fname] && ad[fname]) { stageData[fname] = ad[fname]; dataFound = true; } });
+
+                // Imágenes (Cruce con sufijo)
+                Object.keys(imgs).forEach(key => {
+                    if (key.endsWith(suffix)) {
+                         stageData['imageUrl'] = { value: imgs[key], visible: true, nombre: 'Foto' };
+                         dataFound = true;
+                    }
+                });
+
+                if (dataFound) {
+                    historySnapshot.stages.push({
+                        id: `${acopioData.id}_S${stageDef.orden}`,
+                        nombre_etapa: stageDef.nombre_etapa,
+                        descripcion: stageDef.descripcion,
+                        campos_json: fields,
+                        data: stageData,
+                        blockchain_hash: null,
+                        is_locked: true,
+                        timestamp: acopioData.fecha_acopio
+                    });
+                }
+            });
+        }
+        
+        // ... (Recuperar Perfil Sensorial y Rueda - Lógica igual) ...
+        let perfilId = null, ruedaId = null; const rootData = safeJSONParse(rootBatch.data); if (rootData.target_profile_id?.value) perfilId = rootData.target_profile_id.value; if (rootData.target_wheel_id?.value) ruedaId = rootData.target_wheel_id.value; if (!perfilId || !ruedaId) { for (const row of rows) { const rd = safeJSONParse(row.data); if (!perfilId && rd.tipoPerfil?.value) perfilId = rd.tipoPerfil.value; if (!ruedaId && rd.tipoRuedaSabor?.value) ruedaId = rd.tipoRuedaSabor.value; } }
+        if (perfilId) { let perfil = await get('SELECT * FROM perfiles WHERE id = ?', [perfilId]); if (!perfil && isNaN(perfilId)) perfil = await get('SELECT * FROM perfiles WHERE nombre = ? AND user_id = ?', [perfilId, userId]); if (perfil) { historySnapshot.perfilSensorialData = safeJSONParse(perfil.perfil_data); if (perfil.tipo === 'cacao') { const allCafes = await all("SELECT * FROM perfiles WHERE tipo = 'cafe' AND user_id = ?", [userId]); const recCafe = allCafes.map(cafe => ({ producto: { ...cafe, perfil_data: safeJSONParse(cafe.perfil_data) }, puntuacion: calcularMaridajeCacaoCafe(historySnapshot.perfilSensorialData, safeJSONParse(cafe.perfil_data)) })).sort((a, b) => b.puntuacion - a.puntuacion).slice(0, 3); historySnapshot.maridajesRecomendados = { cafe: recCafe }; } } }
+        if (ruedaId) { const rueda = await get('SELECT * FROM ruedas_sabores WHERE id = ?', [ruedaId]); if (rueda) historySnapshot.ruedaSaborData = { ...rueda, notas_json: safeJSONParse(rueda.notas_json) }; }
+
+        rows.sort((a,b) => { const sA = allStages.find(s=>s.id===a.etapa_id)?.orden||0; const sB = allStages.find(s=>s.id===b.etapa_id)?.orden||0; return sA - sB; }).forEach(row => {
+            const sInfo = allStages.find(s => s.id === row.etapa_id);
+            if(sInfo) historySnapshot.stages.push({ id: row.id, nombre_etapa: sInfo.nombre_etapa, descripcion: sInfo.descripcion, campos_json: safeJSONParse(sInfo.campos_json), data: safeJSONParse(row.data), blockchain_hash: row.blockchain_hash, is_locked: row.is_locked, timestamp: row.created_at });
+        });
+
+        const dataToHash = { id, snapshot: historySnapshot, salt: crypto.randomBytes(16).toString('hex') };
+        const hash = crypto.createHash('sha256').update(JSON.stringify(dataToHash)).digest('hex');
+        historySnapshot.blockchain_hash = hash;
+
+        await run(`INSERT INTO traceability_registry (id, batch_id, user_id, nombre_producto, gtin, fecha_finalizacion, snapshot_data, blockchain_hash) VALUES (?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT(id) DO UPDATE SET snapshot_data = excluded.snapshot_data, blockchain_hash = excluded.blockchain_hash`,
+            [id, id, userId, templateInfo.nombre_producto, historySnapshot.productoFinal?.gtin, new Date().toISOString(), JSON.stringify(historySnapshot), hash]);
+
+        await run('UPDATE batches SET blockchain_hash = ?, is_locked = TRUE WHERE id = ?', [hash, id]);
+        let curr = targetBatch.parent_id;
+        while(curr) { await run('UPDATE batches SET is_locked = TRUE WHERE id = ?', [curr]); const p = await get('SELECT parent_id FROM batches WHERE id = ?', [curr]); curr = p ? p.parent_id : null; }
+
+        res.status(200).json({ message: "Certificado exitosamente.", hash });
+    } catch (err) { res.status(500).json({ error: err.message }); }
 };
 
 const getTrazabilidad = async (req, res) => {
     const { id } = req.params;
     try {
-        
-        const rows = await all(`
-            WITH RECURSIVE trazabilidad_completa AS (
-                SELECT * FROM lotes WHERE UPPER(id) = UPPER(?)
-                UNION ALL
-                SELECT l.* FROM lotes l
-                INNER JOIN trazabilidad_completa tc ON l.id = tc.parent_id
-            )
-            SELECT * FROM trazabilidad_completa;
-        `, [id]);
-        
-        if (rows.length === 0) return res.status(404).json({ error: 'Lote no encontrado' });
-        
-        const loteRaiz = rows.find(r => !r.parent_id);
-        if (!loteRaiz || !loteRaiz.user_id) return res.status(404).json({ error: 'Trazabilidad incompleta.' });
-        
-        const ownerId = loteRaiz.user_id;
-        const plantillaId = loteRaiz.plantilla_id;
+        const record = await get('SELECT snapshot_data, views FROM traceability_registry WHERE id = ?', [id]);
+        if (record) {
+            run('UPDATE traceability_registry SET views = views + 1 WHERE id = ?', [id]).catch(()=>{});
+            return res.status(200).json(safeJSONParse(record.snapshot_data));
+        }
 
-        const templateInfo = await get('SELECT nombre_producto FROM plantillas_proceso WHERE id = ?', [plantillaId]);
-        const allStages = await all('SELECT id, nombre_etapa, descripcion, orden, campos_json FROM etapas_plantilla WHERE plantilla_id = ? ORDER BY orden', [plantillaId]);
-        const ownerInfo = await get('SELECT empresa, company_logo, subscription_tier, trial_ends_at FROM users WHERE id = ?', [ownerId]);
+        run('UPDATE batches SET views = COALESCE(views, 0) + 1 WHERE id = ?', [id]).catch(()=>{});
+        const rows = await all(`WITH RECURSIVE trace AS (SELECT * FROM batches WHERE id = ? UNION ALL SELECT b.* FROM batches b INNER JOIN trace t ON b.id = t.parent_id) SELECT * FROM trace;`, [id]);
+        if (rows.length === 0) return res.status(404).json({ error: 'Lote no encontrado' });
+
+        const rootBatch = rows.find(r => !r.parent_id);
+        const ownerId = rootBatch.user_id;
+        const plantillaId = rootBatch.plantilla_id;
+
+        const [templateInfo, allStages, ownerInfo, acopioData, productoInfo] = await Promise.all([
+            get('SELECT nombre_producto FROM plantillas_proceso WHERE id = ?', [plantillaId]),
+            all('SELECT id, nombre_etapa, descripcion, orden, campos_json, fase FROM etapas_plantilla WHERE plantilla_id = ? ORDER BY orden', [plantillaId]),
+            get('SELECT empresa, company_logo, subscription_tier, trial_ends_at FROM users WHERE id = ?', [ownerId]),
+            rootBatch.acquisition_id ? get('SELECT * FROM acquisitions WHERE id = ?', [rootBatch.acquisition_id]) : null,
+            // Buscar producto en lote final o raíz
+            rows[0].producto_id ? get('SELECT * FROM productos WHERE id = ?', [rows[0].producto_id]) : (rootBatch.producto_id ? get('SELECT * FROM productos WHERE id = ?', [rootBatch.producto_id]) : null)
+        ]);
 
         const history = {
-            productName: templateInfo ? templateInfo.nombre_producto : '',
-            ownerInfo,
-            stages: [],
-            fincaData: null,
-            procesadorasData: [],
-            perfilSensorialData: null,
-            ruedaSaborData: null,
-            maridajesRecomendados: {},
-            productoFinal: null
+            productName: templateInfo.nombre_producto, ownerInfo, stages: [], fincaData: null,
+            acopioData: acopioData ? { ...acopioData, data_adicional: safeJSONParse(acopioData.data_adicional) } : null,
+            productoFinal: null, nutritionalData: null, perfilSensorialData: null, ruedaSaborData: null, maridajesRecomendados: {}
         };
-        
-        const sortedRows = rows.sort((a, b) => {
-            const stageA = allStages.find(s => s.id === a.etapa_id)?.orden || 0;
-            const stageB = allStages.find(s => s.id === b.etapa_id)?.orden || 0;
-            return stageA - stageB;
-        });
 
-        let lastProductId = null;
+        if (productoInfo) {
+             history.productoFinal = { ...productoInfo, imagenes_json: safeJSONParse(productoInfo.imagenes_json), premios_json: safeJSONParse(productoInfo.premios_json) };
+             if (productoInfo.receta_nutricional_id) {
+                 const receta = await get('SELECT * FROM recetas_nutricionales WHERE id = ?', [productoInfo.receta_nutricional_id]);
+                 if(receta) { const ing = await all('SELECT * FROM ingredientes_receta WHERE receta_id = ?', [receta.id]); history.nutritionalData = { ...receta, ingredientes: ing.map(i => ({...i, nutrientes_base_json: safeJSONParse(i.nutrientes_base_json)})) }; }
+             }
+        }
         
-        sortedRows.forEach(row => {
-            const stageInfo = allStages.find(s => s.id === row.etapa_id);
-            if(stageInfo) {
-                history.stages.push({
-                    id: row.id,
-                    nombre_etapa: stageInfo.nombre_etapa,
-                    descripcion: stageInfo.descripcion,
-                    campos_json: safeJSONParse(stageInfo.campos_json),
-                    data: safeJSONParse(row.data),
-                    blockchain_hash: row.blockchain_hash,
-                    is_locked: row.is_locked,
-                    timestamp: row.created_at
-                });
-                if (row.producto_id) lastProductId = row.producto_id;
+        // --- DESGLOSE ACOPIO ---
+        if (history.acopioData) {
+            const ad = history.acopioData.data_adicional || {};
+            const imgs = safeJSONParse(acopioData.imagenes_json || '{}');
+            
+            if (acopioData.finca_origen) {
+                 const finca = await get('SELECT * FROM fincas WHERE nombre_finca = ? AND user_id = ?', [acopioData.finca_origen, ownerId]);
+                 if(finca) history.fincaData = { ...finca, coordenadas: safeJSONParse(finca.coordenadas), imagenes_json: safeJSONParse(finca.imagenes_json), certificaciones_json: safeJSONParse(finca.certificaciones_json), premios_json: safeJSONParse(finca.premios_json) };
             }
-        });
+            const acopioStagesDef = allStages.filter(s => s.fase === 'acopio' || (s.orden <= 3 && s.nombre_etapa.match(/(cosecha|ferment|secado)/i)));
+            acopioStagesDef.forEach(stageDef => {
+                const suffix = `__${stageDef.orden}`;
+                let stageData = {}; let dataFound = false;
+                Object.keys(ad).forEach(key => { if (key.endsWith(suffix)) { stageData[key.split('__')[0]] = ad[key]; dataFound = true; } });
+                const fields = safeJSONParse(stageDef.campos_json);
+                [...(fields.entradas||[]), ...(fields.variables||[]), ...(fields.salidas||[])].map(f => f.name).forEach(fname => { if (!stageData[fname] && ad[fname]) { stageData[fname] = ad[fname]; dataFound = true; } });
+                
+                // INYECTAR IMAGEN
+                Object.keys(imgs).forEach(key => {
+                    if (key.endsWith(suffix)) {
+                         stageData['imageUrl'] = { value: imgs[key], visible: true, nombre: 'Foto' };
+                         dataFound = true;
+                    }
+                });
 
-        console.log(lastProductId);
-        if (lastProductId) {
-             const producto = await get('SELECT * FROM productos WHERE id = ?', [lastProductId]);
-             if (producto) {
-                 history.productoFinal = {
-                     ...producto,
-                     imagenes_json: safeJSONParse(producto.imagenes_json || '[]'),
-                     premios_json: safeJSONParse(producto.premios_json || '[]')
-                 };
+                if (dataFound) {
+                    history.stages.push({
+                        id: `${acopioData.id}_S${stageDef.orden}`,
+                        nombre_etapa: stageDef.nombre_etapa,
+                        descripcion: stageDef.descripcion,
+                        campos_json: fields,
+                        data: stageData,
+                        blockchain_hash: null,
+                        is_locked: true,
+                        timestamp: acopioData.fecha_acopio
+                    });
+                }
+            });
+        }
+
+        // --- RECUPERAR PERFIL SENSORIAL Y RUEDA (COPIADO A GETTRAZABILIDAD) ---
+        let perfilId = null, ruedaId = null;
+        const rootData = safeJSONParse(rootBatch.data);
+        if (rootData.target_profile_id?.value) perfilId = rootData.target_profile_id.value;
+        if (rootData.target_wheel_id?.value) ruedaId = rootData.target_wheel_id.value;
+        
+        if (!perfilId || !ruedaId) {
+             for (const row of rows) {
+                 const rd = safeJSONParse(row.data);
+                 if (!perfilId && rd.tipoPerfil?.value) perfilId = rd.tipoPerfil.value;
+                 if (!ruedaId && rd.tipoRuedaSabor?.value) ruedaId = rd.tipoRuedaSabor.value;
              }
         }
 
-        const cosechaData = history.stages[0]?.data;
-        if (cosechaData && cosechaData.finca) {
-            const finca = await get('SELECT * FROM fincas WHERE nombre_finca = ? AND user_id = ?', [cosechaData.finca.value, ownerId]);
-            if (finca) {
-                history.fincaData = { 
-                    ...finca, 
-                    coordenadas: safeJSONParse(finca.coordenadas || 'null'),
-                    imagenes_json: safeJSONParse(finca.imagenes_json || '[]'),
-                    certificaciones_json: safeJSONParse(finca.certificaciones_json || '[]'),
-                    premios_json: safeJSONParse(finca.premios_json || '[]')
-                };
-            }
-        }
-        const procesadoras = await all('SELECT * FROM procesadoras WHERE user_id = ?', [ownerId]);
-        history.procesadorasData = procesadoras.map(p => ({
-            ...p,
-            coordenadas: safeJSONParse(p.coordenadas || 'null'),
-            imagenes_json: safeJSONParse(p.imagenes_json || '[]'),
-            premios_json: safeJSONParse(p.premios_json || '[]'),
-            certificaciones_json: safeJSONParse(p.certificaciones_json || '[]')
-        }));
-        
-        const calidadData = history.stages.find(s => s.nombre_etapa.toLowerCase().includes('calidad'))?.data;
-        if (calidadData && calidadData.tipoPerfil) {
-            const perfilCacao = await get('SELECT * FROM perfiles WHERE tipo = ? AND nombre = ? AND user_id = ?', ['cacao',calidadData.tipoPerfil.value, ownerId]);
-            if (perfilCacao) {
-                perfilCacao.perfil_data = safeJSONParse(perfilCacao.perfil_data);
-                history.perfilSensorialData = perfilCacao.perfil_data;
-
-                const allCafes = await all('SELECT * FROM perfiles WHERE tipo = ? AND user_id = ?', ['cafe',ownerId]);
-                const allVinos = maridajesVinoData.defaultPerfilesVino;
-                const allQuesos = maridajesQuesoData;
-
-                const recCafe = allCafes.map(cafe => ({
-                    producto: { ...cafe, perfil_data: safeJSONParse(cafe.perfil_data) },
-                    puntuacion: calcularMaridajeCacaoCafe(perfilCacao, { ...cafe, perfil_data: safeJSONParse(cafe.perfil_data) })
-                })).sort((a, b) => b.puntuacion - a.puntuacion);
-
-                const recVino = allVinos.map(vino => ({
-                    producto: vino,
-                    puntuacion: calcularMaridajeCacaoVino(perfilCacao, vino)
-                })).sort((a, b) => b.puntuacion - a.puntuacion);
-                
-                const recQueso = allQuesos.map(queso => ({
-                    producto: queso,
-                    puntuacion: calcularMaridajeCacaoQueso(perfilCacao, queso)
-                })).sort((a, b) => b.puntuacion - a.puntuacion);
-                
-                history.maridajesRecomendados = { cafe: recCafe, vino: recVino, queso: recQueso };
-            }
-        }
-
-        const ruedaData = history.stages.find(s => 
-            s.nombre_etapa.toLowerCase().includes('calidad')
-        )?.data;
-        if (ruedaData) {
-            const ruedaSaborId = ruedaData.tipoRuedaSabor?.value;
-            if (ruedaSaborId) {
-                const rueda = await get('SELECT * FROM ruedas_sabores WHERE id = ? AND user_id = ?', [ruedaSaborId, ownerId]);
-                if (rueda) {
-                    history.ruedaSaborData = {
-                        ...rueda,
-                        notas_json: safeJSONParse(rueda.notas_json)
-                    };
+        if (perfilId) {
+            let perfil = await get('SELECT * FROM perfiles WHERE id = ?', [perfilId]);
+            if (!perfil && isNaN(perfilId)) perfil = await get('SELECT * FROM perfiles WHERE nombre = ? AND user_id = ?', [perfilId, ownerId]);
+            if (perfil) {
+                history.perfilSensorialData = safeJSONParse(perfil.perfil_data);
+                // CALCULAR MARIDAJES
+                if (perfil.tipo === 'cacao') {
+                    const allCafes = await all("SELECT * FROM perfiles WHERE tipo = 'cafe' AND user_id = ?", [ownerId]);
+                    const recCafe = allCafes.map(cafe => ({ producto: { ...cafe, perfil_data: safeJSONParse(cafe.perfil_data) }, puntuacion: calcularMaridajeCacaoCafe(history.perfilSensorialData, safeJSONParse(cafe.perfil_data)) })).sort((a, b) => b.puntuacion - a.puntuacion).slice(0, 3);
+                    history.maridajesRecomendados = { cafe: recCafe };
                 }
             }
         }
+        if (ruedaId) {
+            const rueda = await get('SELECT * FROM ruedas_sabores WHERE id = ?', [ruedaId]);
+            if (rueda) history.ruedaSaborData = { ...rueda, notas_json: safeJSONParse(rueda.notas_json) };
+        }
 
-        run('UPDATE lotes SET views = COALESCE(views, 0) + 1 WHERE id = ?', [id]).catch(err => console.error("Error contando vista:", err));
-        
+        rows.sort((a,b) => { 
+             const sA = allStages.find(s=>s.id===a.etapa_id)?.orden||0; 
+             const sB = allStages.find(s=>s.id===b.etapa_id)?.orden||0; 
+             return sA - sB; 
+        }).forEach(row => {
+            const sInfo = allStages.find(s => s.id === row.etapa_id);
+            if(sInfo) history.stages.push({ id: row.id, nombre_etapa: sInfo.nombre_etapa, descripcion: sInfo.descripcion, campos_json: safeJSONParse(sInfo.campos_json), data: safeJSONParse(row.data), blockchain_hash: row.blockchain_hash, is_locked: row.is_locked, timestamp: row.created_at });
+        });
+
         res.status(200).json(history);
-    } catch (error) { 
-        console.error(`Error en getTrazabilidad para el lote ${id}:`, error.message);
-        res.status(500).json({ error: "Error interno del servidor." }); 
-    }
+
+    } catch (error) { res.status(500).json({ error: "Error interno." }); }
 };
 
 const getImmutableBatches = async (req, res) => {
@@ -969,10 +1022,10 @@ const getImmutableBatches = async (req, res) => {
     try {
         const sql = `
             WITH RECURSIVE user_batches AS (
-                SELECT id FROM lotes WHERE user_id = ?
+                SELECT id FROM batches WHERE user_id = ?
                 UNION ALL
                 SELECT l.id 
-                FROM lotes l 
+                FROM batches l 
                 JOIN user_batches ub ON l.parent_id = ub.id
             )
             SELECT 
@@ -987,11 +1040,20 @@ const getImmutableBatches = async (req, res) => {
                 prod.nombre as nombre_comercial, -- Opcional, para mostrar nombre del producto final
                 COALESCE(AVG(r.rating), 0) as avg_rating,
                 COUNT(r.id) as total_reviews
-            FROM lotes l
+            FROM batches l
             JOIN user_batches ub ON l.id = ub.id
             JOIN plantillas_proceso p ON l.plantilla_id = p.id
             JOIN etapas_plantilla e ON l.etapa_id = e.id
-            LEFT JOIN productos prod ON l.producto_id = prod.id -- <--- JOIN con productos
+            LEFT JOIN productos prod ON prod.id = (
+                WITH RECURSIVE ancestry AS (
+                    SELECT id, parent_id, producto_id FROM batches WHERE id = l.id
+                    UNION ALL
+                    SELECT parent.id, parent.parent_id, parent.producto_id 
+                    FROM batches parent 
+                    JOIN ancestry child ON child.parent_id = parent.id
+                )
+                SELECT producto_id FROM ancestry WHERE producto_id IS NOT NULL LIMIT 1
+            )
             LEFT JOIN product_reviews r ON l.id = r.lote_id
             WHERE l.blockchain_hash IS NOT NULL 
             AND l.blockchain_hash != ''
@@ -1201,7 +1263,7 @@ const getAdminDashboardData = async (req, res) => {
                 get('SELECT COUNT(*) as count FROM procesadoras WHERE user_id = ?', [user.id]),
                 all(`
                     SELECT DISTINCT pt.nombre_producto
-                    FROM lotes l
+                    FROM batches l
                     JOIN plantillas_proceso pt ON l.plantilla_id = pt.id
                     WHERE l.user_id = ? AND l.parent_id IS NULL
                 `, [user.id])
@@ -1261,7 +1323,7 @@ const getDashboardData = async (req, res) => {
             procesadoras,
             costs
         ] = await Promise.all([
-            all('SELECT * FROM lotes WHERE user_id = ?', [userId]),
+            all('SELECT * FROM batches WHERE user_id = ?', [userId]),
             all('SELECT * FROM plantillas_proceso WHERE user_id = ?', [userId]),
             all('SELECT * FROM etapas_plantilla WHERE plantilla_id IN (SELECT id FROM plantillas_proceso WHERE user_id = ?)', [userId]),
             all('SELECT * FROM fincas WHERE user_id = ?', [userId]),
@@ -1562,12 +1624,12 @@ const getBlogPostById = async (req, res) => {
 const getProductos = async (req, res) => {
     const userId = req.user.id;
     try {
-        // Hacemos JOIN para traer el nombre de la receta nutricional vinculada
+        // FILTRO: Solo productos activos (deleted_at IS NULL)
         const sql = `
             SELECT p.*, r.nombre as receta_nutricional_nombre 
             FROM productos p
             LEFT JOIN recetas_nutricionales r ON p.receta_nutricional_id = r.id
-            WHERE p.user_id = ? 
+            WHERE p.user_id = ? AND p.deleted_at IS NULL
             ORDER BY p.created_at DESC
         `;
         const rows = await all(sql, [userId]);
@@ -1631,11 +1693,26 @@ const updateProducto = async (req, res) => {
 const deleteProducto = async (req, res) => {
     const userId = req.user.id;
     const { id } = req.params;
+    
     try {
-        await run('DELETE FROM productos WHERE id = ? AND user_id = ?', [id, userId]);
-        res.status(204).send();
-    } catch (err) {
-        res.status(500).json({ error: err.message });
+        // 1. Verificar uso en lotes de producción (batches)
+        const usageCheck = await get('SELECT id FROM batches WHERE producto_id = ? LIMIT 1', [id]);
+
+        if (usageCheck) {
+            // CASO A: Usado en trazabilidad -> Soft Delete
+            await run('UPDATE productos SET deleted_at = CURRENT_TIMESTAMP WHERE id = ? AND user_id = ?', [id, userId]);
+            res.status(200).json({ 
+                message: "El producto tiene historial de trazabilidad. Se ha archivado (eliminación lógica) para no romper registros antiguos.", 
+                type: 'soft' 
+            });
+        } else {
+            // CASO B: Sin uso -> Hard Delete
+            const result = await run('DELETE FROM productos WHERE id = ? AND user_id = ?', [id, userId]);
+            if (result.changes === 0) return res.status(404).json({ error: "Producto no encontrado." });
+            res.status(204).send();
+        }
+    } catch (err) { 
+        res.status(500).json({ error: err.message }); 
     }
 };
 
@@ -1757,29 +1834,40 @@ const validateDeforestation = async (req, res) => {
 // --- NUEVA FUNCIÓN PARA GS1 RESOLVER ---
 const getBatchByGtinAndLot = async (gtin, loteId) => {
     try {
-        // Buscamos el lote por ID
-        // Hacemos JOIN con productos para verificar que el GTIN coincida
-        // Esto previene que alguien escanee un QR falso que apunte a otro producto
-        const sql = `
-            SELECT 
-                l.id, 
-                l.status, 
-                l.recall_reason,
-                p.gtin,
-                p.nombre as producto_nombre
-            FROM lotes l
-            JOIN productos p ON l.producto_id = p.id
-            WHERE l.id = ? 
-            AND (p.gtin = ? OR p.gtin IS NULL) -- Permitimos si gtin es null en db (interno) o coincide
-        `;
-        
-        // Nota: En un escenario estricto, p.gtin DEBE ser igual al gtin de la URL.
-        // Si usamos códigos internos, el 'gtin' en la URL podría ser el código interno.
-        
-        const row = await get(sql, [loteId, gtin]);
-        return row;
-    } catch (err) {
-        console.error("Error en getBatchByGtinAndLot:", err);
+        // 1. Verificar si el lote existe
+        const batchExists = await get('SELECT id FROM batches WHERE id = ?', [loteId]);
+        if (!batchExists) return null;
+
+        // 2. Búsqueda Recursiva hacia arriba (Ancestros)
+        // Buscamos si ALGÚN lote en la cadena (el actual o sus padres) tiene el producto asociado a este GTIN.
+        // Esto soluciona el problema de que el producto_id solo esté en el lote raíz.
+        const row = await get(`
+            WITH RECURSIVE ancestry AS (
+                -- Lote inicial (Hijo)
+                SELECT b.id, b.parent_id, b.producto_id 
+                FROM batches b 
+                WHERE b.id = ?
+                
+                UNION ALL
+                
+                -- Buscar padres
+                SELECT parent.id, parent.parent_id, parent.producto_id
+                FROM batches parent
+                INNER JOIN ancestry child ON parent.id = child.parent_id
+            )
+            -- Seleccionar si encontramos el producto en algún nivel
+            SELECT a.id 
+            FROM ancestry a
+            JOIN productos p ON a.producto_id = p.id
+            WHERE p.gtin = ?
+            LIMIT 1;
+        `, [loteId, gtin]);
+
+        // Si row tiene datos, significa que la cadena es válida para ese GTIN
+        return row ? { id: loteId } : null;
+
+    } catch (error) {
+        console.error("Error en getBatchByGtinAndLot:", error);
         return null;
     }
 };
@@ -1788,8 +1876,8 @@ const getBatchByGtinAndLot = async (gtin, loteId) => {
 const getRecetasNutricionales = async (req, res) => {
     const userId = req.user.id;
     try {
-        const recetas = await all('SELECT * FROM recetas_nutricionales WHERE user_id = ? ORDER BY created_at DESC', [userId]);
-        // Para cada receta, obtenemos sus ingredientes
+        // FILTRO: deleted_at IS NULL
+        const recetas = await all('SELECT * FROM recetas_nutricionales WHERE user_id = ? AND deleted_at IS NULL ORDER BY created_at DESC', [userId]);
         const recetasCompletas = await Promise.all(recetas.map(async (r) => {
             const ingredientes = await all('SELECT * FROM ingredientes_receta WHERE receta_id = ?', [r.id]);
             return {
@@ -1994,6 +2082,7 @@ module.exports = {
     getTemplates, createTemplate, updateTemplate, deleteTemplate, 
     getSystemTemplates, cloneTemplate, // <-- NUEVAS FUNCIONES EXPORTADAS
     getStagesForTemplate, createStage, updateStage, deleteStage,
+    getAcquisitions, createAcquisition, deleteAcquisition, updateAcquisition,
     getBatchesTree, createBatch, updateBatch, deleteBatch, finalizeBatch,
     getTrazabilidad, getImmutableBatches,
     getUserProfile, updateUserProfile, updateUserPassword,

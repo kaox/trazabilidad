@@ -59,6 +59,8 @@ function initializeNav() {
     const mobileMenu = document.getElementById('mobile-menu');
     const labDropdownBtn = document.getElementById('lab-dropdown-btn');
     const labDropdown = document.getElementById('lab-dropdown-desktop');
+    const operacionesDropdownBtn = document.getElementById('operaciones-dropdown-btn');
+    const operacionesDropdown = document.getElementById('operaciones-dropdown-desktop');
     const configDropdownBtn = document.getElementById('config-dropdown-btn');
     const configDropdown = document.getElementById('config-dropdown-desktop');
 
@@ -97,10 +99,12 @@ function initializeNav() {
 
     setupDropdown(labDropdownBtn, labDropdown);
     setupDropdown(configDropdownBtn, configDropdown);
+    setupDropdown(operacionesDropdownBtn, operacionesDropdown);
     
     document.addEventListener('click', () => {
         if(labDropdown) labDropdown.classList.add('hidden');
         if(configDropdown) configDropdown.classList.add('hidden');
+        if(operacionesDropdown) operacionesDropdown.classList.add('hidden');
     });
 
 

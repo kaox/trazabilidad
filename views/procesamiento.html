@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Planta de Procesamiento - Rurulab</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+    <script src="https://cdn.jsdelivr.net/npm/qrcode-generator/qrcode.js"></script>
+    <script src="/auth.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #fdfaf6; }
+        .font-display { font-family: 'Playfair Display', serif; }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #d6d3d1; border-radius: 4px; }
+        
+        /* Animaciones */
+        .fade-in { animation: fadeIn 0.3s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body class="text-stone-800 antialiased">
+    <div id="nav-placeholder"></div>
+    
+    <!-- FIX: Agregado ID único para evitar conflictos de selector JS -->
+    <div id="main-app-container" class="container mx-auto px-6 py-8 max-w-7xl">
+        <header class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-6">
+            <div>
+                <div class="flex items-center gap-3 mb-1">
+                    <div class="bg-amber-100 p-2 rounded-lg text-amber-800"><i class="fas fa-industry text-xl"></i></div>
+                    <h1 class="text-3xl font-bold text-amber-900 font-display">Planta de Procesamiento</h1>
+                </div>
+                <p class="text-stone-600 text-sm">Gestiona la transformación de tu materia prima.</p>
+            </div>
+            
+            <!-- Selector de Vistas (Tabs) -->
+            <div class="bg-stone-200 p-1 rounded-xl flex gap-1">
+                <button class="view-tab px-6 py-2 rounded-lg text-sm font-bold transition-all shadow-sm bg-white text-stone-800" data-view="acopios">
+                    <i class="fas fa-boxes mr-2"></i> Lotes de Acopio
+                </button>
+                <button class="view-tab px-6 py-2 rounded-lg text-sm font-bold text-stone-500 hover:text-stone-700 transition-all" data-view="procesos">
+                    <i class="fas fa-cogs mr-2"></i> Todos los Procesos
+                </button>
+            </div>
+        </header>
+
+        <!-- Barra de Filtros Dinámicos -->
+        <div id="filters-container" class="mb-8 flex gap-2 overflow-x-auto pb-2">
+            <!-- Se inyectan vía JS según la vista -->
+        </div>
+
+        <!-- VISTA 1: LOTES DE ACOPIO (Maestro-Detalle) -->
+        <div id="view-acopios" class="view-section fade-in">
+            <div id="acopios-list" class="space-y-4">
+                <!-- Lista de Acopios -->
+                <div class="text-center py-20 text-stone-400">
+                    <i class="fas fa-circle-notch fa-spin text-3xl"></i><br>Cargando inventario...
+                </div>
+            </div>
+        </div>
+
+        <!-- VISTA 2: TODOS LOS PROCESOS (Grid) -->
+        <div id="view-procesos" class="view-section hidden fade-in">
+            <div id="procesos-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Tarjetas de procesos -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Formulario (Inicio de Proceso) -->
+    <dialog id="form-modal" class="p-0 rounded-2xl shadow-2xl w-11/12 max-w-2xl backdrop:bg-black/60">
+        <div id="modal-content" class="p-6 bg-white">
+            <!-- Se llena dinámicamente -->
+        </div>
+    </dialog>
+
+    <script src="/js/nav-loader.js"></script>
+    <script src="/js/procesamiento-app.js"></script>
+</body>
+</html>

@@ -1,15 +1,16 @@
 document.addEventListener('DOMContentLoaded', () => {
     // --- ESTADO ---
     let state = {
-        batches: [], 
-        templates: [], // Plantillas del SISTEMA (JSON)
+        acquisitions: [], // Datos de la tabla 'acquisitions'
+        templates: [],    // Plantillas del SISTEMA (JSON)
         userTemplates: [], // Plantillas del USUARIO (DB)
         acopioConfig: [],
         fincas: [],
         procesadoras: [],
         currentSystemTemplate: null, 
-        targetStages: [], // Etapas que se deben llenar en el formulario
-        extraFields: [] // Campos extra definidos en acopio_config.json
+        currentAcopioConfig: null, // Configuración seleccionada (para saber qué campos son peso/precio)
+        targetStages: [], 
+        extraFields: []
     };
 
     let imagesMap = {}; 
@@ -19,23 +20,22 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnNuevoAcopio = document.getElementById('btn-nuevo-acopio');
     const formModal = document.getElementById('form-modal');
     const modalContent = document.getElementById('modal-content');
+    const filterBtns = document.querySelectorAll('.filter-btn');
 
     // --- INIT ---
     init();
 
     async function init() {
         try {
-            // Cargar todo en paralelo
             await Promise.all([
                 loadConfig(),
                 loadSystemTemplates(),
                 loadUserTemplates(),
-                loadBatchesData(),
+                loadAcquisitionsData(), // Carga desde /api/acquisitions
                 loadFincas(),
                 loadProcesadoras()
             ]);
             
-            // Renderizar solo cuando todo esté listo
             renderGrid('all');
             setupEventListeners();
             
@@ -59,16 +59,16 @@ document.addEventListener('DOMContentLoaded', () => {
         try { state.userTemplates = await api('/api/templates'); } catch(e) { state.userTemplates = []; }
     }
     
-    async function loadBatchesData() {
-        state.batches = await api('/api/batches/tree');
+    // CAMBIO: Cargar Acopios en lugar de Lotes
+    async function loadAcquisitionsData() {
+        state.acquisitions = await api('/api/acquisitions');
     }
 
-    // Función para recargar datos y refrescar la vista (usada tras guardar/eliminar)
     async function refreshData() {
         try {
             await Promise.all([
-                loadUserTemplates(), // Recargar plantillas por si se creó una nueva
-                loadBatchesData()    // Recargar lotes
+                loadUserTemplates(), 
+                loadAcquisitionsData()
             ]);
             renderGrid('all');
         } catch (e) {
@@ -79,7 +79,7 @@ document.addEventListener('DOMContentLoaded', () => {
     async function loadFincas() { try { state.fincas = await api('/api/fincas'); } catch (e) { state.fincas = []; } }
     async function loadProcesadoras() { try { state.procesadoras = await api('/api/procesadoras'); } catch(e) { state.procesadoras = []; } }
 
-    // --- RENDERIZADO DEL SELECTOR DE ACOPIO (MODAL PASO 1) ---
+    // --- RENDERIZADO DEL SELECTOR (PASO 1) ---
     function openAcopioSelector() {
         const options = state.acopioConfig.map((p, i) => `<option value="${i}">${p.nombre_producto}</option>`).join('');
 
@@ -87,13 +87,11 @@ document.addEventListener('DOMContentLoaded', () => {
             <h2 class="text-2xl font-display text-green-900 border-b pb-2 mb-4">Registrar Nuevo Ingreso</h2>
             <div class="space-y-4">
                 <div>
-                    <label class="block text-sm font-bold text-stone-600 mb-1">Producto / Cultivo</label>
+                    <label for="product-select" class="block text-sm font-bold text-stone-600 mb-1">Producto / Cultivo</label>
                     <select id="product-select" class="w-full p-3 border border-stone-300 rounded-xl bg-white focus:ring-2 focus:ring-green-500 outline-none transition">${options}</select>
                 </div>
                 
-                <div id="acopio-type-container" class="space-y-3">
-                    <!-- Opciones se inyectan aquí -->
-                </div>
+                <div id="acopio-type-container" class="space-y-3"></div>
                 
                 <div class="flex justify-end gap-2 mt-6 border-t pt-4">
                     <button onclick="document.getElementById('form-modal').close()" class="px-4 py-2 text-stone-500 font-bold hover:bg-stone-100 rounded-lg transition">Cancelar</button>
@@ -110,7 +108,6 @@ document.addEventListener('DOMContentLoaded', () => {
             const prodIndex = productSelect.value;
             const productConfig = state.acopioConfig[prodIndex];
             
-            // Buscar la plantilla correspondiente en el CATÁLOGO DE SISTEMA
             const template = state.templates.find(t => t.nombre_producto === productConfig.nombre_producto);
             state.currentSystemTemplate = template;
 
@@ -122,7 +119,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const optionsHtml = productConfig.acopio.map((a, i) => {
                 const hasSubtypes = a.tipo_acopio && a.tipo_acopio.length > 0;
-                
                 let subTypesHtml = '';
                 if (hasSubtypes) {
                     subTypesHtml = `<div class="mt-3 ml-8 space-y-2 hidden border-l-2 border-stone-200 pl-3" id="subtype-group-${i}">
@@ -191,41 +187,57 @@ document.addEventListener('DOMContentLoaded', () => {
             
             const productConfig = state.acopioConfig[prodIndex];
             const acopioConfig = productConfig.acopio[acopioIndex];
+            state.currentAcopioConfig = acopioConfig; // Guardar config actual para saber nombres de campos
             
             let targetStageOrders = acopioConfig.etapas_acopio; 
+            let subtipoNombre = null;
             
             if (acopioConfig.tipo_acopio) {
                 const subIndex = document.querySelector(`input[name="subtype-${acopioIndex}"]:checked`).value;
-                targetStageOrders = acopioConfig.tipo_acopio[subIndex].etapas_acopio;
+                const subConfig = acopioConfig.tipo_acopio[subIndex];
+                targetStageOrders = subConfig.etapas_acopio;
+                subtipoNombre = subConfig.nombre;
             }
 
             const allJsonStages = [...(state.currentSystemTemplate.acopio || []), ...(state.currentSystemTemplate.etapas || [])];
-            state.targetStages = allJsonStages.filter(s => targetStageOrders.includes(s.orden)); 
+            
+            state.targetStages = allJsonStages.filter(s => {
+                const id = s.id_etapa !== undefined ? s.id_etapa : s.orden;
+                return targetStageOrders.includes(id);
+            });
+            
             state.extraFields = acopioConfig.campos || [];
             
-            openAcopioForm(acopioConfig.nombre_acopio, 'create');
+            openAcopioForm(acopioConfig.nombre_acopio, 'create', null, subtipoNombre);
         });
 
         formModal.showModal();
     }
 
     // --- FORMULARIO CONSOLIDADO (CREAR / EDITAR) ---
-    async function openAcopioForm(title, mode = 'create', batchData = null) {
+    async function openAcopioForm(title, mode = 'create', acopioData = null, subtipo = null) {
         imagesMap = {};
         let formFieldsHtml = '';
         let initialData = {};
 
-        if (mode === 'edit' && batchData) {
-            initialData = batchData.data || {};
+        if (mode === 'edit' && acopioData) {
+            // Reconstruir data plana desde data_adicional
+            initialData = acopioData.data_adicional || {};
+            // Agregar campos principales al initialData para que se muestren en los inputs
+            if (acopioData.peso_kg) initialData[getWeightFieldName()] = { value: acopioData.peso_kg };
+            if (acopioData.precio_unitario) initialData['precioUnitario'] = { value: acopioData.precio_unitario };
+            if (acopioData.fecha_acopio) initialData['fecha'] = { value: acopioData.fecha_acopio }; // Mapeo genérico
             
-            // CORRECCIÓN: Cargar todas las imágenes presentes en los datos
-            // Buscamos campos que terminen en 'imageUrl' o contengan 'imageUrl__'
-            Object.keys(initialData).forEach(key => {
-                // Verificamos si es un campo de foto
-                if ((key === 'imageUrl' || key.includes('imageUrl__')) && initialData[key]?.value) {
-                    imagesMap[key] = initialData[key].value;
-                }
-            });
+            // Cargar imágenes
+            if (acopioData.imagenes_json) {
+                try {
+                    const savedImages = typeof acopioData.imagenes_json === 'string' ? JSON.parse(acopioData.imagenes_json) : acopioData.imagenes_json;
+
+                    if (savedImages && typeof savedImages === 'object') {
+                        imagesMap = savedImages;
+                    }
+                } catch(e) { console.warn("Error parsing images", e); }
+            }
         }
 
         // 1. Campos adicionales globales
@@ -253,27 +265,26 @@ document.addEventListener('DOMContentLoaded', () => {
             
             const stageFields = [
                 ...(stage.campos_json.entradas || []),
-                ...(stage.campos_json.salidas || []), 
                 ...(stage.campos_json.variables || [])
             ];
 
             for (const field of stageFields) {
-                // CORRECCIÓN: Permitimos 'image' dentro del bucle de etapas
                 if (!renderedFields.has(field.name)) {
-                    // Nombre único: SIEMPRE usamos el sufijo __orden para campos de etapa,
-                    // incluso en edición, ya que fetchAndEdit prepara los datos con estos sufijos.
+                    // Nombre único con sufijo
                     const uniqueFieldName = `${field.name}__${stage.orden}`; 
-                    
-                    // Buscar valor (con sufijo prioritario, o fallback sin sufijo para campos legacy)
+                    // Buscar valor: con sufijo (prioridad) o sin sufijo (campos globales como fecha)
                     const val = initialData[uniqueFieldName]?.value || initialData[field.name]?.value;
                     
+                    // Si es imagen, verificar en imagesMap
+                    if (field.type === 'image' && imagesMap[uniqueFieldName]) {
+                         // Se cargará visualmente abajo, no necesitamos pasar valor al createFieldHTML
+                    }
+
                     formFieldsHtml += await createFieldHTML(field, uniqueFieldName, val);
                 }
             }
             formFieldsHtml += `</div></div>`;
         }
-        
-        // (Nota: Se eliminó el campo de foto global "Foto de Evidencia" para respetar las fotos por etapa)
 
         modalContent.innerHTML = `
             <h2 class="text-2xl font-display text-green-900 border-b pb-2 mb-4">${mode === 'edit' ? 'Editar' : 'Nuevo'} Registro: ${title}</h2>
@@ -286,7 +297,7 @@ document.addEventListener('DOMContentLoaded', () => {
             </form>
         `;
 
-        // Listeners Finca (Redirección)
+        // Listeners Finca
         const fincaSelectors = modalContent.querySelectorAll('.finca-selector');
         fincaSelectors.forEach(select => {
             select.addEventListener('change', (e) => {
@@ -300,14 +311,25 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
 
-        // Listeners Fotos (Múltiples)
+        // Listeners Fotos
         const fileInputs = modalContent.querySelectorAll('input[type="file"]');
         fileInputs.forEach(input => {
+            // Pre-cargar preview si existe en imagesMap
+            const fieldName = input.name;
+            if (imagesMap[fieldName]) {
+                 const container = input.closest('div').parentElement;
+                 const previewImg = container.querySelector('.file-preview-img');
+                 const fileNameSpan = container.querySelector('.file-name-display');
+                 if(previewImg) {
+                     previewImg.src = imagesMap[fieldName];
+                     previewImg.classList.remove('hidden');
+                     if(fileNameSpan) fileNameSpan.textContent = "Imagen existente";
+                 }
+            }
+
             input.addEventListener('change', e => {
                 const file = e.target.files[0];
-                const fieldName = e.target.name; // Ej: imageUrl__1
-                
-                // Buscar elementos de UI asociados dentro del contenedor padre generado por createFieldHTML
+                const fName = e.target.name; 
                 const container = e.target.closest('div').parentElement; 
                 const fileNameSpan = container.querySelector('.file-name-display');
                 const previewImg = container.querySelector('.file-preview-img');
@@ -317,7 +339,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     const reader = new FileReader();
                     reader.onload = () => { 
                         const base64 = reader.result;
-                        imagesMap[fieldName] = base64; // Guardar en el mapa global con su nombre único
+                        imagesMap[fName] = base64; 
                         if(previewImg) {
                             previewImg.src = base64;
                             previewImg.classList.remove('hidden');
@@ -339,89 +361,51 @@ document.addEventListener('DOMContentLoaded', () => {
             const formData = new FormData(e.target);
             const rawData = Object.fromEntries(formData.entries());
             
-            const newData = {};
+            // Construir data_adicional (todo el formulario con formato {value, visible})
+            const dataAdicional = {};
             for (const key in rawData) {
-                // Ignoramos el value del input file (que es solo el nombre de archivo)
-                // Usaremos imagesMap para el contenido real
-                if (key.includes('imageUrl')) {
-                     // No guardar el string del path falso
-                } else {
-                     newData[key] = { value: rawData[key], visible: true, nombre: key }; 
+                if (!key.startsWith('imageUrl')) { // Las imágenes no van en el form data directo
+                     dataAdicional[key] = { value: rawData[key], visible: true, nombre: key }; 
                 }
             }
             
-            // Integrar imágenes desde el mapa al objeto de datos
-            for (const [key, base64] of Object.entries(imagesMap)) {
-                newData[key] = { value: base64, visible: true, nombre: 'Foto' };
-            }
+            // Extraer campos principales para columnas de tabla acquisitions
+            const pesoKey = getWeightFieldName();
+            const pesoVal = rawData[pesoKey] || 0;
+            const precioVal = rawData['precioUnitario'] || 0;
+            
+            // Buscar fecha (puede estar en fecha, fecha__1, fechaCosecha, etc)
+            let fechaVal = new Date().toISOString().split('T')[0];
+            const dateKey = Object.keys(rawData).find(k => k.toLowerCase().includes('fecha') && rawData[k]);
+            if(dateKey) fechaVal = rawData[dateKey];
+
+            // Buscar finca
+            let fincaVal = 'Desconocida';
+            const fincaKey = Object.keys(rawData).find(k => k.toLowerCase().includes('finca') && rawData[k]);
+            if(fincaKey) fincaVal = rawData[fincaKey];
+
+            const payload = {
+                nombre_producto: state.currentSystemTemplate.nombre_producto,
+                tipo_acopio: title,
+                subtipo: subtipo || acopioData?.subtipo,
+                fecha_acopio: fechaVal,
+                peso_kg: pesoVal,
+                precio_unitario: precioVal,
+                finca_origen: fincaVal,
+                observaciones: rawData['observaciones'] || '',
+                imagenes_json: imagesMap, // Mapa completo de imágenes
+                data_adicional: dataAdicional
+            };
 
             try {
                 if (mode === 'create') {
-                    const finalStage = state.targetStages[state.targetStages.length - 1];
-                    
-                    // 1. Sincronizar plantilla
-                    await api('/api/templates/clone', { 
-                        method: 'POST', 
-                        body: JSON.stringify({ nombre_producto_sistema: state.currentSystemTemplate.nombre_producto }) 
-                    });
-
-                    // 2. CREAR LOTES SECUENCIALMENTE
-                    let lastParentId = null;
-                    for (const stage of state.targetStages) {
-                        const isLastStage = stage === state.targetStages[state.targetStages.length - 1];
-                        const stageData = {};
-
-                        // Extraer datos específicos para esta etapa por sufijo
-                        for (const key in newData) {
-                            if (key.endsWith(`__${stage.orden}`)) {
-                                const cleanKey = key.split('__')[0];
-                                stageData[cleanKey] = newData[key];
-                            } else if (!key.includes('__')) {
-                                // Datos globales (campos extra) van al último lote
-                                if (isLastStage) stageData[key] = newData[key];
-                            }
-                        }
-
-                        const response = await api('/api/batches', { 
-                            method: 'POST', 
-                            body: JSON.stringify({ 
-                                system_template_name: state.currentSystemTemplate.nombre_producto, 
-                                stage_name: stage.nombre_etapa, 
-                                stage_order: stage.orden, 
-                                parent_id: lastParentId, 
-                                data: stageData 
-                            }) 
-                        });
-                        if (response && response.id) lastParentId = response.id;
-                    }
-                    console.log("Acopio registrado exitosamente.");
+                    await api('/api/acquisitions', { method: 'POST', body: JSON.stringify(payload) });
+                    //alert("Acopio registrado exitosamente.");
                 } else if (mode === 'edit') {
-                    // Lógica de Edición Multi-Lote
-                    for (const stage of state.targetStages) {
-                        const batchId = initialData[`_batchId__${stage.orden}`];
-                        if (!batchId) continue;
-
-                        const stageData = {};
-                        const isLastStage = stage === state.targetStages[state.targetStages.length - 1];
-
-                        for (const key in newData) {
-                            if (key.endsWith(`__${stage.orden}`)) {
-                                const cleanKey = key.split('__')[0];
-                                stageData[cleanKey] = newData[key];
-                            } else if (!key.includes('__') && isLastStage) {
-                                // Globales al último lote
-                                stageData[key] = newData[key];
-                            }
-                        }
-                        
-                        if (Object.keys(stageData).length > 0) {
-                            await api(`/api/batches/${batchId}`, { 
-                                method: 'PUT', 
-                                body: JSON.stringify({ data: stageData }) 
-                            });
-                        }
-                    }
-                    console.log("Registro actualizado.");
+                     // IMPLEMENTACIÓN DE EDICIÓN
+                     // Usamos el ID del objeto acopioData que pasamos al abrir el form
+                     await api(`/api/acquisitions/${acopioData.id}`, { method: 'PUT', body: JSON.stringify(payload) });
+                     //alert("Acopio actualizado exitosamente.");
                 }
                 
                 formModal.close();
@@ -437,87 +421,51 @@ document.addEventListener('DOMContentLoaded', () => {
         // Asegurar que el modal esté visible
         if (!formModal.open) formModal.showModal();
     }
+    
+    // Helper para encontrar el nombre del campo de peso según config
+    function getWeightFieldName() {
+        if (state.currentAcopioConfig && state.currentAcopioConfig.campos) {
+            const pesoField = state.currentAcopioConfig.campos.find(c => c.name.toLowerCase().includes('peso'));
+            if (pesoField) return pesoField.name;
+        }
+        return 'pesoEntrada'; // Fallback
+    }
 
     // --- RECONSTRUCCIÓN PARA EDICIÓN ---
-    async function fetchAndEdit(batch, template) {
-        if (!template) {
-            alert("No se pudo identificar la plantilla de este lote. Intenta recargar la página.");
-            return;
-        }
-        try {
-            const stages = await api(`/api/templates/${template.id}/stages`);
-            if (!stages || stages.length === 0) throw new Error("La plantilla no tiene etapas definidas.");
+    async function fetchAndEdit(acopio) {
+        // Encontrar la configuración correspondiente
+        const productConfig = state.acopioConfig.find(c => c.nombre_producto === acopio.nombre_producto);
+        if (!productConfig) return alert("Configuración no encontrada para este producto");
 
-            // 1. Reconstruir cadena de lotes (Padre/Hijos)
-            let batchChain = [batch];
-            const collectChildren = (b) => {
-                if (b.children && b.children.length > 0) {
-                    const child = b.children[0]; 
-                    batchChain.push(child);
-                    collectChildren(child);
-                }
-            };
-            collectChildren(batch);
-
-            // 2. Identificar etapas correspondientes a los lotes encontrados
-            const chainStages = batchChain.map(b => stages.find(s => s.id === b.etapa_id)).filter(s => s);
+        const template = state.templates.find(t => t.nombre_producto === acopio.nombre_producto);
+        state.currentSystemTemplate = template;
+        
+        // Buscar el tipo de acopio
+        let acopioConfig = productConfig.acopio.find(a => a.nombre_acopio === acopio.tipo_acopio);
+        let targetStageOrders = [];
+        
+        if (acopioConfig) {
+            state.currentAcopioConfig = acopioConfig;
+            state.extraFields = acopioConfig.campos || [];
             
-            if (chainStages.length > 0) {
-                state.targetStages = chainStages;
-                
-                // Intentar recuperar los campos extra del config para mostrarlos
-                state.extraFields = []; 
-                const productConfig = state.acopioConfig.find(c => template.nombre_producto.includes(c.nombre_producto));
-                if (productConfig) {
-                    const currentOrders = chainStages.map(s => s.orden).sort((a,b)=>a-b).join(',');
-                    // Buscar en opciones directas
-                    let foundOption = productConfig.acopio.find(o => o.etapas_acopio && o.etapas_acopio.sort((a,b)=>a-b).join(',') === currentOrders);
-                    
-                    // Si no, buscar en subtipos
-                    if (!foundOption) {
-                        for (const opt of productConfig.acopio) {
-                            if (opt.tipo_acopio) {
-                                const sub = opt.tipo_acopio.find(s => s.etapas_acopio && s.etapas_acopio.sort((a,b)=>a-b).join(',') === currentOrders);
-                                if (sub) { foundOption = opt; break; }
-                            }
-                        }
-                    }
-                    
-                    if (foundOption && foundOption.campos) {
-                        state.extraFields = foundOption.campos;
-                    }
-                }
-
-                // 3. Consolidar Datos
-                let consolidatedData = {};
-                
-                batchChain.forEach((b, index) => {
-                    const stage = chainStages[index];
-                    if (!stage) return;
-
-                    const bData = b.data || {};
-                    
-                    // Guardar ID del lote para poder hacer PUT luego
-                    consolidatedData[`_batchId__${stage.orden}`] = b.id;
-
-                    for (const key in bData) {
-                        const suffixKey = `${key}__${stage.orden}`;
-                        consolidatedData[suffixKey] = bData[key];
-                        
-                        // Campos globales
-                        if (index === batchChain.length - 1 || !consolidatedData[key]) {
-                             consolidatedData[key] = bData[key];
-                        }
-                    }
-                });
-
-                await openAcopioForm(chainStages[0].nombre_etapa + (chainStages.length > 1 ? '...' : ''), 'edit', { id: batch.id, data: consolidatedData });
-                
+            if (acopio.subtipo) {
+                const subConfig = acopioConfig.tipo_acopio.find(s => s.nombre === acopio.subtipo);
+                if (subConfig) targetStageOrders = subConfig.etapas_acopio;
             } else {
-                console.warn("No se encontraron etapas vinculadas para editar.");
-                alert("Error: No se pueden editar los datos de este lote.");
+                targetStageOrders = acopioConfig.etapas_acopio;
             }
-        } catch(e) { console.error("Error cargando formulario de edición:", e); alert("Error cargando edición: " + e.message); }
+        }
+        
+        if (!targetStageOrders || targetStageOrders.length === 0) return alert("No se encontraron etapas para este tipo.");
+
+        // Obtener etapas
+        const allJsonStages = [...(template.acopio || []), ...(template.etapas || [])];
+        state.targetStages = allJsonStages.filter(s => {
+            const id = s.id_etapa !== undefined ? s.id_etapa : s.orden;
+            return targetStageOrders.includes(id);
+        });
+
+        openAcopioForm(acopio.tipo_acopio, 'edit', acopio, acopio.subtipo);
     }
 
     async function createFieldHTML(field, uniqueName, value = '') {
@@ -550,7 +498,7 @@ document.addEventListener('DOMContentLoaded', () => {
              inputHtml = `<select id="${fieldName}" name="${fieldName}" class="w-full p-2.5 border border-stone-300 rounded-lg bg-white text-sm focus:ring-2 focus:ring-green-500 outline-none"><option value="">Seleccionar...</option>${opts}</select>`;
         } 
         else if (field.type === 'image') {
-             const previewSrc = value || ''; 
+             // El input file no lleva value, la previsualización se maneja en openAcopioForm con la imagen cargada
              return `
                 <div class="pt-4 mt-2">
                     <label for="${fieldName}" class="block text-xs font-bold text-stone-500 mb-1 uppercase"><i class="fas fa-camera mr-1"></i> ${field.label}</label>
@@ -559,9 +507,9 @@ document.addEventListener('DOMContentLoaded', () => {
                             <i class="fas fa-upload"></i> Elegir Foto
                             <input type="file" id="${fieldName}" name="${fieldName}" class="hidden" accept="image/*">
                         </label>
-                        <span id="file-name" class="text-xs text-stone-400 italic truncate max-w-[150px] file-name-display">${value ? 'Imagen cargada' : 'Sin archivo'}</span>
+                        <span class="text-xs text-stone-400 italic truncate max-w-[150px] file-name-display">Sin archivo nuevo</span>
                     </div>
-                    <img class="file-preview-img mt-2 w-full h-24 object-cover rounded-lg border border-stone-200 ${value ? '' : 'hidden'}" src="${previewSrc}">
+                    <img class="file-preview-img mt-2 w-full h-24 object-cover rounded-lg border border-stone-200 hidden">
                 </div>
              `;
         }
@@ -572,126 +520,114 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- UTILS ---
     function setupEventListeners() {
         btnNuevoAcopio.addEventListener('click', openAcopioSelector);
+        
+        filterBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                filterBtns.forEach(b => {
+                    b.classList.remove('bg-stone-800', 'text-white');
+                    b.classList.add('bg-white', 'text-stone-600', 'border');
+                });
+                btn.classList.remove('bg-white', 'text-stone-600', 'border');
+                btn.classList.add('bg-stone-800', 'text-white');
+                renderGrid(btn.dataset.filter);
+            });
+        });
     }
 
     function renderGrid(filter) {
         if (!acopioGrid) return;
         acopioGrid.innerHTML = '';
-        const roots = state.batches.filter(b => !b.parent_id); 
-        const filtered = roots.filter(batch => {
-            if (filter === 'all') return true;
-            const dataStr = JSON.stringify(batch.data).toLowerCase();
-            return dataStr.includes(filter.toLowerCase());
-        });
+        
+        let filtered = state.acquisitions;
+        if (filter !== 'all') {
+            filtered = state.acquisitions.filter(a => 
+                (a.nombre_producto && a.nombre_producto.includes(filter)) || 
+                (a.tipo_acopio && a.tipo_acopio.includes(filter))
+            );
+        }
 
         if (filtered.length === 0) {
             acopioGrid.innerHTML = `<div class="col-span-full text-center py-12 bg-white rounded-xl border-2 border-dashed border-stone-200"><i class="fas fa-inbox text-4xl text-stone-300 mb-3"></i><p class="text-stone-500 font-medium">No se encontraron registros.</p></div>`;
             return;
         }
 
-        filtered.reverse().forEach(batch => {
-            let finalData = { ...batch.data }; 
-            const findDeepData = (b) => {
-                if (b.children && b.children.length > 0) {
-                    const child = b.children[0]; 
-                    finalData = { ...finalData, ...child.data };
-                    findDeepData(child);
-                }
+        filtered.forEach(acop => {
+            const pesoDisplay = `${acop.peso_kg} kg`;
+            const tipoLabel = acop.subtipo ? `${acop.tipo_acopio} (${acop.subtipo})` : acop.tipo_acopio;
+            const fecha = new Date(acop.fecha_acopio).toLocaleDateString();
+            
+            let iconClass = 'fa-box';
+            let colorClass = 'text-stone-700';
+            let bgClass = 'bg-stone-100';
+            
+            // Lógica visual básica
+            if (acop.nombre_producto.includes('Cacao')) { iconClass = 'fa-cookie-bite'; colorClass = 'text-amber-800'; bgClass = 'bg-amber-100'; }
+            if (acop.nombre_producto.includes('Café')) { iconClass = 'fa-mug-hot'; colorClass = 'text-red-800'; bgClass = 'bg-red-100'; }
+
+            let extraInfo = '';
+            const data = acop.data_adicional || {};
+            
+            const getVal = (key) => {
+                 if (data[key]?.value) return data[key].value;
+                 // Buscar en claves sufijadas (e.g. variedad__1)
+                 const foundKey = Object.keys(data).find(k => k.startsWith(key + '__'));
+                 return foundKey ? data[foundKey].value : "";
             };
-            findDeepData(batch);
 
-            const data = finalData || {};
-            let fecha = "N/A";
-            const dateKey = Object.keys(data).find(k => k.includes('fecha') && data[k].value);
-            if(dateKey) fecha = data[dateKey].value;
-
-            let finca = "Finca desconocida";
-            const fincaKey = Object.keys(data).find(k => k.includes('finca') && data[k].value);
-            if(fincaKey) finca = data[fincaKey].value;
-            
-            let pesoDisplay = '0 kg';
-            let tipoLabel = 'Acopio';
-            let iconClass = 'fas fa-box';
-            let pesoVal = 0; 
-            
-            const tmpl = state.userTemplates.find(t => t.id === batch.plantilla_id);
-            const tmplName = tmpl ? tmpl.nombre_producto : 'Producto';
-            
-            let themeColor = 'stone';
-            let productConfig = null;
-            if(tmplName) {
-                 productConfig = state.acopioConfig.find(c => tmplName.includes(c.nombre_producto));
-                 if(productConfig) themeColor = productConfig.color;
+            if (acop.nombre_producto.toLowerCase().includes('cacao')) {
+                const variedad = getVal('variedad');
+                if (variedad) extraInfo = ` <span class="font-normal opacity-75 ml-1">[${variedad}]</span>`;
+            } else if (acop.nombre_producto.toLowerCase().includes('café') || acop.nombre_producto.toLowerCase().includes('cafe')) {
+                 const clasificacion = getVal('clasificacion');
+                 const variedad = getVal('variedad');
+                 const parts = [];
+                 if (clasificacion) parts.push(clasificacion);
+                 if (variedad) parts.push(variedad);
+                 if (parts.length > 0) extraInfo = ` <span class="font-normal opacity-75 ml-1">[${parts.join(' - ')}]</span>`;
             }
-
-            const findIcon = (name) => {
-                if (!productConfig) return 'fas fa-box';
-                const acopio = productConfig.acopio.find(a => a.nombre_acopio.includes(name) || name.includes(a.nombre_acopio));
-                return acopio ? acopio.icono : 'fas fa-box';
-            };
-            
-            if (data.pesoSeco?.value != null) { pesoVal = parseFloat(data.pesoSeco.value); pesoDisplay = `${pesoVal} kg`; tipoLabel = 'Grano Seco'; iconClass = findIcon('Grano Seco'); }
-            else if (data.pesoGranosBaba?.value != null) { pesoVal = parseFloat(data.pesoGranosBaba.value); pesoDisplay = `${pesoVal} kg`; tipoLabel = 'En Baba'; iconClass = findIcon('Baba'); }
-            else if (data.pesoCerezas?.value != null) { pesoVal = parseFloat(data.pesoCerezas.value); pesoDisplay = `${pesoVal} kg`; tipoLabel = 'Cereza'; iconClass = findIcon('Cereza'); }
-            else if (data.pesoPergamino?.value != null) { pesoVal = parseFloat(data.pesoPergamino.value); pesoDisplay = `${pesoVal} kg`; tipoLabel = 'Pergamino'; iconClass = findIcon('Pergamino'); }
-            else if (data.pesoCafeVerde?.value != null) { pesoVal = parseFloat(data.pesoCafeVerde.value); pesoDisplay = `${pesoVal} kg`; tipoLabel = 'Verde/Oro'; iconClass = findIcon('Verde'); }
-
-            let precioDisplay = "";
-            if (data.precioUnitario?.value && pesoVal > 0) {
-                const precioUnit = parseFloat(data.precioUnitario.value);
-                const totalPagado = (pesoVal * precioUnit).toFixed(2);
-                precioDisplay = `<span class="text-base font-normal text-stone-400 ml-2">($${totalPagado})</span>`;
-            }
-            
-            // Detalles extra
-            let detalleProducto = "";
-            const variedad = data.variedad?.value;
-            const clasificacion = data.clasificacion?.value;
-            if (tmplName.toLowerCase().includes('cacao')) { if (variedad) detalleProducto = `<span class="text-stone-500 font-medium ml-1">[${variedad}]</span>`; } 
-            else if (tmplName.toLowerCase().includes('cafe')) { const parts = []; if (clasificacion) parts.push(clasificacion); if (variedad) parts.push(variedad); if (parts.length > 0) detalleProducto = `<span class="text-stone-500 font-medium ml-1">[${parts.join(' - ')}]</span>`; }
-
-            const bgLight = `bg-${themeColor}-50`;
-            const textDark = `text-${themeColor}-800`;
-            const borderCol = `border-${themeColor}-200`;
-            const bgDark = `bg-${themeColor}-600`;
 
             const card = document.createElement('div');
-            card.className = "bg-white p-5 rounded-xl shadow-sm border border-stone-200 hover:shadow-lg hover:-translate-y-0.5 transition duration-300 group relative overflow-hidden";
+            card.className = "bg-white p-5 rounded-xl shadow-sm border border-stone-200 hover:shadow-lg hover:-translate-y-0.5 transition duration-300 group relative";
             card.innerHTML = `
-                <div class="absolute left-0 top-0 bottom-0 w-1 ${bgDark}"></div>
-                <div class="flex justify-between items-start mb-3 pl-3">
-                    <span class="${bgLight} ${textDark} text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wider border ${borderCol} flex items-center gap-1"><i class="${iconClass}"></i> ${tipoLabel}</span>
+                <div class="flex justify-between items-start mb-3">
+                    <span class="${bgClass} ${colorClass} text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wider border border-white/50 flex items-center gap-1">
+                        <i class="fas ${iconClass}"></i> ${acop.nombre_producto}${extraInfo}
+                    </span>
                     <div class="flex gap-2">
-                        <button class="edit-acopio-btn text-stone-400 hover:text-green-700 transition" data-id="${batch.id}" title="Editar Info"><i class="fas fa-pen"></i></button>
-                        <button class="delete-acopio-btn text-stone-400 hover:text-red-600 transition" data-id="${batch.id}" title="Eliminar"><i class="fas fa-trash"></i></button>
+                        <button class="edit-acopio-btn text-stone-400 hover:text-green-700 transition" data-id="${acop.id}" title="Editar Info"><i class="fas fa-pen"></i></button>
+                        <button class="delete-acopio-btn text-stone-400 hover:text-red-600 transition" data-id="${acop.id}" title="Eliminar"><i class="fas fa-trash"></i></button>
                     </div>
                 </div>
-                <div class="mb-4 pl-3">
-                    <p class="text-3xl font-display font-bold text-stone-800 mb-1">${pesoDisplay}${precioDisplay}</p>
-                    <p class="text-xs text-stone-500 font-medium uppercase tracking-wide mb-1 flex items-center gap-1"><i class="fas fa-map-marker-alt text-stone-400"></i> ${finca}</p>
-                    <div class="flex justify-between items-end"><p class="text-xs text-stone-400">${tmplName}${detalleProducto}</p><span class="text-xs text-stone-400 flex items-center gap-1"><i class="far fa-calendar"></i> ${fecha}</span></div>
+                <div class="mb-4">
+                    <p class="text-2xl font-display font-bold text-stone-800 mb-1">${pesoDisplay}</p>
+                    <p class="text-xs text-stone-500 font-medium uppercase tracking-wide mb-1 flex items-center gap-1">
+                        <i class="fas fa-layer-group"></i> ${tipoLabel}
+                    </p>
+                    <div class="flex justify-between items-end">
+                         <span class="text-xs text-stone-400 flex items-center gap-1"><i class="fas fa-map-marker-alt"></i> ${acop.finca_origen || 'Origen N/A'}</span>
+                         <span class="text-xs text-stone-400 flex items-center gap-1"><i class="far fa-calendar"></i> ${fecha}</span>
+                    </div>
                 </div>
-                <div class="pt-3 border-t border-stone-100 flex justify-between items-center pl-3">
-                    <span class="text-xs font-mono text-stone-300">ID: ${batch.id.substring(0,6)}</span>
-                    <a href="/app/trazabilidad" class="text-sm font-bold ${textDark} hover:underline flex items-center gap-1 transition">Continuar <i class="fas fa-arrow-right text-xs transform group-hover:translate-x-1 transition-transform"></i></a>
+                <div class="pt-3 border-t border-stone-100 flex justify-between items-center">
+                    <span class="text-xs font-mono text-stone-300">ID: ${acop.id}</span>
+                    <a href="/app/trazabilidad#acopio=${acop.id}" class="text-sm font-bold text-green-700 hover:text-green-900 flex items-center gap-1 transition">
+                        Iniciar Proceso <i class="fas fa-arrow-right text-xs transform group-hover:translate-x-1 transition-transform"></i>
+                    </a>
                 </div>
             `;
             acopioGrid.appendChild(card);
         });
         
-        attachCardListeners();
-    }
-    
-    function attachCardListeners() {
+        // Listeners CRUD
         document.querySelectorAll('.delete-acopio-btn').forEach(btn => {
             btn.addEventListener('click', async (e) => {
                 const id = e.currentTarget.dataset.id;
-                if(confirm("¿Eliminar este registro de acopio? Se borrará toda la trazabilidad asociada.")) {
+                if(confirm("¿Eliminar este registro de acopio?")) {
                     try {
-                        await api(`/api/batches/${id}`, { method: 'DELETE' });
-                        await refreshData();
-                        console.log("Registro eliminado correctamente");
-                    } catch(err) { console.error("Error al eliminar:", err); alert("Error al eliminar: " + err.message); }
+                        await api(`/api/acquisitions/${id}`, { method: 'DELETE' });
+                        await loadAcquisitionsData();
+                        renderGrid('all');
+                    } catch(err) { alert(err.message); }
                 }
             });
         });
@@ -699,12 +635,14 @@ document.addEventListener('DOMContentLoaded', () => {
         document.querySelectorAll('.edit-acopio-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 const id = e.currentTarget.dataset.id;
-                const batch = state.batches.find(b => b.id === id);
-                if (batch) {
-                    const tmpl = state.userTemplates.find(t => t.id === batch.plantilla_id);
-                    if (!tmpl) { alert("Error de integridad: Plantilla no encontrada."); return; }
-                    fetchAndEdit(batch, tmpl);
-                } else { alert("Error interno: Lote no encontrado."); }
+                const acopio = state.acquisitions.find(a => a.id === id);
+                if (acopio) {
+                    // Reconstruir contexto para editar (buscar template, config, etc.)
+                    // Como ya tenemos nombre_producto y tipo, podemos buscar directo
+                    const tmpl = state.templates.find(t => t.nombre_producto === acopio.nombre_producto);
+                    if(tmpl) fetchAndEdit(acopio, tmpl);
+                    else alert("Plantilla no encontrada, no se puede editar estructura.");
+                }
             });
         });
     }
@@ -712,11 +650,9 @@ document.addEventListener('DOMContentLoaded', () => {
     async function api(url, options = {}) {
         options.credentials = 'include';
         options.headers = { ...options.headers, 'Content-Type': 'application/json' };
-        let res;
-        try { res = await fetch(url, options); } catch (err) { throw new Error("Error de conexión."); }
+        const res = await fetch(url, options);
         if (res.status === 204) return null;
         if(!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e.error || `Error API: ${res.status}`); }
-        const text = await res.text();
-        try { return text ? JSON.parse(text) : {}; } catch (e) { throw new Error("Respuesta inválida."); }
+        return res.json();
     }
 });

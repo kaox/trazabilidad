@@ -70,6 +70,7 @@ async function initializeDatabase() {
                     numero_trabajadores INTEGER,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    deleted_at TIMESTAMP,
                     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
                     UNIQUE(user_id, nombre_finca)
                 )`);
@@ -96,6 +97,7 @@ async function initializeDatabase() {
                     numero_trabajadores INTEGER,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    deleted_at TIMESTAMP,
                     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
                     UNIQUE(user_id, ruc)
                 )`);
@@ -120,9 +122,81 @@ async function initializeDatabase() {
                     orden INTEGER NOT NULL,
                     descripcion TEXT,
                     campos_json TEXT NOT NULL,
+                    fase TEXT DEFAULT 'procesamiento',
                     FOREIGN KEY (plantilla_id) REFERENCES plantillas_proceso(id) ON DELETE CASCADE
                 )`);
             console.log("Tabla 'etapas_plantilla' lista.");
+
+            // --- NUEVA TABLA: ACOPIOS (INDEPENDIENTE) ---
+            await runQuery(db, `
+                CREATE TABLE IF NOT EXISTS acquisitions (
+                    id TEXT PRIMARY KEY,
+                    user_id INTEGER NOT NULL,
+                    nombre_producto TEXT NOT NULL, -- Ej: Cacao
+                    tipo_acopio TEXT NOT NULL, -- Ej: Grano Seco, Baba
+                    subtipo TEXT, -- Ej: Lavado, Honey (para cafe)
+                    fecha_acopio DATE,
+                    peso_kg REAL,
+                    precio_unitario REAL,
+                    finca_origen TEXT,
+                    observaciones TEXT,
+                    imagenes_json TEXT,
+                    data_adicional JSONB, -- Para campos extras dinámicos
+                    estado TEXT DEFAULT 'disponible', -- disponible, procesado, agotado
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    deleted_at TIMESTAMP,
+                    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+                )`);
+            console.log("Tabla 'acquisitions' creada.");
+
+            // --- NUEVA TABLA: BATCHES (PROCESAMIENTO) ---
+            // Esta tabla reemplaza funcionalmente a 'lotes' para el nuevo flujo
+            await runQuery(db, `
+                CREATE TABLE IF NOT EXISTS batches (
+                    id TEXT PRIMARY KEY, -- Ej: COS-1234
+                    plantilla_id INTEGER,
+                    etapa_id INTEGER NOT NULL,
+                    user_id INTEGER, -- Dueño del lote raíz
+                    parent_id TEXT,  -- Relación padre-hijo dentro de batches
+                    
+                    -- VINCULACIONES CLAVE
+                    producto_id TEXT, -- Link a SKU comercial (Tabla productos)
+                    acquisition_id TEXT, -- Link a Materia Prima (Tabla acquisitions)
+                    
+                    data TEXT NOT NULL, -- Datos técnicos JSON
+                    
+                    -- ESTADOS Y CERTIFICACIÓN
+                    blockchain_hash TEXT,
+                    is_locked BOOLEAN DEFAULT 0,
+                    views INTEGER DEFAULT 0,
+                    status TEXT DEFAULT 'active', -- active, recall, expired
+                    recall_reason TEXT,
+                    
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    
+                    FOREIGN KEY (plantilla_id) REFERENCES plantillas_proceso(id) ON DELETE CASCADE,
+                    FOREIGN KEY (etapa_id) REFERENCES etapas_plantilla(id) ON DELETE CASCADE,
+                    FOREIGN KEY (parent_id) REFERENCES batches(id) ON DELETE CASCADE,
+                    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+                    FOREIGN KEY (producto_id) REFERENCES productos(id) ON DELETE SET NULL,
+                    FOREIGN KEY (acquisition_id) REFERENCES acquisitions(id) ON DELETE SET NULL
+                )`);
+
+            // --- NUEVA TABLA: TRAZABILIDAD (OPTIMIZADA) ---
+            await runQuery(db, `
+                CREATE TABLE IF NOT EXISTS traceability_registry (
+                    id TEXT PRIMARY KEY,
+                    batch_id TEXT REFERENCES batches(id),
+                    user_id INTEGER REFERENCES users(id),
+                    nombre_producto TEXT,
+                    gtin TEXT,
+                    fecha_finalizacion DATE,
+                    snapshot_data TEXT NOT NULL, -- JSON con toda la historia
+                    blockchain_hash TEXT,
+                    views INTEGER DEFAULT 0,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )`);
+            console.log("Tabla 'traceability_registry' lista.");
 
             await runQuery(db, `
                 CREATE TABLE IF NOT EXISTS lotes (
@@ -132,6 +206,7 @@ async function initializeDatabase() {
                     user_id INTEGER,
                     parent_id TEXT,
                     producto_id TEXT,
+                    acquisition_id TEXT,
                     data TEXT NOT NULL,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     blockchain_hash TEXT,
@@ -143,7 +218,8 @@ async function initializeDatabase() {
                     FOREIGN KEY (etapa_id) REFERENCES etapas_plantilla(id) ON DELETE CASCADE,
                     FOREIGN KEY (parent_id) REFERENCES lotes(id) ON DELETE CASCADE,
                     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-                    FOREIGN KEY (producto_id) REFERENCES productos(id) ON DELETE SET NULL
+                    FOREIGN KEY (producto_id) REFERENCES productos(id) ON DELETE SET NULL,
+                    FOREIGN KEY (acquisition_id) REFERENCES acquisitions(id) ON DELETE SET NULL
                 )`);
             console.log("Tabla 'lotes' lista.");
             
@@ -155,6 +231,7 @@ async function initializeDatabase() {
                     tipo TEXT NOT NULL,
                     perfil_data TEXT NOT NULL,
                     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    deleted_at TIMESTAMP,
                     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
                     UNIQUE(user_id, nombre, tipo)
                 )`);
@@ -168,6 +245,7 @@ async function initializeDatabase() {
                     tipo TEXT NOT NULL,
                     notas_json TEXT NOT NULL,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    deleted_at TIMESTAMP,
                     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
                     UNIQUE(user_id, nombre_rueda)
                 )`);
@@ -251,6 +329,7 @@ async function initializeDatabase() {
                     premios_json TEXT,
                     receta_nutricional_id TEXT REFERENCES recetas_nutricionales(id) ON DELETE SET NULL, -- NUEVO CAMPO
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    deleted_at TIMESTAMP, -- NUEVO CAMPO AUDITORÍA,
                     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
                     UNIQUE(user_id, gtin)
                 )`);
@@ -265,6 +344,7 @@ async function initializeDatabase() {
                     peso_porcion_gramos REAL DEFAULT 100,
                     porciones_envase REAL DEFAULT 1,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    deleted_at TIMESTAMP,
                     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
                 )`);
 

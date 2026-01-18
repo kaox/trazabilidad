@@ -76,13 +76,13 @@
             const tbody = document.getElementById('immutable-table-body');
             try {
                 const batches = await api('/api/batches/immutable');
-                
+                console.log(batches);
                 if (batches.length === 0) {
                     tbody.innerHTML = `
                         <tr>
                             <td colspan="4" class="px-6 py-12 text-center text-stone-400">
-                                <p>No tienes lotes certificados aún.</p>
-                                <a href="/app/trazabilidad" class="text-amber-800 hover:underline">Ir a Trazabilidad</a>
+                                <p>No tienes lotes certificados con trazabilidad inmutable aún.</p>
+                                <a href="/app/procesamiento" class="text-amber-800 hover:underline">Ir a Procesamiento</a>
                             </td>
                         </tr>`;
                     return;

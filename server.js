@@ -192,7 +192,7 @@ app.get('/app/costos', authenticatePage, checkSubscription('profesional'), (req,
 app.get('/app/trazabilidad-inmutable', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'trazabilidad-inmutable.html')));
 app.get('/app/productos', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'productos.html')));
 app.get('/app/acopio', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'acopio.html'))); // <-- NUEVA RUTA DE ACOPIO
-
+app.get('/app/procesamiento', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'procesamiento.html')));
 
 // --- NUEVAS RUTAS VISTAS ADMIN BLOG ---
 app.get('/app/admin-blog', authenticatePage, checkAdmin, (req, res) => res.sendFile(path.join(__dirname, 'views', 'admin-blog-list.html')));
@@ -258,7 +258,11 @@ app.delete('/api/batches/:id', authenticateApi, db.deleteBatch);
 app.post('/api/batches/:id/finalize', authenticateApi, db.finalizeBatch);
 app.get('/api/batches/immutable', authenticateApi, db.getImmutableBatches);
 
-
+// API ACOPIOS (NUEVO)
+app.get('/api/acquisitions', authenticateApi, db.getAcquisitions);
+app.post('/api/acquisitions', authenticateApi, db.createAcquisition);
+app.delete('/api/acquisitions/:id', authenticateApi, db.deleteAcquisition);
+app.put('/api/acquisitions/:id', authenticateApi, db.updateAcquisition);
 
 // Cuenta de Usuario
 app.get('/api/user/profile', authenticateApi, db.getUserProfile);
