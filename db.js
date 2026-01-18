@@ -1054,7 +1054,7 @@ const getImmutableBatches = async (req, res) => {
                 )
                 SELECT producto_id FROM ancestry WHERE producto_id IS NOT NULL LIMIT 1
             )
-            LEFT JOIN product_reviews r ON l.id = r.lote_id
+            LEFT JOIN product_reviews r ON l.id = r.batch_id
             WHERE l.blockchain_hash IS NOT NULL 
             AND l.blockchain_hash != ''
             GROUP BY l.id, p.nombre_producto, e.nombre_etapa, l.created_at, l.views, l.blockchain_hash, l.data, prod.gtin, prod.nombre
