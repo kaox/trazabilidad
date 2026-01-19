@@ -104,13 +104,11 @@ document.addEventListener('DOMContentLoaded', () => {
         setupIntersectionObserver();
 
         // Mapa Finca
-        setTimeout(() => {
-            // Mapa de Finca (Polígono)
-            if (h.fincaData?.coordenadas) {
+        if (h.fincaData?.coordenadas) {
+            setTimeout(() => {
                 initializeMap('finca-map-container', h.fincaData.coordenadas);
-            }
-
-        }, 200);
+            }, 100);
+        }
         
         // Inicializar Pestañas de Producto y Gráficos
         setupProductTabs();
@@ -776,14 +774,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 if (button.dataset.tab === 'ruta' && !chartInstances['route-map-container']) {
                     const routePoints = getRoutePoints(globalHistory);
-                    
-                    setTimeout(() => {
-
-                        if (routePoints.length > 0) {
-                            initializeRouteMap('route-map-container', routePoints);
-                        }
-                        
-                    }, 300);
+                    console.log(routePoints);
+                    initializeRouteMap('route-map-container', routePoints);
                 }
             });
         });
@@ -1313,16 +1305,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
         h.stages.forEach(stage => {
             const locationName = getFieldValue(stage.data.lugarProceso) || getFieldValue(stage.data.finca)  || getFieldValue(stage.data.procesadora);
-
+            
             if (locationName && !addedLocations.has(locationName)) {
                 let locationData = null;
                 
+                console.log(locationName,h);
                 if (h.fincaData && h.fincaData.nombre_finca === locationName) {
                     locationData = h.fincaData;
                 } else if (h.procesadorasData) {
+                    console.log(h.procesadorasData);
                     locationData = h.procesadorasData.find(p => p.nombre_comercial === locationName || p.razon_social === locationName);
+                    console.log(locationData);
                 }
-
+                
                 if (locationData && locationData.coordenadas) {
                     let pointLatLng;
                     // Si es un polígono (array de arrays), calcular el centroide

@@ -814,7 +814,17 @@ const finalizeBatch = async (req, res) => {
             targetBatch.producto_id ? get('SELECT * FROM productos WHERE id = ?', [targetBatch.producto_id]) : null
         ]);
 
-        const historySnapshot = { productName: templateInfo.nombre_producto, ownerInfo, stages: [], fincaData: null, acopioData: acopioData ? { ...acopioData, data_adicional: safeJSONParse(acopioData.data_adicional) } : null, productoFinal: null, nutritionalData: null, perfilSensorialData: null, ruedaSaborData: null, maridajesRecomendados: {}, generatedAt: new Date().toISOString() };
+        // CORRECCIÓN: Obtener procesadoras para guardar en el snapshot
+        const procesadorasList = await all('SELECT * FROM procesadoras WHERE user_id = ?', [ownerId]);
+        const procesadorasData = procesadorasList.map(p => ({
+            ...p,
+            coordenadas: safeJSONParse(p.coordenadas || 'null'),
+            imagenes_json: safeJSONParse(p.imagenes_json || '[]'),
+            premios_json: safeJSONParse(p.premios_json || '[]'),
+            certificaciones_json: safeJSONParse(p.certificaciones_json || '[]')
+        }));
+
+        const historySnapshot = { productName: templateInfo.nombre_producto, ownerInfo, stages: [], fincaData: null, procesadorasData: procesadorasData, acopioData: acopioData ? { ...acopioData, data_adicional: safeJSONParse(acopioData.data_adicional) } : null, productoFinal: null, nutritionalData: null, perfilSensorialData: null, ruedaSaborData: null, maridajesRecomendados: {}, generatedAt: new Date().toISOString() };
 
         if (productoInfo) {
              historySnapshot.productoFinal = { ...productoInfo, imagenes_json: safeJSONParse(productoInfo.imagenes_json), premios_json: safeJSONParse(productoInfo.premios_json) };
@@ -917,8 +927,12 @@ const getTrazabilidad = async (req, res) => {
             rows[0].producto_id ? get('SELECT * FROM productos WHERE id = ?', [rows[0].producto_id]) : (rootBatch.producto_id ? get('SELECT * FROM productos WHERE id = ?', [rootBatch.producto_id]) : null)
         ]);
 
+        // CORRECCIÓN: Obtener procesadoras para renderizar ruta en tiempo real
+        const procesadorasList = await all('SELECT * FROM procesadoras WHERE user_id = ?', [ownerId]);
+        const procesadorasData = procesadorasList.map(p => ({ ...p, coordenadas: safeJSONParse(p.coordenadas || 'null'), imagenes_json: safeJSONParse(p.imagenes_json || '[]'), premios_json: safeJSONParse(p.premios_json || '[]'), certificaciones_json: safeJSONParse(p.certificaciones_json || '[]') }));
+
         const history = {
-            productName: templateInfo.nombre_producto, ownerInfo, stages: [], fincaData: null,
+            productName: templateInfo.nombre_producto, ownerInfo, stages: [], fincaData: null, procesadorasData: procesadorasData,
             acopioData: acopioData ? { ...acopioData, data_adicional: safeJSONParse(acopioData.data_adicional) } : null,
             productoFinal: null, nutritionalData: null, perfilSensorialData: null, ruedaSaborData: null, maridajesRecomendados: {}
         };
