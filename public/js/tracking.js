@@ -110,11 +110,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 initializeMap('finca-map-container', h.fincaData.coordenadas);
             }
 
-            if (routePoints.length > 0) {
-                initializeRouteMap('route-map', routePoints);
-            }
-            
-        }, 300);
+        }, 200);
         
         // Inicializar Pestañas de Producto y Gráficos
         setupProductTabs();
@@ -780,7 +776,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 if (button.dataset.tab === 'ruta' && !chartInstances['route-map-container']) {
                     const routePoints = getRoutePoints(globalHistory);
-                    initializeRouteMap('route-map-container', routePoints);
+                    
+                    setTimeout(() => {
+
+                        if (routePoints.length > 0) {
+                            initializeRouteMap('route-map-container', routePoints);
+                        }
+                        
+                    }, 300);
                 }
             });
         });
