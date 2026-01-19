@@ -104,11 +104,17 @@ document.addEventListener('DOMContentLoaded', () => {
         setupIntersectionObserver();
 
         // Mapa Finca
-        if (h.fincaData?.coordenadas) {
-            setTimeout(() => {
+        setTimeout(() => {
+            // Mapa de Finca (Polígono)
+            if (h.fincaData?.coordenadas) {
                 initializeMap('finca-map-container', h.fincaData.coordenadas);
-            }, 100);
-        }
+            }
+
+            if (routePoints.length > 0) {
+                initializeRouteMap('route-map', routePoints);
+            }
+            
+        }, 300);
         
         // Inicializar Pestañas de Producto y Gráficos
         setupProductTabs();
