@@ -440,15 +440,20 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (error) { alert('Error al cargar datos para editar.'); }
     }
 
-    function handleProductorFotoUpload(e) {
+    async function handleProductorFotoUpload(e) {
         const file = e.target.files[0];
         if (!file) return;
-        const reader = new FileReader();
-        reader.onloadend = () => {
-            productorFotoPreview.src = reader.result;
-            fotoProductorHiddenInput.value = reader.result;
-        };
-        reader.readAsDataURL(file);
+
+        try {
+            // Usamos compressImage aquí también
+            const compressedBase64 = await compressImage(file);
+            
+            productorFotoPreview.src = compressedBase64;
+            fotoProductorHiddenInput.value = compressedBase64;
+        } catch (error) {
+            console.error("Error al procesar foto de productor:", error);
+            alert("No se pudo procesar la imagen del productor.");
+        }
     }
 
     // --- Lógica de Premios ---
@@ -499,24 +504,39 @@ document.addEventListener('DOMContentLoaded', () => {
         `).join('');
     }
     
-    function handleImageUpload(e) {
+    async function handleImageUpload(e) {
         const files = Array.from(e.target.files);
-        if (!files) return;
+        if (!files || files.length === 0) return;
 
         if (currentImages.length + files.length > 5) {
             alert('Puedes subir un máximo de 5 fotos.');
+            // Limpiar el input para permitir intentar de nuevo
+            e.target.value = ''; 
             return;
         }
-        
-        files.forEach(file => {
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                currentImages.push(reader.result);
-                renderImagePreviews();
-            };
-            reader.readAsDataURL(file);
-        });
-        e.target.value = ''; 
+
+        // Mostramos un indicador visual de "Procesando" si deseas, o simplemente esperamos
+        const submitButton = document.querySelector('button[type="submit"]');
+        const originalText = submitButton.textContent;
+        submitButton.textContent = "Procesando imágenes...";
+        submitButton.disabled = true;
+
+        try {
+            for (const file of files) {
+                // AQUI ESTÁ LA MAGIA: Usamos tu función compressImage
+                const compressedBase64 = await compressImage(file);
+                currentImages.push(compressedBase64);
+            }
+            renderImagePreviews();
+        } catch (error) {
+            console.error("Error comprimiendo imagen:", error);
+            alert("Hubo un error al procesar una de las imágenes.");
+        } finally {
+            // Restaurar botón
+            submitButton.textContent = originalText;
+            submitButton.disabled = false;
+            e.target.value = ''; 
+        }
     }
 
     function handleImageDelete(e) {
@@ -605,10 +625,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const editId = editIdInput.value;
         try {
+            let response;
             if (editId) {
-                await api(`/api/fincas/${editId}`, { method: 'PUT', body: JSON.stringify(fincaData) });
+                response = await api(`/api/fincas/${editId}`, { method: 'PUT', body: JSON.stringify(fincaData) });
             } else {
-                await api('/api/fincas', { method: 'POST', body: JSON.stringify(fincaData) });
+                response = await api('/api/fincas', { method: 'POST', body: JSON.stringify(fincaData) });
             }
             resetForm();
             await loadFincas();
@@ -629,5 +650,43 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
     }
+
+    const compressImage = (file) => {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = (event) => {
+                const img = new Image();
+                img.src = event.target.result;
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    const MAX_WIDTH = 1024;
+                    const MAX_HEIGHT = 1024;
+                    let width = img.width;
+                    let height = img.height;
+
+                    if (width > height) {
+                        if (width > MAX_WIDTH) {
+                            height *= MAX_WIDTH / width;
+                            width = MAX_WIDTH;
+                        }
+                    } else {
+                        if (height > MAX_HEIGHT) {
+                            width *= MAX_HEIGHT / height;
+                            height = MAX_HEIGHT;
+                        }
+                    }
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+                    // Convertir a JPEG calidad 70%
+                    resolve(canvas.toDataURL('image/jpeg', 0.7));
+                };
+                img.onerror = (err) => reject(err);
+            };
+            reader.onerror = (err) => reject(err);
+        });
+    };
 
 });
