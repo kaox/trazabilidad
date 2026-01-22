@@ -28,17 +28,16 @@ let get, all, run;
 if (environment === 'production') {
     // --- Configuración para Producción (PostgreSQL con Neon) ---
     const { Pool } = require('@neondatabase/serverless');
+    
     const pool = new Pool({ 
         connectionString: process.env.POSTGRES_URL,
-        connectionTimeoutMillis: 10000, // 1. Si no conecta en 5s, FALLA (entra al catch)
-        idleTimeoutMillis: 1000,       // 2. Cierra conexiones inactivas rápido para no reusar conexiones rotas
-        max: 1
+        connectionTimeoutMillis: 5000, // 5s timeout por intento
+        idleTimeoutMillis: 1000, 
+        max: 1 
     });
 
-    // Helper para pausar la ejecución (wait)
     const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
-    // ADAPTADOR CON LÓGICA DE REINTENTO (RETRY)
     const queryAdapter = async (sql, params = []) => {
         let paramIndex = 1;
         const pgSql = sql.replace(/\?/g, () => `$${paramIndex++}`);
@@ -47,31 +46,36 @@ if (environment === 'production') {
 
         for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
             try {
-                // Intentamos ejecutar la consulta
+                // Intentamos ejecutar
                 const result = await pool.query(pgSql, params);
-                return result; // Si funciona, retornamos y salimos del loop
+                return result; 
             } catch (err) {
-                // Analizamos si es un error de conexión/timeout
-                const isConnectionError = err.message.includes('timeout') || 
-                                          err.message.includes('connect') || 
-                                          err.message.includes('closed');
-
-                if (isConnectionError && attempt < MAX_RETRIES) {
-                    console.warn(`--> [DB WARNING] Intento ${attempt} falló (${err.message}). Reintentando en 1.5s...`);
-                    // Esperamos 1.5 segundos antes de reintentar
-                    await wait(1500);
-                    continue; // Pasamos al siguiente intento
-                }
+                // LOG PARA VER EL ERROR REAL (IMPORTANTE)
+                console.error(`--> [DB DEBUG] Intento ${attempt}/${MAX_RETRIES} falló. Mensaje: ${err.message}`);
                 
-                // Si no es error de conexión o ya agotamos intentos, lanzamos el error
-                console.error(`--> [DB FATAL] Falló definitivamente tras ${attempt} intentos.`);
-                throw err;
+                // Si es el último intento, lanzamos el error y nos rendimos
+                if (attempt === MAX_RETRIES) {
+                    console.error("--> [DB FATAL] Se agotaron los reintentos.");
+                    throw err;
+                }
+
+                // SIEMPRE REINTENTAMOS (Fuerza Bruta para despertar a Neon)
+                console.log(`--> [DB RETRY] Esperando 2 segundos antes de reintentar...`);
+                await wait(2000); // Esperamos 2 segundos
             }
         }
     };
     
-    get = async (sql, params = []) => (await queryAdapter(sql, params)).rows[0];
-    all = async (sql, params = []) => (await queryAdapter(sql, params)).rows;
+    get = async (sql, params = []) => {
+        const result = await queryAdapter(sql, params);
+        return result.rows[0];
+    };
+
+    all = async (sql, params = []) => {
+        const result = await queryAdapter(sql, params);
+        return result.rows;
+    };
+
     run = async (sql, params = []) => {
         const isInsert = sql.trim().toUpperCase().startsWith('INSERT');
         const sqlToRun = isInsert ? `${sql} RETURNING id` : sql;
@@ -89,7 +93,7 @@ if (environment === 'production') {
             throw e;
         }
     };
-    console.log("Conectado a PostgreSQL para producción.");
+    console.log("Conectado a PostgreSQL (Prod) - MODO FUERZA BRUTA.");
 
 } else {
     // --- Configuración para Desarrollo (SQLite) ---
