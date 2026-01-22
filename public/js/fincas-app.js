@@ -629,7 +629,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Bloqueamos el botón
         submitButton.disabled = true;
-        submitButton.textContent = 'Guardando...';
+        submitButton.textContent = 'Guardando ...';
         // Añadimos clases de Tailwind para que se vea deshabilitado (opaco)
         submitButton.classList.add('opacity-50', 'cursor-not-allowed');
         
