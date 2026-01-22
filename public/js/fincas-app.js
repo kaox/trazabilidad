@@ -615,6 +615,8 @@ document.addEventListener('DOMContentLoaded', () => {
         e.preventDefault();
         const formData = new FormData(form);
         const fincaData = Object.fromEntries(formData.entries());
+
+        const originalText = submitButton.textContent;
         
         fincaData.imagenes_json = currentImages;
         fincaData.certificaciones_json = currentFincaCertifications;
@@ -624,6 +626,13 @@ document.addEventListener('DOMContentLoaded', () => {
         else fincaData.coordenadas = null;
 
         const editId = editIdInput.value;
+
+        // Bloqueamos el botón
+        submitButton.disabled = true;
+        submitButton.textContent = 'Guardando... (Por favor espere)';
+        // Añadimos clases de Tailwind para que se vea deshabilitado (opaco)
+        submitButton.classList.add('opacity-50', 'cursor-not-allowed');
+        
         try {
             let response;
             if (editId) {
@@ -636,6 +645,10 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (error) { 
             console.error("Error al guardar:", error);
             alert('Error al guardar la finca.'); 
+        } finally {
+            submitButton.disabled = false;
+            submitButton.textContent = originalText;
+            submitButton.classList.remove('opacity-50', 'cursor-not-allowed');
         }
     }
 
