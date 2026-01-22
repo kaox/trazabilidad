@@ -30,7 +30,7 @@ if (environment === 'production') {
     const { Pool } = require('@neondatabase/serverless');
     const pool = new Pool({ 
         connectionString: process.env.POSTGRES_URL,
-        connectionTimeoutMillis: 5000, // 1. Si no conecta en 5s, FALLA (entra al catch)
+        connectionTimeoutMillis: 20000, // 1. Si no conecta en 5s, FALLA (entra al catch)
         idleTimeoutMillis: 1000,       // 2. Cierra conexiones inactivas rápido para no reusar conexiones rotas
         max: 1
      });
@@ -39,14 +39,7 @@ if (environment === 'production') {
         let paramIndex = 1;
         const pgSql = sql.replace(/\?/g, () => `$${paramIndex++}`);
 
-        const timeoutPromise = new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('DB_QUERY_TIMEOUT: La base de datos tardó más de 10s en responder')), 10000)
-        );
-
-        return Promise.race([
-            pool.query(pgSql, params),
-            timeoutPromise
-        ]);
+        return pool.query(pgSql, params);
     };
     
     get = async (sql, params = []) => (await queryAdapter(sql, params)).rows[0];
