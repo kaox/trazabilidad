@@ -30,16 +30,44 @@ if (environment === 'production') {
     const { Pool } = require('@neondatabase/serverless');
     const pool = new Pool({ 
         connectionString: process.env.POSTGRES_URL,
-        connectionTimeoutMillis: 20000, // 1. Si no conecta en 5s, FALLA (entra al catch)
+        connectionTimeoutMillis: 10000, // 1. Si no conecta en 5s, FALLA (entra al catch)
         idleTimeoutMillis: 1000,       // 2. Cierra conexiones inactivas rápido para no reusar conexiones rotas
         max: 1
-     });
+    });
 
-    const queryAdapter = (sql, params = []) => {
+    // Helper para pausar la ejecución (wait)
+    const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+    // ADAPTADOR CON LÓGICA DE REINTENTO (RETRY)
+    const queryAdapter = async (sql, params = []) => {
         let paramIndex = 1;
         const pgSql = sql.replace(/\?/g, () => `$${paramIndex++}`);
+        
+        const MAX_RETRIES = 3;
 
-        return pool.query(pgSql, params);
+        for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+            try {
+                // Intentamos ejecutar la consulta
+                const result = await pool.query(pgSql, params);
+                return result; // Si funciona, retornamos y salimos del loop
+            } catch (err) {
+                // Analizamos si es un error de conexión/timeout
+                const isConnectionError = err.message.includes('timeout') || 
+                                          err.message.includes('connect') || 
+                                          err.message.includes('closed');
+
+                if (isConnectionError && attempt < MAX_RETRIES) {
+                    console.warn(`--> [DB WARNING] Intento ${attempt} falló (${err.message}). Reintentando en 1.5s...`);
+                    // Esperamos 1.5 segundos antes de reintentar
+                    await wait(1500);
+                    continue; // Pasamos al siguiente intento
+                }
+                
+                // Si no es error de conexión o ya agotamos intentos, lanzamos el error
+                console.error(`--> [DB FATAL] Falló definitivamente tras ${attempt} intentos.`);
+                throw err;
+            }
+        }
     };
     
     get = async (sql, params = []) => (await queryAdapter(sql, params)).rows[0];
