@@ -38,7 +38,15 @@ if (environment === 'production') {
     const queryAdapter = (sql, params = []) => {
         let paramIndex = 1;
         const pgSql = sql.replace(/\?/g, () => `$${paramIndex++}`);
-        return pool.query(pgSql, params);
+
+        const timeoutPromise = new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('DB_QUERY_TIMEOUT: La base de datos tardó más de 10s en responder')), 10000)
+        );
+
+        return Promise.race([
+            pool.query(pgSql, params),
+            timeoutPromise
+        ]);
     };
     
     get = async (sql, params = []) => (await queryAdapter(sql, params)).rows[0];
