@@ -267,6 +267,31 @@ const createFinca = async (req, res) => {
     superficie = sanitizeNumber(superficie);
     numero_trabajadores = sanitizeNumber(numero_trabajadores);
 
+    const safeParam = (val) => (val === undefined ? null : val);
+
+    const params = [
+        safeParam(id),
+        safeParam(userId),
+        safeParam(propietario),
+        safeParam(dni_ruc),
+        safeParam(nombre_finca),
+        safeParam(pais),
+        safeParam(departamento),
+        safeParam(provincia),
+        safeParam(distrito),
+        safeParam(ciudad),
+        safeParam(altura),
+        safeParam(superficie),
+        JSON.stringify(coordenadas || null), // JSON nunca debe ser undefined
+        safeParam(telefono),
+        safeParam(historia),
+        JSON.stringify(imagenes_json || []),
+        JSON.stringify(certificaciones_json || []),
+        JSON.stringify(premios_json || []),
+        safeParam(foto_productor),
+        safeParam(numero_trabajadores)
+    ];
+
     try {
         console.log("--> [DB] Conectando para insertar...");
         await run(
@@ -277,6 +302,7 @@ const createFinca = async (req, res) => {
         res.status(201).json({ message: "Finca creada" });
     } catch (err) { 
         console.error("--> [ERROR] Falló la inserción en DB:", err);
+        console.error("--> Detalle completo:", JSON.stringify(err, Object.getOwnPropertyNames(err)));
         res.status(500).json({ error: err.message }); 
     }
 };
