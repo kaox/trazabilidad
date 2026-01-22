@@ -28,7 +28,12 @@ let get, all, run;
 if (environment === 'production') {
     // --- Configuración para Producción (PostgreSQL con Neon) ---
     const { Pool } = require('@neondatabase/serverless');
-    const pool = new Pool({ connectionString: process.env.POSTGRES_URL });
+    const pool = new Pool({ 
+        connectionString: process.env.POSTGRES_URL,
+        connectionTimeoutMillis: 5000, // 1. Si no conecta en 5s, FALLA (entra al catch)
+        idleTimeoutMillis: 1000,       // 2. Cierra conexiones inactivas rápido para no reusar conexiones rotas
+        max: 1
+     });
 
     const queryAdapter = (sql, params = []) => {
         let paramIndex = 1;
