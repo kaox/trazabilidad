@@ -253,22 +253,32 @@ const getFincas = async (req, res) => {
 };
 
 const createFinca = async (req, res) => {
+    console.log("--> [START] Intentando crear finca...");
     const userId = req.user.id;
     // Agregamos departamento, provincia, distrito
     let { propietario, dni_ruc, nombre_finca, pais, departamento, provincia, distrito, ciudad, altura, superficie, coordenadas, telefono, historia, imagenes_json, certificaciones_json, premios_json, foto_productor, numero_trabajadores } = req.body;
     const id = require('crypto').randomUUID();
+
+    // LOG 2: Ver tamaño del payload que llegó al servidor
+    const payloadSize = JSON.stringify(req.body).length;
+    console.log(`--> [PAYLOAD] Tamaño recibido: ${(payloadSize/1024/1024).toFixed(2)} MB`);
     
     altura = sanitizeNumber(altura);
     superficie = sanitizeNumber(superficie);
     numero_trabajadores = sanitizeNumber(numero_trabajadores);
 
     try {
+        console.log("--> [DB] Conectando para insertar...");
         await run(
             'INSERT INTO fincas (id, user_id, propietario, dni_ruc, nombre_finca, pais, departamento, provincia, distrito, ciudad, altura, superficie, coordenadas, telefono, historia, imagenes_json, certificaciones_json, premios_json, foto_productor, numero_trabajadores) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', 
             [id, userId, propietario, dni_ruc, nombre_finca, pais, departamento, provincia, distrito, ciudad, altura, superficie, JSON.stringify(coordenadas), telefono, historia, JSON.stringify(imagenes_json || []), JSON.stringify(certificaciones_json || []), JSON.stringify(premios_json || []), foto_productor, numero_trabajadores]
         );
+        console.log("--> [SUCCESS] Finca guardada en DB");
         res.status(201).json({ message: "Finca creada" });
-    } catch (err) { res.status(500).json({ error: err.message }); }
+    } catch (err) { 
+        console.error("--> [ERROR] Falló la inserción en DB:", err);
+        res.status(500).json({ error: err.message }); 
+    }
 };
 
 const updateFinca = async (req, res) => {
