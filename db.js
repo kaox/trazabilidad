@@ -26,74 +26,77 @@ const maridajesQuesoData = JSON.parse(fs.readFileSync(path.join(__dirname, 'publ
 let get, all, run;
 
 if (environment === 'production') {
-    // --- Configuración para Producción (PostgreSQL con Neon) ---
-    const { Pool } = require('@neondatabase/serverless');
+    // --- Configuración para Producción (DRIVER HTTP / FETCH) ---
+    // Usamos 'neon' en lugar de 'Pool'. Esto usa HTTPS puro, ideal para serverless inestable.
+    const { neon } = require('@neondatabase/serverless');
     
-    const pool = new Pool({ 
-        connectionString: process.env.POSTGRES_URL,
-        connectionTimeoutMillis: 5000, // 5s timeout por intento
-        idleTimeoutMillis: 1000, 
-        max: 1 
-    });
+    // Creamos la instancia SQL usando la URL de conexión
+    const sqlClient = neon(process.env.POSTGRES_URL);
 
-    const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms));
-
+    // Adaptador que convierte tus consultas estilo SQLite (?) a Postgres ($1, $2)
     const queryAdapter = async (sql, params = []) => {
         let paramIndex = 1;
         const pgSql = sql.replace(/\?/g, () => `$${paramIndex++}`);
         
-        const MAX_RETRIES = 3;
-
-        for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
-            try {
-                // Intentamos ejecutar
-                const result = await pool.query(pgSql, params);
-                return result; 
-            } catch (err) {
-                // LOG PARA VER EL ERROR REAL (IMPORTANTE)
-                console.error(`--> [DB DEBUG] Intento ${attempt}/${MAX_RETRIES} falló. Mensaje: ${err.message}`);
-                
-                // Si es el último intento, lanzamos el error y nos rendimos
-                if (attempt === MAX_RETRIES) {
-                    console.error("--> [DB FATAL] Se agotaron los reintentos.");
-                    throw err;
-                }
-
-                // SIEMPRE REINTENTAMOS (Fuerza Bruta para despertar a Neon)
-                console.log(`--> [DB RETRY] Esperando 2 segundos antes de reintentar...`);
-                await wait(2000); // Esperamos 2 segundos
-            }
+        try {
+            console.log(`--> [HTTP DB] Ejecutando: ${pgSql.substring(0, 50)}...`);
+            // Ejecutamos la consulta via HTTP fetch
+            const result = await sqlClient(pgSql, params);
+            
+            // El driver HTTP devuelve solo las filas (array), no devuelve metadatos como rowCount.
+            // Simulamos la estructura para que tu código no se rompa.
+            return { 
+                rows: result, 
+                rowCount: result.length // En SELECT/RETURNING funciona perfecto.
+            };
+        } catch (err) {
+            console.error("--> [HTTP DB ERROR]", err);
+            throw err;
         }
     };
     
+    // Función GET: Devuelve la primera fila
     get = async (sql, params = []) => {
         const result = await queryAdapter(sql, params);
         return result.rows[0];
     };
 
+    // Función ALL: Devuelve todas las filas
     all = async (sql, params = []) => {
         const result = await queryAdapter(sql, params);
         return result.rows;
     };
 
+    // Función RUN: Para INSERT/UPDATE/DELETE
     run = async (sql, params = []) => {
-        const isInsert = sql.trim().toUpperCase().startsWith('INSERT');
-        const sqlToRun = isInsert ? `${sql} RETURNING id` : sql;
+        // TRUCO: El driver HTTP no nos dice cuántas filas cambió en un UPDATE/DELETE normal.
+        // Para saber si funcionó, forzamos que la DB nos devuelva el ID del registro afectado.
+        
+        const upperSql = sql.trim().toUpperCase();
+        let sqlToRun = sql;
+
+        // Si es INSERT, UPDATE o DELETE y no tiene RETURNING, se lo agregamos
+        if ((upperSql.startsWith('INSERT') || upperSql.startsWith('UPDATE') || upperSql.startsWith('DELETE')) && !upperSql.includes('RETURNING')) {
+            sqlToRun = `${sql} RETURNING id`;
+        }
+
         try {
             const result = await queryAdapter(sqlToRun, params);
+            
+            // Si hay filas en el resultado, significa que hubo cambios
+            const changes = result.rows.length;
+            const lastID = (result.rows[0] && result.rows[0].id) ? result.rows[0].id : null;
+
             return { 
-                changes: result.rowCount, 
-                lastID: result.rows[0] ? result.rows[0].id : null 
+                changes: changes, 
+                lastID: lastID 
             };
         } catch(e) {
-            if (isInsert) {
-                 const result = await queryAdapter(sql, params);
-                 return { changes: result.rowCount, lastID: null };
-            }
+            console.error("--> [HTTP RUN ERROR]", e.message);
             throw e;
         }
     };
-    console.log("Conectado a PostgreSQL (Prod) - MODO FUERZA BRUTA.");
+    console.log("Conectado a PostgreSQL (Prod) via HTTP Driver (Stateless).");
 
 } else {
     // --- Configuración para Desarrollo (SQLite) ---
