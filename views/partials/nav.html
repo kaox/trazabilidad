@@ -51,8 +51,8 @@
                         <a href="/app/perfiles" class="nav-link block px-4 py-2 text-sm text-stone-700 hover:bg-amber-100">Perfiles Sensoriales</a>
                         <a href="/app/ruedas-sabores" class="nav-link block px-4 py-2 text-sm text-stone-700 hover:bg-amber-100">Ruedas de Sabores</a>
                         <!--a href="/app/plantillas" class="nav-link block px-4 py-2 text-sm text-stone-700 hover:bg-amber-100">Plantillas</a-->
-                        <a href="/app/admin-dashboard" class="admin-only block px-4 py-2 text-sm text-stone-700 hover:bg-amber-100" title="Admin Dashboard">Admin</a>
-                        <a href="/app/admin-blog" class="admin-only block px-4 py-2 text-sm text-stone-700 hover:bg-amber-100" title="Blog CMS"><i class="fas fa-feather-alt"></i> CMS</a>
+                        <a href="/app/admin-dashboard" class="admin-only hidden block px-4 py-2 text-sm text-stone-700 hover:bg-amber-100" title="Admin Dashboard">Admin</a>
+                        <a href="/app/admin-blog" class="admin-only hidden block px-4 py-2 text-sm text-stone-700 hover:bg-amber-100" title="Blog CMS"><i class="fas fa-feather-alt"></i> CMS</a>
                     </div>
                 </div>
                 
@@ -68,8 +68,8 @@
     <div id="mobile-menu" class="md:hidden hidden">
         <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3">
             <!-- Enlaces Admin Móvil -->
-            <a href="/app/admin-dashboard" class="admin-only px-3 py-2 rounded-md text-sm font-medium hover:bg-amber-800 transition hidden bg-sky-600 block">Admin Dashboard</a>
-            <a href="/app/admin-blog" class="admin-only px-3 py-2 rounded-md text-sm font-medium hover:bg-amber-800 transition hidden bg-sky-600 block">Admin Blog</a>
+            <a href="/app/admin-dashboard" class="admin-only hidden px-3 py-2 rounded-md text-sm font-medium hover:bg-amber-800 transition hidden bg-sky-600 block">Admin Dashboard</a>
+            <a href="/app/admin-blog" class="admin-only hidden px-3 py-2 rounded-md text-sm font-medium hover:bg-amber-800 transition hidden bg-sky-600 block">Admin Blog</a>
 
             <a href="/app/dashboard" class="nav-link-mobile block px-3 py-2 rounded-md text-base font-medium hover:bg-amber-800">📊Dashboard</a>
             <a href="/app/acopio" class="nav-link-mobile block px-3 py-2 rounded-md text-base font-medium hover:bg-amber-800">⚖️Acopio</a>
@@ -89,86 +89,4 @@
             <button onclick="logout()" class="w-full text-left block px-3 py-2 rounded-md text-base font-medium bg-red-600 hover:bg-red-700">Cerrar Sesión</button>
         </div>
     </div>
-    <!-- Script de Lógica de Navegación -->
-    <script>
-        (async function() {
-            // 1. Lógica para abrir/cerrar Dropdowns
-            const setupDropdown = (btnId, menuId) => {
-                const btn = document.getElementById(btnId);
-                const menu = document.getElementById(menuId);
-                
-                if (btn && menu) {
-                    btn.addEventListener('click', (e) => {
-                        e.stopPropagation();
-                        // Cerrar otros dropdowns abiertos
-                        document.querySelectorAll('[id$="-dropdown-desktop"]').forEach(el => {
-                            if (el.id !== menuId) el.classList.add('hidden');
-                        });
-                        menu.classList.toggle('hidden');
-                        
-                        // Rotar flecha si existe
-                        const arrow = btn.querySelector('svg');
-                        if (arrow) {
-                            arrow.style.transform = menu.classList.contains('hidden') ? 'rotate(0deg)' : 'rotate(180deg)';
-                        }
-                    });
-
-                    // Cerrar al hacer clic fuera
-                    document.addEventListener('click', (e) => {
-                        if (!menu.contains(e.target) && !btn.contains(e.target)) {
-                            menu.classList.add('hidden');
-                            const arrow = btn.querySelector('svg');
-                            if (arrow) arrow.style.transform = 'rotate(0deg)';
-                        }
-                    });
-                }
-            };
-
-            setupDropdown('operaciones-dropdown-btn', 'operaciones-dropdown-desktop');
-            setupDropdown('lab-dropdown-btn', 'lab-dropdown-desktop');
-            setupDropdown('config-dropdown-btn', 'config-dropdown-desktop');
-
-            // 2. Lógica para menú móvil
-            const mobileBtn = document.getElementById('mobile-menu-button');
-            const mobileMenu = document.getElementById('mobile-menu');
-            if (mobileBtn && mobileMenu) {
-                mobileBtn.addEventListener('click', () => {
-                    mobileMenu.classList.toggle('hidden');
-                });
-            }
-
-            // 3. LÓGICA DE ADMIN (Mostrar solo si user.role === 'admin')
-            try {
-                // Obtenemos el perfil del usuario actual
-                const response = await fetch('/api/user/profile');
-                if (response.ok) {
-                    const user = await response.json();
-                    console.log(user);
-                    
-                    // Si es admin, quitamos la clase 'hidden' de los elementos .admin-only
-                    if (user && user.role === 'admin') {
-                        const adminElements = document.querySelectorAll('.admin-only');
-                        adminElements.forEach(el => {
-                            el.classList.remove('hidden');
-                        });
-                    }
-                }
-            } catch (error) {
-                console.error("Error al verificar permisos de admin:", error);
-            }
-        })();
-
-        // Función global de Logout (por si no existe en otro lado)
-        if (typeof logout !== 'function') {
-            window.logout = async () => {
-                try {
-                    await fetch('/api/logout', { method: 'POST' });
-                    window.location.href = '/login.html';
-                } catch (e) {
-                    console.error(e);
-                    window.location.href = '/login.html';
-                }
-            };
-        }
-    </script>
 </nav>
