@@ -526,7 +526,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div class="bg-white p-6 rounded-lg shadow-md">
                         <div id="tab-terroir" class="tab-panel space-y-4">
                             <div><i class="fa-solid fa-globe"></i> <strong>País:</strong> ${fincaData?.pais || 'N/A'}</div>
-                            <div><i class="fa-solid fa-location-dot"></i> <strong>Ciudad:</strong> ${fincaData?.ciudad || 'N/A'}</div>
+                            <div><i class="fa-solid fa-location-dot"></i> <strong>Ciudad:</strong> ${fincaData?.distrito || ''} - ${fincaData?.provincia ||  ''} - ${fincaData?.departamento || ''}</div>
                             <div><i class="fa-solid fa-mountain"></i> <strong>Altura:</strong> ${fincaData?.altura || 'N/A'} msnm</div>
                             <div><i class="fa-solid fa-tag"></i> <strong>Variedad:</strong> ${getFieldValue(firstStage.variedad) || 'N/A'}</div>
                             <div id="finca-map-container" class="w-full h-48 rounded-md border mt-4"></div>
@@ -560,6 +560,8 @@ document.addEventListener('DOMContentLoaded', () => {
     function createAdditionalInfoSection(h) {
         const { maridajesRecomendados, ruedaSaborData } = h;
         let maridajesHtml = '<p class="text-stone-500 italic text-center p-4">No se encontraron recomendaciones automáticas.</p>';
+
+        console.log(maridajesRecomendados);
 
         if (maridajesRecomendados && Object.keys(maridajesRecomendados).length > 0) {
             const renderMaridajeGroup = (recs, type) => {
@@ -597,6 +599,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             ${groupContent}
                         </div>`;
             }).join('');
+            console.log(maridajesHtml);
         }
 
         let ruedaHtml = '';
@@ -774,7 +777,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 if (button.dataset.tab === 'ruta' && !chartInstances['route-map-container']) {
                     const routePoints = getRoutePoints(globalHistory);
-                    console.log(routePoints);
                     initializeRouteMap('route-map-container', routePoints);
                 }
             });

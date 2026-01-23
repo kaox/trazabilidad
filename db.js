@@ -1066,9 +1066,23 @@ const getTrazabilidad = async (req, res) => {
                 history.perfilSensorialData = safeJSONParse(perfil.perfil_data);
                 // CALCULAR MARIDAJES
                 if (perfil.tipo === 'cacao') {
+                    console.log("1");
                     const allCafes = await all("SELECT * FROM perfiles WHERE tipo = 'cafe' AND user_id = ?", [ownerId]);
+                    const allVinos = maridajesVinoData.defaultPerfilesVino;
+                    const allQuesos = maridajesQuesoData;
+
                     const recCafe = allCafes.map(cafe => ({ producto: { ...cafe, perfil_data: safeJSONParse(cafe.perfil_data) }, puntuacion: calcularMaridajeCacaoCafe(history.perfilSensorialData, safeJSONParse(cafe.perfil_data)) })).sort((a, b) => b.puntuacion - a.puntuacion).slice(0, 3);
-                    history.maridajesRecomendados = { cafe: recCafe };
+                    const recVino = allVinos.map(vino => ({
+                        producto: vino,
+                        puntuacion: calcularMaridajeCacaoVino(perfil, vino)
+                    })).sort((a, b) => b.puntuacion - a.puntuacion);
+                    
+                    const recQueso = allQuesos.map(queso => ({
+                        producto: queso,
+                        puntuacion: calcularMaridajeCacaoQueso(perfil, queso)
+                    })).sort((a, b) => b.puntuacion - a.puntuacion);
+
+                    history.maridajesRecomendados = { cafe: recCafe, vino: recVino, queso: recQueso };
                 }
             }
         }
@@ -1088,7 +1102,10 @@ const getTrazabilidad = async (req, res) => {
 
         res.status(200).json(history);
 
-    } catch (error) { res.status(500).json({ error: "Error interno." }); }
+    } catch (error) { 
+        console.log(error);
+        res.status(500).json({ error: "Error interno." });
+    }
 };
 
 const getImmutableBatches = async (req, res) => {
