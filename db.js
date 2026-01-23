@@ -27,27 +27,20 @@ let get, all, run;
 
 if (environment === 'production') {
     // --- Configuración para Producción (DRIVER HTTP / FETCH) ---
-    // Usamos 'neon' en lugar de 'Pool'. Esto usa HTTPS puro, ideal para serverless inestable.
     const { neon } = require('@neondatabase/serverless');
     
-    // Creamos la instancia SQL usando la URL de conexión
     const sqlClient = neon(process.env.POSTGRES_URL);
 
-    // Adaptador que convierte tus consultas estilo SQLite (?) a Postgres ($1, $2)
     const queryAdapter = async (sql, params = []) => {
         let paramIndex = 1;
         const pgSql = sql.replace(/\?/g, () => `$${paramIndex++}`);
         
         try {
-            console.log(`--> [HTTP DB] Ejecutando: ${pgSql.substring(0, 50)}...`);
-            // Ejecutamos la consulta via HTTP fetch
             const result = await sqlClient(pgSql, params);
             
-            // El driver HTTP devuelve solo las filas (array), no devuelve metadatos como rowCount.
-            // Simulamos la estructura para que tu código no se rompa.
             return { 
                 rows: result, 
-                rowCount: result.length // En SELECT/RETURNING funciona perfecto.
+                rowCount: result.length
             };
         } catch (err) {
             console.error("--> [HTTP DB ERROR]", err);
@@ -69,9 +62,6 @@ if (environment === 'production') {
 
     // Función RUN: Para INSERT/UPDATE/DELETE
     run = async (sql, params = []) => {
-        // TRUCO: El driver HTTP no nos dice cuántas filas cambió en un UPDATE/DELETE normal.
-        // Para saber si funcionó, forzamos que la DB nos devuelva el ID del registro afectado.
-        
         const upperSql = sql.trim().toUpperCase();
         let sqlToRun = sql;
 
@@ -83,7 +73,6 @@ if (environment === 'production') {
         try {
             const result = await queryAdapter(sqlToRun, params);
             
-            // Si hay filas en el resultado, significa que hubo cambios
             const changes = result.rows.length;
             const lastID = (result.rows[0] && result.rows[0].id) ? result.rows[0].id : null;
 
@@ -92,11 +81,9 @@ if (environment === 'production') {
                 lastID: lastID 
             };
         } catch(e) {
-            console.error("--> [HTTP RUN ERROR]", e.message);
             throw e;
         }
     };
-    console.log("Conectado a PostgreSQL (Prod) via HTTP Driver (Stateless).");
 
 } else {
     // --- Configuración para Desarrollo (SQLite) ---
@@ -703,10 +690,13 @@ const getBatchesTree = async (req, res) => {
 
 const checkBatchOwnership = async (batchId, userId) => {
     const targetBatch = await get('SELECT id, user_id, parent_id, is_locked FROM batches WHERE id = ?', [batchId]);
+    console.log(targetBatch);
     if (!targetBatch) return null;
     let ownerId = targetBatch.user_id;
+    console.log(ownerId);
     if (!ownerId) {
         const root = await get(`WITH RECURSIVE ancestry AS (SELECT id, parent_id, user_id FROM batches WHERE id = ? UNION ALL SELECT b.id, b.parent_id, b.user_id FROM batches b JOIN ancestry a ON b.id = a.parent_id) SELECT user_id FROM ancestry WHERE user_id IS NOT NULL LIMIT 1`, [batchId]);
+        console.log(root);
         if (root) ownerId = root.user_id;
     }
     return ownerId == userId ? targetBatch : null;
@@ -874,7 +864,9 @@ const deleteBatch = async (req, res) => {
 
 const finalizeBatch = async (req, res) => {
     const { id } = req.params; const userId = req.user.id;
+    console.log(id,userId);
     const targetBatch = await checkBatchOwnership(id, userId);
+    console.log(targetBatch);
     if (!targetBatch) return res.status(403).json({ error: "Sin permiso." });
     if (targetBatch.is_locked) return res.status(409).json({ error: "Ya finalizado." });
 

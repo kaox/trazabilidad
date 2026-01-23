@@ -198,8 +198,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const processCosts = (stageCosts.costoAdquisicion || 0) + (stageCosts.costoManoDeObra || 0) + (stageCosts.costoInsumos || 0) + (stageCosts.costoOperativos || 0);
 
             let inheritedCost = 0;
-            const inputField = stage.campos_json.entradas[0]?.name;
-            const outputField = stage.campos_json.salidas[0]?.name;
+            const inputField = stage.campos_json?.entradas?[0]?.name;
+            const outputField = stage.campos_json?.salidas?[0]?.name;
             const inputWeight = getFieldValue(batchNode.data, inputField) || (parentCostInfo?.outputWeight || 0);
             const outputWeight = getFieldValue(batchNode.data, outputField) || 0;
             

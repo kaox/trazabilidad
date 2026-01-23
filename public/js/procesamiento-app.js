@@ -952,6 +952,7 @@ document.addEventListener('DOMContentLoaded', () => {
     async function handleFinalize(id) {
         if(confirm("¿Finalizar y Certificar?")) {
             try {
+                console.log(id);
                 await api(`/api/batches/${id}/finalize`, { method: 'POST' });
                 await refreshData();
             } catch(e) { alert(e.message); }
