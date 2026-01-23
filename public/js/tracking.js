@@ -298,6 +298,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function renderBlockchainCertificate(h) {
         if (!blockchainContainer || !hashDisplay) return;
 
+        console.log(h.stages);
         // Resetear estado (ocultar por defecto)
         blockchainContainer.classList.add('hidden');
 
@@ -561,8 +562,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const { maridajesRecomendados, ruedaSaborData } = h;
         let maridajesHtml = '<p class="text-stone-500 italic text-center p-4">No se encontraron recomendaciones automáticas.</p>';
 
-        console.log(maridajesRecomendados);
-
         if (maridajesRecomendados && Object.keys(maridajesRecomendados).length > 0) {
             const renderMaridajeGroup = (recs, type) => {
                 const excepcionales = recs.filter(r => r.puntuacion >= 90);
@@ -599,7 +598,6 @@ document.addEventListener('DOMContentLoaded', () => {
                             ${groupContent}
                         </div>`;
             }).join('');
-            console.log(maridajesHtml);
         }
 
         let ruedaHtml = '';

@@ -866,6 +866,9 @@ const finalizeBatch = async (req, res) => {
         if (rows.length === 0) return res.status(404).json({ error: 'Lote no encontrado' });
 
         const rootBatch = rows.find(r => !r.parent_id);
+
+        const ownerId = rootBatch.user_id; 
+
         const [templateInfo, allStages, ownerInfo, acopioData, productoInfo] = await Promise.all([
             get('SELECT nombre_producto FROM plantillas_proceso WHERE id = ?', [rootBatch.plantilla_id]),
             all('SELECT id, nombre_etapa, descripcion, orden, campos_json, fase FROM etapas_plantilla WHERE plantilla_id = ? ORDER BY orden', [rootBatch.plantilla_id]),
@@ -963,15 +966,17 @@ const finalizeBatch = async (req, res) => {
 
 const getTrazabilidad = async (req, res) => {
     const { id } = req.params;
+    console.log("id",id);
     try {
         const record = await get('SELECT snapshot_data, views FROM traceability_registry WHERE id = ?', [id]);
         if (record) {
             run('UPDATE traceability_registry SET views = views + 1 WHERE id = ?', [id]).catch(()=>{});
-            return res.status(200).json(safeJSONParse(record.snapshot_data));
+            //return res.status(200).json(safeJSONParse(record.snapshot_data));
         }
 
         run('UPDATE batches SET views = COALESCE(views, 0) + 1 WHERE id = ?', [id]).catch(()=>{});
         const rows = await all(`WITH RECURSIVE trace AS (SELECT * FROM batches WHERE id = ? UNION ALL SELECT b.* FROM batches b INNER JOIN trace t ON b.id = t.parent_id) SELECT * FROM trace;`, [id]);
+        console.log("rows",rows);
         if (rows.length === 0) return res.status(404).json({ error: 'Lote no encontrado' });
 
         const rootBatch = rows.find(r => !r.parent_id);
