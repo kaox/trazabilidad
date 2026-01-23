@@ -137,15 +137,11 @@ function initializeNav() {
 }
 
 (async function() {
-    console.log("entro");
-
-    // 3. LÓGICA DE ADMIN (Mostrar solo si user.role === 'admin')
     try {
         // Obtenemos el perfil del usuario actual
         const response = await fetch('/api/user/profile');
         if (response.ok) {
             const user = await response.json();
-            console.log(user);
             
             // Si es admin, quitamos la clase 'hidden' de los elementos .admin-only
             if (user && user.role === 'admin') {

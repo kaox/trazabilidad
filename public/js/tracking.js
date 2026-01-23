@@ -1309,13 +1309,10 @@ document.addEventListener('DOMContentLoaded', () => {
             if (locationName && !addedLocations.has(locationName)) {
                 let locationData = null;
                 
-                console.log(locationName,h);
                 if (h.fincaData && h.fincaData.nombre_finca === locationName) {
                     locationData = h.fincaData;
                 } else if (h.procesadorasData) {
-                    console.log(h.procesadorasData);
                     locationData = h.procesadorasData.find(p => p.nombre_comercial === locationName || p.razon_social === locationName);
-                    console.log(locationData);
                 }
                 
                 if (locationData && locationData.coordenadas) {
