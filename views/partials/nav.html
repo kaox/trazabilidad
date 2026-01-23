@@ -143,6 +143,7 @@
                 const response = await fetch('/api/user/profile');
                 if (response.ok) {
                     const user = await response.json();
+                    console.log(user);
                     
                     // Si es admin, quitamos la clase 'hidden' de los elementos .admin-only
                     if (user && user.role === 'admin') {
