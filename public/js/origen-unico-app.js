@@ -22,8 +22,14 @@ const app = {
             const res = await fetch('/api/public/companies');
             const companies = await res.json();
 
+            // Mensaje si no hay datos (pero con CTA)
             if (companies.length === 0) {
-                this.container.innerHTML = `<div class="text-center text-stone-500 py-10"><p>Aún no hay empresas con lotes certificados públicamente.</p></div>`;
+                this.container.innerHTML = `
+                    <div class="text-center text-stone-500 py-10 bg-stone-50 rounded-xl border-2 border-dashed border-stone-200">
+                        <i class="fas fa-users text-4xl text-stone-300 mb-4"></i>
+                        <p class="mb-4">Aún no hay empresas públicas. ¡Sé el primero!</p>
+                        <a href="/login.html" class="text-amber-700 font-bold hover:underline">Registrar mi Empresa</a>
+                    </div>`;
                 return;
             }
 
@@ -34,7 +40,7 @@ const app = {
                 const logo = c.company_logo || `https://ui-avatars.com/api/?name=${encodeURIComponent(c.empresa)}&background=f5f5f4&color=78350f&size=128`;
                 
                 html += `
-                    <div onclick="app.loadProducts('${c.id}', '${c.empresa}')" class="bg-white rounded-2xl shadow-sm border border-stone-200 p-6 cursor-pointer card-hover transition-all duration-300 group">
+                    <div onclick="app.loadProducts('${c.id}', '${c.empresa}')" class="bg-white rounded-2xl shadow-sm border border-stone-200 p-6 cursor-pointer card-hover transition-all duration-300 group relative overflow-hidden">
                         <div class="flex items-center gap-4 mb-4">
                             <img src="${logo}" alt="${c.empresa}" class="w-16 h-16 rounded-full object-cover border border-stone-100 group-hover:border-amber-200 transition">
                             <div>
@@ -51,6 +57,21 @@ const app = {
                     </div>
                 `;
             });
+
+            // --- GROWTH HACK: Tarjeta "Tu Empresa Aquí" ---
+            html += `
+                <a href="/login.html" class="flex flex-col items-center justify-center p-6 rounded-2xl border-2 border-dashed border-amber-300 bg-amber-50/50 hover:bg-amber-50 cursor-pointer transition-all group opacity-80 hover:opacity-100">
+                    <div class="w-16 h-16 rounded-full bg-white border border-amber-200 flex items-center justify-center mb-4 shadow-sm group-hover:scale-110 transition">
+                        <i class="fas fa-plus text-2xl text-amber-500"></i>
+                    </div>
+                    <h3 class="text-xl font-display font-bold text-amber-900 mb-2">¿Tu Marca Aquí?</h3>
+                    <p class="text-sm text-amber-700 text-center mb-4">Únete al directorio de empresas verificadas y demuestra tu origen.</p>
+                    <span class="bg-amber-600 text-white text-sm font-bold px-4 py-2 rounded-lg shadow-md hover:bg-amber-700 transition">
+                        Certificar mis Productos
+                    </span>
+                </a>
+            `;
+
             html += `</div>`;
             this.container.innerHTML = html;
 
@@ -71,7 +92,6 @@ const app = {
         try {
             const res = await fetch(`/api/public/companies/${userId}/products`);
             const products = await res.json();
-            console.log(products);
 
             if (products.length === 0) {
                 this.container.innerHTML = `<div class="text-center text-stone-500 py-10">Esta empresa no tiene productos públicos visibles actualmente.</div>`;
@@ -135,7 +155,7 @@ const app = {
                 batches.forEach(b => {
                     const date = new Date(b.fecha).toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' });
                     const hashShort = b.hash.substring(0, 12) + '...';
-                    console.log(b);
+                    
                     // URL Pública de Trazabilidad
                     const publicUrl = `/${b.id}`; // O http://localhost:3000/ENV... según tu routing
 
@@ -151,7 +171,7 @@ const app = {
                                             <h4 class="font-bold text-lg text-stone-800 group-hover:text-amber-900">Lote: <span class="font-mono">${b.id}</span></h4>
                                             <span class="bg-green-100 text-green-700 text-[10px] font-bold px-2 py-0.5 rounded border border-green-200 uppercase">Inmutable</span>
                                         </div>
-                                        <p class="text-sm text-stone-500"><i class="fas fa-map-marker-alt text-amber-700 mr-1"></i> Finca ${b.origen}</p>
+                                        <p class="text-sm text-stone-500"><i class="fas fa-map-marker-alt text-amber-700 mr-1"></i> ${b.origen}</p>
                                     </div>
                                 </div>
                                 <div class="text-left md:text-right pl-16 md:pl-0">

@@ -20,44 +20,19 @@
 <body class="text-stone-800 antialiased min-h-screen flex flex-col">
 
     <!-- Navbar Simplificado -->
-    <header class="bg-white/80 backdrop-blur-sm sticky top-0 z-50 border-b border-stone-200">
+    <nav class="bg-white border-b border-stone-200 sticky top-0 z-50">
         <div class="container mx-auto px-6 py-4 flex justify-between items-center">
-            <a href="/" class="text-2xl font-bold font-display text-amber-900"><i class="fa-solid fa-fingerprint mr-2"></i>Ruru Lab</a>
-
-            <nav class="hidden md:flex space-x-8 items-center">
-                <a href="/blog.html" class="hover:text-amber-800 transition">Blog</a>
-                <div class="relative" data-menu>
-                    <button class="flex items-center gap-1 font-semibold text-amber-800 transition">
-                        <span>Herramientas</span>
-                        <i class="fas fa-chevron-down text-xs"></i>
-                    </button>
-                    <div class="absolute left-0 mt-2 w-56 bg-white rounded-md shadow-lg z-50 hidden" data-menu-content>
-                        <div class="py-1">
-                            <span class="block px-4 py-2 text-xs text-stone-400 uppercase">Café</span>
-                            <a href="/calculadora-cafe.html" class="block px-4 py-2 text-sm text-stone-700 bg-stone-100 font-medium">Calculadora de Catación SCA</a>
-                        </div>
-                        <div class="py-1 border-t border-stone-100">
-                            <span class="block px-4 py-2 text-xs text-stone-400 uppercase">Cacao</span>
-                            <a href="/calculadora-cacao.html" class="block px-4 py-2 text-sm text-stone-700 bg-stone-100 font-medium">Evaluador Sensorial CoEx</a>
-                        </div>
-                    </div>
-                </div>
-                <a href="/qr" class="hover:text-amber-800 transition">Descubrir Lote</a>
-                <a href="/origen-unico" class="hover:text-amber-800 transition">Empresas Origen Unico</a>
-                <a href="/pricing-public.html" class="hover:text-amber-800 transition">Planes</a>
-                <a href="/login.html" class="bg-amber-800 text-white font-bold py-2 px-5 rounded-lg hover:bg-amber-900 transition">Pruébalo gratis</a>
-            </nav>
-            <!-- Botón de Menú Móvil -->
-            <div class="md:hidden">
-                <button id="menu-button" class="focus:outline-none">
-                    <i class="fas fa-bars fa-lg"></i>
-                </button>
-                <button id="close-menu-button" class="hidden focus:outline-none">
-                    <i class="fas fa-times fa-2x"></i>
-                </button>
+            <a href="/" class="text-2xl font-bold font-display text-amber-900 flex items-center gap-2">
+                <i class="fa-solid fa-fingerprint"></i> Ruru Lab
+            </a>
+            <div class="flex items-center gap-4">
+                <a href="/login.html" class="hidden md:block text-sm font-bold text-amber-700 hover:text-amber-900">Soy Productor</a>
+                <a href="/" class="text-sm font-medium text-stone-500 hover:text-amber-800 transition">
+                    <i class="fas fa-arrow-left mr-1"></i> Volver
+                </a>
             </div>
         </div>
-    </header>
+    </nav>
 
     <!-- Header Hero -->
     <header class="bg-amber-900 text-white py-16">
@@ -95,7 +70,52 @@
 
     </main>
 
-    <footer class="bg-stone-900 text-stone-400 py-8 mt-auto">
+    <!-- SECCIÓN DE CAPTACIÓN / LEAD MAGNET -->
+    <section class="bg-stone-900 text-white py-16">
+        <div class="container mx-auto px-6 grid md:grid-cols-2 gap-12 items-center">
+            <div>
+                <h2 class="text-3xl font-display font-bold mb-4 text-amber-400">¿Tu empresa aún no está aquí?</h2>
+                <p class="text-stone-300 mb-6 text-lg">La transparencia es la nueva ventaja competitiva. Únete a Ruru Lab, cumple con la normativa EUDR y obtén tu Pasaporte Digital de Producto hoy mismo.</p>
+                <ul class="space-y-3 mb-8">
+                    <li class="flex items-center gap-3"><i class="fas fa-check-circle text-green-500"></i> <span>Trazabilidad Blockchain Inmutable</span></li>
+                    <li class="flex items-center gap-3"><i class="fas fa-check-circle text-green-500"></i> <span>Validación Satelital de Deforestación</span></li>
+                    <li class="flex items-center gap-3"><i class="fas fa-check-circle text-green-500"></i> <span>Diferenciación ante compradores internacionales</span></li>
+                </ul>
+                <div class="flex flex-col sm:flex-row gap-4">
+                    <a href="/login.html" class="bg-amber-600 hover:bg-amber-700 text-white font-bold py-3 px-8 rounded-xl text-center shadow-lg transition transform hover:-translate-y-1">
+                        Crear Cuenta Gratis
+                    </a>
+                    <a href="http://wa.me/51961222040" target="_blank" class="bg-stone-800 hover:bg-stone-700 border border-stone-700 text-white font-bold py-3 px-8 rounded-xl text-center transition">
+                        Agendar Demo
+                    </a>
+                </div>
+            </div>
+            <div class="relative hidden md:block">
+                <!-- Efecto visual decorativo -->
+                <div class="absolute -inset-4 bg-amber-500/10 rounded-full blur-3xl"></div>
+                <div class="relative bg-stone-800 p-8 rounded-2xl border border-stone-700 shadow-2xl transform rotate-2 hover:rotate-0 transition duration-500">
+                    <div class="flex items-center gap-4 mb-6">
+                        <div class="w-12 h-12 rounded-full bg-white flex items-center justify-center text-2xl">🏆</div>
+                        <div>
+                            <h3 class="font-bold text-lg">Certificado de Origen</h3>
+                            <p class="text-xs text-stone-400">Ruru Lab Verified</p>
+                        </div>
+                    </div>
+                    <div class="space-y-4">
+                        <div class="h-2 bg-stone-700 rounded w-3/4"></div>
+                        <div class="h-2 bg-stone-700 rounded w-full"></div>
+                        <div class="h-2 bg-stone-700 rounded w-5/6"></div>
+                    </div>
+                    <div class="mt-6 pt-6 border-t border-stone-700 flex justify-between items-center">
+                        <span class="text-amber-400 font-mono text-xs">VERIFIED_HASH_X92</span>
+                        <i class="fas fa-fingerprint text-3xl text-stone-600"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer class="bg-stone-950 text-stone-500 py-8 border-t border-stone-800">
         <div class="container mx-auto px-6 text-center">
             <p>&copy; 2025 Ruru Lab. Transparencia que conecta.</p>
         </div>
