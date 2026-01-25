@@ -8,9 +8,9 @@
     <script src="https://cdn.tailwindcss.com"></script>
     
     <!-- GOOGLE MAPS + DRAWING LIBRARY -->
-    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAM37iJTRcIoSAxESlDzB2DxlNJWKasW5U&libraries=drawing,places&callback=initMap&v=weekly" defer></script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAM37iJTRcIoSAxESlDzB2DxlNJWKasW5U&libraries=drawing,places,geometry&callback=initMap&v=weekly" defer></script>
 
-    <!-- FontAwesome para el icono del satélite -->
+    <!-- FontAwesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -19,8 +19,10 @@
     <style>
         body { font-family: 'Inter', sans-serif; background-color: #fdfaf6; }
         h1, h2, h3, .font-display { font-family: 'Playfair Display', serif; }
-        #map { height: 400px; width: 100%; border-radius: 1rem; border: 1px solid #d1c4b3; z-index: 10; }
-        /* Animación para el escaneo satelital */
+        /* Mapa más alto para facilitar dibujo */
+        #map { height: 450px; width: 100%; border-radius: 0.75rem; border: 1px solid #d1c4b3; z-index: 10; }
+        
+        /* Animación Escaneo */
         @keyframes scanning {
             0% { top: 0%; opacity: 0; }
             10% { opacity: 1; }
@@ -28,167 +30,288 @@
             100% { top: 100%; opacity: 0; }
         }
         .scan-line {
-            position: absolute;
-            left: 0;
-            width: 100%;
-            height: 4px;
+            position: absolute; left: 0; width: 100%; height: 4px;
             background: rgba(16, 185, 129, 0.8);
             box-shadow: 0 0 10px #10b981;
-            z-index: 1000;
-            animation: scanning 2s infinite linear;
+            z-index: 1000; animation: scanning 2s infinite linear;
             pointer-events: none;
         }
     </style>
 </head>
 <body class="text-stone-800 antialiased">
     <div id="nav-placeholder"></div>
-    <div class="container mx-auto p-4 md:p-8 max-w-5xl">
-        <header class="text-center mb-10 mt-4">
-            <h1 class="text-4xl md:text-5xl font-bold text-amber-900 mb-2">Registro de Fincas</h1>
-            <p class="text-stone-600">Añade y gestiona la información de las fincas productoras.</p>
+    
+    <div class="container mx-auto p-4 md:p-8 max-w-6xl">
+        <header class="text-center mb-8 mt-4">
+            <h1 class="text-4xl md:text-5xl font-bold text-amber-900 mb-2">Gestión de Fincas</h1>
+            <p class="text-stone-600">Digitaliza tus orígenes: Dibuja, mide y registra.</p>
         </header>
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <div class="bg-white p-6 rounded-2xl shadow-lg">
-                 <h2 class="text-2xl font-display text-amber-900 border-b pb-2 mb-6">Fincas Registradas</h2>
-                 <div id="fincas-list" class="space-y-4 max-h-[80vh] overflow-y-auto"></div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            
+            <!-- COLUMNA IZQUIERDA: LISTA (4 columnas) -->
+            <div class="lg:col-span-4 flex flex-col gap-6">
+                <div class="bg-white p-6 rounded-2xl shadow-lg border border-stone-100 flex-grow">
+                     <h2 class="text-xl font-display text-amber-900 border-b pb-3 mb-4 flex justify-between items-center">
+                        <span>Mis Fincas</span>
+                        <span class="text-xs bg-amber-100 text-amber-800 px-2 py-1 rounded-full" id="finca-count">0</span>
+                     </h2>
+                     <div id="fincas-list" class="space-y-4 max-h-[80vh] overflow-y-auto pr-2 custom-scrollbar">
+                        <!-- Lista inyectada por JS -->
+                     </div>
+                </div>
             </div>
-            <div class="bg-white p-6 rounded-2xl shadow-lg">
-                <h2 id="form-title" class="text-2xl font-display text-amber-900 border-b pb-2 mb-6">Nueva Finca</h2>
-                <form id="finca-form" class="space-y-4">
-                    <input type="hidden" id="edit-id">
 
-                    <div class="flex items-center gap-4">
-                        <div class="flex-grow space-y-4">
-                            <div><label for="propietario" class="block text-sm font-medium text-stone-700 mb-1">Propietario</label><input type="text" id="propietario" name="propietario" class="w-full p-3 border border-stone-300 rounded-xl" required></div>
-                            <div><label for="dni_ruc" class="block text-sm font-medium text-stone-700 mb-1">DNI / RUC *</label><input type="text" id="dni_ruc" name="dni_ruc" class="w-full p-3 border border-stone-300 rounded-xl" required></div>
-                        </div>
-                        <div class="flex-shrink-0 text-center">
-                            <label class="block text-sm font-medium text-stone-700 mb-1">Foto del Productor</label>
-                            <img id="productor-foto-preview" src="https://placehold.co/100x100/e0e0e0/757575?text=Productor" class="w-24 h-24 rounded-full object-cover mx-auto border-2 border-stone-200">
-                            <input type="file" id="productor-foto-input" class="hidden" accept="image/*">
-                            <input type="hidden" id="foto_productor" name="foto_productor">
-                            <button type="button" onclick="document.getElementById('productor-foto-input').click()" class="mt-2 text-xs text-sky-600 hover:underline">Cambiar foto</button>
-                        </div>
-                    </div>
-
-                    <div><label for="nombre_finca" class="block text-sm font-medium text-stone-700 mb-1">Nombre Finca *</label><input type="text" id="nombre_finca" name="nombre_finca" class="w-full p-3 border border-stone-300 rounded-xl" required></div>
+            <!-- COLUMNA DERECHA: FORMULARIO (8 columnas) -->
+            <div class="lg:col-span-8">
+                <div class="bg-white p-6 md:p-8 rounded-2xl shadow-xl border border-stone-100">
                     
-                    <!-- UBICACIÓN ISO 3166 -->
-                    <div><label for="pais" class="block text-sm font-medium text-stone-700 mb-1">País</label><select id="pais" name="pais" class="w-full p-3 border border-stone-300 rounded-xl bg-white"></select></div>
-                    
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                         <div>
-                            <label for="departamento" class="block text-sm font-medium text-stone-700 mb-1">Estado / Dpto.</label>
-                            <input type="text" id="departamento" name="departamento" class="w-full p-3 border border-stone-300 rounded-xl">
-                        </div>
-                        <div>
-                            <label for="provincia" class="block text-sm font-medium text-stone-700 mb-1">Ciudad / Prov.</label>
-                            <input type="text" id="provincia" name="provincia" class="w-full p-3 border border-stone-300 rounded-xl">
-                        </div>
-                    </div>
-                    
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label for="distrito" class="block text-sm font-medium text-stone-700 mb-1">Distrito / Localidad</label>
-                            <input type="text" id="distrito" name="distrito" class="w-full p-3 border border-stone-300 rounded-xl">
-                        </div>
-                         <div>
-                            <label for="ciudad" class="block text-sm font-medium text-stone-700 mb-1">Referencia / Ciudad</label>
-                            <input type="text" id="ciudad" name="ciudad" class="w-full p-3 border border-stone-300 rounded-xl">
-                        </div>
-                    </div>
-                    <!-- FIN UBICACIÓN -->
-                     
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div><label for="altura" class="block text-sm font-medium text-stone-700 mb-1">Altura (msnm) *</label><input type="number" id="altura" name="altura" class="w-full p-3 border border-stone-300 rounded-xl" required></div>
-                        <div><label for="superficie" class="block text-sm font-medium text-stone-700 mb-1">Superficie (Ha) *</label><input type="number" id="superficie" name="superficie" class="w-full p-3 border border-stone-300 rounded-xl" required step="0.1"></div>
-                        <div><label for="numero_trabajadores" class="block text-sm font-medium text-stone-700 mb-1">Nº Trabajadores</label><input type="number" id="numero_trabajadores" name="numero_trabajadores" class="w-full p-3 border border-stone-300 rounded-xl"></div>
+                    <div class="flex justify-between items-center mb-6 border-b pb-4">
+                        <h2 id="form-title" class="text-2xl font-display text-amber-900">Nueva Finca</h2>
+                        <button type="button" id="cancel-edit-btn" class="hidden text-sm text-stone-500 hover:text-red-600 font-bold bg-stone-100 px-4 py-2 rounded-lg transition">
+                            <i class="fas fa-times mr-1"></i> Cancelar Edición
+                        </button>
                     </div>
 
-                    <div><label for="telefono" class="block text-sm font-medium text-stone-700 mb-1">Teléfono</label><input type="tel" id="telefono" name="telefono" class="w-full p-3 border border-stone-300 rounded-xl"></div>
-                    <div><label for="historia" class="block text-sm font-medium text-stone-700 mb-1">Historia de la Finca</label><textarea id="historia" name="historia" rows="4" class="w-full p-3 border border-stone-300 rounded-xl"></textarea></div>
-                    
-                    <!-- Premios -->
-                    <div class="pt-4 border-t">
-                        <label class="block text-lg font-medium text-stone-800 mb-2">Premios y Reconocimientos</label>
-                        <div class="space-y-2" id="premios-list"></div>
-                        <div class="flex items-center gap-2 mt-4 p-3 bg-stone-50 rounded-lg">
-                            <select id="premio-select" class="w-full p-2 border border-stone-300 rounded-md bg-white"></select>
-                            <input type="number" id="premio-year" class="p-2 border border-stone-300 rounded-md w-24" placeholder="Año" min="1900" max="2100">
-                            <button type="button" id="add-premio-btn" class="bg-sky-600 hover:bg-sky-700 text-white font-bold p-2 rounded-md">+</button>
+                    <form id="finca-form" class="space-y-8">
+                        <input type="hidden" id="edit-id">
+
+                        <!-- PASO 1: MAPA Y GEOMETRÍA (PRIORIDAD ALTA) -->
+                        <div class="bg-amber-50/50 p-5 rounded-2xl border border-amber-100">
+                            <div class="mb-4">
+                                <div class="flex items-center gap-2 mb-1">
+                                    <span class="bg-amber-600 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold">1</span>
+                                    <h3 class="text-lg font-bold text-amber-900">Ubicación Satelital</h3>
+                                </div>
+                                <p class="text-sm text-stone-600 ml-8">
+                                    Busca la zona y <strong class="text-amber-700">dibuja el polígono</strong> exacto de la finca. La ubicación y superficie se calcularán automáticamente.
+                                </p>
+                            </div>
+
+                            <!-- Herramientas Mapa -->
+                            <div class="flex flex-col sm:flex-row gap-2 mb-3">
+                                <div class="relative flex-grow">
+                                    <i class="fas fa-search absolute left-3 top-3.5 text-stone-400"></i>
+                                    <input type="text" id="ciudad-search" placeholder="Buscar lugar, ciudad o coordenadas..." class="w-full pl-10 p-3 border border-stone-300 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none shadow-sm">
+                                </div>
+                                <button type="button" id="search-btn" class="bg-stone-700 hover:bg-stone-800 text-white font-bold px-6 py-3 rounded-xl shadow-sm transition">
+                                    Ir
+                                </button>
+                                <button type="button" id="locate-btn" class="bg-white hover:bg-stone-50 text-amber-600 border border-amber-200 font-bold px-4 py-3 rounded-xl shadow-sm transition" title="Usar mi ubicación actual">
+                                    <i class="fas fa-crosshairs"></i>
+                                </button>
+                            </div>
+
+                            <!-- Mapa Container -->
+                            <div class="relative rounded-xl overflow-hidden shadow-md border border-stone-300 group">
+                                <div id="map"></div>
+                                <div id="satellite-scan-line" class="scan-line hidden"></div>
+                                
+                                <!-- Overlay de Instrucciones (desaparece al dibujar) -->
+                                <div id="map-instructions" class="absolute top-4 left-4 bg-white/90 backdrop-blur px-4 py-2 rounded-lg text-xs font-medium text-stone-600 shadow-sm pointer-events-none border border-white/50">
+                                    <i class="fas fa-draw-polygon mr-1 text-amber-600"></i> Usa la herramienta de polígono arriba
+                                </div>
+                            </div>
+                            <input type="hidden" id="coordenadas" name="coordenadas">
+
+                            <!-- Acciones de Mapa -->
+                            <div class="mt-3 flex justify-end">
+                                <button type="button" id="validate-deforestation-btn" class="bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold py-2 px-4 rounded-lg shadow-sm flex items-center gap-2 transition transform hover:scale-105">
+                                    <i class="fas fa-satellite"></i> Validar EUDR (Anti-Deforestación)
+                                </button>
+                            </div>
                         </div>
-                    </div>
 
-                    <!-- Certificaciones -->
-                    <div class="pt-4 border-t">
-                        <label class="block text-lg font-medium text-stone-800 mb-2">Certificaciones</label>
-                        <div class="space-y-2" id="certifications-list"></div>
-                        <div class="flex items-center gap-2 mt-4 p-3 bg-stone-50 rounded-lg">
-                            <select id="certification-select" class="w-full p-2 border border-stone-300 rounded-md bg-white"></select>
-                            <input type="date" id="certification-expiry" class="p-2 border border-stone-300 rounded-md">
-                            <button type="button" id="add-certification-btn" class="bg-sky-600 hover:bg-sky-700 text-white font-bold p-2 rounded-md">+</button>
+                        <!-- PASO 2: DATOS GEOGRÁFICOS (AUTOCOMPLETADOS) -->
+                        <div class="bg-white p-5 rounded-2xl border border-stone-200 shadow-sm">
+                            <div class="flex items-center gap-2 mb-4">
+                                <span class="bg-stone-600 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold">2</span>
+                                <h3 class="text-lg font-bold text-stone-800">Datos Geográficos</h3>
+                                <span class="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded border border-green-200 font-medium ml-2">
+                                    <i class="fas fa-magic mr-1"></i> Autocompletado
+                                </span>
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <!-- Columna Izquierda: Ubicación Administrativa -->
+                                <div class="space-y-4">
+                                    <div>
+                                        <label for="pais" class="block text-xs font-bold text-stone-500 uppercase mb-1">País</label>
+                                        <select id="pais" name="pais" class="w-full p-2.5 bg-stone-50 border border-stone-300 rounded-lg text-stone-800 font-medium focus:ring-2 focus:ring-amber-500"></select>
+                                    </div>
+                                    <div class="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <label for="departamento" class="block text-xs font-bold text-stone-500 uppercase mb-1">Dpto / Región</label>
+                                            <input type="text" id="departamento" name="departamento" class="w-full p-2.5 bg-stone-50 border border-stone-300 rounded-lg text-stone-800" readonly>
+                                        </div>
+                                        <div>
+                                            <label for="provincia" class="block text-xs font-bold text-stone-500 uppercase mb-1">Provincia</label>
+                                            <input type="text" id="provincia" name="provincia" class="w-full p-2.5 bg-stone-50 border border-stone-300 rounded-lg text-stone-800" readonly>
+                                        </div>
+                                    </div>
+                                    <!-- Distrito solo (Eliminado Referencia/Caserío) -->
+                                    <div>
+                                        <label for="distrito" class="block text-xs font-bold text-stone-500 uppercase mb-1">Distrito</label>
+                                        <input type="text" id="distrito" name="distrito" class="w-full p-2.5 bg-stone-50 border border-stone-300 rounded-lg text-stone-800" readonly>
+                                    </div>
+                                    <!-- Input oculto para ciudad si el backend lo requiere, o simplemente no se envía -->
+                                    <input type="hidden" id="ciudad" name="ciudad"> 
+                                </div>
+
+                                <!-- Columna Derecha: Métricas del Terreno -->
+                                <div class="bg-stone-50 p-4 rounded-xl border border-stone-200 flex flex-col justify-center space-y-4">
+                                    <div>
+                                        <label for="superficie" class="block text-xs font-bold text-stone-500 uppercase mb-1">Superficie Total</label>
+                                        <div class="relative">
+                                            <input type="number" id="superficie" name="superficie" class="w-full p-3 pl-4 text-xl font-bold text-amber-900 border border-stone-300 rounded-xl focus:ring-2 focus:ring-amber-500" placeholder="0.00" step="0.01" required>
+                                            <span class="absolute right-4 top-3.5 text-sm font-bold text-stone-400">Hectáreas</span>
+                                        </div>
+                                        <p class="text-[10px] text-stone-400 mt-1">Calculado automáticamente del polígono.</p>
+                                    </div>
+                                    <div>
+                                        <label for="altura" class="block text-xs font-bold text-stone-500 uppercase mb-1">Altitud Promedio</label>
+                                        <div class="relative">
+                                            <input type="number" id="altura" name="altura" class="w-full p-3 pl-4 text-xl font-bold text-stone-700 border border-stone-300 rounded-xl focus:ring-2 focus:ring-amber-500" placeholder="0" required>
+                                            <span class="absolute right-4 top-3.5 text-sm font-bold text-stone-400">m.s.n.m.</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                    </div>
 
-                    <!-- Galería de Fotos -->
-                    <div class="pt-4 border-t">
-                        <label class="block text-lg font-medium text-stone-800 mb-2">Galería de Fotos</label>
-                        <input type="file" id="fotos" name="fotos" class="block w-full text-sm text-stone-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:font-semibold file:bg-amber-50 file:text-amber-700 hover:file:bg-amber-100" multiple accept="image/*">
-                        <div id="fotos-preview-container" class="mt-4 grid grid-cols-3 gap-4"></div>
-                    </div>
+                        <!-- PASO 3: INFORMACIÓN DEL PRODUCTOR -->
+                        <div class="bg-white p-5 rounded-2xl border border-stone-200 shadow-sm">
+                            <div class="flex items-center gap-2 mb-4">
+                                <span class="bg-stone-600 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold">3</span>
+                                <h3 class="text-lg font-bold text-stone-800">Detalles del Productor y Finca</h3>
+                            </div>
 
-                    <!-- Ubicación -->
-                    <div class="pt-4 border-t">
-                         <label class="block text-lg font-medium text-stone-800 mb-2">Ubicación</label>
-                         <div class="flex items-center gap-2 mb-3">
-                            <input type="text" id="ciudad-search" placeholder="Buscar ubicación en mapa..." class="w-full p-3 border border-stone-300 rounded-xl">
-                            <button type="button" id="search-btn" class="bg-sky-600 hover:bg-sky-700 text-white font-bold p-3 rounded-xl flex-shrink-0">Buscar</button>
-                            <button type="button" id="locate-btn" class="bg-stone-200 hover:bg-stone-300 text-stone-700 font-bold p-3 rounded-xl flex-shrink-0" title="Localizar mi ubicación">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                                  <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd" />
-                                </svg>
+                            <div class="flex flex-col-reverse md:flex-row gap-6">
+                                <div class="flex-grow space-y-4">
+                                    <div>
+                                        <label for="nombre_finca" class="block text-sm font-medium text-stone-700 mb-1">Nombre de la Finca *</label>
+                                        <input type="text" id="nombre_finca" name="nombre_finca" class="w-full p-3 border border-stone-300 rounded-xl focus:ring-2 focus:ring-amber-500" placeholder="Ej. Finca La Esperanza" required>
+                                    </div>
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div>
+                                            <label for="propietario" class="block text-sm font-medium text-stone-700 mb-1">Propietario / Socio *</label>
+                                            <input type="text" id="propietario" name="propietario" class="w-full p-3 border border-stone-300 rounded-xl focus:ring-2 focus:ring-amber-500" required>
+                                        </div>
+                                        <div>
+                                            <label for="dni_ruc" class="block text-sm font-medium text-stone-700 mb-1">DNI / RUC *</label>
+                                            <input type="text" id="dni_ruc" name="dni_ruc" class="w-full p-3 border border-stone-300 rounded-xl focus:ring-2 focus:ring-amber-500" required>
+                                        </div>
+                                    </div>
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div>
+                                            <label for="telefono" class="block text-sm font-medium text-stone-700 mb-1">Teléfono</label>
+                                            <input type="tel" id="telefono" name="telefono" class="w-full p-3 border border-stone-300 rounded-xl">
+                                        </div>
+                                        <div>
+                                            <label for="numero_trabajadores" class="block text-sm font-medium text-stone-700 mb-1">Nº Trabajadores</label>
+                                            <input type="number" id="numero_trabajadores" name="numero_trabajadores" class="w-full p-3 border border-stone-300 rounded-xl">
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label for="historia" class="block text-sm font-medium text-stone-700 mb-1">Historia / Descripción</label>
+                                        <textarea id="historia" name="historia" rows="3" class="w-full p-3 border border-stone-300 rounded-xl text-sm" placeholder="Breve historia para el pasaporte digital..."></textarea>
+                                    </div>
+                                </div>
+
+                                <!-- Foto Productor -->
+                                <div class="md:w-48 flex-shrink-0 flex flex-col items-center">
+                                    <label class="block text-sm font-medium text-stone-700 mb-2">Foto Productor</label>
+                                    <div class="relative group cursor-pointer" onclick="document.getElementById('productor-foto-input').click()">
+                                        <img id="productor-foto-preview" src="https://placehold.co/150x150/e0e0e0/757575?text=Foto" class="w-32 h-32 rounded-full object-cover border-4 border-white shadow-md group-hover:opacity-75 transition">
+                                        <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition">
+                                            <i class="fas fa-camera text-stone-800 text-2xl"></i>
+                                        </div>
+                                    </div>
+                                    <input type="file" id="productor-foto-input" class="hidden" accept="image/*">
+                                    <input type="hidden" id="foto_productor" name="foto_productor">
+                                    <p class="text-xs text-stone-400 mt-2 text-center">Click para subir</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- EXTRAS (Modificado: Visible sin Acordeón y Apilado) -->
+                        <div class="space-y-6 bg-white p-5 rounded-2xl border border-stone-200 shadow-sm">
+                            <div class="flex items-center gap-2 mb-2">
+                                <span class="bg-stone-600 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold">4</span>
+                                <h3 class="text-lg font-bold text-stone-800">Calidad y Extras</h3>
+                            </div>
+                            
+                            <!-- Certificaciones y Premios (APILADO para evitar superposición en móvil) -->
+                            <div class="space-y-8">
+                                <div>
+                                    <label class="block text-xs font-bold text-stone-500 uppercase mb-2">Certificaciones Activas</label>
+                                    <div class="flex flex-col sm:flex-row gap-2 mb-3 sm:items-end">
+                                        <select id="certification-select" class="w-full sm:flex-grow p-2.5 border border-stone-300 rounded-lg text-sm h-[42px] bg-white"></select>
+                                        <div class="flex gap-2 w-full sm:w-auto">
+                                            <input type="date" id="certification-expiry" class="flex-grow sm:flex-none border border-stone-300 rounded-lg text-sm p-2.5 h-[42px] w-full sm:w-auto bg-white">
+                                            <button type="button" id="add-certification-btn" class="bg-stone-800 text-white px-4 rounded-lg hover:bg-black h-[42px] font-bold text-lg leading-none flex items-center justify-center pb-1 flex-shrink-0">+</button>
+                                        </div>
+                                    </div>
+                                    <div id="certifications-list" class="space-y-2"></div>
+                                </div>
+                                <div class="border-t border-stone-100 pt-6">
+                                    <label class="block text-xs font-bold text-stone-500 uppercase mb-2">Premios Ganados</label>
+                                    <div class="flex flex-col sm:flex-row gap-2 mb-3 sm:items-end">
+                                        <select id="premio-select" class="w-full sm:flex-grow p-2.5 border border-stone-300 rounded-lg text-sm h-[42px] bg-white"></select>
+                                        <div class="flex gap-2 w-full sm:w-auto">
+                                            <input type="number" id="premio-year" class="flex-grow sm:flex-none border border-stone-300 rounded-lg text-sm p-2.5 h-[42px] w-full sm:w-24 bg-white" placeholder="Año">
+                                            <button type="button" id="add-premio-btn" class="bg-stone-800 text-white px-4 rounded-lg hover:bg-black h-[42px] font-bold text-lg leading-none flex items-center justify-center pb-1 flex-shrink-0">+</button>
+                                        </div>
+                                    </div>
+                                    <div id="premios-list" class="space-y-2"></div>
+                                </div>
+                            </div>
+
+                            <!-- Galería -->
+                            <div class="pt-6 border-t border-stone-100">
+                                <label class="block text-xs font-bold text-stone-500 uppercase mb-3">Galería de la Finca</label>
+                                <div class="border-2 border-dashed border-stone-300 rounded-xl p-6 text-center hover:bg-stone-50 transition cursor-pointer" onclick="document.getElementById('fotos').click()">
+                                    <i class="fas fa-cloud-upload-alt text-3xl text-stone-300 mb-2"></i>
+                                    <p class="text-sm text-stone-500 font-medium">Click para subir fotos (Máx 5)</p>
+                                    <input type="file" id="fotos" name="fotos" class="hidden" multiple accept="image/*">
+                                </div>
+                                <div id="fotos-preview-container" class="mt-4 grid grid-cols-2 md:grid-cols-4 gap-4"></div>
+                            </div>
+                        </div>
+
+                        <!-- BOTONES ACCIÓN -->
+                        <div class="pt-4 flex justify-end gap-4 border-t border-stone-100">
+                            <button type="button" onclick="window.location.reload()" class="bg-stone-100 hover:bg-stone-200 text-stone-600 font-bold py-3 px-6 rounded-xl transition">
+                                Limpiar
                             </button>
-                         </div>
-                         <p class="text-xs text-stone-500 mb-3">Usa la herramienta de polígono para dibujar los límites.</p>
-                         <div id="map" class="relative">
-                             <!-- Linea de escaneo (oculta por defecto) -->
-                             <div id="satellite-scan-line" class="scan-line hidden"></div>
-                         </div>
-                         <input type="hidden" id="coordenadas" name="coordenadas">
-                         
-                         <!-- BOTÓN VALIDAR DEFORESTACIÓN -->
-                         <div class="mt-4 flex justify-end">
-                            <button type="button" id="validate-deforestation-btn" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 px-5 rounded-lg shadow-sm flex items-center gap-2 text-sm transition-all transform hover:scale-105">
-                                <i class="fas fa-satellite"></i> Validar Deforestación (EUDR)
+                            <button type="submit" class="bg-amber-800 hover:bg-amber-900 text-white font-bold py-3 px-10 rounded-xl shadow-lg transform transition hover:-translate-y-1">
+                                Guardar Finca
                             </button>
                         </div>
-                    </div>
-
-                    <div class="pt-6 flex justify-end gap-4">
-                        <button type="button" id="cancel-edit-btn" class="bg-stone-500 hover:bg-stone-600 text-white font-bold py-3 px-6 rounded-xl shadow-md hidden">Cancelar</button>
-                        <button type="submit" class="bg-amber-800 hover:bg-amber-900 text-white font-bold py-3 px-8 rounded-xl shadow-md">Guardar Finca</button>
-                    </div>
-                </form>
+                    </form>
+                </div>
             </div>
         </div>
     </div>
     
-    <!-- Modal de Análisis -->
-    <div id="analysisModal" class="fixed inset-0 bg-black/80 z-[1000] hidden flex items-center justify-center">
-        <div class="bg-white rounded-xl p-8 max-w-md w-full text-center">
+    <!-- Modal Análisis (Sin cambios) -->
+    <div id="analysisModal" class="fixed inset-0 bg-black/80 z-[1000] hidden flex items-center justify-center backdrop-blur-sm">
+        <div class="bg-white rounded-xl p-8 max-w-md w-full text-center shadow-2xl">
             <div id="analysis-loading">
                 <i class="fas fa-satellite text-6xl text-emerald-600 mb-6 animate-pulse"></i>
                 <h3 class="text-xl font-bold text-stone-800 mb-2">Analizando Imágenes Satelitales</h3>
                 <p class="text-stone-600 text-sm mb-4">Cruzando polígono con base de datos Copernicus/Enveritas...</p>
-                <div class="w-full bg-stone-200 rounded-full h-2.5 mb-2">
+                <div class="w-full bg-stone-200 rounded-full h-2.5 mb-2 overflow-hidden">
                     <div class="bg-emerald-600 h-2.5 rounded-full animate-progress" style="width: 100%; transition: width 2s linear;"></div>
                 </div>
             </div>
             <div id="analysis-success" class="hidden">
-                <i class="fas fa-check-circle text-6xl text-emerald-500 mb-4"></i>
+                <div class="w-20 h-20 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-check text-4xl text-emerald-600"></i>
+                </div>
                 <h3 class="text-xl font-bold text-stone-800 mb-2">¡Validación Exitosa!</h3>
-                <p class="text-emerald-700 font-medium mb-6">El área es libre de deforestación (EUDR Compliant).</p>
-                <button id="close-analysis-btn" class="bg-stone-800 text-white py-2 px-6 rounded-lg font-bold">Aceptar</button>
+                <p class="text-stone-600 mb-6 text-sm">El área es libre de deforestación (EUDR Compliant) según los datos satelitales.</p>
+                <button id="close-analysis-btn" class="bg-stone-800 hover:bg-black text-white py-3 px-8 rounded-lg font-bold w-full transition">Aceptar</button>
             </div>
         </div>
     </div>

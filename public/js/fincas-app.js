@@ -47,6 +47,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let map;
     let drawingManager;
     let currentPolygon; // Instancia de google.maps.Polygon
+    let geocoder; // Instancia de geocoding service
 
     init();
 
@@ -79,6 +80,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 streetViewControl: false
             });
 
+            // Inicializar Geocoder (NUEVO)
+            geocoder = new google.maps.Geocoder();
+
             // Drawing Manager
             drawingManager = new google.maps.drawing.DrawingManager({
                 drawingMode: google.maps.drawing.OverlayType.POLYGON,
@@ -110,10 +114,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 currentPolygon = event.overlay;
                 updateCoordenadasInput();
+                
+                // --- NUEVO: Autocompletar datos basados en el polígono ---
+                autoPopulateFieldsFromPolygon(currentPolygon);
 
-                // Listeners para edición (mover vértices)
-                currentPolygon.getPath().addListener('set_at', updateCoordenadasInput);
-                currentPolygon.getPath().addListener('insert_at', updateCoordenadasInput);
+                // Listeners para edición (mover vértices) para recalcular área
+                currentPolygon.getPath().addListener('set_at', () => {
+                    updateCoordenadasInput();
+                    autoPopulateFieldsFromPolygon(currentPolygon, true); // true = solo recalcular área
+                });
+                currentPolygon.getPath().addListener('insert_at', () => {
+                    updateCoordenadasInput();
+                    autoPopulateFieldsFromPolygon(currentPolygon, true);
+                });
             });
 
         } catch(e) {
@@ -135,6 +148,103 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         // Guardamos array de arrays [[lat, lng], [lat, lng]...] compatible con Leaflet anterior
         document.getElementById('coordenadas').value = JSON.stringify(coords);
+    }
+
+    // --- NUEVO: Lógica de Autocompletado Geográfico (Con Google Geocoding) ---
+    async function autoPopulateFieldsFromPolygon(polygon, onlyArea = false) {
+        if (!polygon) return;
+
+        // 1. Calcular Superficie (Hectáreas)
+        // Requiere la librería 'geometry' de Google Maps.
+        try {
+            if (google.maps.geometry && google.maps.geometry.spherical) {
+                const areaM2 = google.maps.geometry.spherical.computeArea(polygon.getPath());
+                const areaHa = (areaM2 / 10000).toFixed(2); // Convertir m2 a Hectáreas
+                
+                const superficieInput = document.getElementById('superficie');
+                if (superficieInput) {
+                    superficieInput.value = areaHa;
+                    superficieInput.classList.add('bg-green-50', 'border-green-500');
+                    setTimeout(() => {
+                        superficieInput.classList.remove('bg-green-50', 'border-green-500');
+                    }, 1000);
+                }
+            }
+        } catch (e) {
+            console.warn("No se pudo calcular el área automáticamente.", e);
+        }
+
+        if (onlyArea) return; // Ahorrar cuota de API si solo se mueve un vértice
+
+        // 2. Calcular Centroide
+        let latSum = 0;
+        let lngSum = 0;
+        const path = polygon.getPath();
+        const len = path.getLength();
+        
+        for (let i = 0; i < len; i++) {
+            latSum += path.getAt(i).lat();
+            lngSum += path.getAt(i).lng();
+        }
+        const centerLat = latSum / len;
+        const centerLng = lngSum / len;
+
+        // 3. Obtener Altura (API Open-Meteo - Gratis)
+        try {
+            const elevRes = await fetch(`https://api.open-meteo.com/v1/elevation?latitude=${centerLat}&longitude=${centerLng}`);
+            const elevData = await elevRes.json();
+            
+            if (elevData.elevation && elevData.elevation.length > 0) {
+                const alturaInput = document.getElementById('altura');
+                if (alturaInput) alturaInput.value = Math.round(elevData.elevation[0]);
+            }
+        } catch (e) {
+            console.warn("Error obteniendo altura:", e);
+        }
+
+        // 4. Obtener Ubicación Administrativa (Google Geocoding API)
+        // Usamos el geocoder nativo para obtener components precisos como administrative_area_level_2
+        if (!geocoder) return;
+
+        geocoder.geocode({ location: { lat: centerLat, lng: centerLng } }, (results, status) => {
+            if (status === "OK" && results[0]) {
+                const components = results[0].address_components;
+                
+                let pais = '';
+                let region = '';   // Departamento (administrative_area_level_1)
+                let provincia = ''; // Provincia (administrative_area_level_2)
+                let distrito = '';  // Distrito (locality o administrative_area_level_3)
+
+                for (const component of components) {
+                    const type = component.types[0];
+                    if (type === "country") pais = component.long_name;
+                    if (type === "administrative_area_level_1") region = component.long_name;
+                    if (type === "administrative_area_level_2") provincia = component.long_name;
+                    if (type === "locality" || type === "administrative_area_level_3") {
+                        // Priorizar locality si existe, sino nivel 3
+                        if(!distrito || type === "locality") distrito = component.long_name;
+                    }
+                }
+
+                // Actualizar inputs
+                if (document.getElementById('departamento')) document.getElementById('departamento').value = region;
+                if (document.getElementById('provincia')) document.getElementById('provincia').value = provincia;
+                if (document.getElementById('distrito')) document.getElementById('distrito').value = distrito;
+                
+                // Actualizar Select de País
+                const paisSelect = document.getElementById('pais');
+                if (pais && paisSelect) {
+                    for (let i = 0; i < paisSelect.options.length; i++) {
+                        if (paisSelect.options[i].text.toLowerCase().includes(pais.toLowerCase())) {
+                            paisSelect.selectedIndex = i;
+                            break;
+                        }
+                    }
+                }
+            } else {
+                console.warn("Geocode falló: " + status);
+            }
+        });
     }
 
     function setMapData(coordsJson) {
@@ -169,8 +279,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 map.fitBounds(bounds);
                 
                 // Listeners de edición
-                currentPolygon.getPath().addListener('set_at', updateCoordenadasInput);
-                currentPolygon.getPath().addListener('insert_at', updateCoordenadasInput);
+                currentPolygon.getPath().addListener('set_at', () => {
+                    updateCoordenadasInput();
+                    // Recalcular solo área al editar vértices existentes
+                    autoPopulateFieldsFromPolygon(currentPolygon, true);
+                });
+                currentPolygon.getPath().addListener('insert_at', () => {
+                    updateCoordenadasInput();
+                    // Recalcular solo área al insertar nuevos vértices
+                    autoPopulateFieldsFromPolygon(currentPolygon, true);
+                });
                 
                 // Switch a modo edición (no dibujo)
                 if(drawingManager) drawingManager.setDrawingMode(null);
@@ -444,10 +562,14 @@ document.addEventListener('DOMContentLoaded', () => {
         const file = e.target.files[0];
         if (!file) return;
 
+        if (file.size > 5 * 1024 * 1024) {
+            alert(`La imagen supera el límite de 5MB.`);
+            e.target.value = '';
+            return;
+        }
+
         try {
-            // Usamos compressImage aquí también
             const compressedBase64 = await compressImage(file);
-            
             productorFotoPreview.src = compressedBase64;
             fotoProductorHiddenInput.value = compressedBase64;
         } catch (error) {
@@ -504,26 +626,31 @@ document.addEventListener('DOMContentLoaded', () => {
         `).join('');
     }
     
+    // --- Manejo Galería de Fotos ---
     async function handleImageUpload(e) {
         const files = Array.from(e.target.files);
         if (!files || files.length === 0) return;
 
         if (currentImages.length + files.length > 5) {
-            alert('Puedes subir un máximo de 5 fotos.');
-            // Limpiar el input para permitir intentar de nuevo
+            alert('Límite excedido: Solo se permiten un máximo de 5 fotos por finca.');
             e.target.value = ''; 
             return;
         }
 
-        // Mostramos un indicador visual de "Procesando" si deseas, o simplemente esperamos
         const submitButton = document.querySelector('button[type="submit"]');
         const originalText = submitButton.textContent;
         submitButton.textContent = "Procesando imágenes...";
         submitButton.disabled = true;
+        submitButton.classList.add('opacity-50', 'cursor-not-allowed');
 
         try {
             for (const file of files) {
-                // AQUI ESTÁ LA MAGIA: Usamos tu función compressImage
+                const fileSizeMB = file.size / (1024 * 1024);
+                if (fileSizeMB > 5) {
+                    alert(`La imagen "${file.name}" pesa ${fileSizeMB.toFixed(2)}MB. El límite es 5MB y será omitida.`);
+                    continue; 
+                }
+
                 const compressedBase64 = await compressImage(file);
                 currentImages.push(compressedBase64);
             }
@@ -532,9 +659,9 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error("Error comprimiendo imagen:", error);
             alert("Hubo un error al procesar una de las imágenes.");
         } finally {
-            // Restaurar botón
             submitButton.textContent = originalText;
             submitButton.disabled = false;
+            submitButton.classList.remove('opacity-50', 'cursor-not-allowed');
             e.target.value = ''; 
         }
     }
@@ -613,38 +740,59 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function handleFormSubmit(e) {
         e.preventDefault();
-        const formData = new FormData(form);
-        const fincaData = Object.fromEntries(formData.entries());
-
+        
         const originalText = submitButton.textContent;
-        
-        fincaData.imagenes_json = currentImages;
-        fincaData.certificaciones_json = currentFincaCertifications;
-        fincaData.premios_json = currentFincaPremios;
-        
-        if (fincaData.coordenadas) fincaData.coordenadas = JSON.parse(fincaData.coordenadas);
-        else fincaData.coordenadas = null;
-
-        const editId = editIdInput.value;
-
-        // Bloqueamos el botón
         submitButton.disabled = true;
         submitButton.textContent = 'Guardando...';
-        // Añadimos clases de Tailwind para que se vea deshabilitado (opaco)
         submitButton.classList.add('opacity-50', 'cursor-not-allowed');
-        
+
         try {
-            let response;
-            if (editId) {
-                response = await api(`/api/fincas/${editId}`, { method: 'PUT', body: JSON.stringify(fincaData) });
+            const formData = new FormData(form);
+            const fincaData = Object.fromEntries(formData.entries());
+            
+            fincaData.imagenes_json = currentImages;
+            fincaData.certificaciones_json = currentFincaCertifications;
+            fincaData.premios_json = currentFincaPremios;
+            
+            if (fincaData.coordenadas) {
+                try {
+                    fincaData.coordenadas = JSON.parse(fincaData.coordenadas);
+                } catch(e) {
+                    fincaData.coordenadas = null;
+                }
             } else {
-                response = await api('/api/fincas', { method: 'POST', body: JSON.stringify(fincaData) });
+                fincaData.coordenadas = null;
             }
+
+            const payloadString = JSON.stringify(fincaData);
+            const sizeInBytes = new TextEncoder().encode(payloadString).length;
+            const sizeInMB = sizeInBytes / (1024 * 1024);
+
+            if (sizeInMB > 4.0) {
+                throw new Error(`El total de datos es demasiado pesado (${sizeInMB.toFixed(2)}MB). El límite es 4MB. Por favor reduce la cantidad de fotos.`);
+            }
+
+            const editId = editIdInput.value;
+            
+            if (editId) {
+                await api(`/api/fincas/${editId}`, { 
+                    method: 'PUT', 
+                    body: payloadString 
+                });
+            } else {
+                await api('/api/fincas', { 
+                    method: 'POST', 
+                    body: payloadString 
+                });
+            }
+            
+            alert('¡Finca guardada exitosamente!');
             resetForm();
             await loadFincas();
+
         } catch (error) { 
             console.error("Error al guardar:", error);
-            alert('Error al guardar la finca.'); 
+            alert('No se pudo guardar: ' + error.message);
         } finally {
             submitButton.disabled = false;
             submitButton.textContent = originalText;
@@ -693,7 +841,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     canvas.height = height;
                     const ctx = canvas.getContext('2d');
                     ctx.drawImage(img, 0, 0, width, height);
-                    // Convertir a JPEG calidad 70%
                     resolve(canvas.toDataURL('image/jpeg', 0.7));
                 };
                 img.onerror = (err) => reject(err);
@@ -701,5 +848,24 @@ document.addEventListener('DOMContentLoaded', () => {
             reader.onerror = (err) => reject(err);
         });
     };
+
+    // Helper API
+    async function api(url, options = {}) {
+        options.credentials = 'include'; 
+        options.headers = {
+            ...options.headers,
+            'Content-Type': 'application/json'
+        };
+        
+        const response = await fetch(url, options);
+        if (response.status === 204) return null;
+        
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.error || `Error ${response.status}: ${response.statusText}`);
+        }
+        
+        return response.json();
+    }
 
 });
