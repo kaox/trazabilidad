@@ -135,7 +135,7 @@ const app = {
                 batches.forEach(b => {
                     const date = new Date(b.fecha).toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' });
                     const hashShort = b.hash.substring(0, 12) + '...';
-                    
+                    console.log(b);
                     // URL Pública de Trazabilidad
                     const publicUrl = `/${b.id}`; // O http://localhost:3000/ENV... según tu routing
 
@@ -151,7 +151,7 @@ const app = {
                                             <h4 class="font-bold text-lg text-stone-800 group-hover:text-amber-900">Lote: <span class="font-mono">${b.id}</span></h4>
                                             <span class="bg-green-100 text-green-700 text-[10px] font-bold px-2 py-0.5 rounded border border-green-200 uppercase">Inmutable</span>
                                         </div>
-                                        <p class="text-sm text-stone-500"><i class="fas fa-map-marker-alt text-amber-700 mr-1"></i> ${b.origen}</p>
+                                        <p class="text-sm text-stone-500"><i class="fas fa-map-marker-alt text-amber-700 mr-1"></i> Finca ${b.origen}</p>
                                     </div>
                                 </div>
                                 <div class="text-left md:text-right pl-16 md:pl-0">

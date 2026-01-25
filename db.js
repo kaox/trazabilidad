@@ -2331,6 +2331,8 @@ const getPublicBatchesForProduct = async (req, res) => {
                 acq.finca_origen, 
                 f.ciudad, 
                 f.pais,
+                f.departamento, -- Agregamos departamento
+                f.distrito,     -- Agregamos distrito
                 pp.nombre_producto as tipo_proceso
             FROM traceability_registry tr
             JOIN batches b ON CAST(tr.batch_id AS TEXT) = CAST(b.id AS TEXT)
@@ -2347,9 +2349,23 @@ const getPublicBatchesForProduct = async (req, res) => {
         const batches = rows.map(row => {
             const dataObj = safeJSONParse(row.data);
             
-            // Normalizar ubicación para mostrar en la lista
+            // Normalizar ubicación
             let origen = row.finca_origen || dataObj.finca?.value || 'Origen registrado';
-            if (row.ciudad) origen += `, ${row.ciudad}`;
+            
+            // Construir detalle de ubicación: Distrito, Departamento, País
+            const locationParts = [];
+            if (row.distrito) locationParts.push(row.distrito);
+            if (row.departamento) locationParts.push(row.departamento);
+            if (row.pais) locationParts.push(row.pais);
+            
+            // Si no hay datos detallados, intentar usar ciudad
+            if (locationParts.length === 0 && row.ciudad) {
+                locationParts.push(row.ciudad);
+            }
+
+            if (locationParts.length > 0) {
+                origen += `, ${locationParts.join(', ')}`;
+            }
             
             return {
                 id: row.id,
@@ -2357,7 +2373,7 @@ const getPublicBatchesForProduct = async (req, res) => {
                 hash: row.blockchain_hash,
                 origen: origen,
                 tipo: row.tipo_proceso,
-                rating: 5 // Placeholder o calcular promedio real si existe
+                rating: 5 
             };
         });
 
