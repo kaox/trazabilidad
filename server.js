@@ -193,6 +193,8 @@ app.get('/app/trazabilidad-inmutable', authenticatePage, (req, res) => res.sendF
 app.get('/app/productos', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'productos.html')));
 app.get('/app/acopio', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'acopio.html'))); // <-- NUEVA RUTA DE ACOPIO
 app.get('/app/procesamiento', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'procesamiento.html')));
+app.get('/app/estimacion-cosecha', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'estimacion-cosecha.html')));
+
 
 // --- NUEVAS RUTAS VISTAS ADMIN BLOG ---
 app.get('/app/admin-blog', authenticatePage, checkAdmin, (req, res) => res.sendFile(path.join(__dirname, 'views', 'admin-blog-list.html')));
@@ -317,6 +319,16 @@ app.delete('/api/nutricion/recetas/:id', authenticateApi, db.deleteReceta);
 app.post('/api/nutricion/recetas/:receta_id/ingredientes', authenticateApi, db.addIngredienteReceta);
 app.put('/api/nutricion/ingredientes/:id', authenticateApi, db.updateIngredientePeso);
 app.delete('/api/nutricion/ingredientes/:id', authenticateApi, db.deleteIngrediente);
+
+// --- RUTAS PÚBLICAS: ORIGEN ÚNICO ---
+app.get('/origen-unico', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'origen-unico.html'));
+});
+
+// APIs Públicas (Sin authenticateApi porque es un directorio público)
+app.get('/api/public/companies', db.getPublicCompaniesWithImmutable);
+app.get('/api/public/companies/:userId/products', db.getPublicProductsWithImmutable);
+app.get('/api/public/products/:productId/batches', db.getPublicBatchesForProduct);
 
 // PROXY USDA API
 app.get('/api/proxy/usda/search', authenticateApi, db.searchUSDA);

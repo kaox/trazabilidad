@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Estimación de Cosecha AI - Ruru Lab</title>
+    
+    <!-- Estilos y Fuentes -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet">
+    
+    <!-- Chart.js para gráficos -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Google Maps API (Callback initMap) -->
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAM37iJTRcIoSAxESlDzB2DxlNJWKasW5U&libraries=geometry&callback=initMap&v=weekly" defer></script>
+
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; -webkit-tap-highlight-color: transparent; }
+        .font-display { font-family: 'Playfair Display', serif; }
+        
+        /* Animaciones suaves para cambios de estado */
+        .fade-enter { opacity: 0; transform: translateY(10px); }
+        .fade-enter-active { opacity: 1; transform: translateY(0); transition: opacity 0.3s, transform 0.3s; }
+        
+        /* Estilos específicos para inputs móviles */
+        input[type="number"] { font-size: 16px; /* Evita zoom en iOS */ }
+        
+        /* Ocultar flechas de input number */
+        input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+        input[type=number] { -moz-appearance: textfield; }
+        
+        #map { height: 100%; width: 100%; border-radius: 0.75rem; }
+    </style>
+</head>
+<body class="text-slate-800">
+
+    <!-- Barra de Navegación (Placeholder) -->
+    <div id="nav-placeholder"></div>
+
+    <div class="container mx-auto px-4 py-6 max-w-2xl">
+        
+        <!-- Cabecera -->
+        <header class="text-center mb-8">
+            <div class="inline-flex items-center justify-center p-3 bg-white rounded-full shadow-sm mb-3">
+                <i class="fa-solid fa-wand-magic-sparkles text-2xl bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 to-purple-600"></i>
+            </div>
+            <h1 class="text-3xl font-display font-bold text-slate-900">Estimación Cosecha AI</h1>
+            <p class="text-slate-500 text-sm mt-1">Calculadora predictiva con ajuste climático</p>
+        </header>
+
+        <!-- 1. Selector de Cultivo -->
+        <div class="grid grid-cols-2 gap-4 mb-8">
+            <button id="tab-cafe" class="crop-tab active flex flex-col items-center justify-center p-4 rounded-2xl border-2 transition-all duration-300 transform active:scale-95 shadow-md bg-white border-emerald-500 text-emerald-700">
+                <i class="fa-solid fa-mug-hot text-3xl mb-2"></i>
+                <span class="font-bold">Café</span>
+            </button>
+            <button id="tab-cacao" class="crop-tab flex flex-col items-center justify-center p-4 rounded-2xl border-2 border-transparent bg-slate-100 text-slate-400 hover:bg-slate-200 transition-all duration-300 transform active:scale-95">
+                <i class="fa-solid fa-cookie-bite text-3xl mb-2"></i>
+                <span class="font-bold">Cacao</span>
+            </button>
+        </div>
+
+        <!-- Contenedor Principal de Formularios -->
+        <div class="bg-white rounded-3xl shadow-xl border border-slate-100 overflow-hidden relative">
+            
+            <!-- Barra de progreso decorativa superior -->
+            <div id="theme-bar" class="h-2 w-full bg-emerald-500 transition-colors duration-500"></div>
+
+            <div class="p-6 md:p-8">
+                
+                <!-- 2. Formularios Dinámicos -->
+                <form id="prediction-form" class="space-y-6">
+                    
+                    <!-- NUEVO: Selector de Finca y Mapa -->
+                    <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                        <label class="block text-xs font-bold uppercase tracking-widest text-slate-500 mb-2">
+                            <i class="fa-solid fa-location-dot mr-1"></i> Seleccionar Finca Origen
+                        </label>
+                        <select id="finca-select" class="w-full p-3 bg-white border border-slate-300 rounded-xl text-slate-700 font-bold focus:ring-2 focus:ring-emerald-500 outline-none transition-all shadow-sm">
+                            <option value="">-- Ingreso Manual --</option>
+                            <option disabled>Cargando fincas...</option>
+                        </select>
+
+                        <!-- Contenedor del Mapa (Oculto por defecto) -->
+                        <div id="map-container" class="hidden mt-4 h-48 w-full rounded-xl overflow-hidden shadow-inner border border-slate-300 relative">
+                            <div id="map"></div>
+                            <div class="absolute bottom-2 right-2 bg-white/90 px-2 py-1 rounded text-[10px] font-bold text-slate-600 shadow">
+                                <i class="fa-solid fa-satellite"></i> Satélite
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Sección A: Datos del Terreno -->
+                    <div>
+                        <h3 class="text-xs font-bold uppercase tracking-widest text-slate-400 mb-4 flex items-center gap-2">
+                            <i class="fa-solid fa-ruler-combined"></i> Datos del Terreno
+                        </h3>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="space-y-1">
+                                <label class="text-sm font-medium text-slate-700">Área Total</label>
+                                <div class="relative">
+                                    <input type="number" id="area" class="w-full pl-3 pr-8 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:outline-none font-bold text-slate-800 transition-all" placeholder="0.0" step="0.01" inputmode="decimal">
+                                    <span class="absolute right-3 top-3 text-xs text-slate-400 font-bold">Ha</span>
+                                </div>
+                            </div>
+                            <div class="space-y-1">
+                                <label class="text-sm font-medium text-slate-700">Densidad</label>
+                                <div class="relative">
+                                    <input type="number" id="density" class="w-full pl-3 pr-8 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:outline-none font-bold text-slate-800 transition-all" placeholder="0" inputmode="numeric">
+                                    <span class="absolute right-3 top-3 text-xs text-slate-400 font-bold">Arb</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Sección B: Muestreo de Campo (Cambia según cultivo) -->
+                    <div>
+                        <h3 class="text-xs font-bold uppercase tracking-widest text-slate-400 mb-4 flex items-center gap-2">
+                            <i class="fa-solid fa-clipboard-list"></i> Muestreo Promedio
+                        </h3>
+                        
+                        <!-- Inputs Específicos CAFÉ -->
+                        <div id="inputs-cafe" class="grid grid-cols-3 gap-3">
+                            <div class="space-y-1">
+                                <label class="text-xs font-medium text-slate-600 block text-center">Ramas/Árbol</label>
+                                <input type="number" id="coffee-branches" class="w-full p-2 text-center bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:outline-none font-bold" placeholder="0" inputmode="numeric">
+                            </div>
+                            <div class="space-y-1">
+                                <label class="text-xs font-medium text-slate-600 block text-center">Nudos/Rama</label>
+                                <input type="number" id="coffee-nodes" class="w-full p-2 text-center bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:outline-none font-bold" placeholder="0" inputmode="numeric">
+                            </div>
+                            <div class="space-y-1">
+                                <label class="text-xs font-medium text-slate-600 block text-center">Frutos/Nudo</label>
+                                <input type="number" id="coffee-fruits" class="w-full p-2 text-center bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:outline-none font-bold" placeholder="0" inputmode="numeric">
+                            </div>
+                        </div>
+
+                        <!-- Inputs Específicos CACAO (Oculto por defecto) -->
+                        <div id="inputs-cacao" class="grid grid-cols-2 gap-4 hidden">
+                            <div class="space-y-1">
+                                <label class="text-sm font-medium text-slate-700">Mazorcas / Árbol</label>
+                                <input type="number" id="cacao-pods" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:outline-none font-bold" placeholder="Ej. 25" inputmode="numeric">
+                            </div>
+                            <div class="space-y-1">
+                                <label class="text-sm font-medium text-slate-700">% Productividad</label>
+                                <div class="relative">
+                                    <input type="number" id="cacao-prod" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:outline-none font-bold" value="90" max="100" inputmode="numeric">
+                                    <span class="absolute right-3 top-3 text-slate-400">%</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Sección C: Factores de Conversión -->
+                    <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                        <div class="flex justify-between items-center mb-3 cursor-pointer" onclick="document.getElementById('factors-content').classList.toggle('hidden')">
+                            <h3 class="text-xs font-bold uppercase tracking-widest text-slate-500">Factores de Conversión</h3>
+                            <i class="fa-solid fa-chevron-down text-slate-400 text-xs"></i>
+                        </div>
+                        <div id="factors-content" class="grid grid-cols-2 gap-4">
+                            <!-- Café Factors -->
+                            <div class="field-cafe space-y-1">
+                                <label class="text-xs text-slate-500">Peso Fruto (g)</label>
+                                <input type="number" id="coffee-weight" class="w-full p-2 text-sm border rounded-lg" value="2.5" step="0.1">
+                            </div>
+                            <div class="field-cafe space-y-1">
+                                <label class="text-xs text-slate-500">Factor (Cereza:Oro)</label>
+                                <input type="number" id="coffee-factor" class="w-full p-2 text-sm border rounded-lg" value="5.0" step="0.1">
+                            </div>
+                            <!-- Cacao Factors -->
+                            <div class="field-cacao space-y-1 hidden">
+                                <label class="text-xs text-slate-500">Índice Mazorca</label>
+                                <input type="number" id="cacao-index" class="w-full p-2 text-sm border rounded-lg" value="18" placeholder="Mazorcas para 1kg seco">
+                                <p class="text-[10px] text-slate-400">Mazorcas necesarias para 1kg seco</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 3. Módulo Predicción Inteligente (Simulación UI) -->
+                    <div class="relative overflow-hidden rounded-xl border border-indigo-100 bg-gradient-to-br from-indigo-50 to-white p-4">
+                        <div class="absolute top-0 right-0 -mt-2 -mr-2 w-16 h-16 bg-indigo-500 rounded-full opacity-10 blur-xl"></div>
+                        
+                        <div class="flex items-center justify-between mb-2">
+                            <div class="flex items-center gap-2">
+                                <span class="bg-indigo-100 text-indigo-700 text-xs font-bold px-2 py-1 rounded-md border border-indigo-200">
+                                    <i class="fa-solid fa-robot mr-1"></i> AI INSIGHTS
+                                </span>
+                                <span class="text-xs text-slate-400 italic">Simulación de Factores</span>
+                            </div>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" id="ai-toggle" class="sr-only peer" checked>
+                                <div class="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-indigo-600"></div>
+                            </label>
+                        </div>
+                        
+                        <div class="flex items-center gap-3 mt-3">
+                            <div id="weather-badge" class="flex-shrink-0 w-10 h-10 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center text-lg animate-pulse">
+                                <i class="fa-solid fa-sun"></i>
+                            </div>
+                            <div>
+                                <p class="text-xs font-bold text-slate-700 uppercase">Pronóstico Climático</p>
+                                <p id="ai-message" class="text-sm text-slate-600 leading-tight">Fenómeno El Niño detectado. Posible reducción hídrica.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Botón de Acción -->
+                    <button type="submit" id="btn-calculate" class="w-full py-4 rounded-xl text-white font-bold text-lg shadow-lg shadow-emerald-200 transform transition hover:-translate-y-1 active:scale-95 bg-emerald-600">
+                        Calcular Estimación
+                    </button>
+
+                </form>
+            </div>
+        </div>
+
+        <!-- 4. Panel de Resultados (Dashboard) -->
+        <div id="results-panel" class="mt-8 hidden fade-enter">
+            <h2 class="text-xl font-display font-bold text-slate-800 mb-4 flex items-center gap-2">
+                <i class="fa-solid fa-chart-pie text-slate-400"></i> Resultados Proyectados
+            </h2>
+
+            <!-- Tarjetas de KPIs -->
+            <div class="grid grid-cols-2 gap-4 mb-6">
+                <!-- Producción Total -->
+                <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 col-span-2">
+                    <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Producción Estimada (Seco/Oro)</p>
+                    <div class="flex items-end gap-2">
+                        <span id="res-total-kg" class="text-4xl font-bold text-slate-800">0</span>
+                        <span class="text-lg font-medium text-slate-500 mb-1">kg</span>
+                    </div>
+                    <div class="mt-2 pt-2 border-t border-slate-50 flex justify-between items-center">
+                        <span class="text-sm text-slate-500">Quintales (46kg):</span>
+                        <span id="res-quintales" class="font-bold text-slate-700">0 qq</span>
+                    </div>
+                </div>
+
+                <!-- Rendimiento -->
+                <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
+                    <p class="text-xs font-bold text-slate-400 uppercase mb-1">Rendimiento</p>
+                    <p class="text-xl font-bold text-slate-800"><span id="res-yield">0</span> <span class="text-xs font-normal text-slate-500">kg/ha</span></p>
+                </div>
+
+                <!-- Impacto AI -->
+                <div class="bg-indigo-50 p-4 rounded-2xl border border-indigo-100">
+                    <p class="text-xs font-bold text-indigo-400 uppercase mb-1">Ajuste IA</p>
+                    <p id="res-ai-impact" class="text-xl font-bold text-indigo-700">+0%</p>
+                </div>
+            </div>
+
+            <!-- Gráfico Comparativo -->
+            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
+                <h3 class="text-sm font-bold text-slate-700 mb-4">Proyección vs Ajuste Climático</h3>
+                <div class="relative h-64 w-full">
+                    <canvas id="predictionChart"></canvas>
+                </div>
+            </div>
+            
+            <button onclick="window.print()" class="w-full mt-6 py-3 border-2 border-slate-200 rounded-xl text-slate-500 font-bold hover:bg-slate-50 transition">
+                <i class="fa-solid fa-download mr-2"></i> Guardar Reporte
+            </button>
+        </div>
+
+        <div class="h-12"></div> <!-- Spacer footer -->
+    </div>
+
+    <!-- Carga de Lógica -->
+    <script src="/js/nav-loader.js"></script>
+    <script src="/js/estimacion-cosecha-app.js"></script>
+</body>
+</html>

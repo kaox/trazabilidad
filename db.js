@@ -976,7 +976,7 @@ const getTrazabilidad = async (req, res) => {
 
         run('UPDATE batches SET views = COALESCE(views, 0) + 1 WHERE id = ?', [id]).catch(()=>{});
         const rows = await all(`WITH RECURSIVE trace AS (SELECT * FROM batches WHERE id = ? UNION ALL SELECT b.* FROM batches b INNER JOIN trace t ON b.id = t.parent_id) SELECT * FROM trace;`, [id]);
-        console.log("rows",rows);
+
         if (rows.length === 0) return res.status(404).json({ error: 'Lote no encontrado' });
 
         const rootBatch = rows.find(r => !r.parent_id);
@@ -1117,12 +1117,22 @@ const getImmutableBatches = async (req, res) => {
     const userId = req.user.id;
     try {
         const sql = `
-            WITH RECURSIVE user_batches AS (
+            WITH RECURSIVE 
+            user_batches AS (
                 SELECT id FROM batches WHERE user_id = ?
                 UNION ALL
                 SELECT l.id 
                 FROM batches l 
                 JOIN user_batches ub ON l.parent_id = ub.id
+            ),
+            ancestry AS (
+                SELECT id as batch_id, id as root_id, parent_id, acquisition_id 
+                FROM batches 
+                WHERE parent_id IS NULL
+                UNION ALL
+                SELECT b.id as batch_id, a.root_id, b.parent_id, COALESCE(b.acquisition_id, a.acquisition_id)
+                FROM batches b
+                JOIN ancestry a ON b.parent_id = a.batch_id
             )
             SELECT 
                 l.id, 
@@ -1132,37 +1142,57 @@ const getImmutableBatches = async (req, res) => {
                 l.data,
                 p.nombre_producto as tipo_proceso,
                 e.nombre_etapa as ultima_etapa,
-                prod.gtin, -- <--- NUEVO: Obtenemos el GTIN del producto comercial
-                prod.nombre as nombre_comercial, -- Opcional, para mostrar nombre del producto final
+                prod.gtin, 
+                prod.nombre as nombre_comercial, 
                 COALESCE(AVG(r.rating), 0) as avg_rating,
-                COUNT(r.id) as total_reviews
+                COUNT(r.id) as total_reviews,
+                acq.finca_origen as finca_nombre,
+                f.ciudad as finca_ciudad,
+                f.pais as finca_pais
             FROM batches l
             JOIN user_batches ub ON l.id = ub.id
             JOIN plantillas_proceso p ON l.plantilla_id = p.id
             JOIN etapas_plantilla e ON l.etapa_id = e.id
+            LEFT JOIN ancestry ans ON l.id = ans.batch_id
+            LEFT JOIN acquisitions acq ON ans.acquisition_id = acq.id
+            LEFT JOIN fincas f ON acq.finca_origen = f.nombre_finca AND f.user_id = acq.user_id
             LEFT JOIN productos prod ON prod.id = (
-                WITH RECURSIVE ancestry AS (
+                WITH RECURSIVE prod_ancestry AS (
                     SELECT id, parent_id, producto_id FROM batches WHERE id = l.id
                     UNION ALL
                     SELECT parent.id, parent.parent_id, parent.producto_id 
                     FROM batches parent 
-                    JOIN ancestry child ON child.parent_id = parent.id
+                    JOIN prod_ancestry child ON child.parent_id = parent.id
                 )
-                SELECT producto_id FROM ancestry WHERE producto_id IS NOT NULL LIMIT 1
+                SELECT producto_id FROM prod_ancestry WHERE producto_id IS NOT NULL LIMIT 1
             )
             LEFT JOIN product_reviews r ON l.id = r.batch_id
             WHERE l.blockchain_hash IS NOT NULL 
             AND l.blockchain_hash != ''
-            GROUP BY l.id, p.nombre_producto, e.nombre_etapa, l.created_at, l.views, l.blockchain_hash, l.data, prod.gtin, prod.nombre
+            GROUP BY l.id, p.nombre_producto, e.nombre_etapa, l.created_at, l.views, l.blockchain_hash, l.data, prod.gtin, prod.nombre, acq.finca_origen, f.ciudad, f.pais
             ORDER BY l.created_at DESC
         `;
         
         const rows = await all(sql, [userId]);
         
-        const result = rows.map(row => ({
-            ...row,
-            data: safeJSONParse(row.data)
-        }));
+        const result = rows.map(row => {
+            const dataObj = safeJSONParse(row.data);
+            
+            if (!dataObj.finca && row.finca_nombre) {
+                dataObj.finca = { value: row.finca_nombre, visible: true, nombre: 'Finca Origen' };
+            }
+            if (!dataObj.ciudad && row.finca_ciudad) {
+                dataObj.ciudad = { value: row.finca_ciudad, visible: true, nombre: 'Ciudad' };
+            }
+            if (!dataObj.ubicacion && row.finca_ciudad && row.finca_pais) {
+                 dataObj.ubicacion = { value: `${row.finca_ciudad}, ${row.finca_pais}`, visible: true, nombre: 'Ubicación' };
+            }
+
+            return {
+                ...row,
+                data: dataObj
+            };
+        });
 
         res.status(200).json(result);
     } catch (err) {
@@ -2170,6 +2200,174 @@ const ensureTemplateAndStageExists = async (userId, systemTemplateName, stageNam
     }
 };
 
+const getPublicCompaniesWithImmutable = async (req, res) => {
+    try {
+        // CORRECCIÓN: Se eliminó 'u.historia_empresa' que no existe en tu tabla users.
+        // Se agregó CAST en el JOIN para asegurar compatibilidad entre INTEGER (users.id) y TEXT (batches.user_id).
+        const sql = `
+            SELECT DISTINCT u.id, u.empresa, u.company_logo, 
+                   COUNT(DISTINCT tr.id) as total_lotes_certificados
+            FROM users u
+            JOIN traceability_registry tr ON CAST(u.id AS TEXT) = CAST(tr.user_id AS TEXT)
+            WHERE tr.blockchain_hash IS NOT NULL 
+              AND tr.blockchain_hash != ''
+            GROUP BY u.id, u.empresa, u.company_logo
+            ORDER BY u.empresa ASC
+        `;
+        const rows = await all(sql);
+        res.status(200).json(rows);
+    } catch (err) {
+        console.error("Error getPublicCompaniesWithImmutable:", err);
+        res.status(500).json({ error: err.message });
+    }
+};
+
+// 2. Listar Productos de una Empresa que tienen trazabilidad inmutable
+const getPublicProductsWithImmutable = async (req, res) => {
+    const { userId } = req.params;
+    try {
+        const sql = `
+            WITH RECURSIVE BatchLineage AS (
+                -- 1. Ancla: Empezamos desde los lotes certificados
+                SELECT 
+                    b.id as target_batch_id, 
+                    b.parent_id, 
+                    b.producto_id,
+                    tr.id as registry_id
+                FROM batches b
+                JOIN traceability_registry tr ON CAST(b.id AS TEXT) = CAST(tr.batch_id AS TEXT)
+                
+                UNION ALL
+                
+                -- 2. Recursión: Vamos subiendo hacia los padres buscando datos
+                SELECT 
+                    bl.target_batch_id, 
+                    parent.parent_id, 
+                    parent.producto_id,
+                    bl.registry_id
+                FROM batches parent
+                JOIN BatchLineage bl ON CAST(bl.parent_id AS TEXT) = CAST(parent.id AS TEXT)
+            ),
+            ResolvedProducts AS (
+                -- 3. Consolidación: Para cada lote certificado, tomamos el primer producto_id que encontremos en su historia
+                SELECT 
+                    target_batch_id,
+                    registry_id,
+                    MAX(producto_id) as producto_id -- Tomamos el valor no nulo
+                FROM BatchLineage
+                WHERE producto_id IS NOT NULL AND producto_id != ''
+                GROUP BY target_batch_id, registry_id
+            )
+            -- 4. Consulta Final: Listar productos encontrados para este usuario
+            SELECT DISTINCT 
+                p.id, 
+                p.nombre, 
+                p.descripcion, 
+                p.imagenes_json, 
+                p.tipo_producto,
+                COUNT(rp.registry_id) as lotes_count
+            FROM productos p
+            JOIN ResolvedProducts rp ON CAST(p.id AS TEXT) = CAST(rp.producto_id AS TEXT)
+            WHERE CAST(p.user_id AS TEXT) = ?
+            GROUP BY p.id, p.nombre, p.descripcion, p.imagenes_json, p.tipo_producto
+            ORDER BY p.nombre ASC
+        `;
+        const rows = await all(sql, [String(userId)]);
+        const products = rows.map(p => ({
+            ...p,
+            imagenes_json: safeJSONParse(p.imagenes_json || '[]')
+        }));
+        res.status(200).json(products);
+    } catch (err) {
+        console.error("Error getPublicProductsWithImmutable:", err);
+        res.status(500).json({ error: err.message });
+    }
+};
+
+// 3. Listar Lotes Inmutables de un Producto específico
+const getPublicBatchesForProduct = async (req, res) => {
+    const { productId } = req.params;
+    try {
+        // Obtenemos lotes, unimos con acquisitions para saber la finca origen si existe
+        const sql = `
+            WITH RECURSIVE BatchLineage AS (
+                -- 1. Ancla: Empezamos con los lotes que tienen certificado (en traceability_registry)
+                SELECT 
+                    b.id as target_batch_id, 
+                    b.id as ancestor_id, 
+                    b.parent_id, 
+                    b.producto_id, 
+                    b.acquisition_id
+                FROM batches b
+                JOIN traceability_registry tr ON CAST(b.id AS TEXT) = CAST(tr.batch_id AS TEXT)
+                
+                UNION ALL
+                
+                -- 2. Recursión: Vamos subiendo hacia los padres
+                SELECT 
+                    bl.target_batch_id, 
+                    parent.id, 
+                    parent.parent_id, 
+                    parent.producto_id, 
+                    parent.acquisition_id
+                FROM batches parent
+                JOIN BatchLineage bl ON CAST(bl.parent_id AS TEXT) = CAST(parent.id AS TEXT)
+            ),
+            -- 3. Consolidación: Para cada lote certificado, tomamos el primer producto_id y acquisition_id que encontremos en su historia
+            BatchSummary AS (
+                SELECT 
+                    target_batch_id,
+                    MAX(producto_id) as resolved_product_id,
+                    MAX(acquisition_id) as resolved_acquisition_id
+                FROM BatchLineage
+                GROUP BY target_batch_id
+            )
+            -- 4. Consulta Final
+            SELECT 
+                b.id, 
+                b.created_at, 
+                tr.blockchain_hash, 
+                b.data,
+                acq.finca_origen, 
+                f.ciudad, 
+                f.pais,
+                pp.nombre_producto as tipo_proceso
+            FROM traceability_registry tr
+            JOIN batches b ON CAST(tr.batch_id AS TEXT) = CAST(b.id AS TEXT)
+            JOIN BatchSummary bs ON CAST(b.id AS TEXT) = CAST(bs.target_batch_id AS TEXT)
+            LEFT JOIN plantillas_proceso pp ON b.plantilla_id = pp.id
+            LEFT JOIN acquisitions acq ON bs.resolved_acquisition_id = acq.id
+            LEFT JOIN fincas f ON acq.finca_origen = f.nombre_finca AND CAST(f.user_id AS TEXT) = CAST(acq.user_id AS TEXT)
+            WHERE CAST(bs.resolved_product_id AS TEXT) = ?
+            ORDER BY b.created_at DESC
+        `;
+        
+        const rows = await all(sql, [productId]);
+        
+        const batches = rows.map(row => {
+            const dataObj = safeJSONParse(row.data);
+            
+            // Normalizar ubicación para mostrar en la lista
+            let origen = row.finca_origen || dataObj.finca?.value || 'Origen registrado';
+            if (row.ciudad) origen += `, ${row.ciudad}`;
+            
+            return {
+                id: row.id,
+                fecha: row.created_at,
+                hash: row.blockchain_hash,
+                origen: origen,
+                tipo: row.tipo_proceso,
+                rating: 5 // Placeholder o calcular promedio real si existe
+            };
+        });
+
+        res.status(200).json(batches);
+    } catch (err) {
+        console.error("Error getPublicBatchesForProduct:", err);
+        res.status(500).json({ error: err.message });
+    }
+};
+
 module.exports = {
     registerUser, loginUser, logoutUser, handleGoogleLogin,
     getFincas, createFinca, updateFinca, deleteFinca,
@@ -2196,5 +2394,6 @@ module.exports = {
     validateDeforestation, getBatchByGtinAndLot,
     addIngredienteReceta, updateIngredientePeso, deleteIngrediente,
     getRecetasNutricionales, createRecetaNutricional, deleteRecetaNutricional, updateRecetaNutricional,
-    searchUSDA, getUSDADetails
+    searchUSDA, getUSDADetails,
+    getPublicCompaniesWithImmutable, getPublicProductsWithImmutable, getPublicBatchesForProduct
 };

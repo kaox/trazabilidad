@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Empresas con Origen Único - Ruru Lab</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+    
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #fdfaf6; }
+        .font-display { font-family: 'Playfair Display', serif; }
+        .card-hover:hover { transform: translateY(-4px); box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1); }
+        .fade-in { animation: fadeIn 0.5s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body class="text-stone-800 antialiased min-h-screen flex flex-col">
+
+    <!-- Navbar Simplificado -->
+    <header class="bg-white/80 backdrop-blur-sm sticky top-0 z-50 border-b border-stone-200">
+        <div class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <a href="/" class="text-2xl font-bold font-display text-amber-900"><i class="fa-solid fa-fingerprint mr-2"></i>Ruru Lab</a>
+
+            <nav class="hidden md:flex space-x-8 items-center">
+                <a href="/blog.html" class="hover:text-amber-800 transition">Blog</a>
+                <div class="relative" data-menu>
+                    <button class="flex items-center gap-1 font-semibold text-amber-800 transition">
+                        <span>Herramientas</span>
+                        <i class="fas fa-chevron-down text-xs"></i>
+                    </button>
+                    <div class="absolute left-0 mt-2 w-56 bg-white rounded-md shadow-lg z-50 hidden" data-menu-content>
+                        <div class="py-1">
+                            <span class="block px-4 py-2 text-xs text-stone-400 uppercase">Café</span>
+                            <a href="/calculadora-cafe.html" class="block px-4 py-2 text-sm text-stone-700 bg-stone-100 font-medium">Calculadora de Catación SCA</a>
+                        </div>
+                        <div class="py-1 border-t border-stone-100">
+                            <span class="block px-4 py-2 text-xs text-stone-400 uppercase">Cacao</span>
+                            <a href="/calculadora-cacao.html" class="block px-4 py-2 text-sm text-stone-700 bg-stone-100 font-medium">Evaluador Sensorial CoEx</a>
+                        </div>
+                    </div>
+                </div>
+                <a href="/qr" class="hover:text-amber-800 transition">Descubrir Lote</a>
+                <a href="/origen-unico" class="hover:text-amber-800 transition">Empresas Origen Unico</a>
+                <a href="/pricing-public.html" class="hover:text-amber-800 transition">Planes</a>
+                <a href="/login.html" class="bg-amber-800 text-white font-bold py-2 px-5 rounded-lg hover:bg-amber-900 transition">Pruébalo gratis</a>
+            </nav>
+            <!-- Botón de Menú Móvil -->
+            <div class="md:hidden">
+                <button id="menu-button" class="focus:outline-none">
+                    <i class="fas fa-bars fa-lg"></i>
+                </button>
+                <button id="close-menu-button" class="hidden focus:outline-none">
+                    <i class="fas fa-times fa-2x"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Header Hero -->
+    <header class="bg-amber-900 text-white py-16">
+        <div class="container mx-auto px-6 text-center">
+            <div class="inline-flex items-center justify-center p-3 bg-amber-800/50 rounded-full mb-4 backdrop-blur-sm border border-amber-700">
+                <i class="fas fa-certificate text-amber-300 mr-2"></i>
+                <span class="text-xs font-bold uppercase tracking-widest text-amber-100">Directorio Verificado</span>
+            </div>
+            <h1 class="text-4xl md:text-6xl font-display font-bold mb-4">Empresas con Origen Único</h1>
+            <p class="text-lg text-amber-200 max-w-2xl mx-auto">Descubre productores y marcas comprometidos con la transparencia radical. Cada producto aquí listado cuenta con trazabilidad inmutable blockchain.</p>
+        </div>
+    </header>
+
+    <!-- Contenido Principal -->
+    <main class="flex-grow container mx-auto px-6 py-12">
+        
+        <!-- Breadcrumbs (Navegación) -->
+        <div id="breadcrumbs" class="flex items-center gap-2 text-sm text-stone-500 mb-8 hidden">
+            <button onclick="app.resetToCompanies()" class="hover:text-amber-800 hover:underline">Empresas</button>
+            <i class="fas fa-chevron-right text-xs text-stone-300"></i>
+            <span id="breadcrumb-company" class="font-bold text-stone-800"></span>
+            <span id="breadcrumb-product-part" class="hidden flex items-center gap-2">
+                <i class="fas fa-chevron-right text-xs text-stone-300"></i>
+                <span id="breadcrumb-product" class="font-bold text-stone-800"></span>
+            </span>
+        </div>
+
+        <!-- Contenedor Dinámico -->
+        <div id="app-container" class="min-h-[400px]">
+            <!-- Aquí se inyectará el contenido JS -->
+            <div class="flex justify-center py-20">
+                <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-900"></div>
+            </div>
+        </div>
+
+    </main>
+
+    <footer class="bg-stone-900 text-stone-400 py-8 mt-auto">
+        <div class="container mx-auto px-6 text-center">
+            <p>&copy; 2025 Ruru Lab. Transparencia que conecta.</p>
+        </div>
+    </footer>
+
+    <script src="/js/origen-unico-app.js"></script>
+</body>
+</html>
