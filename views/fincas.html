@@ -76,113 +76,10 @@
                     <form id="finca-form" class="space-y-8">
                         <input type="hidden" id="edit-id">
 
-                        <!-- PASO 1: MAPA Y GEOMETRÍA (PRIORIDAD ALTA) -->
-                        <div class="bg-amber-50/50 p-5 rounded-2xl border border-amber-100">
-                            <div class="mb-4">
-                                <div class="flex items-center gap-2 mb-1">
-                                    <span class="bg-amber-600 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold">1</span>
-                                    <h3 class="text-lg font-bold text-amber-900">Ubicación Satelital</h3>
-                                </div>
-                                <p class="text-sm text-stone-600 ml-8">
-                                    Busca la zona y <strong class="text-amber-700">dibuja el polígono</strong> exacto de la finca. La ubicación y superficie se calcularán automáticamente.
-                                </p>
-                            </div>
-
-                            <!-- Herramientas Mapa -->
-                            <div class="flex flex-col sm:flex-row gap-2 mb-3">
-                                <div class="relative flex-grow">
-                                    <i class="fas fa-search absolute left-3 top-3.5 text-stone-400"></i>
-                                    <input type="text" id="ciudad-search" placeholder="Buscar lugar, ciudad o coordenadas..." class="w-full pl-10 p-3 border border-stone-300 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none shadow-sm">
-                                </div>
-                                <button type="button" id="search-btn" class="bg-stone-700 hover:bg-stone-800 text-white font-bold px-6 py-3 rounded-xl shadow-sm transition">
-                                    Ir
-                                </button>
-                                <button type="button" id="locate-btn" class="bg-white hover:bg-stone-50 text-amber-600 border border-amber-200 font-bold px-4 py-3 rounded-xl shadow-sm transition" title="Usar mi ubicación actual">
-                                    <i class="fas fa-crosshairs"></i>
-                                </button>
-                            </div>
-
-                            <!-- Mapa Container -->
-                            <div class="relative rounded-xl overflow-hidden shadow-md border border-stone-300 group">
-                                <div id="map"></div>
-                                <div id="satellite-scan-line" class="scan-line hidden"></div>
-                                
-                                <!-- Overlay de Instrucciones (desaparece al dibujar) -->
-                                <div id="map-instructions" class="absolute top-4 left-4 bg-white/90 backdrop-blur px-4 py-2 rounded-lg text-xs font-medium text-stone-600 shadow-sm pointer-events-none border border-white/50">
-                                    <i class="fas fa-draw-polygon mr-1 text-amber-600"></i> Usa la herramienta de polígono arriba
-                                </div>
-                            </div>
-                            <input type="hidden" id="coordenadas" name="coordenadas">
-
-                            <!-- Acciones de Mapa -->
-                            <div class="mt-3 flex justify-end">
-                                <button type="button" id="validate-deforestation-btn" class="bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold py-2 px-4 rounded-lg shadow-sm flex items-center gap-2 transition transform hover:scale-105">
-                                    <i class="fas fa-satellite"></i> Validar EUDR (Anti-Deforestación)
-                                </button>
-                            </div>
-                        </div>
-
-                        <!-- PASO 2: DATOS GEOGRÁFICOS (AUTOCOMPLETADOS) -->
-                        <div class="bg-white p-5 rounded-2xl border border-stone-200 shadow-sm">
-                            <div class="flex items-center gap-2 mb-4">
-                                <span class="bg-stone-600 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold">2</span>
-                                <h3 class="text-lg font-bold text-stone-800">Datos Geográficos</h3>
-                                <span class="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded border border-green-200 font-medium ml-2">
-                                    <i class="fas fa-magic mr-1"></i> Autocompletado
-                                </span>
-                            </div>
-
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <!-- Columna Izquierda: Ubicación Administrativa -->
-                                <div class="space-y-4">
-                                    <div>
-                                        <label for="pais" class="block text-xs font-bold text-stone-500 uppercase mb-1">País</label>
-                                        <select id="pais" name="pais" class="w-full p-2.5 bg-stone-50 border border-stone-300 rounded-lg text-stone-800 font-medium focus:ring-2 focus:ring-amber-500"></select>
-                                    </div>
-                                    <div class="grid grid-cols-2 gap-4">
-                                        <div>
-                                            <label for="departamento" class="block text-xs font-bold text-stone-500 uppercase mb-1">Dpto / Región</label>
-                                            <input type="text" id="departamento" name="departamento" class="w-full p-2.5 bg-stone-50 border border-stone-300 rounded-lg text-stone-800" readonly>
-                                        </div>
-                                        <div>
-                                            <label for="provincia" class="block text-xs font-bold text-stone-500 uppercase mb-1">Provincia</label>
-                                            <input type="text" id="provincia" name="provincia" class="w-full p-2.5 bg-stone-50 border border-stone-300 rounded-lg text-stone-800" readonly>
-                                        </div>
-                                    </div>
-                                    <!-- Distrito solo (Eliminado Referencia/Caserío) -->
-                                    <div>
-                                        <label for="distrito" class="block text-xs font-bold text-stone-500 uppercase mb-1">Distrito</label>
-                                        <input type="text" id="distrito" name="distrito" class="w-full p-2.5 bg-stone-50 border border-stone-300 rounded-lg text-stone-800" readonly>
-                                    </div>
-                                    <!-- Input oculto para ciudad si el backend lo requiere, o simplemente no se envía -->
-                                    <input type="hidden" id="ciudad" name="ciudad"> 
-                                </div>
-
-                                <!-- Columna Derecha: Métricas del Terreno -->
-                                <div class="bg-stone-50 p-4 rounded-xl border border-stone-200 flex flex-col justify-center space-y-4">
-                                    <div>
-                                        <label for="superficie" class="block text-xs font-bold text-stone-500 uppercase mb-1">Superficie Total</label>
-                                        <div class="relative">
-                                            <input type="number" id="superficie" name="superficie" class="w-full p-3 pl-4 text-xl font-bold text-amber-900 border border-stone-300 rounded-xl focus:ring-2 focus:ring-amber-500" placeholder="0.00" step="0.01" required>
-                                            <span class="absolute right-4 top-3.5 text-sm font-bold text-stone-400">Hectáreas</span>
-                                        </div>
-                                        <p class="text-[10px] text-stone-400 mt-1">Calculado automáticamente del polígono.</p>
-                                    </div>
-                                    <div>
-                                        <label for="altura" class="block text-xs font-bold text-stone-500 uppercase mb-1">Altitud Promedio</label>
-                                        <div class="relative">
-                                            <input type="number" id="altura" name="altura" class="w-full p-3 pl-4 text-xl font-bold text-stone-700 border border-stone-300 rounded-xl focus:ring-2 focus:ring-amber-500" placeholder="0" required>
-                                            <span class="absolute right-4 top-3.5 text-sm font-bold text-stone-400">m.s.n.m.</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
                         <!-- PASO 3: INFORMACIÓN DEL PRODUCTOR -->
                         <div class="bg-white p-5 rounded-2xl border border-stone-200 shadow-sm">
                             <div class="flex items-center gap-2 mb-4">
-                                <span class="bg-stone-600 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold">3</span>
+                                <span class="bg-stone-600 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold">1</span>
                                 <h3 class="text-lg font-bold text-stone-800">Detalles del Productor y Finca</h3>
                             </div>
 
@@ -230,6 +127,109 @@
                                     <input type="file" id="productor-foto-input" class="hidden" accept="image/*">
                                     <input type="hidden" id="foto_productor" name="foto_productor">
                                     <p class="text-xs text-stone-400 mt-2 text-center">Click para subir</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- PASO 1: MAPA Y GEOMETRÍA (PRIORIDAD ALTA) -->
+                        <div class="bg-amber-50/50 p-5 rounded-2xl border border-amber-100">
+                            <div class="mb-4">
+                                <div class="flex items-center gap-2 mb-1">
+                                    <span class="bg-amber-600 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold">2</span>
+                                    <h3 class="text-lg font-bold text-amber-900">Ubicación Satelital</h3>
+                                </div>
+                                <p class="text-sm text-stone-600 ml-8">
+                                    Busca la zona y <strong class="text-amber-700">dibuja el polígono</strong> exacto de la finca. La ubicación y superficie se calcularán automáticamente.
+                                </p>
+                            </div>
+
+                            <!-- Herramientas Mapa -->
+                            <div class="flex flex-col sm:flex-row gap-2 mb-3">
+                                <div class="relative flex-grow">
+                                    <i class="fas fa-search absolute left-3 top-3.5 text-stone-400"></i>
+                                    <input type="text" id="ciudad-search" placeholder="Buscar lugar, ciudad o coordenadas..." class="w-full pl-10 p-3 border border-stone-300 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none shadow-sm">
+                                </div>
+                                <button type="button" id="search-btn" class="bg-stone-700 hover:bg-stone-800 text-white font-bold px-6 py-3 rounded-xl shadow-sm transition">
+                                    Ir
+                                </button>
+                                <button type="button" id="locate-btn" class="bg-white hover:bg-stone-50 text-amber-600 border border-amber-200 font-bold px-4 py-3 rounded-xl shadow-sm transition" title="Usar mi ubicación actual">
+                                    <i class="fas fa-crosshairs"></i>
+                                </button>
+                            </div>
+
+                            <!-- Mapa Container -->
+                            <div class="relative rounded-xl overflow-hidden shadow-md border border-stone-300 group">
+                                <div id="map"></div>
+                                <div id="satellite-scan-line" class="scan-line hidden"></div>
+                                
+                                <!-- Overlay de Instrucciones (desaparece al dibujar) -->
+                                <div id="map-instructions" class="absolute top-4 left-4 bg-white/90 backdrop-blur px-4 py-2 rounded-lg text-xs font-medium text-stone-600 shadow-sm pointer-events-none border border-white/50">
+                                    <i class="fas fa-draw-polygon mr-1 text-amber-600"></i> Usa la herramienta de polígono arriba
+                                </div>
+                            </div>
+                            <input type="hidden" id="coordenadas" name="coordenadas">
+
+                            <!-- Acciones de Mapa -->
+                            <div class="mt-3 flex justify-end">
+                                <button type="button" id="validate-deforestation-btn" class="bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold py-2 px-4 rounded-lg shadow-sm flex items-center gap-2 transition transform hover:scale-105">
+                                    <i class="fas fa-satellite"></i> Validar EUDR (Anti-Deforestación)
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- PASO 2: DATOS GEOGRÁFICOS (AUTOCOMPLETADOS) -->
+                        <div class="bg-white p-5 rounded-2xl border border-stone-200 shadow-sm">
+                            <div class="flex items-center gap-2 mb-4">
+                                <span class="bg-stone-600 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold">3</span>
+                                <h3 class="text-lg font-bold text-stone-800">Datos Geográficos</h3>
+                                <span class="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded border border-green-200 font-medium ml-2">
+                                    <i class="fas fa-magic mr-1"></i> Autocompletado
+                                </span>
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <!-- Columna Izquierda: Ubicación Administrativa -->
+                                <div class="space-y-4">
+                                    <div>
+                                        <label for="pais" class="block text-xs font-bold text-stone-500 uppercase mb-1">País</label>
+                                        <select id="pais" name="pais" class="w-full p-2.5 bg-stone-50 border border-stone-300 rounded-lg text-stone-800 font-medium focus:ring-2 focus:ring-amber-500"></select>
+                                    </div>
+                                    <div class="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <label for="departamento" class="block text-xs font-bold text-stone-500 uppercase mb-1">Dpto / Región</label>
+                                            <input type="text" id="departamento" name="departamento" class="w-full p-2.5 bg-stone-50 border border-stone-300 rounded-lg text-stone-800" readonly>
+                                        </div>
+                                        <div>
+                                            <label for="provincia" class="block text-xs font-bold text-stone-500 uppercase mb-1">Provincia</label>
+                                            <input type="text" id="provincia" name="provincia" class="w-full p-2.5 bg-stone-50 border border-stone-300 rounded-lg text-stone-800" readonly>
+                                        </div>
+                                    </div>
+                                    <!-- Distrito solo (Eliminado Referencia/Caserío) -->
+                                    <div>
+                                        <label for="distrito" class="block text-xs font-bold text-stone-500 uppercase mb-1">Distrito</label>
+                                        <input type="text" id="distrito" name="distrito" class="w-full p-2.5 bg-stone-50 border border-stone-300 rounded-lg text-stone-800" readonly>
+                                    </div>
+                                    <!-- Input oculto para ciudad si el backend lo requiere, o simplemente no se envía -->
+                                    <input type="hidden" id="ciudad" name="ciudad"> 
+                                </div>
+
+                                <!-- Columna Derecha: Métricas del Terreno -->
+                                <div class="bg-stone-50 p-4 rounded-xl border border-stone-200 flex flex-col justify-center space-y-4">
+                                    <div>
+                                        <label for="superficie" class="block text-xs font-bold text-stone-500 uppercase mb-1">Superficie Total</label>
+                                        <div class="relative">
+                                            <input type="number" id="superficie" name="superficie" class="w-full p-3 pl-4 text-xl font-bold text-amber-900 border border-stone-300 rounded-xl focus:ring-2 focus:ring-amber-500" placeholder="0.00" step="0.01">
+                                            <span class="absolute right-4 top-3.5 text-sm font-bold text-stone-400">Hectáreas</span>
+                                        </div>
+                                        <p class="text-[10px] text-stone-400 mt-1">Calculado automáticamente del polígono.</p>
+                                    </div>
+                                    <div>
+                                        <label for="altura" class="block text-xs font-bold text-stone-500 uppercase mb-1">Altitud Promedio</label>
+                                        <div class="relative">
+                                            <input type="number" id="altura" name="altura" class="w-full p-3 pl-4 text-xl font-bold text-stone-700 border border-stone-300 rounded-xl focus:ring-2 focus:ring-amber-500" placeholder="0">
+                                            <span class="absolute right-4 top-3.5 text-sm font-bold text-stone-400">m.s.n.m.</span>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>

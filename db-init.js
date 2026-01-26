@@ -68,6 +68,7 @@ async function initializeDatabase() {
                     premios_json TEXT,
                     foto_productor TEXT,
                     numero_trabajadores INTEGER,
+                    access_token TEXT UNIQUE,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     deleted_at TIMESTAMP,
@@ -374,13 +375,7 @@ async function initializeDatabase() {
                 )`);
 
             try {
-                await runQuery(db, `ALTER TABLE lotes ADD COLUMN producto_id TEXT REFERENCES productos(id) ON DELETE SET NULL`);
-
-                await runQuery(db, `ALTER TABLE productos ADD COLUMN tipo_producto TEXT`);
-                await runQuery(db, `ALTER TABLE productos ADD COLUMN peso TEXT`);
-                await runQuery(db, `ALTER TABLE productos ADD COLUMN imagenes_json TEXT`);
-                await runQuery(db, `ALTER TABLE productos ADD COLUMN premios_json TEXT`);
-                await runQuery(db, `ALTER TABLE productos ADD COLUMN ingredientes TEXT`);
+                await runQuery(db, `ALTER TABLE fincas ADD COLUMN access_token TEXT;`);
                 console.log("Columna producto_id agregada a lotes.");
             } catch (e) {
                 // Ignorar error si la columna ya existe (para no romper ejecuciones futuras)

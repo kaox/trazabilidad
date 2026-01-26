@@ -354,6 +354,86 @@ const deleteFinca = async (req, res) => {
     } catch (err) { res.status(500).json({ error: err.message }); }
 };
 
+// 1. Generar o recuperar el token de acceso para una finca
+const generateFincaToken = async (req, res) => {
+    const { id } = req.params;
+    const userId = req.user.id; // Seguridad: Solo el dueño de la cuenta puede generar el link
+
+    try {
+        // Verificar propiedad
+        const finca = await get('SELECT id, access_token FROM fincas WHERE id = ? AND user_id = ?', [id, userId]);
+        if (!finca) return res.status(404).json({ error: "Finca no encontrada o sin permiso." });
+
+        // Si ya tiene token, lo devolvemos
+        if (finca.access_token) {
+            return res.json({ token: finca.access_token });
+        }
+
+        // Si no, generamos uno nuevo (UUID seguro)
+        const token = require('crypto').randomUUID();
+        await run('UPDATE fincas SET access_token = ? WHERE id = ?', [token, id]);
+        
+        res.json({ token });
+    } catch (err) {
+        console.error("Error generando token finca:", err);
+        res.status(500).json({ error: err.message });
+    }
+};
+
+// 2. Obtener datos de la finca PÚBLICAMENTE (usando el token)
+const getFincaByToken = async (req, res) => {
+    const { token } = req.params;
+    try {
+        const finca = await get('SELECT * FROM fincas WHERE access_token = ?', [token]);
+        if (!finca) return res.status(404).json({ error: "Enlace inválido o expirado." });
+
+        // Parsear JSONs
+        finca.coordenadas = safeJSONParse(finca.coordenadas || 'null');
+        finca.imagenes_json = safeJSONParse(finca.imagenes_json || '[]');
+        finca.certificaciones_json = safeJSONParse(finca.certificaciones_json || '[]');
+        finca.premios_json = safeJSONParse(finca.premios_json || '[]');
+
+        res.json(finca);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};
+
+// 3. Actualizar finca PÚBLICAMENTE (usando el token)
+const updateFincaByToken = async (req, res) => {
+    const { token } = req.params;
+    // Permitimos actualizar datos clave que el agricultor conoce
+    let { propietario, dni_ruc, nombre_finca, telefono, historia, imagenes_json, coordenadas, altura, superficie, pais, departamento, provincia, distrito, ciudad } = req.body;
+
+    altura = sanitizeNumber(altura);
+    superficie = sanitizeNumber(superficie);
+
+    try {
+        const finca = await get('SELECT id FROM fincas WHERE access_token = ?', [token]);
+        if (!finca) return res.status(404).json({ error: "Enlace inválido." });
+
+        // Actualizamos los campos permitidos
+        await run(
+            `UPDATE fincas SET 
+                propietario = ?, dni_ruc = ?, nombre_finca = ?, telefono = ?, historia = ?, 
+                imagenes_json = ?, coordenadas = ?, altura = ?, superficie = ?,
+                pais = ?, departamento = ?, provincia = ?, distrito = ?, ciudad = ?
+             WHERE id = ?`,
+            [
+                propietario, dni_ruc, nombre_finca, telefono, historia, 
+                JSON.stringify(imagenes_json || []), JSON.stringify(coordenadas), altura, superficie,
+                pais, departamento, provincia, distrito, ciudad,
+                finca.id
+            ]
+        );
+
+        res.json({ message: "Información actualizada correctamente." });
+    } catch (err) {
+        console.error("Error updateFincaByToken:", err);
+        res.status(500).json({ error: err.message });
+    }
+};
+
 // --- Procesadoras ---
 const getProcesadoras = async (req, res) => {
     const userId = req.user.id;
@@ -2386,7 +2466,7 @@ const getPublicBatchesForProduct = async (req, res) => {
 
 module.exports = {
     registerUser, loginUser, logoutUser, handleGoogleLogin,
-    getFincas, createFinca, updateFinca, deleteFinca,
+    getFincas, createFinca, updateFinca, deleteFinca, generateFincaToken, getFincaByToken, updateFincaByToken,
     getProcesadoras, createProcesadora, updateProcesadora, deleteProcesadora,
     getPerfiles, createPerfil, updatePerfil, deletePerfil,
     getTemplates, createTemplate, updateTemplate, deleteTemplate, 

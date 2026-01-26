@@ -334,6 +334,18 @@ app.get('/api/public/products/:productId/batches', db.getPublicBatchesForProduct
 app.get('/api/proxy/usda/search', authenticateApi, db.searchUSDA);
 app.get('/api/proxy/usda/food/:fdcId', authenticateApi, db.getUSDADetails);
 
+// Ruta protegida para generar el token (solo el usuario registrado puede crear el link)
+app.post('/api/fincas/:id/share-token', authenticateApi, db.generateFincaToken);
+
+// Rutas PÚBLICAS para el agricultor (sin autenticación, solo token en URL)
+app.get('/api/public/fincas/:token', db.getFincaByToken);
+app.put('/api/public/fincas/:token', db.updateFincaByToken);
+
+// Ruta para servir la página HTML pública del agricultor
+app.get('/registro-productor', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'registro-productor.html'));
+});
+
 // Iniciar Servidor
 app.listen(PORT, () => {
     console.log(`Servidor corriendo en modo [${process.env.NODE_ENV || 'development'}] en http://localhost:${PORT}`);

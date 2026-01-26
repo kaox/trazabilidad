@@ -71,6 +71,7 @@ CREATE TABLE IF NOT EXISTS fincas (
     premios_json JSONB DEFAULT '[]',
     foto_productor TEXT,
     numero_trabajadores INTEGER,
+    access_token TEXT UNIQUE,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,

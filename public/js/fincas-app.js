@@ -465,21 +465,33 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function renderFincas(fincas) {
-        fincasList.innerHTML = fincas.length === 0 ? '<p class="text-stone-500 text-center">No hay fincas registradas.</p>' : fincas.map(finca => `
-            <div class="p-4 border rounded-xl bg-stone-50">
-                <div class="flex justify-between items-start">
+        const countBadge = document.getElementById('finca-count');
+        if(countBadge) countBadge.textContent = fincas.length;
+
+        fincasList.innerHTML = fincas.length === 0 ? 
+            '<div class="text-center py-8 text-stone-400 bg-stone-50 rounded-xl border-2 border-dashed border-stone-200"><i class="fas fa-seedling text-3xl mb-2"></i><p>No hay fincas registradas.</p></div>' : 
+            fincas.map(finca => `
+            <div class="bg-white p-4 rounded-xl border border-stone-200 shadow-sm hover:shadow-md transition group">
+                <div class="flex justify-between items-start mb-3">
                     <div>
-                        <h3 class="font-bold text-amber-900 text-lg">${finca.nombre_finca}</h3>
-                        <p class="text-sm text-stone-600">${finca.propietario}</p>
-                        <p class="text-xs text-stone-500">
-                            ${finca.distrito || ''}, ${finca.provincia || ''}, ${finca.departamento || ''} 
-                            ${finca.pais ? `(${finca.pais})` : ''}
-                        </p>
+                        <h3 class="font-bold text-amber-900 text-lg leading-tight group-hover:text-amber-700 transition">${finca.nombre_finca}</h3>
+                        <p class="text-xs text-stone-500 font-medium uppercase tracking-wide mt-1">${finca.propietario}</p>
                     </div>
-                    <div class="flex gap-2 flex-shrink-0">
-                        <button data-id="${finca.id}" class="edit-btn text-sm bg-sky-600 hover:bg-sky-700 text-white px-3 py-1 rounded-lg">Editar</button>
-                        <button data-id="${finca.id}" class="delete-btn text-sm bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-lg">Eliminar</button>
+                    <div class="flex gap-1">
+                        <button onclick="shareFincaLink('${finca.id}', '${finca.nombre_finca}')" class="text-stone-400 hover:text-green-600 p-1.5 rounded-lg hover:bg-green-50 transition" title="Compartir con Productor">
+                            <i class="fas fa-share-alt"></i>
+                        </button>
+                        <button data-id="${finca.id}" class="edit-btn text-stone-400 hover:text-sky-600 p-1.5 rounded-lg hover:bg-sky-50 transition" title="Editar">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button data-id="${finca.id}" class="delete-btn text-stone-400 hover:text-red-600 p-1.5 rounded-lg hover:bg-red-50 transition" title="Eliminar">
+                            <i class="fas fa-trash"></i>
+                        </button>
                     </div>
+                </div>
+                <div class="text-xs text-stone-500 space-y-1">
+                    <p><i class="fas fa-map-marker-alt w-4 text-center mr-1"></i> ${finca.distrito || '-'}, ${finca.departamento || '-'}</p>
+                    <p><i class="fas fa-ruler-combined w-4 text-center mr-1"></i> ${finca.superficie || 0} ha / ${finca.altura || 0} msnm</p>
                 </div>
             </div>`).join('');
     }
@@ -801,11 +813,15 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function handleFincaListClick(e) {
-        if (e.target.classList.contains('edit-btn')) {
-            populateFormForEdit(e.target.dataset.id);
+        const editBtn = e.target.closest('.edit-btn');
+        const deleteBtn = e.target.closest('.delete-btn');
+
+        if (editBtn) {
+            populateFormForEdit(editBtn.dataset.id);
         }
-        if (e.target.classList.contains('delete-btn')) {
-            const id = e.target.dataset.id;
+        
+        if (deleteBtn) {
+            const id = deleteBtn.dataset.id;
             if (confirm('¿Seguro que quieres eliminar esta finca?')) {
                 api(`/api/fincas/${id}`, { method: 'DELETE' }).then(loadFincas);
             }
@@ -867,5 +883,38 @@ document.addEventListener('DOMContentLoaded', () => {
         
         return response.json();
     }
+
+    window.shareFincaLink = async function(id, nombre) {
+        try {
+            // 1. Obtener Token
+            const res = await api(`/api/fincas/${id}/share-token`, { method: 'POST' });
+            const token = res.token;
+            
+            // 2. Construir URL
+            const url = `${window.location.origin}/registro-productor?t=${token}`;
+            
+            // 3. Crear mensaje para WhatsApp
+            const mensaje = `Hola! Por favor completa la información de la finca "${nombre}" en este enlace seguro: ${url}`;
+            const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(mensaje)}`;
+
+            // 4. Mostrar opciones (Alert simple o Modal personalizado)
+            // Usamos un prompt simple para permitir copiar rápido
+            /*
+            if(confirm(`Enlace generado:\n${url}\n\n¿Deseas enviar por WhatsApp ahora?`)) {
+                window.open(whatsappUrl, '_blank');
+            }
+            */
+           
+           // Mejor UX: Copiar al portapapeles y avisar
+           navigator.clipboard.writeText(mensaje).then(() => {
+               if(confirm(`Enlace copiado al portapapeles.\n\n¿Quieres abrir WhatsApp para enviarlo?`)) {
+                   window.open(whatsappUrl, '_blank');
+               }
+           });
+
+        } catch (e) {
+            alert("Error generando enlace: " + e.message);
+        }
+    };
 
 });
