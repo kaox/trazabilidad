@@ -793,12 +793,27 @@ const generateUniqueLoteId = async (prefix) => {
 const getAcquisitions = async (req, res) => {
     const userId = req.user.id;
     try {
-        // MODIFICADO: Filtrar solo registros activos (no borrados lógicamente)
-        const rows = await all('SELECT * FROM acquisitions WHERE user_id = ? AND deleted_at IS NULL ORDER BY created_at DESC', [userId]);
+        // Hacemos JOIN para traer el código de la unidad (KG, LB) y el símbolo de moneda ($, S/)
+        // Esto evita tener que guardar esos textos manualmente
+        const sql = `
+            SELECT a.*, 
+                   u.code as unit_code, 
+                   c.code as currency_code, c.symbol as currency_symbol
+            FROM acquisitions a
+            LEFT JOIN units_of_measure u ON a.unit_id = u.id
+            LEFT JOIN currencies c ON a.currency_id = c.id
+            WHERE a.user_id = ? AND a.deleted_at IS NULL 
+            ORDER BY a.created_at DESC
+        `;
+        const rows = await all(sql, [userId]);
+        
         const result = rows.map(r => ({
             ...r,
             imagenes_json: safeJSONParse(r.imagenes_json || '[]'),
-            data_adicional: safeJSONParse(r.data_adicional || '{}')
+            data_adicional: safeJSONParse(r.data_adicional || '{}'),
+            // Inyectamos valores legibles para el frontend si existen los joins, sino fallbacks
+            display_unit: r.unit_code || 'KG',
+            display_currency: r.currency_symbol || '$'
         }));
         res.status(200).json(result);
     } catch (err) { res.status(500).json({ error: err.message }); }
@@ -806,16 +821,30 @@ const getAcquisitions = async (req, res) => {
 
 const createAcquisition = async (req, res) => {
     const userId = req.user.id;
-    const { nombre_producto, tipo_acopio, subtipo, fecha_acopio, peso_kg, precio_unitario, finca_origen, observaciones, imagenes_json, data_adicional } = req.body;
+    const { 
+        nombre_producto, tipo_acopio, subtipo, fecha_acopio, 
+        peso_kg, precio_unitario, // Valores normalizados
+        original_quantity, original_price, unit_id, currency_id, // Nuevos campos vinculados
+        finca_origen, observaciones, imagenes_json, data_adicional 
+    } = req.body;
     
-    // Generar ID único para el acopio (Ej: ACP-X821)
     const randomPart = Math.random().toString(36).substring(2, 6).toUpperCase();
     const id = `ACP-${randomPart}`;
 
     try {
         await run(
-            'INSERT INTO acquisitions (id, user_id, nombre_producto, tipo_acopio, subtipo, fecha_acopio, peso_kg, precio_unitario, finca_origen, observaciones, imagenes_json, data_adicional) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-            [id, userId, nombre_producto, tipo_acopio, subtipo, fecha_acopio, peso_kg, precio_unitario, finca_origen, observaciones, JSON.stringify(imagenes_json), JSON.stringify(data_adicional)]
+            `INSERT INTO acquisitions (
+                id, user_id, nombre_producto, tipo_acopio, subtipo, fecha_acopio, 
+                peso_kg, precio_unitario, 
+                original_quantity, original_price, unit_id, currency_id,
+                finca_origen, observaciones, imagenes_json, data_adicional
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [
+                id, userId, nombre_producto, tipo_acopio, subtipo, fecha_acopio, 
+                peso_kg, precio_unitario, 
+                original_quantity, original_price, unit_id, currency_id,
+                finca_origen, observaciones, JSON.stringify(imagenes_json), JSON.stringify(data_adicional)
+            ]
         );
         res.status(201).json({ message: "Acopio registrado", id });
     } catch (err) { res.status(500).json({ error: err.message }); }

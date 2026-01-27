@@ -9,8 +9,8 @@
             "icono": "fas fa-tint",
             "etapas_acopio": [1],
             "campos": [
-                {"label": "Peso Granos en Baba (kg)", "name": "pesoGranosBaba", "type": "number", "oem": "kg"},
-                {"label": "Precio Unitario (USD/kg)", "name": "precioUnitario", "type": "number", "currency": "S/"}
+                {"label": "Peso Granos en Baba", "name": "pesoGranosBaba", "type": "number"},
+                {"label": "Precio Total", "name": "precioUnitario", "type": "number"}
             ]
         },
         {
@@ -18,8 +18,8 @@
             "icono": "fas fa-leaf",
             "etapas_acopio": [1, 2, 3],
             "campos": [
-                {"label": "Peso Grano Seco (kg)", "name": "pesoSeco", "type": "number"},
-                {"label": "Precio Unitario (USD/kg)", "name": "precioUnitario", "type": "number"}
+                {"label": "Peso Grano Seco", "name": "pesoSeco", "type": "number"},
+                {"label": "Precio Total", "name": "precioUnitario", "type": "number"}
             ]
         }
       ]
@@ -33,8 +33,8 @@
             "icono": "fas fa-circle",
             "etapas_acopio": [1],
             "campos": [
-                {"label": "Peso Cerezas (kg)", "name": "pesoCerezas", "type": "number"},
-                {"label": "Precio Unitario (USD/kg)", "name": "precioUnitario", "type": "number"}
+                {"label": "Peso Cerezas", "name": "pesoCerezas", "type": "number"},
+                {"label": "Precio Unitario", "name": "precioUnitario", "type": "number"}
             ]
         },
         {
@@ -61,8 +61,8 @@
                 }
             ],
             "campos": [
-                {"label": "Peso Pergamino (kg)", "name": "pesoPergamino", "type": "number"},
-                {"label": "Precio Unitario (USD/kg)", "name": "precioUnitario", "type": "number"}
+                {"label": "Peso Pergamino", "name": "pesoPergamino", "type": "number"},
+                {"label": "Precio Unitario", "name": "precioUnitario", "type": "number"}
             ]
         },
         {
@@ -89,8 +89,8 @@
                 }
             ],
             "campos": [
-                {"label": "Peso Café Verde (kg)", "name": "pesoCafeVerde", "type": "number"},
-                {"label": "Precio Unitario (USD/kg)", "name": "precioUnitario", "type": "number"}
+                {"label": "Peso Café Verde", "name": "pesoCafeVerde", "type": "number"},
+                {"label": "Precio Unitario", "name": "precioUnitario", "type": "number"}
             ]
         }
       ]

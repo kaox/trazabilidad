@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Existencias - Rurulab</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+    <script src="/auth.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet">
+    <script src="/js/analytics-loader.js" defer></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+        h1, h2, h3, .font-display { font-family: 'Playfair Display', serif; }
+    </style>
+</head>
+<body class="text-slate-800 antialiased">
+    <div id="nav-placeholder"></div>
+    
+    <div class="container mx-auto px-4 md:px-8 py-8 max-w-7xl">
+        
+        <!-- Header -->
+        <header class="mb-10">
+            <h1 class="text-3xl md:text-4xl font-bold text-slate-900 font-display mb-2">Almacén Central</h1>
+            <p class="text-slate-500">Control de inventario, valoración y tiempos de maduración.</p>
+        </header>
+
+        <!-- KPIs Financieros (WAC) -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+            <!-- Valor Total -->
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 relative overflow-hidden">
+                <div class="absolute top-0 right-0 p-4 opacity-5">
+                    <i class="fas fa-sack-dollar text-6xl text-emerald-900"></i>
+                </div>
+                <p class="text-xs font-bold text-emerald-600 uppercase tracking-wider mb-2">Valor Total Inventario</p>
+                <h3 class="text-3xl font-bold text-slate-900" id="kpi-total-value">...</h3>
+                <p class="text-xs text-slate-400 mt-2">Capital inmovilizado en bodega</p>
+            </div>
+
+            <!-- Costo Promedio Ponderado (CPP/WAC) -->
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 relative overflow-hidden">
+                <div class="absolute top-0 right-0 p-4 opacity-5">
+                    <i class="fas fa-scale-balanced text-6xl text-blue-900"></i>
+                </div>
+                <p class="text-xs font-bold text-blue-600 uppercase tracking-wider mb-2">Costo Promedio (CPP)</p>
+                <h3 class="text-3xl font-bold text-slate-900" id="kpi-wac">...</h3>
+                <p class="text-xs text-slate-400 mt-2">Ponderado por volumen actual</p>
+            </div>
+
+            <!-- Stock Total -->
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 relative overflow-hidden">
+                <div class="absolute top-0 right-0 p-4 opacity-5">
+                    <i class="fas fa-cubes text-6xl text-amber-900"></i>
+                </div>
+                <p class="text-xs font-bold text-amber-600 uppercase tracking-wider mb-2">Stock Físico Total</p>
+                <h3 class="text-3xl font-bold text-slate-900" id="kpi-total-stock">...</h3>
+                <p class="text-xs text-slate-400 mt-2">Materia prima + En proceso</p>
+            </div>
+        </div>
+
+        <!-- Filtros y Tabla -->
+        <div class="bg-white rounded-2xl shadow-lg border border-slate-200 overflow-hidden">
+            
+            <!-- Barra de Herramientas -->
+            <div class="p-6 border-b border-slate-100 flex flex-col md:flex-row justify-between items-center gap-4">
+                <div class="flex gap-2 p-1 bg-slate-100 rounded-xl">
+                    <button class="filter-tab active px-4 py-2 rounded-lg text-sm font-bold text-white bg-slate-800 shadow-sm transition" data-status="all">Todo</button>
+                    <button class="filter-tab px-4 py-2 rounded-lg text-sm font-bold text-slate-600 hover:bg-white hover:shadow-sm transition" data-status="acopio">Acopio (Materia Prima)</button>
+                    <button class="filter-tab px-4 py-2 rounded-lg text-sm font-bold text-slate-600 hover:bg-white hover:shadow-sm transition" data-status="proceso">En Proceso</button>
+                    <button class="filter-tab px-4 py-2 rounded-lg text-sm font-bold text-slate-600 hover:bg-white hover:shadow-sm transition" data-status="terminado">Terminado</button>
+                </div>
+                
+                <div class="relative">
+                    <i class="fas fa-search absolute left-3 top-3 text-slate-400 text-sm"></i>
+                    <input type="text" id="search-inventory" placeholder="Buscar lote, producto..." class="pl-9 pr-4 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-amber-500 outline-none w-64">
+                </div>
+            </div>
+
+            <!-- Tabla -->
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-slate-50 text-slate-500 text-xs uppercase tracking-wider">
+                            <th class="p-4 font-bold border-b border-slate-100">Lote / ID</th>
+                            <th class="p-4 font-bold border-b border-slate-100">Producto</th>
+                            <th class="p-4 font-bold border-b border-slate-100">Estado</th>
+                            <th class="p-4 font-bold border-b border-slate-100 text-right">Existencia (KG)</th>
+                            <th class="p-4 font-bold border-b border-slate-100 text-right">Costo Unit.</th>
+                            <th class="p-4 font-bold border-b border-slate-100 text-right">Valor Total</th>
+                            <th class="p-4 font-bold border-b border-slate-100 text-center">Tiempo en Bodega</th>
+                            <th class="p-4 font-bold border-b border-slate-100 text-center">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="inventory-table-body" class="text-sm text-slate-700 divide-y divide-slate-100">
+                        <tr><td colspan="8" class="p-8 text-center text-slate-400">Cargando inventario...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="p-4 border-t border-slate-100 bg-slate-50 text-xs text-slate-500 flex justify-between items-center">
+                <span>* El Costo Promedio Ponderado (CPP) se calcula en base a las compras/acopios históricos.</span>
+                <button id="export-btn" class="flex items-center gap-2 text-amber-700 font-bold hover:underline">
+                    <i class="fas fa-file-excel"></i> Exportar Reporte
+                </button>
+            </div>
+        </div>
+
+    </div>
+
+    <script src="/js/nav-loader.js"></script>
+    <script src="/js/existencias-app.js"></script>
+</body>
+</html>

@@ -196,6 +196,13 @@ CREATE TABLE IF NOT EXISTS acquisitions (
     fecha_acopio DATE,
     peso_kg DOUBLE PRECISION,
     precio_unitario DOUBLE PRECISION,
+
+    -- DATOS ORIGINALES (Lo que ingresó el usuario)
+    original_quantity DOUBLE PRECISION,
+    original_price DOUBLE PRECISION,
+    unit_id INTEGER REFERENCES units_of_measure(id),
+    currency_id INTEGER REFERENCES currencies(id),
+
     finca_origen TEXT,
     observaciones TEXT,
     imagenes_json JSONB,
@@ -376,7 +383,9 @@ INSERT INTO currencies (code, name, symbol) VALUES
     ('PEN', 'Sol Peruano', 'S/'),
     ('EUR', 'Euro', '€'),
     ('COP', 'Peso Colombiano', '$'),
-    ('MXN', 'Peso Mexicano', '$')
+    ('CLP', 'Peso Chileno', '$'),
+    ('MXN', 'Peso Mexicano', '$'),
+    ('BRL', 'Real Brasileño', 'R$')
 ON CONFLICT (code) DO NOTHING;
 
 -- ÍNDICES DE RENDIMIENTO

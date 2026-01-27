@@ -141,6 +141,13 @@ async function initializeDatabase() {
                     fecha_acopio DATE,
                     peso_kg REAL,
                     precio_unitario REAL,
+
+                    -- DATOS ORIGINALES (Lo que ingresó el usuario)
+                    original_quantity REAL,
+                    original_price REAL,
+                    unit_id INTEGER REFERENCES units_of_measure(id),
+                    currency_id INTEGER REFERENCES currencies(id),
+
                     finca_origen TEXT,
                     observaciones TEXT,
                     imagenes_json TEXT,
@@ -431,17 +438,16 @@ async function initializeDatabase() {
             }
             console.log("Datos iniciales de monedas cargados.");
 
-            // --- MIGRACIÓN PREFERENCIAS DE USUARIO (NUEVO) ---
+            // --- MIGRACIONES ESPECÍFICAS PARA ACOPIOS ---
             try {
-                await runQuery(db, `ALTER TABLE users ADD COLUMN default_currency TEXT;`);
-                console.log("Columna default_currency agregada a users.");
-            } catch (e) { if (!e.message.includes("duplicate column")) console.log("Nota currency:", e.message); }
-
-            try {
-                await runQuery(db, `ALTER TABLE users ADD COLUMN default_unit TEXT;`);
-                console.log("Columna default_unit agregada a users.");
-            } catch (e) { if (!e.message.includes("duplicate column")) console.log("Nota unit:", e.message); }
-
+                await runQuery(db, `ALTER TABLE acquisitions ADD COLUMN unit_id INTEGER;`);
+                await runQuery(db, `ALTER TABLE acquisitions ADD COLUMN currency_id INTEGER;`);
+                await runQuery(db, `ALTER TABLE acquisitions ADD COLUMN original_quantity REAL;`);
+                await runQuery(db, `ALTER TABLE acquisitions ADD COLUMN original_price REAL;`);
+                console.log("Columnas de unidades y monedas agregadas a acquisitions.");
+            } catch (e) {
+                if (!e.message.includes("duplicate column")) console.log("Nota migracion acquisitions:", e.message);
+            }
 
             console.log('Esquema de base de datos listo.');
 

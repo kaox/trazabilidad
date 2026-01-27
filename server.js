@@ -349,6 +349,8 @@ app.get('/registro-productor', (req, res) => {
 app.get('/api/config/currencies', authenticateApi, db.getCurrencies);
 app.get('/api/config/units', authenticateApi, db.getUnits);
 
+app.get('/app/existencias', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'existencias.html')));
+
 // Iniciar Servidor
 app.listen(PORT, () => {
     console.log(`Servidor corriendo en modo [${process.env.NODE_ENV || 'development'}] en http://localhost:${PORT}`);
