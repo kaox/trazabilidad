@@ -404,6 +404,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 } else if (mode === 'edit') {
                      // IMPLEMENTACIÓN DE EDICIÓN
                      // Usamos el ID del objeto acopioData que pasamos al abrir el form
+                     console.log("edit");
                      await api(`/api/acquisitions/${acopioData.id}`, { method: 'PUT', body: JSON.stringify(payload) });
                      //alert("Acopio actualizado exitosamente.");
                 }

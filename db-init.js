@@ -40,6 +40,8 @@ async function initializeDatabase() {
                     password TEXT NOT NULL,
                     nombre TEXT, apellido TEXT, dni TEXT, ruc TEXT, empresa TEXT, company_logo TEXT, celular TEXT, correo TEXT,
                     role TEXT DEFAULT 'user',
+                    default_currency TEXT DEFAULT 'PEN',
+                    default_unit TEXT DEFAULT 'KG',
                     subscription_tier TEXT DEFAULT 'artesano',
                     trial_ends_at TIMESTAMP,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -374,13 +376,72 @@ async function initializeDatabase() {
                     UNIQUE(codigo_externo)
                 )`);
 
-            try {
-                await runQuery(db, `ALTER TABLE fincas ADD COLUMN access_token TEXT;`);
-                console.log("Columna producto_id agregada a lotes.");
-            } catch (e) {
-                // Ignorar error si la columna ya existe (para no romper ejecuciones futuras)
-                if (!e.message.includes("duplicate column")) console.log("Nota sobre lotes:", e.message);
+            // --- NUEVA TABLA: UNIDADES DE MEDIDA ---
+            await runQuery(db, `
+                CREATE TABLE IF NOT EXISTS units_of_measure (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    code TEXT NOT NULL UNIQUE,
+                    name TEXT,
+                    type TEXT NOT NULL, -- 'MASA', 'VOLUMEN', 'UNIDAD'
+                    base_factor REAL DEFAULT 1.0, -- Factor para convertir a la unidad base (KG para masa, L para volumen)
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )`);
+            console.log("Tabla 'units_of_measure' creada.");
+
+            // Carga inicial Unidades (usando INSERT OR IGNORE para evitar duplicados en re-ejecuciones)
+            const initialUnits = [
+                ['KG', 'Kilogramo', 'MASA', 1.0],
+                ['LB', 'Libra', 'MASA', 0.453592],
+                ['G', 'Gramo', 'MASA', 0.001],
+                ['TON', 'Tonelada', 'MASA', 1000.0],
+                ['QQ', 'Quintal (46kg)', 'MASA', 46.0],
+                ['L', 'Litro', 'VOLUMEN', 1.0],
+                ['ML', 'Mililitro', 'VOLUMEN', 0.001],
+                ['GAL', 'Galón (US)', 'VOLUMEN', 3.78541],
+                ['Un', 'Unidad', 'UNIDAD', 1.0]
+            ];
+
+            for (const unit of initialUnits) {
+                await runQuery(db, `INSERT OR IGNORE INTO units_of_measure (code, name, type, base_factor) VALUES ('${unit[0]}', '${unit[1]}', '${unit[2]}', ${unit[3]})`);
             }
+            console.log("Datos iniciales de unidades cargados.");
+
+            // --- NUEVA TABLA: MONEDAS ---
+            await runQuery(db, `
+                CREATE TABLE IF NOT EXISTS currencies (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    code TEXT NOT NULL UNIQUE,
+                    name TEXT NOT NULL,
+                    symbol TEXT,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )`);
+            console.log("Tabla 'currencies' creada.");
+
+            // Carga inicial Monedas
+            const initialCurrencies = [
+                ['USD', 'Dólar Estadounidense', '$'],
+                ['PEN', 'Sol Peruano', 'S/'],
+                ['EUR', 'Euro', '€'],
+                ['COP', 'Peso Colombiano', '$'],
+                ['MXN', 'Peso Mexicano', '$']
+            ];
+
+            for (const curr of initialCurrencies) {
+                await runQuery(db, `INSERT OR IGNORE INTO currencies (code, name, symbol) VALUES ('${curr[0]}', '${curr[1]}', '${curr[2]}')`);
+            }
+            console.log("Datos iniciales de monedas cargados.");
+
+            // --- MIGRACIÓN PREFERENCIAS DE USUARIO (NUEVO) ---
+            try {
+                await runQuery(db, `ALTER TABLE users ADD COLUMN default_currency TEXT;`);
+                console.log("Columna default_currency agregada a users.");
+            } catch (e) { if (!e.message.includes("duplicate column")) console.log("Nota currency:", e.message); }
+
+            try {
+                await runQuery(db, `ALTER TABLE users ADD COLUMN default_unit TEXT;`);
+                console.log("Columna default_unit agregada a users.");
+            } catch (e) { if (!e.message.includes("duplicate column")) console.log("Nota unit:", e.message); }
+
 
             console.log('Esquema de base de datos listo.');
 

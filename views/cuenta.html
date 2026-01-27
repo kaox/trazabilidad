@@ -77,6 +77,24 @@
                                 <input type="email" id="correo" name="correo" class="w-full p-3 border border-stone-300 rounded-xl">
                             </div>
                         </div>
+                        <!-- Sección de Configuración de Sistema (Integrada en el formulario de perfil) -->
+                        <div class="pt-4 border-t border-stone-100">
+                            <h3 class="text-lg font-medium text-stone-800 mb-4">Preferencias del Sistema</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label for="default_currency" class="block text-sm font-medium text-stone-700 mb-1">Moneda Principal</label>
+                                    <select id="default_currency" name="default_currency" class="w-full p-3 border border-stone-300 rounded-xl bg-white focus:ring-2 focus:ring-amber-500 outline-none">
+                                        <option value="">Cargando...</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label for="default_unit" class="block text-sm font-medium text-stone-700 mb-1">Unidad de Medida (Masa)</label>
+                                    <select id="default_unit" name="default_unit" class="w-full p-3 border border-stone-300 rounded-xl bg-white focus:ring-2 focus:ring-amber-500 outline-none">
+                                        <option value="">Cargando...</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
                         <div class="pt-4 flex justify-end">
                             <button type="submit" class="bg-amber-800 hover:bg-amber-900 text-white font-bold py-2 px-6 rounded-xl">Actualizar Perfil</button>
                         </div>

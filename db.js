@@ -226,7 +226,7 @@ const logoutUser = (req, res) => {
 const getUserProfile = async (req, res) => {
     const userId = req.user.id;
     try {
-        let user = await get('SELECT id, usuario, nombre, apellido, dni, ruc, empresa, company_logo, celular, correo, role, subscription_tier, trial_ends_at FROM users WHERE id = ?', [userId]);
+        let user = await get('SELECT id, usuario, nombre, apellido, dni, ruc, empresa, company_logo, celular, correo, role, subscription_tier, trial_ends_at, default_currency, default_unit FROM users WHERE id = ?', [userId]);
         if (!user) return res.status(404).json({ error: "Usuario no encontrado." });
 
         if (!user.trial_ends_at) {
@@ -242,9 +242,9 @@ const getUserProfile = async (req, res) => {
 
 const updateUserProfile = async (req, res) => {
     const userId = req.user.id;
-    const { nombre, apellido, dni, ruc, empresa, company_logo, celular, correo } = req.body;
+    const { nombre, apellido, dni, ruc, empresa, company_logo, celular, correo, default_currency, default_unit } = req.body;
     try {
-        await run('UPDATE users SET nombre = ?, apellido = ?, dni = ?, ruc = ?, empresa = ?, company_logo = ?, celular = ?, correo = ? WHERE id = ?', [nombre, apellido, dni, ruc, empresa, company_logo, celular, correo, userId]);
+        await run('UPDATE users SET nombre = ?, apellido = ?, dni = ?, ruc = ?, empresa = ?, company_logo = ?, celular = ?, correo = ?, default_currency = ?, default_unit = ? WHERE id = ?', [nombre, apellido, dni, ruc, empresa, company_logo, celular, correo, default_currency, default_unit, userId]);
         res.status(200).json({ message: "Perfil actualizado." });
     } catch (err) { res.status(500).json({ error: err.message }); }
 };
@@ -2464,6 +2464,21 @@ const getPublicBatchesForProduct = async (req, res) => {
     }
 };
 
+// --- CONFIGURACIÓN DEL SISTEMA (NUEVO) ---
+const getCurrencies = async (req, res) => {
+    try {
+        const rows = await all('SELECT * FROM currencies ORDER BY code');
+        res.status(200).json(rows);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+};
+
+const getUnits = async (req, res) => {
+    try {
+        const rows = await all('SELECT * FROM units_of_measure ORDER BY type, code');
+        res.status(200).json(rows);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+};
+
 module.exports = {
     registerUser, loginUser, logoutUser, handleGoogleLogin,
     getFincas, createFinca, updateFinca, deleteFinca, generateFincaToken, getFincaByToken, updateFincaByToken,
@@ -2491,5 +2506,6 @@ module.exports = {
     addIngredienteReceta, updateIngredientePeso, deleteIngrediente,
     getRecetasNutricionales, createRecetaNutricional, deleteRecetaNutricional, updateRecetaNutricional,
     searchUSDA, getUSDADetails,
-    getPublicCompaniesWithImmutable, getPublicProductsWithImmutable, getPublicBatchesForProduct
+    getPublicCompaniesWithImmutable, getPublicProductsWithImmutable, getPublicBatchesForProduct,
+    getCurrencies, getUnits
 };

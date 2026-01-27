@@ -11,10 +11,42 @@ document.addEventListener('DOMContentLoaded', () => {
     const companyLogoInput = document.getElementById('company-logo-input');
     const companyLogoPreview = document.getElementById('company-logo-preview');
     const companyLogoHiddenInput = document.getElementById('company_logo');
+    
+    // Selectores de Configuración
+    const currencySelect = document.getElementById('default_currency');
+    const unitSelect = document.getElementById('default_unit');
 
     async function init() {
-        await loadProfile();
+        await loadConfigOptions(); // Cargar combos primero
+        await loadProfile();       // Luego cargar datos del usuario y setear valores
         setupEventListeners();
+    }
+
+    async function loadConfigOptions() {
+        try {
+            // Cargar Monedas
+            const currRes = await api('/api/config/currencies');
+            if (currencySelect) {
+                currencySelect.innerHTML = currRes.map(c => 
+                    `<option value="${c.code}">${c.code} - ${c.name} (${c.symbol})</option>`
+                ).join('');
+                // Default fallback
+                if(!currencySelect.value) currencySelect.value = 'USD';
+            }
+
+            // Cargar Unidades (Solo MASA por ahora para simplificar)
+            const unitRes = await api('/api/config/units');
+            if (unitSelect) {
+                const massUnits = unitRes.filter(u => u.type === 'MASA');
+                unitSelect.innerHTML = massUnits.map(u => 
+                    `<option value="${u.code}">${u.code} - ${u.name}</option>`
+                ).join('');
+                // Default fallback
+                if(!unitSelect.value) unitSelect.value = 'KG';
+            }
+        } catch (e) {
+            console.error("Error cargando configuraciones:", e);
+        }
     }
 
     async function loadProfile() {
@@ -30,6 +62,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 profileForm.empresa.value = user.empresa || '';
                 profileForm.celular.value = user.celular || '';
                 profileForm.correo.value = user.correo || '';
+
+                // Poblar configuración
+                if (user.default_currency) currencySelect.value = user.default_currency;
+                if (user.default_unit) unitSelect.value = user.default_unit;
 
                 if (user.company_logo) {
                     companyLogoPreview.src = user.company_logo;
@@ -60,7 +96,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         } catch (error) {
             console.error("Error al cargar perfil:", error);
-            alert("No se pudo cargar la información de tu perfil. Por favor, intenta recargar la página.");
+            // alert("No se pudo cargar la información de tu perfil."); 
         }
     }
 
@@ -79,16 +115,49 @@ document.addEventListener('DOMContentLoaded', () => {
     function handleLogoUpload(e) {
         const file = e.target.files[0];
         if (!file) return;
+        
+        // Validación de tamaño (Max 2MB para logos)
+        if (file.size > 2 * 1024 * 1024) {
+            alert("El logo es demasiado pesado (Máx 2MB)");
+            return;
+        }
+
         const reader = new FileReader();
         reader.onloadend = () => {
-            companyLogoPreview.src = reader.result;
-            companyLogoHiddenInput.value = reader.result;
+            const img = new Image();
+            img.src = reader.result;
+            img.onload = () => {
+                // Redimensionar logo (max 300x300 es suficiente)
+                const canvas = document.createElement('canvas');
+                const MAX_SIZE = 300;
+                let width = img.width;
+                let height = img.height;
+                
+                if (width > height) {
+                    if (width > MAX_SIZE) { height *= MAX_SIZE / width; width = MAX_SIZE; }
+                } else {
+                    if (height > MAX_SIZE) { width *= MAX_SIZE / height; height = MAX_SIZE; }
+                }
+                
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+                
+                const resizedData = canvas.toDataURL('image/png');
+                companyLogoPreview.src = resizedData;
+                companyLogoHiddenInput.value = resizedData;
+            };
         };
         reader.readAsDataURL(file);
     }
 
     async function handleProfileUpdate(e) {
         e.preventDefault();
+        const btn = profileForm.querySelector('button[type="submit"]');
+        const originalText = btn.textContent;
+        btn.disabled = true; btn.textContent = "Guardando...";
+
         const formData = new FormData(profileForm);
         const data = Object.fromEntries(formData.entries());
 
@@ -101,6 +170,8 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (error) {
             console.error("Error al actualizar perfil:", error);
             alert(`Error: ${error.message}`);
+        } finally {
+            btn.disabled = false; btn.textContent = originalText;
         }
     }
 
@@ -130,6 +201,17 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // Helper API
+    async function api(url, options = {}) {
+        options.credentials = 'include';
+        options.headers = { ...options.headers, 'Content-Type': 'application/json' };
+        const res = await fetch(url, options);
+        if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            throw new Error(err.error || `Error ${res.status}`);
+        }
+        return res.json();
+    }
+
     init();
 });
-

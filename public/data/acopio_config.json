@@ -9,8 +9,8 @@
             "icono": "fas fa-tint",
             "etapas_acopio": [1],
             "campos": [
-                {"label": "Peso Granos en Baba (kg)", "name": "pesoGranosBaba", "type": "number"},
-                {"label": "Precio Unitario (USD/kg)", "name": "precioUnitario", "type": "number"}
+                {"label": "Peso Granos en Baba (kg)", "name": "pesoGranosBaba", "type": "number", "oem": "kg"},
+                {"label": "Precio Unitario (USD/kg)", "name": "precioUnitario", "type": "number", "currency": "S/"}
             ]
         },
         {

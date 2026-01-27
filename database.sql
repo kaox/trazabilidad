@@ -43,6 +43,8 @@ CREATE TABLE IF NOT EXISTS users (
     company_logo TEXT,
     celular TEXT,
     correo TEXT,
+    default_currency TEXT DEFAULT 'PEN',
+    default_unit TEXT DEFAULT 'KG',
     role TEXT DEFAULT 'user', -- 'user', 'admin'
     subscription_tier TEXT DEFAULT 'artesano', -- 'artesano', 'profesional'
     trial_ends_at TIMESTAMPTZ,
@@ -331,6 +333,51 @@ CREATE TABLE IF NOT EXISTS lote_costs (
     cost_data JSONB NOT NULL,
     FOREIGN KEY (batch_id) REFERENCES batches(id) ON DELETE CASCADE
 );
+
+-- -----------------------------------------------------
+-- Tabla: units_of_measure
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS units_of_measure (
+    id SERIAL PRIMARY KEY,
+    code TEXT NOT NULL UNIQUE,
+    name TEXT,
+    type TEXT NOT NULL, -- 'MASA', 'VOLUMEN', 'UNIDAD'
+    base_factor REAL DEFAULT 1.0, -- Factor para convertir a la unidad base (KG para masa, L para volumen)
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Carga inicial: Unidades de Medida
+INSERT INTO units_of_measure (code, name, type, base_factor) VALUES
+    ('KG', 'Kilogramo', 'MASA', 1.0),
+    ('LB', 'Libra', 'MASA', 0.453592),
+    ('G', 'Gramo', 'MASA', 0.001),
+    ('TON', 'Tonelada', 'MASA', 1000.0),
+    ('QQ', 'Quintal (46kg)', 'MASA', 46.0),
+    ('L', 'Litro', 'VOLUMEN', 1.0),
+    ('ML', 'Mililitro', 'VOLUMEN', 0.001),
+    ('GAL', 'Galón (US)', 'VOLUMEN', 3.78541),
+    ('Un', 'Unidad', 'UNIDAD', 1.0)
+ON CONFLICT (code) DO NOTHING;
+
+-- -----------------------------------------------------
+-- Tabla: currencies
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS currencies (
+    id SERIAL PRIMARY KEY,
+    code TEXT NOT NULL UNIQUE,
+    name TEXT NOT NULL,
+    symbol TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Carga inicial: Monedas
+INSERT INTO currencies (code, name, symbol) VALUES
+    ('USD', 'Dólar Estadounidense', '$'),
+    ('PEN', 'Sol Peruano', 'S/'),
+    ('EUR', 'Euro', '€'),
+    ('COP', 'Peso Colombiano', '$'),
+    ('MXN', 'Peso Mexicano', '$')
+ON CONFLICT (code) DO NOTHING;
 
 -- ÍNDICES DE RENDIMIENTO
 CREATE INDEX IF NOT EXISTS idx_batches_user ON batches(user_id);
