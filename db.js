@@ -581,7 +581,7 @@ const getTemplates = async (req, res) => {
 const getSystemTemplates = (req, res) => {
     try {
         // Lee el archivo JSON siempre fresco
-        const catalog = require('./default-templates.json').templates;
+        const catalog = require('./public/data/procesos_config.json').templates;
         res.status(200).json(catalog);
     } catch (err) {
         console.error("Error al leer el catálogo de plantillas:", err);
@@ -597,7 +597,7 @@ const cloneTemplate = async (req, res) => {
     if (!nombre_producto_sistema) return res.status(400).json({ error: "Falta el nombre de la plantilla del sistema." });
 
     try {
-        const catalog = require('./default-templates.json').templates;
+        const catalog = require('./public/data/procesos_config.json').templates;
         const templateToClone = catalog.find(t => t.nombre_producto === nombre_producto_sistema);
 
         if (!templateToClone) return res.status(404).json({ error: "Plantilla no encontrada en el catálogo." });
@@ -761,13 +761,10 @@ const getBatchesTree = async (req, res) => {
 
 const checkBatchOwnership = async (batchId, userId) => {
     const targetBatch = await get('SELECT id, user_id, parent_id, is_locked FROM batches WHERE id = ?', [batchId]);
-    console.log(targetBatch);
     if (!targetBatch) return null;
     let ownerId = targetBatch.user_id;
-    console.log(ownerId);
     if (!ownerId) {
         const root = await get(`WITH RECURSIVE ancestry AS (SELECT id, parent_id, user_id FROM batches WHERE id = ? UNION ALL SELECT b.id, b.parent_id, b.user_id FROM batches b JOIN ancestry a ON b.id = a.parent_id) SELECT user_id FROM ancestry WHERE user_id IS NOT NULL LIMIT 1`, [batchId]);
-        console.log(root);
         if (root) ownerId = root.user_id;
     }
     return ownerId == userId ? targetBatch : null;
@@ -933,6 +930,7 @@ const createBatch = async (req, res) => {
             params = [data.id, parentBatch.plantilla_id, etapa_id, parent_id, JSON.stringify(data), finalProductId];
         }
         await run(sql, params);
+        await syncBatchOutputs(data.id, etapa_id, data); 
         res.status(201).json({ message: "Lote creado", id: data.id });
     } catch (err) { console.error(err); res.status(500).json({ error: err.message }); }
 };
@@ -950,6 +948,7 @@ const updateBatch = async (req, res) => {
     try {
         if (finalProductId !== undefined) await run('UPDATE batches SET data = ?, producto_id = ? WHERE id = ?', [JSON.stringify(data), finalProductId, id]);
         else await run('UPDATE batches SET data = ? WHERE id = ?', [JSON.stringify(data), id]);
+        await syncBatchOutputs(id, targetBatch.etapa_id, data);
         res.status(200).json({ message: "Lote actualizado" });
     } catch (err) { res.status(500).json({ error: err.message }); }
 };
@@ -964,9 +963,7 @@ const deleteBatch = async (req, res) => {
 
 const finalizeBatch = async (req, res) => {
     const { id } = req.params; const userId = req.user.id;
-    console.log(id,userId);
     const targetBatch = await checkBatchOwnership(id, userId);
-    console.log(targetBatch);
     if (!targetBatch) return res.status(403).json({ error: "Sin permiso." });
     if (targetBatch.is_locked) return res.status(409).json({ error: "Ya finalizado." });
 
@@ -1075,7 +1072,6 @@ const finalizeBatch = async (req, res) => {
 
 const getTrazabilidad = async (req, res) => {
     const { id } = req.params;
-    console.log("id",id);
     try {
         const record = await get('SELECT snapshot_data, views FROM traceability_registry WHERE id = ?', [id]);
         if (record) {
@@ -1180,7 +1176,6 @@ const getTrazabilidad = async (req, res) => {
                 history.perfilSensorialData = safeJSONParse(perfil.perfil_data);
                 // CALCULAR MARIDAJES
                 if (perfil.tipo === 'cacao') {
-                    console.log("1");
                     const allCafes = await all("SELECT * FROM perfiles WHERE tipo = 'cafe' AND user_id = ?", [ownerId]);
                     const allVinos = maridajesVinoData.defaultPerfilesVino;
                     const allQuesos = maridajesQuesoData;
@@ -2258,10 +2253,8 @@ const ensureTemplateAndStageExists = async (userId, systemTemplateName, stageNam
         if (template) {
             templateId = template.id;
         } else {
-            // 2. Si no existe, CLONAR desde el JSON (Lógica JIT)
-            console.log(`[Auto-Clone] Plantilla '${systemTemplateName}' no existe para usuario ${userId}. Creando...`);
-            
-            const catalogPath = path.join(__dirname, 'default-templates.json');
+            // 2. Si no existe, CLONAR desde el JSON (Lógica JIT)            
+            const catalogPath = path.join(__dirname, 'data/procesos_config.json');
             const catalogData = JSON.parse(fs.readFileSync(catalogPath, 'utf8'));
             const templateToClone = catalogData.templates.find(t => t.nombre_producto === systemTemplateName);
 
@@ -2508,6 +2501,67 @@ const getUnits = async (req, res) => {
     } catch (err) { res.status(500).json({ error: err.message }); }
 };
 
+const syncBatchOutputs = async (batchId, etapaId, dataObj) => {
+    try {
+        const stage = await get('SELECT campos_json FROM etapas_plantilla WHERE id = ?', [etapaId]);
+        if (!stage) return;
+        
+        const config = safeJSONParse(stage.campos_json);
+        if (!config || !config.salidas || !Array.isArray(config.salidas)) return;
+
+        await run('DELETE FROM batch_outputs WHERE batch_id = ?', [batchId]);
+
+        for (const salida of config.salidas) {
+            const key = salida.name || toCamelCase(salida.label);
+            const entry = dataObj[key];
+            
+            // Verificamos si es un objeto complejo (nuevo formato) o simple (viejo)
+            let quantity = 0;
+            let unitId = null;
+            let unitCost = 0;
+            let currencyId = null;
+
+            if (entry && typeof entry === 'object' && entry.type === 'output') {
+                quantity = parseFloat(entry.value) || 0;
+                unitId = entry.unit_id ? parseInt(entry.unit_id) : null;
+                unitCost = entry.unit_cost ? parseFloat(entry.unit_cost) : 0;
+                currencyId = entry.currency_id ? parseInt(entry.currency_id) : null;
+            } else if (entry && typeof entry === 'object' && entry.value) {
+                 // Fallback formato simple {value: "100"}
+                 quantity = parseFloat(entry.value) || 0;
+            }
+
+            if (quantity > 0) {
+                const outId = require('crypto').randomUUID();
+                
+                await run(`
+                    INSERT INTO batch_outputs (
+                        id, batch_id, product_type, quantity, output_category, unit_id, unit_cost, currency_id
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                `, [
+                    outId, 
+                    batchId, 
+                    salida.label, 
+                    quantity, 
+                    salida.product_type || 'principal', 
+                    unitId,
+                    unitCost,
+                    currencyId
+                ]);
+            }
+        }
+    } catch (e) {
+        console.error("Error sincronizando outputs:", e);
+    }
+};
+
+// --- HELPER: Normalizar claves (Igual que en Frontend) ---
+const toCamelCase = (str) => {
+    return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "") // Elimina acentos (á -> a)
+        .replace(/(?:^\w|[A-Z]|\b\w)/g, (word, index) => index === 0 ? word.toLowerCase() : word.toUpperCase()) // Convierte primera letra a minuscula, resto a Mayuscula (Camel)
+        .replace(/\s+/g, ''); // Elimina espacios
+};
+
 module.exports = {
     registerUser, loginUser, logoutUser, handleGoogleLogin,
     getFincas, createFinca, updateFinca, deleteFinca, generateFincaToken, getFincaByToken, updateFincaByToken,
@@ -2517,7 +2571,7 @@ module.exports = {
     getSystemTemplates, cloneTemplate, // <-- NUEVAS FUNCIONES EXPORTADAS
     getStagesForTemplate, createStage, updateStage, deleteStage,
     getAcquisitions, createAcquisition, deleteAcquisition, updateAcquisition,
-    getBatchesTree, createBatch, updateBatch, deleteBatch, finalizeBatch,
+    getBatchesTree, createBatch, updateBatch, deleteBatch, finalizeBatch, syncBatchOutputs,
     getTrazabilidad, getImmutableBatches,
     getUserProfile, updateUserProfile, updateUserPassword,
     getRuedasSabores, createRuedaSabores, updateRuedaSabores, deleteRuedaSabores,

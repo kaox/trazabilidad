@@ -1,9 +1,9 @@
 document.addEventListener('DOMContentLoaded', () => {
     // --- ESTADO ---
     let state = {
-        acquisitions: [], // Materia prima
-        batches: [],      // Procesos (Árbol)
-        templates: [],    // Plantillas del SISTEMA (JSON)
+        acquisitions: [], 
+        batches: [],      
+        templates: [],    
         userTemplates: [], 
         stagesByTemplate: {},
         acopioConfig: [],
@@ -11,14 +11,17 @@ document.addEventListener('DOMContentLoaded', () => {
         procesadoras: [],
         products: [], 
         perfilesSensoriales: [], 
-        ruedasSabor: [],         
+        ruedasSabor: [],
+        units: [],      // <-- Nuevo: Unidades
+        currencies: [], // <-- Nuevo: Monedas
+        userProfile: {}, // <-- Nuevo: Perfil para defaults
         
         // UI State
         currentView: 'acopios', 
         filterProduct: 'all',   
         filterStatus: 'active', 
         
-        // Contexto de Trabajo
+        // Contexto
         activeRootBatch: null,
         currentAcopio: null,
         currentSystemTemplate: null,
@@ -40,14 +43,21 @@ document.addEventListener('DOMContentLoaded', () => {
     const formModal = document.getElementById('form-modal');
     const modalContent = document.getElementById('modal-content');
 
-    // Contenedor dinámico Workstation
     let viewWorkstation = null;
+
+    const toCamelCase = (str) => {
+        return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+            .replace(/(?:^\w|[A-Z]|\b\w)/g, (word, index) => index === 0 ? word.toLowerCase() : word.toUpperCase())
+            .replace(/\s+/g, '');
+    };
 
     init();
 
     async function init() {
         try {
             await Promise.all([
+                loadGlobalConfig(), // <-- Cargar Configs
+                loadUserProfile(),  // <-- Cargar Perfil
                 loadConfig(),
                 loadSystemTemplates(),
                 loadUserTemplates(),
@@ -63,11 +73,9 @@ document.addEventListener('DOMContentLoaded', () => {
             setupEventListeners();
             
             const hash = window.location.hash.substring(1);
-            if (hash) {
-                if (!hash.startsWith('acopio=')) {
-                    const targetBatch = state.batches.find(b => b.id === hash);
-                    if (targetBatch) openWorkstation(targetBatch);
-                }
+            if (hash && !hash.startsWith('acopio=')) {
+                const targetBatch = state.batches.find(b => b.id === hash);
+                if (targetBatch) openWorkstation(targetBatch);
             }
             updateView();
             
@@ -77,6 +85,18 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- CARGA DE DATOS ---
+    async function loadGlobalConfig() {
+        try {
+            const [units, currencies] = await Promise.all([
+                api('/api/config/units'),
+                api('/api/config/currencies')
+            ]);
+            state.units = units.filter(u => u.type === 'MASA'); 
+            state.currencies = currencies;
+        } catch (e) { console.error("Error configs globales", e); }
+    }
+    async function loadUserProfile() { try { state.userProfile = await api('/api/user/profile'); } catch (e) {} }
+
     async function loadConfig() {
         const res = await fetch('/data/acopio_config.json');
         const data = await res.json();
@@ -91,7 +111,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 try {
                     state.stagesByTemplate[t.id] = await api(`/api/templates/${t.id}/stages`);
                 } catch (errStage) {
-                    console.warn(`Error etapas plantilla ${t.id}`, errStage);
                     state.stagesByTemplate[t.id] = [];
                 }
             }
@@ -114,11 +133,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function loadBatches() {
-        try {
-            state.batches = await api('/api/batches/tree');
-        } catch (e) {
-            console.error("Error cargando lotes:", e);
-        }
+        try { state.batches = await api('/api/batches/tree'); } catch (e) { console.error("Error cargando lotes:", e); }
     }
 
     async function refreshData() {
@@ -132,14 +147,10 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // --- GESTIÓN DE VISTAS ---
+    // --- GESTIÓN DE VISTAS (Igual) ---
     function createWorkstationView() {
         const mainContainer = document.getElementById('main-app-container'); 
-        
-        if (!mainContainer) {
-            console.error("No se encontró el contenedor principal 'main-app-container'");
-            return;
-        }
+        if (!mainContainer) return;
 
         viewWorkstation = document.createElement('div');
         viewWorkstation.id = 'view-workstation';
@@ -180,7 +191,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function updateView() {
         renderFilters();
-        
         viewAcopios.classList.add('hidden');
         viewProcesos.classList.add('hidden');
         if(viewWorkstation) viewWorkstation.classList.add('hidden');
@@ -222,7 +232,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // --- VISTA 1: ACOPIOS ---
+    // --- VISTAS ACOPIO/PROCESO (Mantenidas) ---
     function renderAcopiosView() {
         acopiosList.innerHTML = '';
         let filtered = state.acquisitions;
@@ -319,7 +329,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             newProcBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
-                prepareProcessing(acop);
+                prepareProcessing(acop); // acop definido en el loop
             });
             
             card.querySelectorAll('.view-process-btn').forEach(btn => {
@@ -334,7 +344,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // --- VISTA 2: PROCESOS ---
     function renderProcesosView() {
         procesosGrid.innerHTML = '';
         const roots = state.batches.filter(b => !b.parent_id);
@@ -356,27 +365,55 @@ document.addEventListener('DOMContentLoaded', () => {
             const analysis = analyzeBatchChain(root);
             const startDate = new Date(root.created_at).toLocaleDateString();
             
+            // 1. Determinar Estilo por Producto (Icono y Color)
+            let prodIcon = 'fa-box';
+            let iconBg = 'bg-stone-600';
+            const prodName = analysis.productName.toLowerCase();
+            
+            if (prodName.includes('cacao')) {
+                prodIcon = 'fa-cookie-bite';
+                iconBg = 'bg-amber-700';
+            } else if (prodName.includes('cafe') || prodName.includes('café')) {
+                prodIcon = 'fa-mug-hot';
+                iconBg = 'bg-red-800';
+            }
+
+            // 2. Determinar Badge de Estado
+            const statusBadge = analysis.lastNode.is_locked
+                ? `<span class="px-2 py-1 rounded-md text-[10px] font-bold uppercase bg-green-100 text-green-700 border border-green-200 flex items-center gap-1"><i class="fas fa-check-circle"></i> Finalizado</span>`
+                : `<span class="px-2 py-1 rounded-md text-[10px] font-bold uppercase bg-blue-50 text-blue-600 border border-blue-100 flex items-center gap-1"><i class="fas fa-clock"></i> En Curso</span>`;
+
+            // 3. Renderizar Tarjeta
             const card = document.createElement('div');
-            card.className = "bg-white rounded-xl shadow-sm border border-stone-200 hover:shadow-md transition p-5 flex flex-col";
+            card.className = "bg-white rounded-xl shadow-sm border border-stone-200 hover:shadow-lg transition p-5 flex flex-col group";
             card.innerHTML = `
-                <div class="flex justify-between items-start mb-3">
-                    <span class="text-xs font-bold uppercase tracking-wider text-white px-2 py-1 rounded-full bg-stone-600">
-                        ${analysis.productName}
-                    </span>
-                    <span class="text-xs text-stone-400 font-mono">${root.id}</span>
+                <div class="flex justify-between items-start mb-4">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-full flex items-center justify-center text-white ${iconBg} shadow-sm">
+                            <i class="fas ${prodIcon}"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-xs font-bold uppercase tracking-wider text-stone-500">${analysis.productName}</h3>
+                            <div class="font-mono text-xs text-stone-400 font-bold bg-stone-50 px-1.5 rounded inline-block border border-stone-100">${root.id}</div>
+                        </div>
+                    </div>
+                    ${statusBadge}
                 </div>
                 
-                <div class="flex-grow mb-4">
-                    <h3 class="text-lg font-bold text-stone-800 mb-1">${analysis.lastStageName}</h3>
-                    <p class="text-xs text-stone-500 flex items-center gap-1">
-                        <i class="fas fa-map-marker-alt"></i> ${analysis.finca}
+                <div class="flex-grow mb-4 pl-1">
+                    <h3 class="text-lg font-bold text-stone-800 mb-1 leading-tight">${analysis.lastStageName}</h3>
+                    <p class="text-xs text-stone-500 flex items-center gap-1 mb-1">
+                        <i class="fas fa-map-marker-alt text-amber-700"></i> ${analysis.finca}
                     </p>
-                    <p class="text-xs text-stone-400 mt-1">Iniciado: ${startDate}</p>
+                    <p class="text-xs text-stone-400">Inicio: ${startDate}</p>
                 </div>
 
                 <div class="pt-3 border-t border-stone-100 flex justify-between items-center">
-                    <span class="text-sm font-bold text-stone-700">${analysis.lastWeight} kg</span>
-                    <button class="manage-btn text-sm font-bold text-blue-600 hover:text-blue-800 flex items-center gap-1">
+                    <div class="text-sm font-bold text-stone-700 flex flex-col">
+                        <span>${analysis.lastWeight} kg</span>
+                        <span class="text-[10px] text-stone-400 font-normal uppercase">Peso Actual</span>
+                    </div>
+                    <button class="manage-btn text-sm font-bold text-white bg-stone-800 hover:bg-black px-4 py-2 rounded-lg flex items-center gap-2 transition transform group-hover:translate-x-1">
                         Gestionar <i class="fas fa-arrow-right text-xs"></i>
                     </button>
                 </div>
@@ -387,7 +424,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // --- LOGIC HELPERS ---
     function analyzeBatchChain(rootBatch) {
         let lastNode = rootBatch;
         const findLast = (node) => {
@@ -425,7 +461,7 @@ document.addEventListener('DOMContentLoaded', () => {
         };
     }
 
-    // --- VISTA 3: WORKSTATION (DETALLE) ---
+    // --- WORKSTATION ---
     function openWorkstation(rootBatch) {
         state.activeRootBatch = rootBatch;
         state.currentView = 'workstation';
@@ -434,27 +470,21 @@ document.addEventListener('DOMContentLoaded', () => {
         const analysis = analyzeBatchChain(rootBatch);
         const header = document.getElementById('workstation-header');
         
-        // Recuperar configuraciones guardadas en el rootBatch (data)
         const currentSkuId = rootBatch.producto_id;
         const currentProfileId = rootBatch.data.target_profile_id?.value; 
         const currentWheelId = rootBatch.data.target_wheel_id?.value;
 
-        // Buscar nombres
         const productObj = state.products.find(p => p.id === currentSkuId);
         const skuName = productObj ? productObj.nombre : 'Sin SKU';
         const gtin = productObj ? productObj.gtin : null;
         const profileName = state.perfilesSensoriales.find(p => p.id == currentProfileId)?.nombre || 'Sin Perfil';
         const wheelName = state.ruedasSabor.find(r => r.id == currentWheelId)?.nombre_rueda || 'Sin Rueda';
 
-        // URL GS1 Digital Link
-        // Si hay GTIN, usar formato GS1 /01/GTIN/10/LOTE
-        // Si no, usar URL genérica de plataforma
         let publicTraceUrl = `${window.location.origin}/${analysis.lastNode.id}`;
         if (gtin) {
             publicTraceUrl = `${window.location.origin}/01/${gtin}/10/${analysis.lastNode.id}`;
         }
 
-        // --- ENCABEZADO MEJORADO CON CONFIGURACIÓN Y TRAZABILIDAD ---
         header.innerHTML = `
             <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div class="flex-grow">
@@ -462,12 +492,10 @@ document.addEventListener('DOMContentLoaded', () => {
                         <h2 class="text-2xl font-display font-bold text-stone-900">${analysis.productName}</h2>
                         <span class="bg-stone-100 text-stone-600 px-2 py-1 rounded text-xs font-mono font-bold">${rootBatch.id}</span>
                         
-                        <!-- BOTÓN CONFIGURAR -->
                         <button id="btn-config-batch" class="text-stone-400 hover:text-amber-600 transition p-1 rounded-full hover:bg-stone-50" title="Configurar Producto y Calidad">
                             <i class="fas fa-cog text-lg"></i>
                         </button>
                         
-                        <!-- NUEVOS BOTONES: TRAZABILIDAD Y QR -->
                         <div class="flex items-center gap-1 ml-2 pl-2 border-l border-stone-300">
                             <button id="btn-view-trace" class="text-stone-400 hover:text-blue-600 transition p-1.5 rounded-full hover:bg-blue-50" title="Ver Trazabilidad Pública (GS1)">
                                 <i class="fas fa-globe text-lg"></i>
@@ -479,35 +507,28 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>
                     <p class="text-sm text-stone-500 mt-1"><i class="fas fa-map-marker-alt"></i> ${analysis.finca} • Iniciado: ${new Date(rootBatch.created_at).toLocaleDateString()}</p>
                     
-                    <!-- BADGES DE CONFIGURACIÓN -->
                     <div class="flex flex-wrap gap-2 mt-3">
-                        ${currentSkuId ? `<span class="text-xs bg-indigo-50 text-indigo-700 px-2 py-1 rounded border border-indigo-100 font-medium" title="SKU Vinculado"><i class="fas fa-tag mr-1"></i> ${skuName}</span>` : '<span class="text-xs text-stone-400 border border-stone-200 border-dashed px-2 py-1 rounded">Sin SKU</span>'}
-                        
-                        ${currentProfileId ? `<span class="text-xs bg-purple-50 text-purple-700 px-2 py-1 rounded border border-purple-100 font-medium" title="Perfil Objetivo"><i class="fas fa-chart-radar mr-1"></i> ${profileName}</span>` : ''}
-                        
-                        ${currentWheelId ? `<span class="text-xs bg-pink-50 text-pink-700 px-2 py-1 rounded border border-pink-100 font-medium" title="Rueda de Sabor"><i class="fas fa-bullseye mr-1"></i> ${wheelName}</span>` : ''}
+                        ${currentSkuId ? `<span class="text-xs bg-indigo-50 text-indigo-700 px-2 py-1 rounded border border-indigo-100 font-medium"><i class="fas fa-tag mr-1"></i> ${skuName}</span>` : '<span class="text-xs text-stone-400 border border-stone-200 border-dashed px-2 py-1 rounded">Sin SKU</span>'}
+                        ${currentProfileId ? `<span class="text-xs bg-purple-50 text-purple-700 px-2 py-1 rounded border border-purple-100 font-medium"><i class="fas fa-chart-radar mr-1"></i> ${profileName}</span>` : ''}
+                        ${currentWheelId ? `<span class="text-xs bg-pink-50 text-pink-700 px-2 py-1 rounded border border-pink-100 font-medium"><i class="fas fa-bullseye mr-1"></i> ${wheelName}</span>` : ''}
                     </div>
                 </div>
                 <div class="text-right">
-                     <p class="text-xs font-bold text-stone-400 uppercase tracking-widest">Peso Actual</p>
-                     <p class="text-3xl font-bold text-stone-800">${analysis.lastWeight} kg</p>
+                      <p class="text-xs font-bold text-stone-400 uppercase tracking-widest">Peso Actual</p>
+                      <p class="text-3xl font-bold text-stone-800">${analysis.lastWeight} kg</p>
                 </div>
             </div>
             <div class="mt-6 pt-4 border-t border-stone-100" id="ws-action-container"></div>
         `;
         
-        // Listeners Trazabilidad y QR
         document.getElementById('btn-view-trace').addEventListener('click', () => window.open(publicTraceUrl, '_blank'));
         
         document.getElementById('btn-download-qr').addEventListener('click', () => {
-            // Verificar si qrcode.js está disponible
             if (typeof qrcode === 'undefined') {
-                // Intento de fallback o mensaje si la librería no está en el HTML
-                alert("Error: Librería de QR no cargada. Recarga la página.");
+                alert("Error: Librería de QR no cargada.");
                 return;
             }
             try {
-                console.log(publicTraceUrl);
                 const qr = qrcode(0, 'L');
                 qr.addData(publicTraceUrl);
                 qr.make();
@@ -515,26 +536,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 link.href = qr.createDataURL(4, 2);
                 link.download = `QR_${gtin ? 'GS1_' : ''}${rootBatch.id}.png`;
                 link.click();
-            } catch (e) {
-                console.error("Error generando QR", e);
-                alert("Error generando QR.");
-            }
+            } catch (e) { console.error(e); }
         });
 
-        // Listener Configuración
         document.getElementById('btn-config-batch').addEventListener('click', () => openBatchConfigModal(rootBatch));
 
         configureNextStageButton(analysis.lastNode, rootBatch.plantilla_id);
         renderTimeline(rootBatch);
     }
-
-    // --- NUEVO MODAL: CONFIGURAR LOTE ---
+    
     function openBatchConfigModal(rootBatch) {
-        // Filtrar opciones por tipo de producto (Cacao/Cafe)
-        const tmpl = state.userTemplates.find(t => t.id === rootBatch.plantilla_id);
+        // ... (misma lógica de modal configuración, omitida por brevedad si no hay cambios)
+         const tmpl = state.userTemplates.find(t => t.id === rootBatch.plantilla_id);
         const tipoProd = tmpl ? (tmpl.nombre_producto.toLowerCase().includes('cafe') ? 'cafe' : 'cacao') : 'otro';
 
-        // Filtrar listas
         const filteredProducts = state.products.filter(p => p.tipo_producto.includes(tipoProd));
         const filteredProfiles = state.perfilesSensoriales.filter(p => p.tipo === tipoProd);
         const filteredWheels = state.ruedasSabor.filter(r => r.tipo === tipoProd);
@@ -543,7 +558,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const currentProfileId = rootBatch.data.target_profile_id?.value || "";
         const currentWheelId = rootBatch.data.target_wheel_id?.value || "";
 
-        // Generar HTML para los selects con links si están vacíos
         const productsInput = filteredProducts.length === 0
             ? `<div class="text-sm text-red-500 bg-red-50 p-2 rounded border border-red-100">No hay productos de ${tipoProd}. <a href="/app/productos" target="_blank" class="underline font-bold">Crear aquí</a></div>`
             : `<select name="producto_id" class="w-full p-2 border rounded-lg text-sm bg-white"><option value="">-- Sin asignar --</option>${filteredProducts.map(p => `<option value="${p.id}" ${p.id === currentSkuId ? 'selected' : ''}>${p.nombre}</option>`).join('')}</select>`;
@@ -561,19 +575,9 @@ document.addEventListener('DOMContentLoaded', () => {
             <p class="text-sm text-stone-500 mb-4">Define los estándares de calidad y el producto final objetivo para este lote.</p>
             
             <form id="config-batch-form" class="space-y-4">
-                <div>
-                    <label class="block text-xs font-bold text-stone-600 mb-1 uppercase">Producto Final (SKU)</label>
-                    ${productsInput}
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-stone-600 mb-1 uppercase">Perfil Sensorial Objetivo</label>
-                    ${profilesInput}
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-stone-600 mb-1 uppercase">Rueda de Sabor</label>
-                    ${wheelsInput}
-                </div>
-
+                <div><label class="block text-xs font-bold text-stone-600 mb-1 uppercase">Producto Final (SKU)</label>${productsInput}</div>
+                <div><label class="block text-xs font-bold text-stone-600 mb-1 uppercase">Perfil Sensorial Objetivo</label>${profilesInput}</div>
+                <div><label class="block text-xs font-bold text-stone-600 mb-1 uppercase">Rueda de Sabor</label>${wheelsInput}</div>
                 <div class="flex justify-end gap-3 mt-6 pt-4 border-t">
                     <button type="button" onclick="document.getElementById('form-modal').close()" class="px-4 py-2 text-stone-500 font-bold hover:bg-stone-100 rounded-lg">Cancelar</button>
                     <button type="submit" class="px-6 py-2 bg-amber-800 text-white font-bold rounded-lg hover:bg-amber-900 shadow-sm">Guardar Cambios</button>
@@ -587,46 +591,25 @@ document.addEventListener('DOMContentLoaded', () => {
             const productId = formData.get('producto_id');
             const profileId = formData.get('target_profile_id');
             const wheelId = formData.get('target_wheel_id');
-            
-            // Actualizar datos del lote raíz
-            // Necesitamos actualizar 'data' (para perfiles) y 'producto_id' (columna)
-            // Preservamos la data existente
             const currentData = rootBatch.data || {};
-            
-            // Actualizar campos específicos en data
             const newData = { ...currentData };
-            if (profileId) newData.target_profile_id = { value: profileId, visible: false, nombre: 'Perfil Objetivo' };
-            else delete newData.target_profile_id;
-            
-            if (wheelId) newData.target_wheel_id = { value: wheelId, visible: false, nombre: 'Rueda Sabor' };
-            else delete newData.target_wheel_id;
+            if (profileId) newData.target_profile_id = { value: profileId, visible: false, nombre: 'Perfil Objetivo' }; else delete newData.target_profile_id;
+            if (wheelId) newData.target_wheel_id = { value: wheelId, visible: false, nombre: 'Rueda Sabor' }; else delete newData.target_wheel_id;
 
             try {
-                await api(`/api/batches/${rootBatch.id}`, { 
-                    method: 'PUT', 
-                    body: JSON.stringify({ 
-                        data: newData, 
-                        producto_id: productId 
-                    }) 
-                });
-                
+                await api(`/api/batches/${rootBatch.id}`, { method: 'PUT', body: JSON.stringify({ data: newData, producto_id: productId }) });
                 formModal.close();
-                await loadBatches(); // Recargar para actualizar state
-                // Refrescar vista
+                await loadBatches();
                 const updatedRoot = state.batches.find(b => b.id === rootBatch.id);
                 openWorkstation(updatedRoot);
-                
-            } catch(err) {
-                console.error(err);
-                alert("Error guardando configuración: " + err.message);
-            }
+            } catch(err) { console.error(err); alert("Error guardando configuración: " + err.message); }
         });
-
         formModal.showModal();
     }
 
     function configureNextStageButton(lastBatchNode, templateId) {
         const container = document.getElementById('ws-action-container');
+        if (!container) return;
         container.innerHTML = ''; 
 
         const stages = state.stagesByTemplate[templateId];
@@ -654,9 +637,10 @@ document.addEventListener('DOMContentLoaded', () => {
             container.appendChild(btn);
         }
     }
-
+    
     function renderTimeline(rootBatch) {
         const timeline = document.getElementById('workstation-timeline');
+        if (!timeline) return;
         timeline.innerHTML = '';
 
         let flatList = [];
@@ -673,28 +657,36 @@ document.addEventListener('DOMContentLoaded', () => {
             const stage = stages.find(s => s.id === batch.etapa_id);
             const d = batch.data || {};
             let weight = 0;
-            // Buscar peso principal
-            Object.keys(d).forEach(k => { if(k.includes('peso') || k.includes('salida') || k.includes('unidades')) weight = d[k]?.value || weight; });
+            const outputKeys = Object.keys(d).filter(k => k.toLowerCase().includes('salida') || k.toLowerCase().includes('peso') || k.toLowerCase().includes('unidades'));
+            if(outputKeys.length > 0) weight = parseFloat(d[outputKeys[0]]?.value || 0);
             
-            // Buscar imagen
             let imageUrl = null;
             Object.keys(d).forEach(k => { if(k.includes('image') && d[k]?.value) imageUrl = d[k].value; });
             
-            // Generar detalles completos
             let detailsHtml = '';
             if (stage && batch.data) {
-                // Combinar todos los campos para iterar
+                // MODIFICADO: Combinar todos los campos incluyendo SALIDAS para mostrarlas en el timeline
+                // También necesitamos procesar las salidas guardadas en batch_outputs si es posible
                 const allFields = [
                     ...(stage.campos_json.entradas || []),
-                    ...(stage.campos_json.salidas || []),
-                    ...(stage.campos_json.variables || [])
+                    ...(stage.campos_json.variables || []),
+                    ...(stage.campos_json.salidas || [])
                 ];
 
                 allFields.forEach(field => {
-                    if (field.type === 'image') return; // Se muestra aparte
-                    const valObj = batch.data[field.name];
+                    if (field.type === 'image') return;
+                    const fieldName = field.name || toCamelCase(field.label);
+                    
+                    // Manejo especial para outputs complejos (si se guardaron en data como objetos)
+                    let valObj = batch.data[fieldName];
                     let val = valObj ? valObj.value : '';
                     
+                    // Si es un output, puede tener unidad y precio
+                    if (field.product_type) {
+                        const unitCode = valObj?.unit_id ? getUnitCode(valObj.unit_id) : '';
+                        val = `${val} ${unitCode}`;
+                    }
+
                     if (val !== undefined && val !== null && val !== '') {
                         detailsHtml += `
                             <div class="flex justify-between text-xs border-b border-stone-100 py-1 last:border-0">
@@ -714,19 +706,15 @@ document.addEventListener('DOMContentLoaded', () => {
                     <h4 class="font-bold text-stone-800">${stage ? stage.nombre_etapa : 'Etapa'}</h4>
                     <span class="text-xs text-stone-400 bg-stone-50 px-2 py-0.5 rounded">${new Date(batch.created_at).toLocaleDateString()}</span>
                 </div>
-                
                 <div class="flex flex-col sm:flex-row gap-4">
                     ${imageUrl ? `<img src="${imageUrl}" class="w-24 h-24 rounded-lg object-cover border border-stone-100 bg-stone-50 flex-shrink-0 cursor-pointer hover:opacity-90" onclick="window.open('${imageUrl}')">` : ''}
                     <div class="flex-grow space-y-2">
                          <div class="text-sm text-stone-700 font-bold border-b border-stone-200 pb-2 mb-2">
-                            ${weight} <span class="text-xs font-normal text-stone-500">kg/un</span>
+                            ${isNaN(weight) ? 0 : weight.toFixed(2)} <span class="text-xs font-normal text-stone-500">kg/un</span>
                          </div>
-                         <div class="space-y-1">
-                            ${detailsHtml}
-                         </div>
+                         <div class="space-y-1">${detailsHtml}</div>
                     </div>
                 </div>
-
                 ${!batch.is_locked ? `
                 <div class="flex justify-end gap-2 border-t border-stone-100 pt-3 mt-3">
                     <button class="text-xs text-stone-500 hover:text-amber-600 font-bold edit-batch-btn border border-stone-200 px-3 py-1.5 rounded-lg transition hover:bg-amber-50">Editar</button>
@@ -747,10 +735,7 @@ document.addEventListener('DOMContentLoaded', () => {
     async function prepareProcessing(acopio) {
         state.currentAcopio = acopio;
         const template = state.templates.find(t => t.nombre_producto === acopio.nombre_producto);
-        if (!template) {
-            alert(`Error: No se encontró plantilla de sistema para ${acopio.nombre_producto}.`);
-            return;
-        }
+        if (!template) { alert(`Error: No se encontró plantilla de sistema para ${acopio.nombre_producto}.`); return; }
         state.currentSystemTemplate = template;
 
         const pConfig = state.acopioConfig.find(c => c.nombre_producto === acopio.nombre_producto);
@@ -763,7 +748,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const maxStageId = Math.max(...(completedStages || [0]), 0);
         const allStages = [...(template.acopio||[]), ...(template.etapas||[])];
-        
         const nextStage = allStages.find(s => (s.id_etapa !== undefined ? s.id_etapa : s.orden) === maxStageId + 1);
 
         if (!nextStage) return alert("Este producto ya completó todas las etapas configuradas.");
@@ -778,16 +762,39 @@ document.addEventListener('DOMContentLoaded', () => {
         openProcessingForm(nextStage, prefillData);
     }
 
-    // --- FORMULARIO DE PROCESAMIENTO ---
+    // --- FORMULARIO DE PROCESAMIENTO (MODIFICADO PARA SALIDAS COMPLEJAS) ---
     async function openProcessingForm(stage, prefillData) {
         imagesMap = {};
         let formFieldsHtml = '';
-        const stageFields = [...(stage.campos_json.entradas || []), ...(stage.campos_json.variables || [])];
+        
+        // MODIFICADO: Identificar salidas y marcarlas como 'output_complex'
+        const stageFields = [
+            ...(stage.campos_json.entradas || []).map(f => ({...f, section: 'Variables de Proceso'})),
+            ...(stage.campos_json.variables || []).map(f => ({...f, section: 'Variables de Proceso'})),
+            ...(stage.campos_json.salidas || []).map(f => ({
+                ...f, 
+                section: 'Resultados / Salidas', 
+                type: 'output_complex', // NUEVO TIPO PARA RENDERIZADO
+                name: f.name || toCamelCase(f.label)
+            }))
+        ];
 
-        for (const field of stageFields) {
-            let val = '';
-            if (field.type !== 'image' && prefillData[field.name]) val = prefillData[field.name];
-            formFieldsHtml += await createFieldHTML(field, field.name, val);
+        const groupedFields = { 'Variables de Proceso': [], 'Resultados / Salidas': [] };
+        stageFields.forEach(f => {
+            const sec = f.section || 'Variables de Proceso';
+            if (!groupedFields[sec]) groupedFields[sec] = [];
+            groupedFields[sec].push(f);
+        });
+
+        for (const section in groupedFields) {
+            if (groupedFields[section].length > 0) {
+                formFieldsHtml += `<h3 class="text-sm font-bold text-amber-800 uppercase tracking-wider border-b border-amber-100 pb-1 mb-3 mt-4">${section}</h3>`;
+                for (const field of groupedFields[section]) {
+                    let val = '';
+                    if (field.type !== 'image' && prefillData[field.name]) val = prefillData[field.name];
+                    formFieldsHtml += await createFieldHTML(field, field.name, val);
+                }
+            }
         }
 
         modalContent.innerHTML = `
@@ -823,13 +830,31 @@ document.addEventListener('DOMContentLoaded', () => {
             const formData = new FormData(e.target);
             const rawData = Object.fromEntries(formData.entries());
             const newData = {};
-            for (const key in rawData) {
-                if (!key.startsWith('imageUrl')) newData[key] = { value: rawData[key], visible: true, nombre: key };
-            }
-            if (imagesMap['imageUrl']) newData.imageUrl = { value: imagesMap['imageUrl'], visible: true, nombre: 'Foto' };
+            
+            // PROCESAMIENTO DE CAMPOS (Incluyendo Outputs Complejos)
+            // Recorremos los campos definidos en la etapa para saber qué buscar
+            stageFields.forEach(field => {
+                const key = field.name;
+                
+                if (field.type === 'output_complex') {
+                    // Reconstruir objeto complejo
+                    newData[key] = {
+                        value: rawData[key] || 0, // Cantidad
+                        unit_id: rawData[`${key}_unit_id`],
+                        unit_cost: rawData[`${key}_unit_cost`],
+                        currency_id: rawData[`${key}_currency_id`],
+                        visible: true,
+                        nombre: field.label,
+                        type: 'output' // Marca para el backend
+                    };
+                } else if (field.type === 'image') {
+                    if (imagesMap[key]) newData[key] = { value: imagesMap[key], visible: true, nombre: 'Foto' };
+                } else {
+                    if (rawData[key]) newData[key] = { value: rawData[key], visible: true, nombre: key };
+                }
+            });
 
             try {
-                // 1. Sincronizar plantilla y OBTENER ID
                 const tmplRes = await api('/api/templates/clone', { 
                     method: 'POST', 
                     body: JSON.stringify({ nombre_producto_sistema: state.currentSystemTemplate.nombre_producto }) 
@@ -837,13 +862,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 if (!tmplRes || !tmplRes.id) throw new Error("Error al sincronizar plantilla.");
 
-                // 2. BUSCAR EL ID REAL DE LA ETAPA EN LA DB
                 const dbStages = await api(`/api/templates/${tmplRes.id}/stages`);
                 const targetDbStage = dbStages.find(s => s.nombre_etapa === stage.nombre_etapa && s.orden === stage.orden);
 
                 if (!targetDbStage) throw new Error(`La etapa "${stage.nombre_etapa}" no se encontró en la base de datos.`);
 
-                // 3. Crear Lote vinculado al Acopio
                 const response = await api('/api/batches', { 
                     method: 'POST', 
                     body: JSON.stringify({ 
@@ -858,7 +881,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 formModal.close();
                 await refreshData();
                 
-                // Abrir directamente la estación de trabajo del nuevo lote
                 const newBatch = state.batches.find(b => b.id === response.id);
                 if (newBatch) openWorkstation(newBatch);
 
@@ -879,12 +901,41 @@ document.addEventListener('DOMContentLoaded', () => {
         if (mode === 'edit') initialData = batchData.data || {};
         
         let formFieldsHtml = '';
-        const stageFields = [...(stage.campos_json.entradas || []), ...(stage.campos_json.salidas || []), ...(stage.campos_json.variables || [])];
+        
+        // CORRECCIÓN: Preparar campos incluyendo SALIDAS
+        const stageFields = [
+            ...(stage.campos_json.entradas || []).map(f => ({...f, section: 'Variables de Proceso'})),
+            ...(stage.campos_json.variables || []).map(f => ({...f, section: 'Variables de Proceso'})),
+            ...(stage.campos_json.salidas || []).map(f => ({
+                ...f, 
+                section: 'Resultados / Salidas', 
+                type: 'output_complex', // Usar tipo complejo
+                name: f.name || toCamelCase(f.label)
+            }))
+        ];
 
-        for (const field of stageFields) {
-            let val = initialData[field.name]?.value || '';
-            if (field.type === 'image' && val) imagesMap[field.name] = val;
-            formFieldsHtml += await createFieldHTML(field, field.name, val);
+        const groupedFields = { 'Variables de Proceso': [], 'Resultados / Salidas': [] };
+        stageFields.forEach(f => {
+            const sec = f.section || 'Variables de Proceso';
+            if (!groupedFields[sec]) groupedFields[sec] = [];
+            groupedFields[sec].push(f);
+        });
+
+        for (const section in groupedFields) {
+            if (groupedFields[section].length > 0) {
+                formFieldsHtml += `<h3 class="text-sm font-bold text-amber-800 uppercase tracking-wider border-b border-amber-100 pb-1 mb-3 mt-4">${section}</h3>`;
+                for (const field of groupedFields[section]) {
+                    // Buscar valor: intentar nombre exacto, o nombre generado
+                    const fieldName = field.name;
+                    // Para outputs complejos, el valor en initialData es un objeto {value, unit_id...}
+                    // createFieldHTML ahora espera el objeto completo si es output_complex
+                    let val = initialData[fieldName];
+                    
+                    if (field.type === 'image' && val?.value) imagesMap[fieldName] = val.value;
+                    
+                    formFieldsHtml += await createFieldHTML(field, fieldName, val);
+                }
+            }
         }
 
         modalContent.innerHTML = `
@@ -909,12 +960,24 @@ document.addEventListener('DOMContentLoaded', () => {
             const rawData = Object.fromEntries(formData.entries());
             const newData = {};
             
-            for (const key in rawData) {
-                if (!key.startsWith('imageUrl')) newData[key] = { value: rawData[key], visible: true, nombre: key };
-            }
-            for (const [key, base64] of Object.entries(imagesMap)) {
-                newData[key] = { value: base64, visible: true, nombre: 'Foto' };
-            }
+             stageFields.forEach(field => {
+                const key = field.name;
+                if (field.type === 'output_complex') {
+                    newData[key] = {
+                        value: rawData[key] || 0,
+                        unit_id: rawData[`${key}_unit_id`],
+                        unit_cost: rawData[`${key}_unit_cost`],
+                        currency_id: rawData[`${key}_currency_id`],
+                        visible: true,
+                        nombre: field.label,
+                        type: 'output'
+                    };
+                } else if (field.type === 'image') {
+                    if (imagesMap[key]) newData[key] = { value: imagesMap[key], visible: true, nombre: 'Foto' };
+                } else {
+                    if (rawData[key]) newData[key] = { value: rawData[key], visible: true, nombre: key };
+                }
+            });
 
             try {
                 if (mode === 'create') {
@@ -959,9 +1022,53 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // --- HELPERS CAMPOS (Versión Completa) ---
-    async function createFieldHTML(field, uniqueName, value = '') {
+    // --- HELPERS CAMPOS (ACTUALIZADO PARA OUTPUT_COMPLEX) ---
+    async function createFieldHTML(field, uniqueName, valueData = '') {
         const fieldName = uniqueName || field.name;
+        
+        // Si valueData es un objeto (caso output complex), extraemos el valor numérico base
+        let value = (typeof valueData === 'object' && valueData !== null) ? valueData.value : valueData;
+        
+        // 1. OUTPUT COMPLEX (Salidas con Peso y Precio)
+        if (field.type === 'output_complex') {
+            const defaults = state.userProfile || {};
+            // Recuperar valores guardados si es edición, o usar defaults
+            const selectedUnitId = (valueData && valueData.unit_id) ? valueData.unit_id : (state.units.find(u => u.code === (defaults.default_unit || 'KG'))?.id);
+            const selectedCurrId = (valueData && valueData.currency_id) ? valueData.currency_id : (state.currencies.find(c => c.code === (defaults.default_currency || 'USD'))?.id);
+            const savedCost = (valueData && valueData.unit_cost) ? valueData.unit_cost : '';
+
+            const unitOptions = state.units.map(u => `<option value="${u.id}" ${u.id == selectedUnitId ? 'selected' : ''}>${u.code}</option>`).join('');
+            const currOptions = state.currencies.map(c => `<option value="${c.id}" ${c.id == selectedCurrId ? 'selected' : ''}>${c.code}</option>`).join('');
+
+            return `
+            <div class="p-4 bg-stone-50 rounded-lg border border-stone-200">
+                <label class="block text-xs font-bold text-stone-600 mb-2 uppercase">${field.label}</label>
+                <div class="grid grid-cols-2 gap-3">
+                    <!-- Peso -->
+                    <div>
+                        <label class="block text-[10px] text-stone-500 mb-1">Cantidad / Peso</label>
+                        <div class="flex shadow-sm rounded-lg">
+                            <input type="number" name="${fieldName}" class="w-full p-2 border border-stone-300 rounded-l-lg text-sm focus:ring-1 focus:ring-amber-500 outline-none" step="0.01" value="${value}" placeholder="0.00" required>
+                            <select name="${fieldName}_unit_id" class="bg-white border-y border-r border-stone-300 text-stone-700 font-bold px-2 rounded-r-lg outline-none text-xs focus:bg-stone-100 w-16">
+                                ${unitOptions}
+                            </select>
+                        </div>
+                    </div>
+                    <!-- Precio Unitario -->
+                    <div>
+                        <label class="block text-[10px] text-stone-500 mb-1">Costo Unitario</label>
+                        <div class="flex shadow-sm rounded-lg">
+                             <select name="${fieldName}_currency_id" class="bg-white border border-r-0 border-stone-300 text-stone-700 font-bold px-1 rounded-l-lg outline-none text-xs focus:bg-stone-100 w-14">
+                                ${currOptions}
+                            </select>
+                            <input type="number" name="${fieldName}_unit_cost" class="w-full p-2 border border-stone-300 rounded-r-lg text-sm focus:ring-1 focus:ring-amber-500 outline-none" step="0.01" value="${savedCost}" placeholder="0.00">
+                        </div>
+                    </div>
+                </div>
+            </div>`;
+        }
+
+        // ... Resto de campos (selectFinca, etc.) igual que antes ...
         let inputHtml = `<input type="${field.type === 'number' ? 'number' : 'text'}" id="${fieldName}" name="${fieldName}" class="w-full p-2.5 border border-stone-300 rounded-lg text-sm focus:ring-2 focus:ring-amber-500 outline-none transition" step="0.01" value="${value}">`;
         
         if (field.type === 'selectFinca') {
@@ -983,7 +1090,8 @@ document.addEventListener('DOMContentLoaded', () => {
         } else if (field.options) {
              const opts = field.options.map(o => `<option value="${o}" ${o === value ? 'selected' : ''}>${o}</option>`).join('');
              inputHtml = `<select id="${fieldName}" name="${fieldName}" class="w-full p-2.5 border border-stone-300 rounded-lg bg-white text-sm focus:ring-2 focus:ring-green-500 outline-none"><option value="">Seleccionar...</option>${opts}</select>`;
-        } else if (field.type === 'image') {
+        } 
+        else if (field.type === 'image') {
              return `
                 <div class="pt-2 mt-2">
                     <label class="block text-xs font-bold text-stone-500 mb-1 uppercase"><i class="fas fa-camera mr-1"></i> ${field.label}</label>
@@ -1003,6 +1111,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return `<div><label for="${fieldName}" class="block text-xs font-bold text-stone-500 mb-1 uppercase">${field.label}</label>${inputHtml}</div>`;
     }
 
+    // ... (helpers comunes)
     function setupFormListeners() {
         const fileInputs = modalContent.querySelectorAll('input[type="file"]');
         fileInputs.forEach(input => {
@@ -1020,6 +1129,9 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
     }
+    
+    // Helper unitario
+    function getUnitCode(id) { const u = state.units.find(u => u.id == id); return u ? u.code : ''; }
 
     async function api(url, options = {}) {
         options.credentials = 'include';

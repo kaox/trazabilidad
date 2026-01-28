@@ -192,25 +192,6 @@ async function initializeDatabase() {
                     FOREIGN KEY (acquisition_id) REFERENCES acquisitions(id) ON DELETE SET NULL
                 )`);
 
-            // --- NUEVA TABLA: BATCH OUTPUTS (SALIDAS MÚLTIPLES) ---
-            await runQuery(db, `
-                CREATE TABLE IF NOT EXISTS batch_outputs (
-                    id TEXT PRIMARY KEY,
-                    batch_id TEXT NOT NULL,
-                    product_type TEXT NOT NULL, -- Ej: 'CAFE_ORO', 'CASCARILLA', 'MERMA'
-                    quantity REAL NOT NULL,
-                    unit_id INTEGER,
-                    unit_cost REAL,
-                    currency_id INTEGER,
-                    is_main_product BOOLEAN DEFAULT 0, -- 1: Principal, 0: Subproducto
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    
-                    FOREIGN KEY (batch_id) REFERENCES batches(id) ON DELETE CASCADE,
-                    FOREIGN KEY (unit_id) REFERENCES units_of_measure(id) ON DELETE SET NULL,
-                    FOREIGN KEY (currency_id) REFERENCES currencies(id) ON DELETE SET NULL
-                )`);
-            console.log("Tabla 'batch_outputs' lista.");
-
             // --- NUEVA TABLA: TRAZABILIDAD (OPTIMIZADA) ---
             await runQuery(db, `
                 CREATE TABLE IF NOT EXISTS batch_outputs (
@@ -228,7 +209,7 @@ async function initializeDatabase() {
                     FOREIGN KEY (unit_id) REFERENCES units_of_measure(id) ON DELETE SET NULL,
                     FOREIGN KEY (currency_id) REFERENCES currencies(id) ON DELETE SET NULL
                 )`);
-            console.log("Tabla 'traceability_registry' lista.");
+            console.log("Tabla 'batch_outputs' lista.");
 
             await runQuery(db, `
                 CREATE TABLE IF NOT EXISTS lotes (
@@ -459,17 +440,6 @@ async function initializeDatabase() {
                 await runQuery(db, `INSERT OR IGNORE INTO currencies (code, name, symbol) VALUES ('${curr[0]}', '${curr[1]}', '${curr[2]}')`);
             }
             console.log("Datos iniciales de monedas cargados.");
-
-            // --- MIGRACIONES ESPECÍFICAS PARA ACOPIOS ---
-            try {
-                await runQuery(db, `ALTER TABLE acquisitions ADD COLUMN unit_id INTEGER;`);
-                await runQuery(db, `ALTER TABLE acquisitions ADD COLUMN currency_id INTEGER;`);
-                await runQuery(db, `ALTER TABLE acquisitions ADD COLUMN original_quantity REAL;`);
-                await runQuery(db, `ALTER TABLE acquisitions ADD COLUMN original_price REAL;`);
-                console.log("Columnas de unidades y monedas agregadas a acquisitions.");
-            } catch (e) {
-                if (!e.message.includes("duplicate column")) console.log("Nota migracion acquisitions:", e.message);
-            }
 
             console.log('Esquema de base de datos listo.');
 
