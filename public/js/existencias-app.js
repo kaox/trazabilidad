@@ -3,7 +3,9 @@ document.addEventListener('DOMContentLoaded', () => {
     let state = {
         inventory: [], // Lista unificada
         currency: 'USD',
-        filter: 'all'
+        unit: 'KG',
+        filter: 'all',
+        wacByProduct: {} // Mapa de Costo Promedio por tipo de producto
     };
 
     // --- DOM ---
@@ -13,6 +15,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const kpiTotalStock = document.getElementById('kpi-total-stock');
     const tabs = document.querySelectorAll('.filter-tab');
     const searchInput = document.getElementById('search-inventory');
+    const refreshBtn = document.getElementById('refresh-btn');
 
     init();
 
@@ -27,91 +30,187 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function loadData() {
-        // 1. Cargar Datos en Paralelo
-        const [acquisitions, batchesTree, userProfile] = await Promise.all([
-            api('/api/acquisitions'),
-            api('/api/batches/tree'),
-            api('/api/user/profile')
-        ]);
+        tableBody.innerHTML = `<tr><td colspan="8" class="p-8 text-center text-slate-400"><i class="fas fa-circle-notch fa-spin mr-2"></i> Actualizando existencias...</td></tr>`;
 
-        state.currency = userProfile.default_currency || 'USD';
+        try {
+            // 1. Cargar Datos en Paralelo
+            const [acquisitions, batchesTree, userProfile] = await Promise.all([
+                api('/api/acquisitions'),
+                api('/api/batches/tree'),
+                api('/api/user/profile')
+            ]);
 
-        // 2. Procesar Inventario Unificado
-        const inventoryList = [];
+            state.currency = userProfile.default_currency || 'USD';
+            state.unit = userProfile.default_unit || 'KG';
 
-        // A) Procesar Materia Prima (Acopio)
-        // Solo los que están 'disponible' cuentan como stock en bodega de acopio
-        acquisitions.forEach(acq => {
-            if (acq.estado === 'disponible') {
-                inventoryList.push({
-                    id: acq.id,
-                    product: `${acq.nombre_producto} (${acq.tipo_acopio})`,
-                    type: 'acopio',
-                    status: 'En Bodega',
-                    entryDate: new Date(acq.fecha_acopio),
-                    weight: acq.peso_kg || 0,
-                    unitCost: (acq.precio_unitario && acq.peso_kg) ? (acq.precio_unitario / acq.peso_kg) : 0,
-                    totalValue: acq.precio_unitario || 0,
-                    location: acq.finca_origen || 'Centro de Acopio'
+            // --- PASO PREVIO: Calcular Consumo de Acopios ---
+            // Recorremos todo el árbol de lotes para sumar cuánto se ha usado de cada acopio
+            const acqUsageMap = {};
+            
+            const calculateUsage = (nodes) => {
+                nodes.forEach(node => {
+                    if (node.acquisition_id) {
+                        const used = parseFloat(node.input_quantity) || 0;
+                        acqUsageMap[node.acquisition_id] = (acqUsageMap[node.acquisition_id] || 0) + used;
+                    }
+                    if (node.children) calculateUsage(node.children);
                 });
-            }
-        });
+            };
+            calculateUsage(batchesTree);
 
-        // B) Procesar Lotes en Proceso/Terminados
-        // Necesitamos aplanar el árbol de lotes para listarlos
-        const flattenBatches = (nodes) => {
-            let flat = [];
-            nodes.forEach(node => {
-                const data = typeof node.data === 'string' ? JSON.parse(node.data) : node.data;
+            // 2. Calcular WAC (Costo Promedio)
+            const costTotals = {};
+            const weightTotals = {};
+
+            acquisitions.forEach(acq => {
+                const key = acq.nombre_producto; 
+                const totalCost = acq.original_price && acq.currency_id ? acq.precio_unitario : (acq.precio_unitario || 0);
+                const weight = acq.peso_kg || 0;
+
+                if (!costTotals[key]) { costTotals[key] = 0; weightTotals[key] = 0; }
                 
-                // Intentar inferir peso actual (buscando claves comunes)
-                let currentWeight = 0;
-                const weightKeys = Object.keys(data).filter(k => k.toLowerCase().includes('peso') || k.toLowerCase().includes('salida') || k.toLowerCase().includes('cantidad'));
-                if (weightKeys.length > 0) {
-                    currentWeight = parseFloat(data[weightKeys[0]]?.value || 0);
-                }
-
-                // Estimación de Costo para Lotes (Heredado simple o Cero por ahora)
-                // Nota: Un sistema de costos real requeriría trazabilidad de costos agregados.
-                // Aquí mostramos valor 0 o estimado para no confundir con caja real.
-                
-                // Determinar estado
-                let type = node.is_locked ? 'terminado' : 'proceso';
-                let statusLabel = node.is_locked ? 'Finalizado' : 'En Proceso';
-
-                // Solo agregar si tiene peso > 0 (es un lote físico existente)
-                if (currentWeight > 0) {
-                    inventoryList.push({
-                        id: node.id,
-                        product: getProductNameFromBatch(node), 
-                        type: type,
-                        status: statusLabel,
-                        entryDate: new Date(node.created_at),
-                        weight: currentWeight,
-                        unitCost: 0, // Pendiente: Implementar herencia de costos
-                        totalValue: 0, 
-                        location: 'Planta Procesamiento'
-                    });
-                }
-
-                if (node.children && node.children.length > 0) {
-                    flat = flat.concat(flattenBatches(node.children));
+                if (totalCost > 0 && weight > 0) {
+                    costTotals[key] += totalCost;
+                    weightTotals[key] += weight;
                 }
             });
-            return flat;
-        };
 
-        const flatBatches = flattenBatches(batchesTree);
-        state.inventory = [...inventoryList, ...flatBatches];
+            state.wacByProduct = {};
+            Object.keys(costTotals).forEach(key => {
+                state.wacByProduct[key] = weightTotals[key] > 0 ? (costTotals[key] / weightTotals[key]) : 0;
+            });
 
-        // 3. Renderizar
-        updateDashboard();
-    }
+            // 3. Procesar Inventario Unificado
+            const inventoryList = [];
 
-    function getProductNameFromBatch(batch) {
-        // Intentar obtener nombre legible
-        // Idealmente vendría del JOIN con plantillas, pero si no, usamos el ID o data
-        return `Lote ${batch.plantilla_id || 'Proceso'}`; // Simplificado
+            // A) Materia Prima (Acopios con Saldo)
+            acquisitions.forEach(acq => {
+                // Calculamos el remanente real
+                const used = acqUsageMap[acq.id] || 0;
+                const remaining = Math.max(0, acq.peso_kg - used);
+                
+                // MOSTRAR SI HAY SALDO (> 0.1 KG), independientemente del estado 'procesado'
+                if (remaining > 0.1) {
+                    const wac = state.wacByProduct[acq.nombre_producto] || 0;
+                    const realCost = (acq.precio_unitario && acq.peso_kg) ? (acq.precio_unitario / acq.peso_kg) : wac;
+                    
+                    // Estado visual
+                    let statusLabel = 'Materia Prima';
+                    if (used > 0) statusLabel = 'En Uso (Saldo)';
+
+                    inventoryList.push({
+                        id: acq.id,
+                        product: `${acq.nombre_producto} - ${acq.tipo_acopio}`,
+                        type: 'acopio',
+                        status: statusLabel,
+                        entryDate: new Date(acq.fecha_acopio),
+                        weight: remaining, // Mostramos lo que queda, no lo que entró
+                        unitCost: realCost,
+                        totalValue: remaining * realCost,
+                        location: acq.finca_origen || 'Bodega Acopio',
+                        originalUnit: 'KG', // Al ser saldo calculado, lo mostramos en KG para no complicar conversión inversa
+                        isBalance: used > 0
+                    });
+                }
+            });
+
+            // B) Lotes en Proceso/Terminado
+            const processedIds = new Set();
+            const flattenForCheck = (nodes) => {
+                nodes.forEach(n => {
+                    if(n.parent_id) processedIds.add(n.parent_id);
+                    if(n.children) flattenForCheck(n.children);
+                });
+            };
+            flattenForCheck(batchesTree);
+
+            const flattenBatches = (nodes) => {
+                let flat = [];
+                nodes.forEach(node => {
+                    // Un lote es inventario si no ha sido transformado totalmente (es hoja)
+                    // Opcional: Podríamos implementar lógica de saldos en lotes también, pero por ahora asumimos hoja = stock.
+                    const isLeaf = !processedIds.has(node.id);
+                    
+                    if (isLeaf) {
+                        const data = typeof node.data === 'string' ? JSON.parse(node.data) : node.data;
+                        
+                        // --- LÓGICA DE PESO REAL Y COSTO (OUTPUTS) ---
+                        let currentWeight = 0;
+                        let currentUnitCost = 0; // Variable para capturar el costo real del lote
+                        let productLabel = `Proceso: ${node.etapa_id}`;
+
+                        // 1. Buscar en Outputs complejos (Prioridad Alta)
+                        const outputValues = Object.values(data).filter(v => typeof v === 'object' && v.type === 'output');
+                        
+                        if (outputValues.length > 0) {
+                            // Asumir que el mayor valor es el producto principal
+                            const mainOutput = outputValues.reduce((prev, current) => (parseFloat(prev.value) > parseFloat(current.value)) ? prev : current);
+                            currentWeight = parseFloat(mainOutput.value || 0);
+                            
+                            // Intentar obtener el nombre del producto del label del output
+                            if (mainOutput.nombre) productLabel = mainOutput.nombre;
+
+                            // NUEVO: Extraer el costo unitario específico si existe
+                            if (mainOutput.unit_cost) {
+                                currentUnitCost = parseFloat(mainOutput.unit_cost);
+                            }
+                        } else {
+                            // 2. Fallback Legacy
+                            const weightKeys = Object.keys(data).filter(k => k.toLowerCase().includes('peso') || k.toLowerCase().includes('salida') || k.toLowerCase().includes('cantidad'));
+                            if (weightKeys.length > 0) {
+                                currentWeight = parseFloat(data[weightKeys[0]]?.value || 0);
+                            }
+                        }
+                        // --------------------------------------
+
+                        // Inferir tipo producto para valorar si no hay costo específico
+                        let productType = 'Cacao'; 
+                        const estimatedWac = state.wacByProduct[productType] || 0;
+                        
+                        // Prioridad: Costo Específico del Lote > Costo Promedio Estimado
+                        const finalCost = currentUnitCost > 0 ? currentUnitCost : estimatedWac;
+
+                        let type = node.is_locked ? 'terminado' : 'proceso';
+                        
+                        // Si hay lugar de proceso, usarlo como ubicación o nombre
+                        if (data.lugarProceso?.value) {
+                             // Si no pudimos deducir nombre del output, usamos el lugar
+                             if(productLabel.startsWith('Proceso')) productLabel = `En ${data.lugarProceso.value}`;
+                        }
+
+                        if (currentWeight > 0) {
+                            inventoryList.push({
+                                id: node.id,
+                                product: productLabel,
+                                type: type,
+                                status: node.is_locked ? 'Terminado' : 'En Proceso',
+                                entryDate: new Date(node.created_at),
+                                weight: currentWeight,
+                                unitCost: finalCost, 
+                                totalValue: currentWeight * finalCost, 
+                                location: 'Planta Procesamiento',
+                                originalUnit: 'KG'
+                            });
+                        }
+                    }
+
+                    if (node.children && node.children.length > 0) {
+                        flat = flat.concat(flattenBatches(node.children));
+                    }
+                });
+                return flat;
+            };
+
+            const flatBatches = flattenBatches(batchesTree);
+            state.inventory = [...inventoryList, ...flatBatches];
+
+            // 4. Renderizar
+            updateDashboard();
+
+        } catch (e) {
+            console.error("Error logic:", e);
+            tableBody.innerHTML = `<tr><td colspan="8" class="p-8 text-center text-red-500">Error de cálculo. ${e.message}</td></tr>`;
+        }
     }
 
     function updateDashboard() {
@@ -120,72 +219,75 @@ document.addEventListener('DOMContentLoaded', () => {
             return item.type === state.filter;
         });
 
-        // --- CALCULO DE KPIs (Solo sobre lo filtrado o sobre todo?) ---
-        // Generalmente KPIs financieros se basan en Materia Prima (Acopio) que es donde tenemos costos reales
-        const acopioItems = state.inventory.filter(i => i.type === 'acopio');
-        
-        const totalVal = acopioItems.reduce((sum, i) => sum + i.totalValue, 0);
-        const totalKg = acopioItems.reduce((sum, i) => sum + i.weight, 0);
-        const wac = totalKg > 0 ? (totalVal / totalKg) : 0;
-        
-        const globalStock = state.inventory.reduce((sum, i) => sum + i.weight, 0); // Stock físico total (MP + Proceso)
+        // KPIs
+        const totalVal = state.inventory.reduce((sum, i) => sum + i.totalValue, 0);
+        const globalStock = state.inventory.reduce((sum, i) => sum + i.weight, 0);
+        const globalWac = globalStock > 0 ? (totalVal / globalStock) : 0;
 
-        // Render KPIs
-        animateValue(kpiTotalValue, totalVal, state.currency);
-        kpiWac.textContent = `${formatCurrency(wac)} / kg`;
-        kpiTotalStock.textContent = `${globalStock.toLocaleString()} kg`;
+        animateValue(kpiTotalValue, totalVal);
+        kpiWac.textContent = `${formatCurrency(globalWac)} / kg`;
+        kpiTotalStock.textContent = `${globalStock.toLocaleString('es-PE', {maximumFractionDigits: 2})} kg`;
 
-        // Render Tabla
         renderTable(filtered);
     }
 
     function renderTable(items) {
         if (items.length === 0) {
-            tableBody.innerHTML = `<tr><td colspan="8" class="p-8 text-center text-slate-400">No hay existencias en esta categoría.</td></tr>`;
+            tableBody.innerHTML = `<tr><td colspan="8" class="p-12 text-center text-slate-400 italic">No hay existencias en esta categoría.</td></tr>`;
             return;
         }
 
         tableBody.innerHTML = items.map(item => {
-            // Cálculo de Antigüedad (Maduración)
             const daysOld = Math.floor((new Date() - item.entryDate) / (1000 * 60 * 60 * 24));
             
-            // Semáforo de Maduración
-            let badgeClass = 'bg-green-100 text-green-700';
+            let badgeClass = 'bg-green-100 text-green-800 border-green-200';
             let icon = 'fa-clock';
-            if (daysOld > 30) badgeClass = 'bg-amber-100 text-amber-700';
-            if (daysOld > 90) { badgeClass = 'bg-red-100 text-red-700'; icon = 'fa-triangle-exclamation'; }
+            if (daysOld > 30) badgeClass = 'bg-amber-100 text-amber-800 border-amber-200';
+            if (daysOld > 90) { badgeClass = 'bg-red-100 text-red-800 border-red-200'; icon = 'fa-triangle-exclamation'; }
+
+            // Formateo visual
+            let displayWeight = `${item.weight.toFixed(2)} KG`;
+            // Si es un saldo, agregar indicador visual
+            if (item.isBalance) displayWeight = `(Saldo) ${item.weight.toFixed(2)} KG`;
 
             return `
-                <tr class="hover:bg-slate-50 transition border-b border-slate-50">
-                    <td class="p-4 font-mono text-xs font-bold text-slate-600">${item.id}</td>
+                <tr class="hover:bg-slate-50 transition border-b border-slate-50 group">
                     <td class="p-4">
-                        <div class="font-bold text-slate-800">${item.product}</div>
-                        <div class="text-xs text-slate-400">${item.location}</div>
+                        <span class="font-mono text-xs font-bold text-slate-500 bg-slate-100 px-2 py-1 rounded">${item.id}</span>
                     </td>
                     <td class="p-4">
-                        <span class="px-2 py-1 rounded-full text-xs font-bold uppercase ${getStatusColor(item.type)}">
+                        <div class="font-bold text-slate-800">${item.product}</div>
+                        <div class="text-xs text-slate-400 flex items-center gap-1"><i class="fas fa-map-marker-alt"></i> ${item.location}</div>
+                    </td>
+                    <td class="p-4">
+                        <span class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${getStatusColor(item.type)}">
                             ${item.status}
                         </span>
                     </td>
-                    <td class="p-4 text-right font-bold text-slate-700">${item.weight.toFixed(2)}</td>
-                    <td class="p-4 text-right text-slate-500 text-xs">${item.unitCost > 0 ? formatCurrency(item.unitCost) : '-'}</td>
-                    <td class="p-4 text-right font-bold text-emerald-700">${item.totalValue > 0 ? formatCurrency(item.totalValue) : '-'}</td>
-                    <td class="p-4 text-center">
-                        <span class="inline-flex items-center gap-1 px-2 py-1 rounded border ${badgeClass} border-current border-opacity-20 text-xs font-bold">
-                            <i class="fas ${icon}"></i> ${daysOld} días
-                        </span>
+                    <td class="p-4 text-right">
+                        <div class="font-bold text-slate-700">${displayWeight}</div>
+                    </td>
+                    <td class="p-4 text-right text-slate-500 text-xs font-mono">
+                        ${item.unitCost > 0 ? formatCurrency(item.unitCost) : '-'}
+                    </td>
+                    <td class="p-4 text-right font-bold text-emerald-700">
+                        ${item.totalValue > 0 ? formatCurrency(item.totalValue) : '-'}
                     </td>
                     <td class="p-4 text-center">
-                        <button class="text-slate-400 hover:text-blue-600 transition p-1" title="Ver Detalle">
-                            <i class="fas fa-eye"></i>
-                        </button>
+                        <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg border ${badgeClass} text-xs font-bold shadow-sm">
+                            <i class="fas ${icon}"></i> ${daysOld} días
+                        </div>
+                    </td>
+                    <td class="p-4 text-center">
+                        <a href="/app/procesamiento#${item.type === 'acopio' ? 'acopio=' : ''}${item.id}" class="text-slate-400 hover:text-blue-600 transition p-2 rounded-full hover:bg-blue-50" title="Ver en Procesamiento">
+                            <i class="fas fa-external-link-alt"></i>
+                        </a>
                     </td>
                 </tr>
             `;
         }).join('');
     }
 
-    // --- UTILIDADES ---
     function getStatusColor(type) {
         if (type === 'acopio') return 'bg-blue-50 text-blue-700 border border-blue-100';
         if (type === 'proceso') return 'bg-amber-50 text-amber-700 border border-amber-100';
@@ -197,7 +299,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return new Intl.NumberFormat('es-PE', { style: 'currency', currency: state.currency }).format(val);
     }
 
-    function animateValue(obj, end, currency) {
+    function animateValue(obj, end) {
         const start = 0;
         const duration = 1000;
         let startTimestamp = null;
@@ -205,7 +307,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!startTimestamp) startTimestamp = timestamp;
             const progress = Math.min((timestamp - startTimestamp) / duration, 1);
             const val = progress * (end - start) + start;
-            obj.innerHTML = new Intl.NumberFormat('es-PE', { style: 'currency', currency: currency }).format(val);
+            obj.innerHTML = formatCurrency(val);
             if (progress < 1) {
                 window.requestAnimationFrame(step);
             }
@@ -216,12 +318,12 @@ document.addEventListener('DOMContentLoaded', () => {
     function setupListeners() {
         tabs.forEach(tab => {
             tab.addEventListener('click', (e) => {
-                tabs.forEach(t => t.classList.remove('bg-slate-800', 'text-white', 'active'));
-                tabs.forEach(t => t.classList.add('text-slate-600', 'hover:bg-white'));
-                
+                tabs.forEach(t => {
+                    t.classList.remove('bg-slate-800', 'text-white', 'active');
+                    t.classList.add('text-slate-600', 'hover:bg-white');
+                });
                 e.target.classList.add('bg-slate-800', 'text-white', 'active');
                 e.target.classList.remove('text-slate-600', 'hover:bg-white');
-                
                 state.filter = e.target.dataset.status;
                 updateDashboard();
             });
@@ -237,7 +339,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // API Helper
     async function api(url) {
         const res = await fetch(url);
         if (!res.ok) throw new Error('API Error');

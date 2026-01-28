@@ -93,7 +93,6 @@
           "campos_json": {
             "salidas": [
               {"label": "Nibs de Cacao", "product_type": "principal"},
-              {"label": "Licor de Cacao", "product_type": "principal"},
               {"label": "Cascarilla", "product_type": "subproducto"}
             ],
             "variables": [

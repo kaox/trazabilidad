@@ -895,10 +895,15 @@ const updateAcquisition = async (req, res) => {
 
 const createBatch = async (req, res) => {
     const userId = req.user.id;
-    let { plantilla_id, etapa_id, parent_id, data, producto_id, acquisition_id, system_template_name, stage_name, stage_order } = req.body;
+    // Agregamos input_quantity al destructuring
+    let { 
+        plantilla_id, etapa_id, parent_id, data, producto_id, acquisition_id, 
+        system_template_name, stage_name, stage_order,
+        input_quantity // <-- NUEVO CAMPO
+    } = req.body;
     
     try {
-        // JIT Template
+        // ... (Lógica JIT Template igual) ...
         if ((!plantilla_id || !etapa_id) && system_template_name && stage_name) {
             const resolved = await ensureTemplateAndStageExists(userId, system_template_name, stage_name, stage_order);
             plantilla_id = resolved.plantilla_id;
@@ -916,39 +921,76 @@ const createBatch = async (req, res) => {
         if (producto_id) finalProductId = producto_id;
         else if (data.productoFinal?.value) finalProductId = data.productoFinal.value;
 
-        if (acquisition_id) await run("UPDATE acquisitions SET estado = 'procesado' WHERE id = ? AND user_id = ?", [acquisition_id, userId]);
+        // Validar cantidad usada (input_quantity)
+        const qtyUsed = parseFloat(input_quantity) || 0;
+
+        // Actualizar estado de acopio si corresponde
+        // NOTA: Con la nueva lógica de inventario, podríamos cambiar el estado a 'agotado' 
+        // solo si qtyUsed >= stock disponible, pero por ahora mantenemos 'procesado' como indicador de uso.
+        if (acquisition_id) {
+            await run("UPDATE acquisitions SET estado = 'procesado' WHERE id = ? AND user_id = ?", [acquisition_id, userId]);
+        }
 
         let sql, params;
         if (!parent_id) {
-            sql = 'INSERT INTO batches (id, user_id, plantilla_id, etapa_id, parent_id, data, producto_id, acquisition_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)';
-            params = [data.id, userId, plantilla_id, etapa_id, null, JSON.stringify(data), finalProductId, acquisition_id || null];
+            // Se agrega input_quantity al INSERT
+            sql = 'INSERT INTO batches (id, user_id, plantilla_id, etapa_id, parent_id, data, producto_id, acquisition_id, input_quantity) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)';
+            params = [data.id, userId, plantilla_id, etapa_id, null, JSON.stringify(data), finalProductId, acquisition_id || null, qtyUsed];
         } else {
             const ownerInfo = await checkBatchOwnership(parent_id, userId);
             if (!ownerInfo) return res.status(403).json({ error: "No tienes permiso." });
             const parentBatch = await get('SELECT plantilla_id FROM batches WHERE id = ?', [parent_id]);
-            sql = 'INSERT INTO batches (id, plantilla_id, etapa_id, parent_id, data, producto_id) VALUES (?, ?, ?, ?, ?, ?)';
-            params = [data.id, parentBatch.plantilla_id, etapa_id, parent_id, JSON.stringify(data), finalProductId];
+            
+            // Se agrega input_quantity al INSERT
+            sql = 'INSERT INTO batches (id, plantilla_id, etapa_id, parent_id, data, producto_id, input_quantity) VALUES (?, ?, ?, ?, ?, ?, ?)';
+            params = [data.id, parentBatch.plantilla_id, etapa_id, parent_id, JSON.stringify(data), finalProductId, qtyUsed];
         }
         await run(sql, params);
-        await syncBatchOutputs(data.id, etapa_id, data); 
+
+        await syncBatchOutputs(data.id, etapa_id, data);
+
         res.status(201).json({ message: "Lote creado", id: data.id });
     } catch (err) { console.error(err); res.status(500).json({ error: err.message }); }
 };
 
 const updateBatch = async (req, res) => {
-    const { id } = req.params; const { data, producto_id } = req.body;
-    const targetBatch = await checkBatchOwnership(id, req.user.id);
-    if (!targetBatch) return res.status(403).json({ error: "Sin permiso." });
+    const { id } = req.params; 
+    // Agregamos input_quantity
+    const { data, producto_id, input_quantity } = req.body;
+    
+    const targetBatch = await get('SELECT id, user_id, parent_id, is_locked, etapa_id FROM batches WHERE id = ?', [id]);
+    
+    if (!targetBatch) return res.status(404).json({error: "Lote no encontrado"});
     if (targetBatch.is_locked) return res.status(409).json({ error: "Lote bloqueado." });
 
     let finalProductId = undefined;
     if (producto_id !== undefined) finalProductId = producto_id === "" ? null : producto_id;
     else if (data && data.productoFinal?.value) finalProductId = data.productoFinal.value;
 
+    const qtyUsed = input_quantity !== undefined ? parseFloat(input_quantity) : undefined;
+
     try {
-        if (finalProductId !== undefined) await run('UPDATE batches SET data = ?, producto_id = ? WHERE id = ?', [JSON.stringify(data), finalProductId, id]);
-        else await run('UPDATE batches SET data = ? WHERE id = ?', [JSON.stringify(data), id]);
+        let sql = 'UPDATE batches SET data = ?';
+        let params = [JSON.stringify(data)];
+
+        if (finalProductId !== undefined) {
+            sql += ', producto_id = ?';
+            params.push(finalProductId);
+        }
+        
+        // Actualizamos input_quantity solo si viene en el request
+        if (qtyUsed !== undefined) {
+            sql += ', input_quantity = ?';
+            params.push(qtyUsed);
+        }
+
+        sql += ' WHERE id = ?';
+        params.push(id);
+
+        await run(sql, params);
+        
         await syncBatchOutputs(id, targetBatch.etapa_id, data);
+
         res.status(200).json({ message: "Lote actualizado" });
     } catch (err) { res.status(500).json({ error: err.message }); }
 };

@@ -188,29 +188,48 @@ CREATE TABLE IF NOT EXISTS productos (
 
 -- 10. MÓDULO DE ACOPIO (MATERIA PRIMA)
 CREATE TABLE IF NOT EXISTS acquisitions (
-    id TEXT PRIMARY KEY, -- Ej: ACP-XXXX
+    id TEXT PRIMARY KEY,
     user_id INTEGER NOT NULL,
-    nombre_producto TEXT NOT NULL, -- 'Cacao', 'Café'
-    tipo_acopio TEXT NOT NULL, -- 'Baba', 'Grano Seco'
-    subtipo TEXT, -- 'Lavado', 'Honey'
+    nombre_producto TEXT NOT NULL, 
+    tipo_acopio TEXT NOT NULL, 
+    subtipo TEXT, 
     fecha_acopio DATE,
+    
+    -- Valores Normalizados (Para cálculos del sistema)
     peso_kg DOUBLE PRECISION,
     precio_unitario DOUBLE PRECISION,
 
-    -- DATOS ORIGINALES (Lo que ingresó el usuario)
+    -- Valores Originales (Visualización y Auditoría)
     original_quantity DOUBLE PRECISION,
     original_price DOUBLE PRECISION,
-    unit_id INTEGER REFERENCES units_of_measure(id),
-    currency_id INTEGER REFERENCES currencies(id),
+    
+    -- Llaves Foráneas de Configuración
+    unit_id INTEGER,
+    currency_id INTEGER,
 
     finca_origen TEXT,
     observaciones TEXT,
-    imagenes_json JSONB,
-    data_adicional JSONB, -- Campos dinámicos del formulario
-    estado TEXT DEFAULT 'disponible', -- 'disponible', 'procesado', 'agotado'
-    deleted_at TIMESTAMPTZ, -- Soft Delete
-    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    imagenes_json TEXT,
+    data_adicional JSONB, 
+    estado TEXT DEFAULT 'disponible', 
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP,
+
+    -- Restricciones
+    CONSTRAINT fk_acquisitions_user 
+        FOREIGN KEY (user_id) 
+        REFERENCES users(id) 
+        ON DELETE CASCADE,
+
+    CONSTRAINT fk_acquisitions_unit 
+        FOREIGN KEY (unit_id) 
+        REFERENCES units_of_measure(id) 
+        ON DELETE SET NULL,
+
+    CONSTRAINT fk_acquisitions_currency 
+        FOREIGN KEY (currency_id) 
+        REFERENCES currencies(id) 
+        ON DELETE SET NULL
 );
 
 -- 11. MÓDULO DE PROCESAMIENTO (LOTES/BATCHES)
@@ -412,6 +431,16 @@ INSERT INTO currencies (code, name, symbol) VALUES
     ('MXN', 'Peso Mexicano', '$'),
     ('BRL', 'Real Brasileño', 'R$')
 ON CONFLICT (code) DO NOTHING;
+
+
+-- Agregar campo para controlar la cantidad de insumo utilizada en este proceso
+ALTER TABLE batches 
+ADD COLUMN IF NOT EXISTS input_quantity NUMERIC(10, 2) DEFAULT 0;
+
+-- Opcional: Índice para calcular inventarios rápidamente
+CREATE INDEX IF NOT EXISTS idx_batches_parent_input ON batches(parent_id, input_quantity);
+CREATE INDEX IF NOT EXISTS idx_batches_acquisition_input ON batches(acquisition_id, input_quantity);
+
 
 -- ÍNDICES DE RENDIMIENTO
 CREATE INDEX IF NOT EXISTS idx_batches_user ON batches(user_id);

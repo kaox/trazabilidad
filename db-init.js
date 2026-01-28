@@ -172,6 +172,7 @@ async function initializeDatabase() {
                     -- VINCULACIONES CLAVE
                     producto_id TEXT, -- Link a SKU comercial (Tabla productos)
                     acquisition_id TEXT, -- Link a Materia Prima (Tabla acquisitions)
+                    input_quantity REAL DEFAULT 0, -- Cantidad de entrada total para este lote
                     
                     data TEXT NOT NULL, -- Datos técnicos JSON
                     
@@ -440,6 +441,14 @@ async function initializeDatabase() {
                 await runQuery(db, `INSERT OR IGNORE INTO currencies (code, name, symbol) VALUES ('${curr[0]}', '${curr[1]}', '${curr[2]}')`);
             }
             console.log("Datos iniciales de monedas cargados.");
+            
+            // --- NUEVA MIGRACIÓN: INPUT QUANTITY PARA BATCHES ---
+            try { 
+                await runQuery(db, `ALTER TABLE batches ADD COLUMN input_quantity REAL DEFAULT 0;`); 
+                console.log("Columna input_quantity agregada a batches.");
+            } catch(e) {
+                if (!e.message.includes("duplicate column")) console.log("Nota batches:", e.message);
+            }
 
             console.log('Esquema de base de datos listo.');
 

@@ -2,6 +2,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- ESTADO ---
     let state = {
         acquisitions: [],
+        batches: [],      
         templates: [],
         userTemplates: [],
         acopioConfig: [],
@@ -29,9 +30,6 @@ document.addEventListener('DOMContentLoaded', () => {
     init();
 
     async function init() {
-        // 1. Configurar Listeners INMEDIATAMENTE
-        setupEventListeners();
-
         try {
             await Promise.all([
                 loadGlobalConfig(),
@@ -40,15 +38,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 loadSystemTemplates(),
                 loadUserTemplates(),
                 loadAcquisitionsData(),
+                loadBatches(), 
                 loadFincas(),
                 loadProcesadoras()
             ]);
             
             renderGrid('all');
+            setupEventListeners();
             
         } catch (e) {
             console.error("Error inicializando acopio:", e);
-            if (acopioGrid) acopioGrid.innerHTML = `<div class="col-span-full text-center text-red-500 py-10">Error de conexión. Intenta recargar.</div>`;
         }
     }
 
@@ -69,25 +68,39 @@ document.addEventListener('DOMContentLoaded', () => {
     async function loadSystemTemplates() { state.templates = await api('/api/templates/system'); }
     async function loadUserTemplates() { try { state.userTemplates = await api('/api/templates'); } catch(e) { state.userTemplates = []; } }
     async function loadAcquisitionsData() { state.acquisitions = await api('/api/acquisitions'); }
-    async function refreshData() { try { await Promise.all([loadUserTemplates(), loadAcquisitionsData()]); renderGrid('all'); } catch (e) { console.error(e); } }
+    
+    async function loadBatches() {
+        try { state.batches = await api('/api/batches/tree'); } catch (e) { state.batches = []; }
+    }
+
+    async function refreshData() {
+        try {
+            await Promise.all([loadUserTemplates(), loadAcquisitionsData(), loadBatches()]);
+            renderGrid('all');
+        } catch (e) { console.error("Error refrescando:", e); }
+    }
+
     async function loadFincas() { try { state.fincas = await api('/api/fincas'); } catch (e) { state.fincas = []; } }
     async function loadProcesadoras() { try { state.procesadoras = await api('/api/procesadoras'); } catch(e) { state.procesadoras = []; } }
 
     // --- RENDERIZADO DEL SELECTOR (PASO 1) ---
     function openAcopioSelector() {
         const options = state.acopioConfig.map((p, i) => `<option value="${i}">${p.nombre_producto}</option>`).join('');
+
         modalContent.innerHTML = `
             <div class="p-6 bg-white">
                 <h2 class="text-2xl font-display text-green-900 border-b pb-2 mb-4">Registrar Nuevo Ingreso</h2>
                 <div class="space-y-4">
                     <div>
-                        <label class="block text-sm font-bold text-stone-600 mb-1">Producto</label>
+                        <label for="product-select" class="block text-sm font-bold text-stone-600 mb-1">Producto / Cultivo</label>
                         <select id="product-select" class="w-full p-3 border border-stone-300 rounded-xl outline-none transition focus:ring-2 focus:ring-green-500">${options}</select>
                     </div>
+                    
                     <div id="acopio-type-container" class="space-y-3 max-h-[400px] overflow-y-auto custom-scrollbar"></div>
+                    
                     <div class="flex justify-end gap-2 mt-6 border-t pt-4">
                         <button onclick="document.getElementById('form-modal').close()" class="px-4 py-2 text-stone-500 font-bold hover:bg-stone-100 rounded-lg">Cancelar</button>
-                        <button id="btn-next-step" class="px-6 py-2 bg-green-700 text-white font-bold rounded-lg shadow-md transition disabled:opacity-50" disabled>Siguiente</button>
+                        <button id="btn-next-step" class="px-6 py-2 bg-green-700 text-white font-bold rounded-lg shadow-md transition disabled:opacity-50 disabled:cursor-not-allowed" disabled>Siguiente</button>
                     </div>
                 </div>
             </div>`;
@@ -99,22 +112,21 @@ document.addEventListener('DOMContentLoaded', () => {
         const updateTypes = () => {
             const prodIndex = productSelect.value;
             const productConfig = state.acopioConfig[prodIndex];
+            
             const template = state.templates.find(t => t.nombre_producto === productConfig.nombre_producto);
             state.currentSystemTemplate = template;
 
             if (!template) {
-                typeContainer.innerHTML = `<div class="p-4 bg-red-50 text-red-600 rounded-lg">Error: Plantilla no encontrada.</div>`;
+                typeContainer.innerHTML = `<div class="p-4 bg-red-50 text-red-600 rounded-lg text-sm border border-red-200">Error: La plantilla '${productConfig.nombre_producto}' no existe en el sistema.</div>`;
                 nextBtn.disabled = true;
                 return;
             }
 
-            typeContainer.innerHTML = productConfig.acopio.map((a, i) => {
-                const hasSubtypes = a.tipo_acopio && Array.isArray(a.tipo_acopio);
+            const optionsHtml = productConfig.acopio.map((a, i) => {
+                const hasSubtypes = a.tipo_acopio && a.tipo_acopio.length > 0;
                 let subTypesHtml = '';
-                
                 if (hasSubtypes) {
-                    subTypesHtml = `
-                    <div class="mt-3 ml-8 space-y-2 hidden border-l-2 border-stone-200 pl-3 subtype-group" id="subtype-group-${i}">
+                    subTypesHtml = `<div class="mt-3 ml-8 space-y-2 hidden border-l-2 border-stone-200 pl-3 subtype-group" id="subtype-group-${i}">
                         <p class="text-xs text-stone-500 font-bold uppercase tracking-wider mb-1">Selecciona Tipo:</p>
                         ${a.tipo_acopio.map((sub, j) => `
                             <label class="flex items-center gap-2 cursor-pointer hover:text-green-700 transition py-1">
@@ -138,6 +150,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     ${subTypesHtml}
                 </div>`;
             }).join('');
+            
+            typeContainer.innerHTML = optionsHtml;
             
             typeContainer.querySelectorAll('.acopio-option-card').forEach(card => {
                 card.addEventListener('click', (e) => {
@@ -196,6 +210,7 @@ document.addEventListener('DOMContentLoaded', () => {
             
             openAcopioForm(acopioConfig.nombre_acopio, 'create', null, subtipoNombre);
         });
+
         formModal.showModal();
     }
 
@@ -215,7 +230,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
-        // 1. Campos Globales
+        // 1. Campos Globales (Peso, Precio, Fecha, Origen)
         if (state.extraFields.length > 0) {
             formFieldsHtml += `<div class="bg-amber-50 p-4 rounded-xl border border-amber-100 mb-6 space-y-4">
                 <h4 class="font-bold text-amber-900 text-sm uppercase flex items-center gap-2"><i class="fas fa-file-invoice-dollar"></i> Datos de Recepción</h4>`;
@@ -225,16 +240,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 let metaId = null;
                 
                 if (mode === 'edit') {
-                    // Mapeo inverso para edición usando data_adicional que es más confiable que columnas sueltas en este caso
-                    if (initialData[field.name]) {
-                        val = initialData[field.name].value;
-                        metaId = initialData[field.name].unit_id || initialData[field.name].currency_id;
-                    } else if (field.name.includes('peso') || field.name.includes('cantidad')) {
-                         val = acopioData.original_quantity || acopioData.peso_kg;
-                         metaId = acopioData.unit_id;
-                    } else if (field.name.includes('precio')) {
-                         val = acopioData.original_price || acopioData.precio_unitario;
-                         metaId = acopioData.currency_id;
+                    if (field.name.includes('peso') || field.name.includes('cantidad')) {
+                        val = acopioData.original_quantity; 
+                        metaId = acopioData.unit_id;
+                    }
+                    if (field.name.includes('precio')) {
+                        val = acopioData.original_price;
+                        metaId = acopioData.currency_id;
                     }
                 }
                 formFieldsHtml += await createFieldHTML(field, field.name, val, metaId);
@@ -242,7 +254,7 @@ document.addEventListener('DOMContentLoaded', () => {
             formFieldsHtml += `</div>`;
         }
         
-        // 2. Campos Etapa
+        // 2. Campos de Etapa (Igual)
         const stagesToShow = state.targetStages;
         const renderedFields = new Set(state.extraFields.map(f => f.name));
 
@@ -285,7 +297,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         setupDynamicListeners();
 
-        // SUBMIT
+        // Submit Handler
         document.getElementById('acopio-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             const btn = e.target.querySelector('button[type="submit"]');
@@ -304,14 +316,12 @@ document.addEventListener('DOMContentLoaded', () => {
             let selectedUnitId = null;
             let selectedCurrencyId = null;
 
-            // Procesar campos comunes
             for (const key in rawData) {
                 if (!key.startsWith('imageUrl') && !key.endsWith('_unit_id') && !key.endsWith('_currency_id')) { 
                      dataAdicional[key] = { value: rawData[key], visible: true, nombre: key }; 
                 }
             }
             
-            // Procesar Peso y Precio con Unidades
             const fieldsToProcess = [...state.extraFields];
             state.targetStages.forEach(s => {
                 if(s.campos_json.entradas) fieldsToProcess.push(...s.campos_json.entradas);
@@ -326,8 +336,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         
                         if(dataAdicional[keyFound]) dataAdicional[keyFound].unit_id = unitId;
 
-                        // Si es el peso principal
-                        if (pesoKg === 0 || field.name.includes('pesoEntrada') || field.name.includes('cantidad')) {
+                        if (pesoKg === 0 || field.name.includes('pesoEntrada') || field.name.includes('cantidad') || field.name === 'peso_kg') {
                             originalQty = val;
                             selectedUnitId = unitId ? parseInt(unitId) : null;
                             const unitObj = state.units.find(u => u.id === selectedUnitId);
@@ -398,6 +407,40 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!formModal.open) formModal.showModal();
     }
 
+    // --- NUEVA FUNCIÓN: fetchAndEdit (RESTORED) ---
+    async function fetchAndEdit(acopio) {
+        const productConfig = state.acopioConfig.find(c => c.nombre_producto === acopio.nombre_producto);
+        if (!productConfig) return alert("Configuración no encontrada para este producto");
+
+        const template = state.templates.find(t => t.nombre_producto === acopio.nombre_producto);
+        state.currentSystemTemplate = template;
+        
+        let acopioConfig = productConfig.acopio.find(a => a.nombre_acopio === acopio.tipo_acopio);
+        let targetStageOrders = [];
+        
+        if (acopioConfig) {
+            state.currentAcopioConfig = acopioConfig;
+            state.extraFields = acopioConfig.campos || [];
+            
+            if (acopio.subtipo) {
+                const subConfig = acopioConfig.tipo_acopio.find(s => s.nombre === acopio.subtipo);
+                if (subConfig) targetStageOrders = subConfig.etapas_acopio;
+            } else {
+                targetStageOrders = acopioConfig.etapas_acopio;
+            }
+        }
+        
+        if (!targetStageOrders || targetStageOrders.length === 0) return alert("No se encontraron etapas para este tipo.");
+
+        const allJsonStages = [...(template.acopio || []), ...(template.etapas || [])];
+        state.targetStages = allJsonStages.filter(s => {
+            const id = s.id_etapa !== undefined ? s.id_etapa : s.orden;
+            return targetStageOrders.includes(id);
+        });
+
+        openAcopioForm(acopio.tipo_acopio, 'edit', acopio, acopio.subtipo);
+    }
+
     // --- GENERADOR DE CAMPOS INTELIGENTE ---
     async function createFieldHTML(field, uniqueName, value = '', metaId = null) {
         const fieldName = uniqueName || field.name;
@@ -452,16 +495,14 @@ document.addEventListener('DOMContentLoaded', () => {
         
         if (field.type === 'selectFinca') {
              const opts = state.fincas.map(f => `<option value="${f.nombre_finca}" ${f.nombre_finca === value ? 'selected' : ''}>${f.nombre_finca}</option>`).join('');
-             const addOption = `<option value="__REDIRECT_FINCAS__" class="font-bold text-green-700 bg-green-50">+ Agregar Nueva Finca</option>`;
-             inputHtml = `<select id="${fieldName}" name="${fieldName}" class="w-full p-2.5 border border-stone-300 rounded-lg bg-white text-sm focus:ring-2 focus:ring-amber-500 outline-none finca-selector"><option value="">Seleccionar Finca...</option>${opts}${addOption}</select>`;
+             inputHtml = `<select id="${fieldName}" name="${fieldName}" class="w-full p-2.5 border border-stone-300 rounded-lg bg-white text-sm focus:ring-2 focus:ring-amber-500 outline-none finca-selector"><option value="">Seleccionar Finca...</option>${opts}</select>`;
         } 
         else if (field.type === 'selectLugar' || field.type === 'selectProcesadora') {
              let opts = '<option value="">Seleccionar...</option>';
              if (state.fincas.length > 0) opts += `<optgroup label="Fincas">${state.fincas.map(f => `<option value="${f.nombre_finca}" ${f.nombre_finca === value ? 'selected' : ''}>${f.nombre_finca}</option>`).join('')}</optgroup>`;
              if (state.procesadoras.length > 0) opts += `<optgroup label="Procesadoras">${state.procesadoras.map(p => `<option value="${p.nombre_comercial || p.razon_social}" ${(p.nombre_comercial || p.razon_social) === value ? 'selected' : ''}>${p.nombre_comercial || p.razon_social}</option>`).join('')}</optgroup>`;
              inputHtml = `<select id="${fieldName}" name="${fieldName}" class="w-full p-2.5 border border-stone-300 rounded-lg bg-white text-sm focus:ring-2 focus:ring-green-500 outline-none">${opts}</select>`;
-        }
-        else if (field.type === 'date') {
+        } else if (field.type === 'date') {
              const dateVal = value || new Date().toISOString().split('T')[0];
              inputHtml = `<input type="date" id="${fieldName}" name="${fieldName}" class="w-full p-2.5 border border-stone-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500 outline-none" value="${dateVal}">`;
         } else if (field.options) {
@@ -470,18 +511,19 @@ document.addEventListener('DOMContentLoaded', () => {
         } 
         else if (field.type === 'image') {
              return `
-                <div class="pt-4 mt-2">
-                    <label for="${fieldName}" class="block text-xs font-bold text-stone-500 mb-1 uppercase"><i class="fas fa-camera mr-1"></i> ${field.label}</label>
+                <div class="pt-2 mt-2">
+                    <label class="block text-xs font-bold text-stone-500 mb-1 uppercase"><i class="fas fa-camera mr-1"></i> ${field.label}</label>
                     <div class="flex items-center gap-3">
-                         <label class="cursor-pointer bg-stone-100 hover:bg-stone-200 text-stone-600 px-3 py-2 rounded-lg text-xs font-medium transition flex items-center gap-2 border border-stone-200">
-                            <i class="fas fa-upload"></i> Elegir Foto
-                            <input type="file" id="${fieldName}" name="${fieldName}" class="hidden" accept="image/*">
+                         <label class="cursor-pointer bg-stone-100 hover:bg-stone-200 px-3 py-2 rounded-lg text-xs font-medium border border-stone-200 transition">
+                            <i class="fas fa-upload"></i> Foto
+                            <input type="file" name="${fieldName}" class="hidden" accept="image/*">
                         </label>
-                        <span class="text-xs text-stone-400 italic truncate max-w-[150px] file-name-display">Sin archivo nuevo</span>
+                        <span class="text-xs text-stone-400 file-name-display">Sin archivo</span>
                     </div>
-                    <img class="file-preview-img mt-2 w-full h-24 object-cover rounded-lg border border-stone-200 hidden">
-                </div>
-             `;
+                    <img class="file-preview-img mt-2 w-full h-24 object-cover rounded-lg hidden">
+                </div>`;
+        } else if (field.type === 'textarea') {
+             inputHtml = `<textarea id="${fieldName}" name="${fieldName}" class="w-full p-2.5 border border-stone-300 rounded-lg text-sm focus:ring-2 focus:ring-amber-500 outline-none" rows="3">${value}</textarea>`;
         }
         
         return `<div><label for="${fieldName}" class="block text-xs font-bold text-stone-500 mb-1 uppercase">${field.label}</label>${inputHtml}</div>`;
@@ -505,6 +547,21 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
+        // --- CÁLCULO DE CONSUMO ---
+        const acqUsageMap = {};
+        if (state.batches) {
+            const calculateUsage = (nodes) => {
+                nodes.forEach(node => {
+                    if (node.acquisition_id) {
+                        const used = parseFloat(node.input_quantity) || 0;
+                        acqUsageMap[node.acquisition_id] = (acqUsageMap[node.acquisition_id] || 0) + used;
+                    }
+                    if (node.children) calculateUsage(node.children);
+                });
+            };
+            calculateUsage(state.batches);
+        }
+
         filtered.forEach(acop => {
             const fecha = new Date(acop.fecha_acopio).toLocaleDateString();
             let iconClass = 'fa-box';
@@ -513,36 +570,20 @@ document.addEventListener('DOMContentLoaded', () => {
             if (acop.nombre_producto.includes('Cacao')) { iconClass = 'fa-cookie-bite'; colorClass = 'text-amber-800'; bgClass = 'bg-amber-100'; }
             if (acop.nombre_producto.includes('Café')) { iconClass = 'fa-mug-hot'; colorClass = 'text-red-800'; bgClass = 'bg-red-100'; }
 
-            // RECONSTRUCCIÓN INTELIGENTE DE VALORES
-            // Intentamos obtener los valores originales desde data_adicional primero
-            const data = acop.data_adicional || {};
-            let displayWeight, displayPrice;
-
-            // Buscar campo de peso en data_adicional
-            const weightEntry = Object.values(data).find(v => v.unit_id);
-            if (weightEntry && weightEntry.value) {
-                // Si encontramos unit_id, buscamos el código en state.units
-                const unitObj = state.units.find(u => u.id == weightEntry.unit_id);
-                const unitCode = unitObj ? unitObj.code : 'Unit';
-                displayWeight = `${weightEntry.value} ${unitCode}`;
-            } else {
-                // Fallback a columnas originales (legacy o si data_adicional falla)
-                displayWeight = (acop.original_quantity && acop.unit_code) 
-                    ? `${acop.original_quantity} ${acop.unit_code}` 
-                    : `${acop.peso_kg.toFixed(2)} KG`;
+            let displayWeight = `${acop.peso_kg.toFixed(2)} KG`;
+            let displayPrice = acop.precio_unitario ? `$ ${acop.precio_unitario.toFixed(2)}` : '';
+            
+            if (acop.original_quantity && acop.unit_code) {
+                displayWeight = `${acop.original_quantity} ${acop.unit_code}`;
+            }
+            if (acop.original_price && acop.currency_code) {
+                displayPrice = `${acop.currency_code} ${acop.original_price}`;
             }
 
-            // Buscar campo de precio en data_adicional
-            const priceEntry = Object.values(data).find(v => v.currency_id);
-            if (priceEntry && priceEntry.value) {
-                const currObj = state.currencies.find(c => c.id == priceEntry.currency_id);
-                const currCode = currObj ? currObj.code : '$';
-                displayPrice = `${currCode} ${priceEntry.value}`;
-            } else {
-                displayPrice = (acop.original_price && acop.currency_code)
-                    ? `${acop.currency_code} ${acop.original_price}`
-                    : (acop.precio_unitario ? `$ ${acop.precio_unitario}` : '');
-            }
+            const used = acqUsageMap[acop.id] || 0;
+            const remaining = Math.max(0, acop.peso_kg - used);
+            const isDepleted = remaining <= 0.1;
+            const progressPercent = Math.min(100, (used / acop.peso_kg) * 100);
 
             const card = document.createElement('div');
             card.className = "bg-white p-5 rounded-xl shadow-sm border border-stone-200 hover:shadow-lg hover:-translate-y-0.5 transition duration-300 group relative";
@@ -556,23 +597,42 @@ document.addEventListener('DOMContentLoaded', () => {
                         <button class="delete-acopio-btn text-stone-400 hover:text-red-600 transition" data-id="${acop.id}" title="Eliminar"><i class="fas fa-trash"></i></button>
                     </div>
                 </div>
-                <div class="mb-4">
-                    <p class="text-2xl font-display font-bold text-stone-800 mb-1">${displayWeight}</p>
-                    <p class="text-xs text-stone-500 font-medium uppercase tracking-wide mb-1 flex items-center gap-1">
-                        <i class="fas fa-layer-group"></i> ${acop.tipo_acopio}
-                    </p>
-                    <div class="flex justify-between items-end mt-2">
-                         <span class="text-xs text-stone-400 flex items-center gap-1"><i class="fas fa-map-marker-alt"></i> ${acop.finca_origen || 'Origen N/A'}</span>
-                         <span class="text-xs text-stone-500 font-bold flex items-center gap-1">${displayPrice}</span>
+                <div class="mb-2">
+                    <p class="text-xs text-stone-400 font-medium mb-0.5">Ingreso Original</p>
+                    <p class="text-lg font-display font-bold text-stone-600">${displayWeight}</p>
+                    
+                    <div class="flex justify-between items-end mt-3 border-t border-stone-50 pt-2">
+                         <div>
+                            <p class="text-[10px] text-stone-400 font-bold uppercase tracking-wider">Saldo Disp.</p>
+                            <p class="text-xl font-bold ${isDepleted ? 'text-stone-300' : 'text-green-600'}">
+                                ${remaining.toFixed(2)} <span class="text-xs font-normal">KG</span>
+                            </p>
+                         </div>
+                         <div class="text-right">
+                            <span class="text-xs font-bold ${isDepleted ? 'text-red-500 bg-red-50' : 'text-amber-600 bg-amber-50'} px-2 py-1 rounded-lg">
+                                ${isDepleted ? 'Agotado' : 'Disponible'}
+                            </span>
+                         </div>
+                    </div>
+                    
+                    <div class="w-full bg-stone-100 rounded-full h-1.5 mt-2 overflow-hidden">
+                        <div class="bg-amber-500 h-1.5 rounded-full" style="width: ${progressPercent}%"></div>
+                    </div>
+
+                    <div class="flex justify-between items-end mt-3 text-xs text-stone-400">
+                         <span><i class="fas fa-map-marker-alt"></i> ${acop.finca_origen || 'Origen N/A'}</span>
+                         <span>${displayPrice}</span>
                     </div>
                     <div class="text-right text-[10px] text-stone-400 mt-1"><i class="far fa-calendar"></i> ${fecha}</div>
                 </div>
+                
+                ${!isDepleted ? `
                 <div class="pt-3 border-t border-stone-100 flex justify-between items-center">
                     <span class="text-xs font-mono text-stone-300">ID: ${acop.id}</span>
                     <a href="/app/procesamiento#acopio=${acop.id}" class="text-sm font-bold text-green-700 hover:text-green-900 flex items-center gap-1 transition">
                         Procesar <i class="fas fa-arrow-right text-xs"></i>
                     </a>
-                </div>
+                </div>` : ''}
             `;
             acopioGrid.appendChild(card);
         });
@@ -588,6 +648,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     try {
                         await api(`/api/acquisitions/${id}`, { method: 'DELETE' });
                         await loadAcquisitionsData();
+                        await loadBatches(); 
                         renderGrid('all');
                     } catch(err) { alert(err.message); }
                 }
@@ -607,7 +668,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // ... (rest of utils and setupDynamicListeners remains same) ...
     function setupDynamicListeners() {
         const fincaSelectors = modalContent.querySelectorAll('.finca-selector');
         fincaSelectors.forEach(select => {
@@ -618,8 +678,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             });
         });
-        // ... (files listener logic if needed, copied from above if missing) ...
-         const fileInputs = modalContent.querySelectorAll('input[type="file"]');
+        
+        const fileInputs = modalContent.querySelectorAll('input[type="file"]');
         fileInputs.forEach(input => {
             const fieldName = input.name;
             if (imagesMap[fieldName]) {
@@ -635,7 +695,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 const fName = e.target.name; 
                 const container = e.target.closest('div').parentElement; 
                 const previewImg = container.querySelector('.file-preview-img');
+                const nameSpan = container.querySelector('.file-name-display');
                 if(file) {
+                    if(nameSpan) nameSpan.textContent = file.name;
                     const reader = new FileReader();
                     reader.onload = () => { 
                         const base64 = reader.result;

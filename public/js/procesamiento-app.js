@@ -12,9 +12,9 @@ document.addEventListener('DOMContentLoaded', () => {
         products: [], 
         perfilesSensoriales: [], 
         ruedasSabor: [],
-        units: [],      // <-- Nuevo: Unidades
-        currencies: [], // <-- Nuevo: Monedas
-        userProfile: {}, // <-- Nuevo: Perfil para defaults
+        units: [],      
+        currencies: [], 
+        userProfile: {},
         
         // UI State
         currentView: 'acopios', 
@@ -56,8 +56,8 @@ document.addEventListener('DOMContentLoaded', () => {
     async function init() {
         try {
             await Promise.all([
-                loadGlobalConfig(), // <-- Cargar Configs
-                loadUserProfile(),  // <-- Cargar Perfil
+                loadGlobalConfig(),
+                loadUserProfile(),
                 loadConfig(),
                 loadSystemTemplates(),
                 loadUserTemplates(),
@@ -91,7 +91,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 api('/api/config/units'),
                 api('/api/config/currencies')
             ]);
-            state.units = units.filter(u => u.type === 'MASA'); 
+            state.units = units; 
             state.currencies = currencies;
         } catch (e) { console.error("Error configs globales", e); }
     }
@@ -147,7 +147,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // --- GESTIÓN DE VISTAS (Igual) ---
+    // --- GESTIÓN DE VISTAS ---
     function createWorkstationView() {
         const mainContainer = document.getElementById('main-app-container'); 
         if (!mainContainer) return;
@@ -232,7 +232,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // --- VISTAS ACOPIO/PROCESO (Mantenidas) ---
+    // --- VISTA 1: ACOPIOS ---
     function renderAcopiosView() {
         acopiosList.innerHTML = '';
         let filtered = state.acquisitions;
@@ -248,6 +248,13 @@ document.addEventListener('DOMContentLoaded', () => {
         filtered.forEach(acop => {
             const childBatches = state.batches.filter(b => String(b.acquisition_id) === String(acop.id));
             const hasChildren = childBatches.length > 0;
+
+            // --- NUEVO: CÁLCULO DE SALDO ---
+            // Sumamos lo que se ha usado en los procesos hijos (input_quantity)
+            const totalUsed = childBatches.reduce((sum, b) => sum + (parseFloat(b.input_quantity) || 0), 0);
+            const remaining = Math.max(0, acop.peso_kg - totalUsed);
+            const isDepleted = remaining <= 0.1; // Margen de error pequeño
+            // ---------------------------------
             
             const card = document.createElement('div');
             card.className = "bg-white rounded-xl shadow-sm border border-stone-200 overflow-hidden transition-all duration-300 mb-4";
@@ -264,6 +271,8 @@ document.addEventListener('DOMContentLoaded', () => {
             if (hasChildren) {
                 childrenHtml = childBatches.map(b => {
                     const analysis = analyzeBatchChain(b);
+                    // Mostramos cuánto se usó en cada lote hijo
+                    const usedInBatch = parseFloat(b.input_quantity) || 0;
                     return `
                     <div class="flex justify-between items-center bg-stone-50 p-2 rounded border border-stone-100 text-sm mb-1">
                         <div class="flex items-center gap-2">
@@ -273,8 +282,12 @@ document.addEventListener('DOMContentLoaded', () => {
                                 <span class="text-xs text-stone-400 ml-1">#${b.id.substring(0,8)}</span>
                             </div>
                         </div>
-                        <div class="flex items-center gap-2">
-                            <span class="text-xs font-bold text-stone-600">${analysis.lastWeight} kg</span>
+                        <div class="flex items-center gap-3">
+                            <span class="text-xs text-stone-500 bg-stone-200 px-1.5 py-0.5 rounded" title="Cantidad usada de acopio">
+                                <i class="fas fa-arrow-down text-[10px]"></i> ${usedInBatch.toFixed(2)} kg
+                            </span>
+                            <div class="h-4 border-r border-stone-300"></div>
+                            <span class="text-xs font-bold text-stone-700" title="Producto resultante">${analysis.lastWeight} kg</span>
                             <button class="text-blue-600 hover:text-blue-800 font-bold bg-blue-50 px-2 py-1 rounded text-xs view-process-btn" data-id="${b.id}">
                                 Gestionar <i class="fas fa-arrow-right"></i>
                             </button>
@@ -296,20 +309,30 @@ document.addEventListener('DOMContentLoaded', () => {
                             </div>
                         </div>
                         <div class="text-right">
-                            <p class="text-xl font-display font-bold text-stone-900">${acop.peso_kg} <span class="text-sm font-sans text-stone-500 font-normal">kg</span></p>
-                            <span class="text-xs font-bold ${hasChildren ? 'text-green-600' : 'text-amber-600'}">
-                                ${hasChildren ? `${childBatches.length} Proceso(s)` : 'Disponible'}
+                            <!-- NUEVA VISUALIZACIÓN: Saldo / Total -->
+                            <p class="text-xl font-display font-bold ${isDepleted ? 'text-stone-400' : 'text-stone-900'}">
+                                ${remaining.toFixed(2)} <span class="text-sm font-sans font-normal">kg disp.</span>
+                            </p>
+                            <p class="text-xs text-stone-400">de ${acop.peso_kg} kg originales</p>
+                            
+                            <span class="text-xs font-bold ${isDepleted ? 'text-red-500' : (hasChildren ? 'text-green-600' : 'text-amber-600')}">
+                                ${isDepleted ? 'Agotado' : (hasChildren ? `${childBatches.length} Proceso(s)` : 'Disponible')}
                             </span>
                         </div>
+                    </div>
+                    <!-- Barra de progreso de uso -->
+                    <div class="mt-3 w-full bg-stone-100 rounded-full h-1.5 overflow-hidden">
+                        <div class="bg-amber-500 h-1.5 rounded-full" style="width: ${(totalUsed / acop.peso_kg) * 100}%"></div>
                     </div>
                 </div>
                 
                 <div id="children-${acop.id}" class="hidden border-t border-stone-100 bg-stone-50/50 p-4">
                     <div class="flex justify-between items-center mb-3">
                         <h4 class="text-xs font-bold text-stone-500 uppercase tracking-widest">Procesos Derivados</h4>
+                        ${!isDepleted ? `
                         <button class="text-xs bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded-lg font-bold flex items-center gap-1 new-process-btn">
                             <i class="fas fa-plus"></i> Iniciar Nuevo Proceso
-                        </button>
+                        </button>` : ''}
                     </div>
                     <div class="space-y-1 children-list">
                         ${childrenHtml}
@@ -327,10 +350,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 header.classList.toggle('bg-stone-100');
             });
 
-            newProcBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                prepareProcessing(acop); // acop definido en el loop
-            });
+            if (newProcBtn) {
+                newProcBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    prepareProcessing(acop); // CORREGIDO: acopio -> acop
+                });
+            }
             
             card.querySelectorAll('.view-process-btn').forEach(btn => {
                 btn.addEventListener('click', (e) => {
@@ -344,6 +369,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // --- VISTA 2: PROCESOS ---
     function renderProcesosView() {
         procesosGrid.innerHTML = '';
         const roots = state.batches.filter(b => !b.parent_id);
@@ -365,7 +391,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const analysis = analyzeBatchChain(root);
             const startDate = new Date(root.created_at).toLocaleDateString();
             
-            // 1. Determinar Estilo por Producto (Icono y Color)
+            // 1. Determinar Estilo por Producto
             let prodIcon = 'fa-box';
             let iconBg = 'bg-stone-600';
             const prodName = analysis.productName.toLowerCase();
@@ -383,7 +409,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 ? `<span class="px-2 py-1 rounded-md text-[10px] font-bold uppercase bg-green-100 text-green-700 border border-green-200 flex items-center gap-1"><i class="fas fa-check-circle"></i> Finalizado</span>`
                 : `<span class="px-2 py-1 rounded-md text-[10px] font-bold uppercase bg-blue-50 text-blue-600 border border-blue-100 flex items-center gap-1"><i class="fas fa-clock"></i> En Curso</span>`;
 
-            // 3. Renderizar Tarjeta
             const card = document.createElement('div');
             card.className = "bg-white rounded-xl shadow-sm border border-stone-200 hover:shadow-lg transition p-5 flex flex-col group";
             card.innerHTML = `
@@ -424,6 +449,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // --- LOGIC HELPERS ---
     function analyzeBatchChain(rootBatch) {
         let lastNode = rootBatch;
         const findLast = (node) => {
@@ -446,8 +472,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const d = lastNode.data || {};
         let weight = 0;
-        const outputKeys = Object.keys(d).filter(k => k.toLowerCase().includes('salida') || k.toLowerCase().includes('peso') || k.toLowerCase().includes('unidades'));
-        if(outputKeys.length > 0) weight = parseFloat(d[outputKeys[0]]?.value || 0);
+
+        // --- MEJORA: Detección inteligente de peso ---
+        // 1. Priorizar campos explícitamente marcados como 'output' en el JSON
+        const outputValues = Object.values(d).filter(v => typeof v === 'object' && v.type === 'output');
+        
+        if (outputValues.length > 0) {
+            // Si hay outputs, asumimos que el mayor valor es el producto principal (heurística simple)
+            // O idealmente buscar 'product_type'='principal' si estuviera en el JSON, pero 'type=output' es seguro.
+            weight = outputValues.reduce((max, curr) => Math.max(max, parseFloat(curr.value || 0)), 0);
+        } else {
+            // 2. Fallback: Buscar claves antiguas por nombre (legacy support)
+            const outputKeys = Object.keys(d).filter(k => k.toLowerCase().includes('salida') || k.toLowerCase().includes('peso') || k.toLowerCase().includes('unidades'));
+            if(outputKeys.length > 0) weight = parseFloat(d[outputKeys[0]]?.value || 0);
+        }
+        // ---------------------------------------------
 
         const finca = rootBatch.data.finca?.value || rootBatch.data.lugarProceso?.value || 'N/A';
 
@@ -461,7 +500,7 @@ document.addEventListener('DOMContentLoaded', () => {
         };
     }
 
-    // --- WORKSTATION ---
+    // --- VISTA 3: WORKSTATION (DETALLE) ---
     function openWorkstation(rootBatch) {
         state.activeRootBatch = rootBatch;
         state.currentView = 'workstation';
@@ -536,7 +575,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 link.href = qr.createDataURL(4, 2);
                 link.download = `QR_${gtin ? 'GS1_' : ''}${rootBatch.id}.png`;
                 link.click();
-            } catch (e) { console.error(e); }
+            } catch (e) {
+                console.error(e);
+            }
         });
 
         document.getElementById('btn-config-batch').addEventListener('click', () => openBatchConfigModal(rootBatch));
@@ -545,11 +586,13 @@ document.addEventListener('DOMContentLoaded', () => {
         renderTimeline(rootBatch);
     }
     
+    // --- FUNCIÓN RESTAURADA: openBatchConfigModal ---
     function openBatchConfigModal(rootBatch) {
-        // ... (misma lógica de modal configuración, omitida por brevedad si no hay cambios)
-         const tmpl = state.userTemplates.find(t => t.id === rootBatch.plantilla_id);
+        // Filtrar opciones por tipo de producto (Cacao/Cafe)
+        const tmpl = state.userTemplates.find(t => t.id === rootBatch.plantilla_id);
         const tipoProd = tmpl ? (tmpl.nombre_producto.toLowerCase().includes('cafe') ? 'cafe' : 'cacao') : 'otro';
 
+        // Filtrar listas
         const filteredProducts = state.products.filter(p => p.tipo_producto.includes(tipoProd));
         const filteredProfiles = state.perfilesSensoriales.filter(p => p.tipo === tipoProd);
         const filteredWheels = state.ruedasSabor.filter(r => r.tipo === tipoProd);
@@ -558,6 +601,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const currentProfileId = rootBatch.data.target_profile_id?.value || "";
         const currentWheelId = rootBatch.data.target_wheel_id?.value || "";
 
+        // Generar HTML para los selects con links si están vacíos
         const productsInput = filteredProducts.length === 0
             ? `<div class="text-sm text-red-500 bg-red-50 p-2 rounded border border-red-100">No hay productos de ${tipoProd}. <a href="/app/productos" target="_blank" class="underline font-bold">Crear aquí</a></div>`
             : `<select name="producto_id" class="w-full p-2 border rounded-lg text-sm bg-white"><option value="">-- Sin asignar --</option>${filteredProducts.map(p => `<option value="${p.id}" ${p.id === currentSkuId ? 'selected' : ''}>${p.nombre}</option>`).join('')}</select>`;
@@ -575,9 +619,19 @@ document.addEventListener('DOMContentLoaded', () => {
             <p class="text-sm text-stone-500 mb-4">Define los estándares de calidad y el producto final objetivo para este lote.</p>
             
             <form id="config-batch-form" class="space-y-4">
-                <div><label class="block text-xs font-bold text-stone-600 mb-1 uppercase">Producto Final (SKU)</label>${productsInput}</div>
-                <div><label class="block text-xs font-bold text-stone-600 mb-1 uppercase">Perfil Sensorial Objetivo</label>${profilesInput}</div>
-                <div><label class="block text-xs font-bold text-stone-600 mb-1 uppercase">Rueda de Sabor</label>${wheelsInput}</div>
+                <div>
+                    <label class="block text-xs font-bold text-stone-600 mb-1 uppercase">Producto Final (SKU)</label>
+                    ${productsInput}
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-stone-600 mb-1 uppercase">Perfil Sensorial Objetivo</label>
+                    ${profilesInput}
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-stone-600 mb-1 uppercase">Rueda de Sabor</label>
+                    ${wheelsInput}
+                </div>
+
                 <div class="flex justify-end gap-3 mt-6 pt-4 border-t">
                     <button type="button" onclick="document.getElementById('form-modal').close()" class="px-4 py-2 text-stone-500 font-bold hover:bg-stone-100 rounded-lg">Cancelar</button>
                     <button type="submit" class="px-6 py-2 bg-amber-800 text-white font-bold rounded-lg hover:bg-amber-900 shadow-sm">Guardar Cambios</button>
@@ -591,22 +645,43 @@ document.addEventListener('DOMContentLoaded', () => {
             const productId = formData.get('producto_id');
             const profileId = formData.get('target_profile_id');
             const wheelId = formData.get('target_wheel_id');
+            
+            // Actualizar datos del lote raíz
             const currentData = rootBatch.data || {};
+            
+            // Actualizar campos específicos en data
             const newData = { ...currentData };
-            if (profileId) newData.target_profile_id = { value: profileId, visible: false, nombre: 'Perfil Objetivo' }; else delete newData.target_profile_id;
-            if (wheelId) newData.target_wheel_id = { value: wheelId, visible: false, nombre: 'Rueda Sabor' }; else delete newData.target_wheel_id;
+            if (profileId) newData.target_profile_id = { value: profileId, visible: false, nombre: 'Perfil Objetivo' };
+            else delete newData.target_profile_id;
+            
+            if (wheelId) newData.target_wheel_id = { value: wheelId, visible: false, nombre: 'Rueda Sabor' };
+            else delete newData.target_wheel_id;
 
             try {
-                await api(`/api/batches/${rootBatch.id}`, { method: 'PUT', body: JSON.stringify({ data: newData, producto_id: productId }) });
+                await api(`/api/batches/${rootBatch.id}`, { 
+                    method: 'PUT', 
+                    body: JSON.stringify({ 
+                        data: newData, 
+                        producto_id: productId 
+                    }) 
+                });
+                
                 formModal.close();
-                await loadBatches();
+                await loadBatches(); // Recargar para actualizar state
+                // Refrescar vista
                 const updatedRoot = state.batches.find(b => b.id === rootBatch.id);
                 openWorkstation(updatedRoot);
-            } catch(err) { console.error(err); alert("Error guardando configuración: " + err.message); }
+                
+            } catch(err) {
+                console.error(err);
+                alert("Error guardando configuración: " + err.message);
+            }
         });
+
         formModal.showModal();
     }
 
+    // --- FUNCIÓN RESTAURADA: configureNextStageButton ---
     function configureNextStageButton(lastBatchNode, templateId) {
         const container = document.getElementById('ws-action-container');
         if (!container) return;
@@ -638,6 +713,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
     
+    // --- FUNCIÓN RESTAURADA: renderTimeline ---
     function renderTimeline(rootBatch) {
         const timeline = document.getElementById('workstation-timeline');
         if (!timeline) return;
@@ -657,29 +733,39 @@ document.addEventListener('DOMContentLoaded', () => {
             const stage = stages.find(s => s.id === batch.etapa_id);
             const d = batch.data || {};
             let weight = 0;
-            const outputKeys = Object.keys(d).filter(k => k.toLowerCase().includes('salida') || k.toLowerCase().includes('peso') || k.toLowerCase().includes('unidades'));
-            if(outputKeys.length > 0) weight = parseFloat(d[outputKeys[0]]?.value || 0);
+            // Buscar peso principal (MEJORADO)
+            const outputValues = Object.values(d).filter(v => typeof v === 'object' && v.type === 'output');
+            if (outputValues.length > 0) {
+                weight = outputValues.reduce((max, curr) => Math.max(max, parseFloat(curr.value || 0)), 0);
+            } else {
+                const outputKeys = Object.keys(d).filter(k => k.toLowerCase().includes('salida') || k.toLowerCase().includes('peso') || k.toLowerCase().includes('unidades'));
+                if(outputKeys.length > 0) {
+                     const val = d[outputKeys[0]];
+                     weight = parseFloat(val?.value || val || 0);
+                }
+            }
             
+            // Buscar imagen
             let imageUrl = null;
             Object.keys(d).forEach(k => { if(k.includes('image') && d[k]?.value) imageUrl = d[k].value; });
             
+            // Generar detalles completos
             let detailsHtml = '';
             if (stage && batch.data) {
-                // MODIFICADO: Combinar todos los campos incluyendo SALIDAS para mostrarlas en el timeline
-                // También necesitamos procesar las salidas guardadas en batch_outputs si es posible
+                // Combinar todos los campos para iterar
                 const allFields = [
                     ...(stage.campos_json.entradas || []),
-                    ...(stage.campos_json.variables || []),
-                    ...(stage.campos_json.salidas || [])
+                    ...(stage.campos_json.salidas || []),
+                    ...(stage.campos_json.variables || [])
                 ];
 
                 allFields.forEach(field => {
-                    if (field.type === 'image') return;
+                    if (field.type === 'image') return; // Se muestra aparte
                     const fieldName = field.name || toCamelCase(field.label);
                     
                     // Manejo especial para outputs complejos (si se guardaron en data como objetos)
                     let valObj = batch.data[fieldName];
-                    let val = valObj ? valObj.value : '';
+                    let val = valObj ? (valObj.value !== undefined ? valObj.value : valObj) : '';
                     
                     // Si es un output, puede tener unidad y precio
                     if (field.product_type) {
@@ -706,15 +792,19 @@ document.addEventListener('DOMContentLoaded', () => {
                     <h4 class="font-bold text-stone-800">${stage ? stage.nombre_etapa : 'Etapa'}</h4>
                     <span class="text-xs text-stone-400 bg-stone-50 px-2 py-0.5 rounded">${new Date(batch.created_at).toLocaleDateString()}</span>
                 </div>
+                
                 <div class="flex flex-col sm:flex-row gap-4">
                     ${imageUrl ? `<img src="${imageUrl}" class="w-24 h-24 rounded-lg object-cover border border-stone-100 bg-stone-50 flex-shrink-0 cursor-pointer hover:opacity-90" onclick="window.open('${imageUrl}')">` : ''}
                     <div class="flex-grow space-y-2">
                          <div class="text-sm text-stone-700 font-bold border-b border-stone-200 pb-2 mb-2">
                             ${isNaN(weight) ? 0 : weight.toFixed(2)} <span class="text-xs font-normal text-stone-500">kg/un</span>
                          </div>
-                         <div class="space-y-1">${detailsHtml}</div>
+                         <div class="space-y-1">
+                            ${detailsHtml}
+                         </div>
                     </div>
                 </div>
+
                 ${!batch.is_locked ? `
                 <div class="flex justify-end gap-2 border-t border-stone-100 pt-3 mt-3">
                     <button class="text-xs text-stone-500 hover:text-amber-600 font-bold edit-batch-btn border border-stone-200 px-3 py-1.5 rounded-lg transition hover:bg-amber-50">Editar</button>
@@ -735,7 +825,10 @@ document.addEventListener('DOMContentLoaded', () => {
     async function prepareProcessing(acopio) {
         state.currentAcopio = acopio;
         const template = state.templates.find(t => t.nombre_producto === acopio.nombre_producto);
-        if (!template) { alert(`Error: No se encontró plantilla de sistema para ${acopio.nombre_producto}.`); return; }
+        if (!template) {
+            alert(`Error: No se encontró plantilla de sistema para ${acopio.nombre_producto}.`);
+            return;
+        }
         state.currentSystemTemplate = template;
 
         const pConfig = state.acopioConfig.find(c => c.nombre_producto === acopio.nombre_producto);
@@ -748,29 +841,36 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const maxStageId = Math.max(...(completedStages || [0]), 0);
         const allStages = [...(template.acopio||[]), ...(template.etapas||[])];
+        
         const nextStage = allStages.find(s => (s.id_etapa !== undefined ? s.id_etapa : s.orden) === maxStageId + 1);
 
         if (!nextStage) return alert("Este producto ya completó todas las etapas configuradas.");
         state.nextStage = nextStage;
 
+        // --- CÁLCULO DE SALDO DISPONIBLE ---
+        const childBatches = state.batches.filter(b => String(b.acquisition_id) === String(acopio.id));
+        const totalUsed = childBatches.reduce((sum, b) => sum + (parseFloat(b.input_quantity) || 0), 0);
+        const remaining = Math.max(0, acopio.peso_kg - totalUsed);
+
         const prefillData = {
-            pesoEntrada: acopio.peso_kg,
+            pesoEntrada: remaining,
             finca: acopio.finca_origen,
             fecha: new Date().toISOString().split('T')[0]
         };
 
-        openProcessingForm(nextStage, prefillData);
+        openProcessingForm(nextStage, prefillData, remaining);
     }
 
-    // --- FORMULARIO DE PROCESAMIENTO (MODIFICADO PARA SALIDAS COMPLEJAS) ---
-    async function openProcessingForm(stage, prefillData) {
+    // --- FORMULARIO DE PROCESAMIENTO ---
+    async function openProcessingForm(stage, prefillData,  balance = null) {
         imagesMap = {};
         let formFieldsHtml = '';
         
-        // MODIFICADO: Identificar salidas y marcarlas como 'output_complex'
+        // CORRECCIÓN: Preparar campos incluyendo salidas
         const stageFields = [
             ...(stage.campos_json.entradas || []).map(f => ({...f, section: 'Variables de Proceso'})),
             ...(stage.campos_json.variables || []).map(f => ({...f, section: 'Variables de Proceso'})),
+            // Aseguramos que las SALIDAS tengan 'name' usando toCamelCase
             ...(stage.campos_json.salidas || []).map(f => ({
                 ...f, 
                 section: 'Resultados / Salidas', 
@@ -779,6 +879,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }))
         ];
 
+        // Agrupación visual por sección
         const groupedFields = { 'Variables de Proceso': [], 'Resultados / Salidas': [] };
         stageFields.forEach(f => {
             const sec = f.section || 'Variables de Proceso';
@@ -786,8 +887,25 @@ document.addEventListener('DOMContentLoaded', () => {
             groupedFields[sec].push(f);
         });
 
+        // Generar HTML agrupado
         for (const section in groupedFields) {
             if (groupedFields[section].length > 0) {
+                // --- NUEVO: INPUT PARA CANTIDAD USADA (Solo en Variables de Proceso) ---
+                if (section === 'Variables de Proceso') {
+                    // Pre-llenar con el total disponible si es un inicio desde acopio
+                    const inputQty = prefillData.pesoEntrada || 0;
+                    formFieldsHtml += `
+                        <div class="mb-6 p-4 bg-blue-50 border border-blue-100 rounded-xl">
+                            <label class="block text-xs font-bold text-blue-800 mb-1 uppercase">Cantidad a Procesar (Insumo)</label>
+                            <div class="flex shadow-sm rounded-lg">
+                                <input type="number" id="input_quantity" name="input_quantity" class="w-full p-3 border border-blue-200 rounded-l-lg text-lg font-bold text-blue-900 focus:ring-2 focus:ring-blue-500 outline-none" step="0.01" value="${inputQty}" required>
+                                <span class="bg-blue-100 border-y border-r border-blue-200 text-blue-700 font-bold px-4 flex items-center justify-center rounded-r-lg text-sm">KG</span>
+                            </div>
+                            <p class="text-[10px] text-blue-500 mt-1">Se descontará del inventario anterior.</p>
+                        </div>
+                    `;
+                }
+                
                 formFieldsHtml += `<h3 class="text-sm font-bold text-amber-800 uppercase tracking-wider border-b border-amber-100 pb-1 mb-3 mt-4">${section}</h3>`;
                 for (const field of groupedFields[section]) {
                     let val = '';
@@ -796,6 +914,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
         }
+
+        // Mostrar saldo disponible en el header del modal
+        const displayWeight = balance !== null ? balance.toFixed(2) : state.currentAcopio.peso_kg;
 
         modalContent.innerHTML = `
             <div class="bg-amber-50 border-l-4 border-amber-500 p-4 mb-6">
@@ -806,7 +927,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>
                     <div class="text-right">
                         <p class="text-xs font-bold text-amber-800 uppercase">Materia Prima</p>
-                        <p class="text-sm text-amber-900">${state.currentAcopio.tipo_acopio} (${state.currentAcopio.peso_kg} kg)</p>
+                        <p class="text-sm text-amber-900">${state.currentAcopio.tipo_acopio} (${displayWeight} kg disp.)</p>
                     </div>
                 </div>
             </div>
@@ -831,8 +952,10 @@ document.addEventListener('DOMContentLoaded', () => {
             const rawData = Object.fromEntries(formData.entries());
             const newData = {};
             
+            // --- NUEVO: Extraer cantidad usada ---
+            const inputQuantity = parseFloat(rawData.input_quantity) || 0;
+            
             // PROCESAMIENTO DE CAMPOS (Incluyendo Outputs Complejos)
-            // Recorremos los campos definidos en la etapa para saber qué buscar
             stageFields.forEach(field => {
                 const key = field.name;
                 
@@ -850,7 +973,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 } else if (field.type === 'image') {
                     if (imagesMap[key]) newData[key] = { value: imagesMap[key], visible: true, nombre: 'Foto' };
                 } else {
-                    if (rawData[key]) newData[key] = { value: rawData[key], visible: true, nombre: key };
+                    if (rawData[key] && key !== 'input_quantity') newData[key] = { value: rawData[key], visible: true, nombre: key };
                 }
             });
 
@@ -874,7 +997,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         etapa_id: targetDbStage.id,
                         parent_id: null, 
                         acquisition_id: state.currentAcopio.id, 
-                        data: newData 
+                        data: newData,
+                        input_quantity: inputQuantity // Enviamos al backend
                     }) 
                 });
                 
@@ -914,6 +1038,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }))
         ];
 
+        // Agrupación visual
         const groupedFields = { 'Variables de Proceso': [], 'Resultados / Salidas': [] };
         stageFields.forEach(f => {
             const sec = f.section || 'Variables de Proceso';
@@ -923,6 +1048,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
         for (const section in groupedFields) {
             if (groupedFields[section].length > 0) {
+                // --- NUEVO: INPUT CANTIDAD A PROCESAR (Solo en Create Mode desde Batch Anterior) ---
+                if (mode === 'create' && section === 'Variables de Proceso' && parentBatch) {
+                    // Intentar obtener el peso disponible del padre (Output principal del padre)
+                    const parentWeight = getBatchWeight(parentBatch); 
+                    
+                    formFieldsHtml += `
+                        <div class="mb-6 p-4 bg-blue-50 border border-blue-100 rounded-xl">
+                            <label class="block text-xs font-bold text-blue-800 mb-1 uppercase">Cantidad a Procesar (Insumo)</label>
+                            <div class="flex shadow-sm rounded-lg">
+                                <input type="number" id="input_quantity" name="input_quantity" class="w-full p-3 border border-blue-200 rounded-l-lg text-lg font-bold text-blue-900 focus:ring-2 focus:ring-blue-500 outline-none" step="0.01" value="${parentWeight}" required>
+                                <span class="bg-blue-100 border-y border-r border-blue-200 text-blue-700 font-bold px-4 flex items-center justify-center rounded-r-lg text-sm">KG</span>
+                            </div>
+                            <p class="text-[10px] text-blue-500 mt-1">Disponible del proceso anterior.</p>
+                        </div>
+                    `;
+                }
+
                 formFieldsHtml += `<h3 class="text-sm font-bold text-amber-800 uppercase tracking-wider border-b border-amber-100 pb-1 mb-3 mt-4">${section}</h3>`;
                 for (const field of groupedFields[section]) {
                     // Buscar valor: intentar nombre exacto, o nombre generado
@@ -960,6 +1102,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const rawData = Object.fromEntries(formData.entries());
             const newData = {};
             
+            // --- NUEVO: Extraer cantidad usada ---
+            const inputQuantity = parseFloat(rawData.input_quantity) || 0;
+            
              stageFields.forEach(field => {
                 const key = field.name;
                 if (field.type === 'output_complex') {
@@ -975,7 +1120,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 } else if (field.type === 'image') {
                     if (imagesMap[key]) newData[key] = { value: imagesMap[key], visible: true, nombre: 'Foto' };
                 } else {
-                    if (rawData[key]) newData[key] = { value: rawData[key], visible: true, nombre: key };
+                    if (rawData[key] && key !== 'input_quantity') newData[key] = { value: rawData[key], visible: true, nombre: key };
                 }
             });
 
@@ -986,10 +1131,12 @@ document.addEventListener('DOMContentLoaded', () => {
                         etapa_id: stage.id, 
                         parent_id: parentBatch.id, 
                         data: newData,
-                        producto_id: preselectedProductId 
+                        producto_id: preselectedProductId,
+                        input_quantity: inputQuantity // Enviamos al backend
                     };
                     await api('/api/batches', { method: 'POST', body: JSON.stringify(payload) });
                 } else {
+                    // En edición usualmente no se cambia el input quantity del origen, pero podría añadirse
                     await api(`/api/batches/${batchData.id}`, { method: 'PUT', body: JSON.stringify({ data: newData }) });
                 }
                 
@@ -1001,6 +1148,25 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         formModal.showModal();
+    }
+    
+    // --- HELPER: Obtener Peso de un Lote (Para sugerir input) ---
+    function getBatchWeight(batch) {
+        if (!batch || !batch.data) return 0;
+        const d = typeof batch.data === 'string' ? JSON.parse(batch.data) : batch.data;
+        // MEJORA: Detección inteligente de outputs
+        const outputValues = Object.values(d).filter(v => typeof v === 'object' && v.type === 'output');
+        if(outputValues.length > 0) {
+            // Asumir que el mayor valor es el peso principal
+            return outputValues.reduce((max, curr) => Math.max(max, parseFloat(curr.value || 0)), 0);
+        }
+        // Fallback
+        const outputKeys = Object.keys(d).filter(k => k.toLowerCase().includes('salida') || k.toLowerCase().includes('peso') || k.toLowerCase().includes('unidades'));
+        if(outputKeys.length > 0) {
+            const val = d[outputKeys[0]];
+            return parseFloat(val?.value || val || 0);
+        }
+        return 0;
     }
 
     async function handleDeleteBatch(id) {
@@ -1020,6 +1186,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 await refreshData();
             } catch(e) { alert(e.message); }
         }
+    }
+
+    // --- HELPER: Obtener código de unidad ---
+    function getUnitCode(id) {
+        const u = state.units.find(u => u.id == id);
+        return u ? u.code : '';
     }
 
     // --- HELPERS CAMPOS (ACTUALIZADO PARA OUTPUT_COMPLEX) ---
@@ -1111,7 +1283,6 @@ document.addEventListener('DOMContentLoaded', () => {
         return `<div><label for="${fieldName}" class="block text-xs font-bold text-stone-500 mb-1 uppercase">${field.label}</label>${inputHtml}</div>`;
     }
 
-    // ... (helpers comunes)
     function setupFormListeners() {
         const fileInputs = modalContent.querySelectorAll('input[type="file"]');
         fileInputs.forEach(input => {
@@ -1129,9 +1300,6 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
     }
-    
-    // Helper unitario
-    function getUnitCode(id) { const u = state.units.find(u => u.id == id); return u ? u.code : ''; }
 
     async function api(url, options = {}) {
         options.credentials = 'include';
