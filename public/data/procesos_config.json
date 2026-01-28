@@ -10,8 +10,12 @@
           "descripcion": "Bajo la sombra de árboles, manos expertas eligen el fruto perfecto. Un corte preciso revela la pulpa blanca, brillante y dulce como perlas de la selva.",
           "orden": 1,
           "campos_json": {
-            "entradas": [{"label": "Peso Mazorcas (kg)", "name": "pesoMazorcas", "type": "number"}],
-            "salidas": [{"label": "Peso Granos en Baba (kg)", "name": "pesoGranosBaba", "type": "number"}],
+            "salidas": [
+              {"label": "Granos en Baba", "product_type": "principal"},
+              {"label": "Cascara Mazorca", "product_type": "merma"},
+              {"label": "Placenta", "product_type": "merma"},
+              {"label": "Fruto enfermo", "product_type": "merma"}
+            ],
             "variables": [
                 {"label": "Finca", "name": "finca", "type": "selectFinca", "popup": true},
                 {"label": "Fecha Cosecha", "name": "fecha", "type": "date", "popup": true},
@@ -26,8 +30,10 @@
           "descripcion": "Aquí ocurre la magia. Los granos reposan durante días. Este paso crucial es pura alquimia: transforma los azúcares y despierta las complejas notas de sabor únicas de este cacao.",
           "orden": 2,
           "campos_json": {
-            "entradas": [{"label": "Peso Granos en Baba (kg)", "name": "pesoEntrada", "type": "number"}],
-            "salidas": [{"label": "Peso Granos Fermentado (kg)", "name": "pesoFermentado", "type": "number"}],
+            "salidas": [
+              {"label": "Granos Fermentado", "product_type": "principal"},
+              {"label": "Mucilago", "product_type": "subproducto"}
+            ],
             "variables": [
                 {"label": "Lugar del Proceso", "name": "lugarProceso", "type": "selectLugar", "popup": true},
                 {"label": "Fecha Inicio", "name": "fecha", "type": "date", "popup": true},
@@ -44,7 +50,10 @@
           "descripcion": "Una danza bajo el sol. Los granos se mueven con rastrillos de madera hasta que el viento se lleva la humedad y crujen como hojas secas.",
           "orden": 3,
           "campos_json": {
-            "salidas": [{"label": "Peso Cacao Seco (kg)", "name": "pesoSeco", "type": "number"}],
+            "salidas": [
+              {"label": "Cacao Seco", "product_type": "principal"},
+              {"label": "Cacao Pasilla", "product_type": "merma"}
+            ],
             "variables": [
                 {"label": "Lugar del Proceso", "name": "lugarProceso", "type": "selectLugar", "popup": true},
                 {"label": "Fecha Inicio", "name": "fecha", "type": "date", "popup": true},
@@ -61,7 +70,9 @@
           "descripcion": "El fuego es nuestro pincel: un tostado preciso despierta el alma del cacao. Aquí se revela el aroma profundo y se define la personalidad única de tu chocolate.",
           "orden": 4,
           "campos_json": {
-            "salidas": [{"label": "Peso Cacao Tostado (kg)", "name": "pesoTostado", "type": "number"}],
+            "salidas": [
+              {"label": "Cacao Tostado", "product_type": "principal"}
+            ],
             "variables": [
                 {"label": "Procesadora", "name": "procesadora", "type": "selectProcesadora", "popup": true},
                 {"label": "Fecha Tostado", "name": "fecha", "type": "date", "popup": true},
@@ -80,7 +91,11 @@
           "descripcion": "Partimos los granos tostadas para liberar su corazón: los nibs. Al molerlos, la fricción los transforma mágicamente en el alma líquida del cacao: un intenso licor que es la base de todo.",
           "orden": 5,
           "campos_json": {
-            "salidas": [{"label": "Peso Nibs/Licor de Cacao (kg)", "name": "pesoProductoFinal", "type": "number"}, {"label": "Peso Cascarilla (kg)", "name": "pesoCascarilla", "type": "number"}],
+            "salidas": [
+              {"label": "Nibs de Cacao", "product_type": "principal"},
+              {"label": "Licor de Cacao", "product_type": "principal"},
+              {"label": "Cascarilla", "product_type": "subproducto"}
+            ],
             "variables": [
                 {"label": "Procesadora", "name": "procesadora", "type": "selectProcesadora", "popup": true},
                 {"label": "Fecha", "name": "fecha", "type": "date", "popup": true},
@@ -96,7 +111,9 @@
           "descripcion": "El licor se transforma. Añadimos ingredientes selectos y refinamos la mezcla pacientemente (conchado) hasta alcanzar la textura sedosa y aterciopelada que se derrite en tu boca.",
           "orden": 6,
           "campos_json": {
-            "salidas": [{"label": "Número de Unidades", "name": "unidades", "type": "number"}],
+            "salidas": [
+              {"label": "Chocolate & Derivados", "product_type": "principal"}
+            ],
             "variables": [
               {"label": "Procesadora", "name": "procesadora", "type": "selectProcesadora", "popup": true},
               {"label": "Fecha", "name": "fecha", "type": "date", "popup": true},
@@ -115,7 +132,7 @@
           "descripcion": "Moldeamos y enfriamos el chocolate, preservando su brillo. Envolvemos cada tableta con cuidado para proteger su aroma y frescura. Este empaque es el guardián de la historia que acabas de leer.",
           "orden": 7,
           "campos_json": {
-            "salidas": [{"label": "Número de Unidades Producidas", "name": "unidades", "type": "number"}],
+            "salidas": [{"label": "Unidades Producidas", "product_type": "principal"}],
             "variables": [
               {"label": "Procesadora", "name": "procesadora", "type": "selectProcesadora", "popup": true},
               {"label": "Fecha Empaque", "name": "fecha", "type": "date", "popup": true},
@@ -136,8 +153,9 @@
           "descripcion": "Manos expertas eligen las cerezas maduras, asegurando la mejor calidad desde el inicio del proceso.",
           "orden": 1,
           "campos_json": {
-            "entradas": [{"label": "Peso Cereza (kg)", "name": "pesoCereza", "type": "number"}],
-            "salidas": [{"label": "Peso Cereza Seleccionada (kg)", "name": "pesoCerezaSeleccionada", "type": "number"}],
+            "salidas": [
+              {"label": "Cereza de Café", "product_type": "principal"}
+            ],
             "variables": [
                 {"label": "Finca", "name": "finca", "type": "selectFinca", "popup": true},
                 {"label": "Fecha Cosecha", "name": "fecha", "type": "date", "popup": true},
@@ -152,8 +170,10 @@
           "descripcion": "Separar la pulpa del grano es un arte que requiere precisión. Este paso es crucial para preparar los granos para una fermentación óptima.",
           "orden": 2,
           "campos_json": {
-            "entradas": [{"label": "Peso Cereza Seleccionada (kg)", "name": "pesoCerezaSeleccionada", "type": "number"}],
-            "salidas": [{"label": "Peso en Pergamino Húmedo (kg)", "name": "pesoPergaminoHumedo", "type": "number"}],
+            "salidas": [
+              {"label": "Pergamino con Mucilago", "product_type": "principal"},
+              {"label": "Pulpa Fresca", "product_type": "subproducto"}
+            ],
             "variables": [
                 {"label": "Lugar del Proceso", "name": "lugarProceso", "type": "selectLugar", "popup": true},
                 {"label": "Fecha Despulpado", "name": "fecha", "type": "date", "popup": true},
@@ -167,8 +187,10 @@
           "descripcion": "La fermentación es donde la magia sucede. Controlar este proceso es esencial para desarrollar los sabores complejos que definen un café de alta calidad.",
           "orden": 3,
           "campos_json": {
-            "entradas": [{"label": "Peso en Pergamino Húmedo (kg)", "name": "pesoPergaminoHumedo", "type": "number"}],
-            "salidas": [{"label": "Peso Post-Fermentación (kg)", "name": "pesoPostFermentacion", "type": "number"}],
+            "salidas": [
+              {"label": "Pergamino Fermentado", "product_type": "principal"},
+              {"label": "Mossto (lixiviado)", "product_type": "subproducto"}
+            ],
             "variables": [
                 {"label": "Lugar del Proceso", "name": "lugarProceso", "type": "selectLugar", "popup": true},
                 {"label": "Fecha Inicio", "name": "fecha", "type": "date", "popup": true},
@@ -186,8 +208,9 @@
           "descripcion": "Eliminar la mucílago residual es vital para asegurar un perfil de sabor limpio y brillante en el café final.",
           "orden": 4,
           "campos_json": {
-            "entradas": [{"label": "Peso Post-Fermentación (kg)", "name": "pesoPostFermentacion", "type": "number"}],
-            "salidas": [{"label": "Peso Lavado (kg)", "name": "pesoLavado", "type": "number"}],
+            "salidas": [
+              {"label": "Pergamino Lavado", "product_type": "principal"}
+            ],
             "variables": [
               {"label": "Lugar del Proceso", "name": "lugarProceso", "type": "selectLugar", "popup": true},
               {"label": "Fecha Lavado", "name": "fecha", "type": "date", "popup": true},
@@ -203,8 +226,9 @@
           "descripcion": "El secado adecuado preserva la calidad del grano. Controlar este proceso es clave para evitar defectos y asegurar un café de sabor excepcional.",
           "orden": 5,
           "campos_json": {
-            "entradas": [{"label": "Peso Lavado (kg)", "name": "pesoLavado", "type": "number"}],
-            "salidas": [{"label": "Peso Pergamino Seco (kg)", "name": "pesoPergaminoSeco", "type": "number"}],
+            "salidas": [
+              {"label": "Pergamino Seco", "product_type": "principal"}
+            ],
             "variables": [
               {"label": "Lugar del Proceso", "name": "lugarProceso", "type": "selectLugar", "popup": true},
               {"label": "Fecha Inicio", "name": "fecha", "type": "date", "popup": true},
@@ -221,8 +245,11 @@
           "descripcion": "Quitar el pergamino y seleccionar los granos es esencial para garantizar la calidad del café verde antes del tostado.",
           "orden": 6,
           "campos_json": {
-            "entradas": [{"label": "Peso Pergamino Seco (kg)", "name": "pesoPergaminoSeco", "type": "number"}],
-            "salidas": [{"label": "Peso Café Verde (kg)", "name": "pesoCafeVerde", "type": "number"}],
+            "salidas": [
+              {"label": "Cafe Oro Verde", "product_type": "principal"},
+              {"label": "Pasilla", "product_type": "subproducto"},
+              {"label": "Cascarilla", "product_type": "merma"}
+            ],
             "variables": [
               {"label": "Procesadora", "name": "procesadora", "type": "selectProcesadora", "popup": true},
               {"label": "Fecha Trilla", "name": "fechaTrilla", "type": "date", "popup": true},
@@ -237,8 +264,10 @@
           "descripcion": "El tostado es donde el café revela su carácter. Un control preciso del calor y el tiempo es crucial para desarrollar los perfiles de sabor deseados.",
           "orden": 7,
           "campos_json": {
-            "entradas": [{"label": "Peso Café Verde (kg)", "name": "pesoCafeVerde", "type": "number"}],
-            "salidas": [{"label": "Peso Café Tostado (kg)", "name": "pesoCafeTostado", "type": "number"}],
+            "salidas": [
+              {"label": "Cafe Tostado", "product_type": "principal"},
+              {"label": "Quakers", "product_type": "subproducto"}
+            ],
             "variables": [
                 {"label": "Procesadora", "name": "procesadora", "type": "selectProcesadora", "popup": true},
                 {"label": "Fecha Tostado", "name": "fecha", "type": "date", "popup": true},
@@ -251,13 +280,16 @@
           }
         },
         {
-          "nombre_etapa": "Envasado",
+          "nombre_etapa": "Molienda / Envasado",
           "descripcion": "Moldeamos y sellamos el café tostado para preservar su frescura y aroma. Un empaque adecuado es esencial para mantener la calidad hasta que llegue a tu taza.",
           "orden": 8,
           "campos_json": {
-            "salidas": [{"label": "Número de Unidades", "name": "unidades", "type": "number"}],
+            "salidas": [
+              {"label": "Cafe Empacado", "product_type": "principal"}
+            ],
             "variables": [
               {"label": "Procesadora", "name": "procesadora", "type": "selectProcesadora", "popup": true},
+              {"label": "Tipo de Molienda", "name": "tipoMolienda", "type": "select", "options": ["Fina", "Media-Fina", "Media", "Media-Gruesa", "Gruesa"]},
               {"label": "Fecha Empaque", "name": "fecha", "type": "date", "popup": true},
               {"label": "Numero de Lote", "name": "numeroLote", "type": "text"},
               {"label": "Fecha Vencimiento", "name": "vencimiento", "type": "date", "popup": true}

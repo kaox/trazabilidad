@@ -192,19 +192,41 @@ async function initializeDatabase() {
                     FOREIGN KEY (acquisition_id) REFERENCES acquisitions(id) ON DELETE SET NULL
                 )`);
 
+            // --- NUEVA TABLA: BATCH OUTPUTS (SALIDAS MÚLTIPLES) ---
+            await runQuery(db, `
+                CREATE TABLE IF NOT EXISTS batch_outputs (
+                    id TEXT PRIMARY KEY,
+                    batch_id TEXT NOT NULL,
+                    product_type TEXT NOT NULL, -- Ej: 'CAFE_ORO', 'CASCARILLA', 'MERMA'
+                    quantity REAL NOT NULL,
+                    unit_id INTEGER,
+                    unit_cost REAL,
+                    currency_id INTEGER,
+                    is_main_product BOOLEAN DEFAULT 0, -- 1: Principal, 0: Subproducto
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    
+                    FOREIGN KEY (batch_id) REFERENCES batches(id) ON DELETE CASCADE,
+                    FOREIGN KEY (unit_id) REFERENCES units_of_measure(id) ON DELETE SET NULL,
+                    FOREIGN KEY (currency_id) REFERENCES currencies(id) ON DELETE SET NULL
+                )`);
+            console.log("Tabla 'batch_outputs' lista.");
+
             // --- NUEVA TABLA: TRAZABILIDAD (OPTIMIZADA) ---
             await runQuery(db, `
-                CREATE TABLE IF NOT EXISTS traceability_registry (
+                CREATE TABLE IF NOT EXISTS batch_outputs (
                     id TEXT PRIMARY KEY,
-                    batch_id TEXT REFERENCES batches(id),
-                    user_id INTEGER REFERENCES users(id),
-                    nombre_producto TEXT,
-                    gtin TEXT,
-                    fecha_finalizacion DATE,
-                    snapshot_data TEXT NOT NULL, -- JSON con toda la historia
-                    blockchain_hash TEXT,
-                    views INTEGER DEFAULT 0,
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                    batch_id TEXT NOT NULL,
+                    product_type TEXT NOT NULL, -- Ej: 'CAFE_ORO', 'CASCARILLA', 'MERMA'
+                    quantity REAL NOT NULL,
+                    unit_id INTEGER,
+                    unit_cost REAL,
+                    currency_id INTEGER,
+                    output_category TEXT DEFAULT 'principal', -- 'principal', 'subproducto', 'merma'
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    
+                    FOREIGN KEY (batch_id) REFERENCES batches(id) ON DELETE CASCADE,
+                    FOREIGN KEY (unit_id) REFERENCES units_of_measure(id) ON DELETE SET NULL,
+                    FOREIGN KEY (currency_id) REFERENCES currencies(id) ON DELETE SET NULL
                 )`);
             console.log("Tabla 'traceability_registry' lista.");
 

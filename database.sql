@@ -232,15 +232,40 @@ CREATE TABLE IF NOT EXISTS batches (
     views INTEGER DEFAULT 0,
     status TEXT DEFAULT 'active',
     recall_reason TEXT,
-    
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-    
     FOREIGN KEY (plantilla_id) REFERENCES plantillas_proceso(id) ON DELETE CASCADE,
     FOREIGN KEY (etapa_id) REFERENCES etapas_plantilla(id) ON DELETE CASCADE,
     FOREIGN KEY (parent_id) REFERENCES batches(id) ON DELETE CASCADE,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (producto_id) REFERENCES productos(id) ON DELETE SET NULL,
     FOREIGN KEY (acquisition_id) REFERENCES acquisitions(id) ON DELETE SET NULL
+);
+
+CREATE TABLE IF NOT EXISTS batch_outputs (
+    id TEXT PRIMARY KEY,
+    batch_id TEXT NOT NULL,
+    product_type VARCHAR(100) NOT NULL, -- Ej: 'CAFE_ORO', 'CASCARILLA', 'MERMA'
+    quantity NUMERIC(10, 2) NOT NULL,
+    unit_id INTEGER,
+    unit_cost NUMERIC(10, 2),
+    currency_id INTEGER,
+    output_category VARCHAR(20) DEFAULT 'principal', -- 'principal', 'subproducto', 'merma'
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    
+    CONSTRAINT fk_batch
+      FOREIGN KEY(batch_id) 
+      REFERENCES batches(id)
+      ON DELETE CASCADE,
+      
+    CONSTRAINT fk_unit
+      FOREIGN KEY(unit_id) 
+      REFERENCES units_of_measure(id)
+      ON DELETE SET NULL,
+      
+    CONSTRAINT fk_currency
+      FOREIGN KEY(currency_id) 
+      REFERENCES currencies(id)
+      ON DELETE SET NULL
 );
 
 -- 12. TABLA OPTIMIZADA DE LECTURA (TRAZABILIDAD PÚBLICA)
