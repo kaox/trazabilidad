@@ -433,6 +433,15 @@ INSERT INTO currencies (code, name, symbol) VALUES
 ON CONFLICT (code) DO NOTHING;
 
 
+CREATE TABLE IF NOT EXISTS analytics_events (
+    id SERIAL PRIMARY KEY, 
+    event_type TEXT NOT NULL, -- 'landing_view', 'buy_click', 'trace_view'
+    target_user_id INTEGER,   -- ID de la Empresa visitada (Owner)
+    target_product_id TEXT,   -- ID del Producto (si aplica)
+    meta_data TEXT,           -- JSON para UserAgent, Referrer, Campaña, etc.
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Agregar campo para controlar la cantidad de insumo utilizada en este proceso
 ALTER TABLE batches 
 ADD COLUMN IF NOT EXISTS input_quantity NUMERIC(10, 2) DEFAULT 0;

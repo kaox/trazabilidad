@@ -200,7 +200,7 @@ const app = {
                 coverImage = entity.imagenes[0];
                 if (entity.imagenes.length > 1) {
                     galleryHtml = `<div class="grid grid-cols-3 gap-2 mt-4">` + 
-                        entity.imagenes.slice(1, 4).map(img => `<img src="${img}" class="h-20 w-full object-cover rounded-lg cursor-pointer hover:opacity-90 transition" onclick="window.open('${img}')">`).join('') +
+                        entity.imagenes.slice(1, 4).map(img => `<img src="${img}" class="h-20 w-full object-cover rounded-lg border border-stone-100">`).join('') +
                         `</div>`;
                 }
             }
