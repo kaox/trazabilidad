@@ -2740,6 +2740,28 @@ const getCompanyLandingData = async (req, res) => {
     }
 };
 
+const trackAnalyticsEvent = async (req, res) => {
+    const { event_type, target_user_id, target_product_id, meta_data } = req.body;
+    
+    try {
+        await run(
+            'INSERT INTO analytics_events (event_type, target_user_id, target_product_id, meta_data) VALUES (?, ?, ?, ?)',
+            [
+                event_type, 
+                target_user_id, 
+                target_product_id || null, 
+                JSON.stringify(meta_data || {})
+            ]
+        );
+        // Respondemos 201 Created (silenciosamente exitoso)
+        res.status(201).json({ status: 'ok' });
+    } catch (err) {
+        // Logueamos el error pero no rompemos la app del cliente
+        console.error("Error Analytics:", err);
+        res.status(200).json({ status: 'error_logged' }); 
+    }
+};
+
 // --- HELPER: Normalizar claves (Igual que en Frontend) ---
 const toCamelCase = (str) => {
     return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "") // Elimina acentos (á -> a)
@@ -2776,5 +2798,6 @@ module.exports = {
     searchUSDA, getUSDADetails,
     getPublicCompaniesWithImmutable, getPublicProductsWithImmutable, getPublicBatchesForProduct,
     getCurrencies, getUnits,
-    getCompanyLandingData
+    getCompanyLandingData,
+    trackAnalyticsEvent
 };

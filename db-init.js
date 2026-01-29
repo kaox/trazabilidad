@@ -459,11 +459,18 @@ async function initializeDatabase() {
                 await runQuery(db, `INSERT OR IGNORE INTO currencies (code, name, symbol) VALUES ('${curr[0]}', '${curr[1]}', '${curr[2]}')`);
             }
             console.log("Datos iniciales de monedas cargados.");
-            
-            // --- NUEVA MIGRACIÓN: INPUT QUANTITY PARA BATCHES ---
-            try { await runQuery(db, `ALTER TABLE users ADD COLUMN company_type TEXT;`); } catch(e){}
-            try { await runQuery(db, `ALTER TABLE users ADD COLUMN company_id TEXT;`); } catch(e){}
 
+            await runQuery(db, `
+                CREATE TABLE IF NOT EXISTS analytics_events (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    event_type TEXT NOT NULL, -- 'landing_view', 'buy_click', 'trace_view'
+                    target_user_id INTEGER,   -- ID de la Empresa visitada (Owner)
+                    target_product_id TEXT,   -- ID del Producto (si aplica)
+                    meta_data TEXT,           -- JSON para UserAgent, Referrer, Campaña, etc.
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )`);
+            console.log("Tabla 'analytics_events' creada.");
+            
             console.log('Esquema de base de datos listo.');
 
         } catch (error) {
