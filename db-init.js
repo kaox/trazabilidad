@@ -389,6 +389,22 @@ async function initializeDatabase() {
                     UNIQUE(codigo_externo)
                 )`);
 
+            // --- NUEVA TABLA: TRAZABILIDAD ---
+            await runQuery(db, `
+                CREATE TABLE IF NOT EXISTS traceability_registry (
+                    id TEXT PRIMARY KEY,
+                    batch_id TEXT REFERENCES batches(id),
+                    user_id INTEGER REFERENCES users(id),
+                    nombre_producto TEXT,
+                    gtin TEXT,
+                    fecha_finalizacion DATE,
+                    snapshot_data TEXT NOT NULL, 
+                    blockchain_hash TEXT,
+                    views INTEGER DEFAULT 0,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )`);
+            console.log("Tabla 'traceability_registry' lista.");
+
             // --- NUEVA TABLA: UNIDADES DE MEDIDA ---
             await runQuery(db, `
                 CREATE TABLE IF NOT EXISTS units_of_measure (

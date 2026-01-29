@@ -325,10 +325,17 @@ app.get('/origen-unico', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'origen-unico.html'));
 });
 
+// NUEVA RUTA PARA SOPORTAR FRIENDLY URLs (EJ: /origen-unico/nombre-empresa)
+// Esto soluciona el error 404 al recargar la página con un slug
+app.get('/origen-unico/:slug', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'origen-unico.html'));
+});
+
 // APIs Públicas (Sin authenticateApi porque es un directorio público)
 app.get('/api/public/companies', db.getPublicCompaniesWithImmutable);
 app.get('/api/public/companies/:userId/products', db.getPublicProductsWithImmutable);
 app.get('/api/public/products/:productId/batches', db.getPublicBatchesForProduct);
+app.get('/api/public/companies/:userId/landing', db.getCompanyLandingData);
 
 // PROXY USDA API
 app.get('/api/proxy/usda/search', authenticateApi, db.searchUSDA);
