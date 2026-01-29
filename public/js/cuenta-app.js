@@ -16,8 +16,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const currencySelect = document.getElementById('default_currency');
     const unitSelect = document.getElementById('default_unit');
 
+    // Selectores de Entidad Productiva (NUEVO)
+    const companyTypeSelect = document.getElementById('company_type');
+    const companyIdSelect = document.getElementById('company_id');
+
     async function init() {
         await loadConfigOptions(); // Cargar combos primero
+        await loadEntityOptions(); // Cargar fincas y procesadoras (NUEVO)
         await loadProfile();       // Luego cargar datos del usuario y setear valores
         setupEventListeners();
     }
@@ -49,6 +54,39 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // NUEVO: Cargar Fincas y Procesadoras para el combo
+    let fincasCache = [];
+    let procesadorasCache = [];
+
+    async function loadEntityOptions() {
+        try {
+            // Cargar ambos en paralelo
+            const [fincas, procesadoras] = await Promise.all([
+                api('/api/fincas').catch(() => []),
+                api('/api/procesadoras').catch(() => [])
+            ]);
+            fincasCache = fincas;
+            procesadorasCache = procesadoras;
+        } catch (e) { console.error("Error cargando entidades:", e); }
+    }
+
+    function updateCompanyIdSelect(type, selectedId = null) {
+        if (!companyIdSelect) return;
+        
+        companyIdSelect.innerHTML = '<option value="">-- Seleccionar --</option>';
+        
+        if (type === 'finca') {
+            companyIdSelect.disabled = false;
+            companyIdSelect.innerHTML += fincasCache.map(f => `<option value="${f.id}" ${f.id === selectedId ? 'selected' : ''}>${f.nombre_finca}</option>`).join('');
+        } else if (type === 'procesadora') {
+            companyIdSelect.disabled = false;
+            companyIdSelect.innerHTML += procesadorasCache.map(p => `<option value="${p.id}" ${p.id === selectedId ? 'selected' : ''}>${p.nombre_comercial || p.razon_social}</option>`).join('');
+        } else {
+            companyIdSelect.disabled = true;
+            companyIdSelect.innerHTML = '<option value="">Selecciona un tipo primero</option>';
+        }
+    }
+
     async function loadProfile() {
         try {
             const user = await api('/api/user/profile');
@@ -66,6 +104,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Poblar configuración
                 if (user.default_currency) currencySelect.value = user.default_currency;
                 if (user.default_unit) unitSelect.value = user.default_unit;
+
+                // Poblar Entidad Productiva
+                if (user.company_type) {
+                    companyTypeSelect.value = user.company_type;
+                    updateCompanyIdSelect(user.company_type, user.company_id);
+                }
 
                 if (user.company_logo) {
                     companyLogoPreview.src = user.company_logo;
@@ -109,6 +153,12 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         if (companyLogoInput) {
             companyLogoInput.addEventListener('change', handleLogoUpload);
+        }
+        // Listener para cambio de tipo de entidad
+        if (companyTypeSelect) {
+            companyTypeSelect.addEventListener('change', (e) => {
+                updateCompanyIdSelect(e.target.value);
+            });
         }
     }
 

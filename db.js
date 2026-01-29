@@ -226,7 +226,8 @@ const logoutUser = (req, res) => {
 const getUserProfile = async (req, res) => {
     const userId = req.user.id;
     try {
-        let user = await get('SELECT id, usuario, nombre, apellido, dni, ruc, empresa, company_logo, celular, correo, role, subscription_tier, trial_ends_at, default_currency, default_unit FROM users WHERE id = ?', [userId]);
+        // AGREGAMOS company_type y company_id a la consulta
+        let user = await get('SELECT id, usuario, nombre, apellido, dni, ruc, empresa, company_logo, celular, correo, role, subscription_tier, trial_ends_at, default_currency, default_unit, company_type, company_id FROM users WHERE id = ?', [userId]);
         if (!user) return res.status(404).json({ error: "Usuario no encontrado." });
 
         if (!user.trial_ends_at) {
@@ -242,9 +243,11 @@ const getUserProfile = async (req, res) => {
 
 const updateUserProfile = async (req, res) => {
     const userId = req.user.id;
-    const { nombre, apellido, dni, ruc, empresa, company_logo, celular, correo, default_currency, default_unit } = req.body;
+    // AGREGAMOS company_type y company_id al body
+    const { nombre, apellido, dni, ruc, empresa, company_logo, celular, correo, default_currency, default_unit, company_type, company_id } = req.body;
     try {
-        await run('UPDATE users SET nombre = ?, apellido = ?, dni = ?, ruc = ?, empresa = ?, company_logo = ?, celular = ?, correo = ?, default_currency = ?, default_unit = ? WHERE id = ?', [nombre, apellido, dni, ruc, empresa, company_logo, celular, correo, default_currency, default_unit, userId]);
+        await run('UPDATE users SET nombre = ?, apellido = ?, dni = ?, ruc = ?, empresa = ?, company_logo = ?, celular = ?, correo = ?, default_currency = ?, default_unit = ?, company_type = ?, company_id = ? WHERE id = ?', 
+            [nombre, apellido, dni, ruc, empresa, company_logo, celular, correo, default_currency, default_unit, company_type, company_id, userId]);
         res.status(200).json({ message: "Perfil actualizado." });
     } catch (err) { res.status(500).json({ error: err.message }); }
 };

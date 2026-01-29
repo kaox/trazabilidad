@@ -44,7 +44,9 @@ async function initializeDatabase() {
                     default_unit TEXT DEFAULT 'KG',
                     subscription_tier TEXT DEFAULT 'artesano',
                     trial_ends_at TIMESTAMP,
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    company_type TEXT,
+                    company_id TEXT
                 )`);
             console.log("Tabla 'users' lista.");
 
@@ -173,7 +175,7 @@ async function initializeDatabase() {
                     producto_id TEXT, -- Link a SKU comercial (Tabla productos)
                     acquisition_id TEXT, -- Link a Materia Prima (Tabla acquisitions)
                     input_quantity REAL DEFAULT 0, -- Cantidad de entrada total para este lote
-                    
+
                     data TEXT NOT NULL, -- Datos técnicos JSON
                     
                     -- ESTADOS Y CERTIFICACIÓN
@@ -443,12 +445,8 @@ async function initializeDatabase() {
             console.log("Datos iniciales de monedas cargados.");
             
             // --- NUEVA MIGRACIÓN: INPUT QUANTITY PARA BATCHES ---
-            try { 
-                await runQuery(db, `ALTER TABLE batches ADD COLUMN input_quantity REAL DEFAULT 0;`); 
-                console.log("Columna input_quantity agregada a batches.");
-            } catch(e) {
-                if (!e.message.includes("duplicate column")) console.log("Nota batches:", e.message);
-            }
+            try { await runQuery(db, `ALTER TABLE users ADD COLUMN company_type TEXT;`); } catch(e){}
+            try { await runQuery(db, `ALTER TABLE users ADD COLUMN company_id TEXT;`); } catch(e){}
 
             console.log('Esquema de base de datos listo.');
 

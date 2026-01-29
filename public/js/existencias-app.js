@@ -5,7 +5,9 @@ document.addEventListener('DOMContentLoaded', () => {
         currency: 'USD',
         unit: 'KG',
         filter: 'all',
-        wacByProduct: {} // Mapa de Costo Promedio por tipo de producto
+        wacByProduct: {}, // Mapa de Costo Promedio por tipo de producto
+        units: [], // <-- Nuevo: Para traducir IDs de unidades
+        currencies: []
     };
 
     // --- DOM ---
@@ -33,20 +35,22 @@ document.addEventListener('DOMContentLoaded', () => {
         tableBody.innerHTML = `<tr><td colspan="8" class="p-8 text-center text-slate-400"><i class="fas fa-circle-notch fa-spin mr-2"></i> Actualizando existencias...</td></tr>`;
 
         try {
-            // 1. Cargar Datos en Paralelo
-            const [acquisitions, batchesTree, userProfile] = await Promise.all([
+            // 1. Cargar Datos en Paralelo (Incluyendo Config Global)
+            const [acquisitions, batchesTree, userProfile, unitsRes, currenciesRes] = await Promise.all([
                 api('/api/acquisitions'),
                 api('/api/batches/tree'),
-                api('/api/user/profile')
+                api('/api/user/profile'),
+                api('/api/config/units'),
+                api('/api/config/currencies')
             ]);
 
             state.currency = userProfile.default_currency || 'USD';
             state.unit = userProfile.default_unit || 'KG';
+            state.units = unitsRes;
+            state.currencies = currenciesRes;
 
             // --- PASO PREVIO: Calcular Consumo de Acopios ---
-            // Recorremos todo el árbol de lotes para sumar cuánto se ha usado de cada acopio
             const acqUsageMap = {};
-            
             const calculateUsage = (nodes) => {
                 nodes.forEach(node => {
                     if (node.acquisition_id) {
@@ -85,18 +89,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // A) Materia Prima (Acopios con Saldo)
             acquisitions.forEach(acq => {
-                // Calculamos el remanente real
                 const used = acqUsageMap[acq.id] || 0;
                 const remaining = Math.max(0, acq.peso_kg - used);
                 
-                // MOSTRAR SI HAY SALDO (> 0.1 KG), independientemente del estado 'procesado'
                 if (remaining > 0.1) {
                     const wac = state.wacByProduct[acq.nombre_producto] || 0;
                     const realCost = (acq.precio_unitario && acq.peso_kg) ? (acq.precio_unitario / acq.peso_kg) : wac;
-                    
-                    // Estado visual
-                    let statusLabel = 'Materia Prima';
-                    if (used > 0) statusLabel = 'En Uso (Saldo)';
+                    let statusLabel = used > 0 ? 'En Uso (Saldo)' : 'Materia Prima';
+
+                    // Recuperar unidad original si existe
+                    const origUnitId = acq.unit_id; // Si se guardó en DB
+                    let displayUnit = 'KG';
+                    if (origUnitId) {
+                         const u = state.units.find(x => x.id === origUnitId);
+                         if (u) displayUnit = u.code;
+                    } else if (acq.data_adicional?.original_unit) {
+                         displayUnit = acq.data_adicional.original_unit;
+                    }
 
                     inventoryList.push({
                         id: acq.id,
@@ -104,11 +113,11 @@ document.addEventListener('DOMContentLoaded', () => {
                         type: 'acopio',
                         status: statusLabel,
                         entryDate: new Date(acq.fecha_acopio),
-                        weight: remaining, // Mostramos lo que queda, no lo que entró
+                        weight: remaining,
                         unitCost: realCost,
                         totalValue: remaining * realCost,
                         location: acq.finca_origen || 'Bodega Acopio',
-                        originalUnit: 'KG', // Al ser saldo calculado, lo mostramos en KG para no complicar conversión inversa
+                        displayUnit: displayUnit || 'KG', // Unidad para mostrar
                         isBalance: used > 0
                     });
                 }
@@ -127,16 +136,15 @@ document.addEventListener('DOMContentLoaded', () => {
             const flattenBatches = (nodes) => {
                 let flat = [];
                 nodes.forEach(node => {
-                    // Un lote es inventario si no ha sido transformado totalmente (es hoja)
-                    // Opcional: Podríamos implementar lógica de saldos en lotes también, pero por ahora asumimos hoja = stock.
                     const isLeaf = !processedIds.has(node.id);
                     
                     if (isLeaf) {
                         const data = typeof node.data === 'string' ? JSON.parse(node.data) : node.data;
                         
-                        // --- LÓGICA DE PESO REAL Y COSTO (OUTPUTS) ---
+                        // --- LÓGICA DE PESO Y UNIDAD ---
                         let currentWeight = 0;
-                        let currentUnitCost = 0; // Variable para capturar el costo real del lote
+                        let currentUnitCost = 0;
+                        let currentUnitCode = 'KG'; // Default
                         let productLabel = `Proceso: ${node.etapa_id}`;
 
                         // 1. Buscar en Outputs complejos (Prioridad Alta)
@@ -147,34 +155,37 @@ document.addEventListener('DOMContentLoaded', () => {
                             const mainOutput = outputValues.reduce((prev, current) => (parseFloat(prev.value) > parseFloat(current.value)) ? prev : current);
                             currentWeight = parseFloat(mainOutput.value || 0);
                             
-                            // Intentar obtener el nombre del producto del label del output
                             if (mainOutput.nombre) productLabel = mainOutput.nombre;
-
-                            // NUEVO: Extraer el costo unitario específico si existe
-                            if (mainOutput.unit_cost) {
-                                currentUnitCost = parseFloat(mainOutput.unit_cost);
+                            if (mainOutput.unit_cost) currentUnitCost = parseFloat(mainOutput.unit_cost);
+                            
+                            // Detectar unidad
+                            if (mainOutput.unit_id) {
+                                const u = state.units.find(x => x.id == mainOutput.unit_id);
+                                if (u) currentUnitCode = u.code;
                             }
                         } else {
                             // 2. Fallback Legacy
-                            const weightKeys = Object.keys(data).filter(k => k.toLowerCase().includes('peso') || k.toLowerCase().includes('salida') || k.toLowerCase().includes('cantidad'));
-                            if (weightKeys.length > 0) {
-                                currentWeight = parseFloat(data[weightKeys[0]]?.value || 0);
+                            // Buscar claves específicas para unidades
+                            if (data.unidades && data.unidades.value) {
+                                currentWeight = parseFloat(data.unidades.value);
+                                currentUnitCode = 'Un'; // O 'Und'
+                            } else {
+                                const weightKeys = Object.keys(data).filter(k => k.toLowerCase().includes('peso') || k.toLowerCase().includes('salida') || k.toLowerCase().includes('cantidad'));
+                                if (weightKeys.length > 0) {
+                                    currentWeight = parseFloat(data[weightKeys[0]]?.value || 0);
+                                    // Si el key es 'unidades', forzar unidad
+                                    if(weightKeys[0].toLowerCase().includes('unidad')) currentUnitCode = 'Un';
+                                }
                             }
                         }
-                        // --------------------------------------
 
-                        // Inferir tipo producto para valorar si no hay costo específico
+                        // Inferir tipo producto para valorar
                         let productType = 'Cacao'; 
                         const estimatedWac = state.wacByProduct[productType] || 0;
-                        
-                        // Prioridad: Costo Específico del Lote > Costo Promedio Estimado
                         const finalCost = currentUnitCost > 0 ? currentUnitCost : estimatedWac;
-
                         let type = node.is_locked ? 'terminado' : 'proceso';
                         
-                        // Si hay lugar de proceso, usarlo como ubicación o nombre
                         if (data.lugarProceso?.value) {
-                             // Si no pudimos deducir nombre del output, usamos el lugar
                              if(productLabel.startsWith('Proceso')) productLabel = `En ${data.lugarProceso.value}`;
                         }
 
@@ -189,7 +200,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                 unitCost: finalCost, 
                                 totalValue: currentWeight * finalCost, 
                                 location: 'Planta Procesamiento',
-                                originalUnit: 'KG'
+                                displayUnit: currentUnitCode // Unidad detectada
                             });
                         }
                     }
@@ -204,7 +215,6 @@ document.addEventListener('DOMContentLoaded', () => {
             const flatBatches = flattenBatches(batchesTree);
             state.inventory = [...inventoryList, ...flatBatches];
 
-            // 4. Renderizar
             updateDashboard();
 
         } catch (e) {
@@ -219,13 +229,13 @@ document.addEventListener('DOMContentLoaded', () => {
             return item.type === state.filter;
         });
 
-        // KPIs
         const totalVal = state.inventory.reduce((sum, i) => sum + i.totalValue, 0);
-        const globalStock = state.inventory.reduce((sum, i) => sum + i.weight, 0);
-        const globalWac = globalStock > 0 ? (totalVal / globalStock) : 0;
+        // Nota: Sumar pesos de diferentes unidades (Kg + Unidades) no tiene sentido físico global,
+        // pero se mantiene para referencia visual aproximada de "volumen".
+        const globalStock = state.inventory.reduce((sum, i) => sum + (i.displayUnit === 'KG' ? i.weight : 0), 0); // Solo sumamos KGs al KPI superior
 
         animateValue(kpiTotalValue, totalVal);
-        kpiWac.textContent = `${formatCurrency(globalWac)} / kg`;
+        kpiWac.textContent = `-`; // WAC global es difuso con unidades mixtas
         kpiTotalStock.textContent = `${globalStock.toLocaleString('es-PE', {maximumFractionDigits: 2})} kg`;
 
         renderTable(filtered);
@@ -245,10 +255,14 @@ document.addEventListener('DOMContentLoaded', () => {
             if (daysOld > 30) badgeClass = 'bg-amber-100 text-amber-800 border-amber-200';
             if (daysOld > 90) { badgeClass = 'bg-red-100 text-red-800 border-red-200'; icon = 'fa-triangle-exclamation'; }
 
-            // Formateo visual
-            let displayWeight = `${item.weight.toFixed(2)} KG`;
-            // Si es un saldo, agregar indicador visual
-            if (item.isBalance) displayWeight = `(Saldo) ${item.weight.toFixed(2)} KG`;
+            // Formateo visual inteligente según unidad
+            let qtyDisplay = item.weight.toFixed(2);
+            if (item.displayUnit === 'Un' || item.displayUnit === 'Und' || item.displayUnit === 'Botellas' || item.displayUnit === 'Barras') {
+                qtyDisplay = Math.round(item.weight); // Sin decimales para unidades enteras
+            }
+
+            let displayWeight = `${qtyDisplay} <span class="text-xs font-normal text-slate-500">${item.displayUnit}</span>`;
+            if (item.isBalance) displayWeight = `<span class="text-xs text-amber-600 font-bold mr-1">(Saldo)</span> ${displayWeight}`;
 
             return `
                 <tr class="hover:bg-slate-50 transition border-b border-slate-50 group">
