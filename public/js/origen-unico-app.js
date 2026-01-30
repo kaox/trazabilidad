@@ -432,10 +432,10 @@ const app = {
                 zoom: 13,
                 mapTypeId: 'satellite',
                 disableDefaultUI: true, 
-                draggable: false,       
-                zoomControl: false,
+                draggable: true,       
+                zoomControl: true,
                 scrollwheel: false,
-                disableDoubleClickZoom: true
+                disableDoubleClickZoom: false
             };
             const map = new google.maps.Map(document.getElementById('mini-map'), mapOptions);
 
