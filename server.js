@@ -327,8 +327,75 @@ app.get('/origen-unico', (req, res) => {
 
 // NUEVA RUTA PARA SOPORTAR FRIENDLY URLs (EJ: /origen-unico/nombre-empresa)
 // Esto soluciona el error 404 al recargar la página con un slug
-app.get('/origen-unico/:slug', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'origen-unico.html'));
+app.get('/origen-unico/:slug', async (req, res) => {
+    const slug = req.params.slug;
+    const filePath = path.join(__dirname, 'public', 'origen-unico.html');
+
+    // 1. Leer el archivo HTML base
+    fs.readFile(filePath, 'utf8', async (err, htmlData) => {
+        if (err) {
+            console.error('Error leyendo archivo HTML:', err);
+            return res.status(500).send('Error interno');
+        }
+
+        try {
+            // 2. Obtener la lista de empresas para encontrar el match (Esto podría optimizarse en DB, pero para el piloto está bien)
+            // Nota: Importamos la función directamente o hacemos la query aquí. 
+            // Asumiremos que db.getPublicCompaniesWithImmutable puede ser llamada internamente o replicamos la query.
+            // Para simplicidad, replicamos una query ligera aquí mismo para obtener datos de meta.
+            
+            // Necesitamos acceder al objeto db importado arriba
+            // Asumo que db.js exporta 'all' o similar, si no, usamos una función pública.
+            // Dado tu estructura anterior, vamos a simular la llamada a la API interna o crear una función helper.
+            
+            /* TRUCO: Como no podemos llamar a la API HTTP desde aquí fácilmente sin fetch, 
+               usaremos el módulo db directamente si exporta las funciones. */
+               
+            // Vamos a obtener todas las empresas usando la función del db.js si devuelve promesa pura
+            // Pero como getPublicCompaniesWithImmutable usa req, res, haremos una query directa aquí o simulada.
+            
+            // SOLUCIÓN RÁPIDA: Query directa para metadatos
+            const companies = await db.getPublicCompaniesDataInternal(); // <--- NECESITAMOS CREAR ESTO EN db.js (Ver paso 2)
+            
+            const company = companies.find(c => createSlug(c.empresa) === slug);
+
+            if (company) {
+                // 3. Preparar datos para inyectar
+                const title = `${company.empresa} - Origen Único Verificado`;
+                const description = company.historia_empresa 
+                    ? company.historia_empresa.substring(0, 150) + "..."
+                    : `Conoce la trazabilidad y origen de ${company.empresa} en Ruru Lab.`;
+                
+                // NOTA IMPORTANTE: WhatsApp NO muestra imágenes en Base64. 
+                // Debe ser una URL pública (https://...). 
+                // Si company_logo es Base64, usamos una imagen por defecto o intentamos usarla si es URL.
+                let image = "https://rurulab.com/images/banner_1.png"; // Imagen default
+                if (company.company_logo && company.company_logo.startsWith('http')) {
+                    image = company.company_logo;
+                }
+
+                // 4. Reemplazar Meta Tags en el HTML
+                // Reemplazamos las etiquetas por defecto
+                let injectedHtml = html
+                    .replace('<title>Empresas con Origen Único - Ruru Lab</title>', `<title>${title}</title>`)
+                    .replace(/content="RuruLab - Trazabilidad y Pasaporte Digital para Cacao y Café"/g, `content="${title}"`) // OG Title
+                    .replace(/content="Crea un pasaporte digital para tu producto..."/g, `content="${description}"`) // OG Description
+                    .replace(/content="https:\/\/images.unsplash.com\/photo-1579532824334-a8c095a59d35\?q=80&w=1200&auto=format&fit=crop"/g, `content="${image}"`); // OG Image
+
+                // También inyectamos etiquetas específicas si no existen en el HTML base para asegurarnos
+                // (Opcional: Si tu HTML ya tiene las etiquetas meta property="og:...", el replace de arriba funciona. 
+                // Si no, podrías inyectarlas en el <head>).
+                
+                res.send(injectedHtml);
+            } else {
+                // Si no encuentra empresa, manda el HTML original
+                res.send(htmlData);
+            }
+        } catch (error) {
+            console.error("Error inyectando metadatos:", error);
+            res.send(htmlData); // Fallback al HTML original
+        }
+    });
 });
 
 // APIs Públicas (Sin authenticateApi porque es un directorio público)
@@ -359,6 +426,15 @@ app.get('/api/config/units', authenticateApi, db.getUnits);
 app.get('/app/existencias', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'existencias.html')));
 
 app.post('/api/public/analytics', db.trackAnalyticsEvent);
+
+// --- HELPER PARA SLUGS (Copiar lógica del frontend) ---
+const createSlug = (text) => {
+    return text.toString().toLowerCase().trim()
+        .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+        .replace(/\s+/g, '-')
+        .replace(/[^\w\-]+/g, '')
+        .replace(/\-\-+/g, '-');
+};
 
 // Iniciar Servidor
 app.listen(PORT, () => {

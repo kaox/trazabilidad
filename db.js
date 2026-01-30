@@ -2762,6 +2762,20 @@ const trackAnalyticsEvent = async (req, res) => {
     }
 };
 
+const getPublicCompaniesDataInternal = async () => {
+    try {
+        const sql = `
+            SELECT id, empresa, company_logo, historia_empresa
+            FROM users 
+            WHERE empresa IS NOT NULL AND empresa != ''
+        `;
+        return await all(sql);
+    } catch (err) {
+        console.error("Error interno fetching companies:", err);
+        return [];
+    }
+};
+
 // --- HELPER: Normalizar claves (Igual que en Frontend) ---
 const toCamelCase = (str) => {
     return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "") // Elimina acentos (á -> a)
@@ -2799,5 +2813,6 @@ module.exports = {
     getPublicCompaniesWithImmutable, getPublicProductsWithImmutable, getPublicBatchesForProduct,
     getCurrencies, getUnits,
     getCompanyLandingData,
-    trackAnalyticsEvent
+    trackAnalyticsEvent,
+    getPublicCompaniesDataInternal
 };
