@@ -157,7 +157,7 @@ window.downloadBrandedQR = function(loteId, gtin) {
     // Usamos un logo genérico o el de la empresa si estuviera disponible. 
     // Para este ejemplo, uso un icono de huella dactilar de FontAwesome convertido a imagen o una URL fija
     // Aquí usaré una URL de placeholder segura. En producción, usa '/images/logo-rurulab-qr.png'
-    const logoUrl = 'https://placehold.co/100x100/78350f/ffffff?text=R'; 
+    const logoUrl = 'https://www.rurulab.com/images/logo.png'; 
     
     const img = new Image();
     img.crossOrigin = "anonymous";
