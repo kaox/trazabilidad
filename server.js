@@ -375,7 +375,7 @@ app.get('/origen-unico/:slug', async (req, res) => {
 
                 // 4. Reemplazar Meta Tags en el HTML
                 // Reemplazamos las etiquetas por defecto
-                let injectedHtml = html
+                let injectedHtml = htmlData
                     .replace('<title>Empresas con Origen Único - Ruru Lab</title>', `<title>${title}</title>`)
                     .replace(/content="RuruLab - Trazabilidad y Pasaporte Digital para Cacao y Café"/g, `content="${title}"`) // OG Title
                     .replace(/content="Crea un pasaporte digital para tu producto..."/g, `content="${description}"`) // OG Description
