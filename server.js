@@ -363,9 +363,7 @@ app.get('/origen-unico/:slug', async (req, res) => {
             if (company) {
                 // 3. Preparar datos para inyectar
                 const title = `${company.empresa} - Origen Único Verificado`;
-                const description = company.historia_empresa 
-                    ? company.historia_empresa.substring(0, 150) + "..."
-                    : `Conoce la trazabilidad y origen de ${company.empresa} en Ruru Lab.`;
+                const description = `Conoce la trazabilidad y origen de ${company.empresa} en Ruru Lab.`;
                 
                 // NOTA IMPORTANTE: WhatsApp NO muestra imágenes en Base64. 
                 // Debe ser una URL pública (https://...). 

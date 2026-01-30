@@ -2765,7 +2765,7 @@ const trackAnalyticsEvent = async (req, res) => {
 const getPublicCompaniesDataInternal = async () => {
     try {
         const sql = `
-            SELECT id, empresa, company_logo, historia_empresa
+            SELECT id, empresa, company_logo
             FROM users 
             WHERE empresa IS NOT NULL AND empresa != ''
         `;
