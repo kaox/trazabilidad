@@ -51,7 +51,11 @@
                             </div>
                         </div>
                         <div>
-                            <label for="empresa" class="block text-sm font-medium text-stone-700 mb-1">Empresa</label>
+                            <label for="empresa" class="block text-sm font-medium text-stone-700 mb-1">Empresa *</label>
+                            <p class="text-xs text-stone-500 mb-3 bg-blue-50 text-blue-700 p-3 rounded-lg border border-blue-100">
+                                <i class="fas fa-info-circle mr-1"></i>
+                                Este es el nombre que se generará en tu la url de tu perfil público en el directorio de "Origen Único".
+                            </p>
                             <input type="text" id="empresa" name="empresa" class="w-full p-3 border border-stone-300 rounded-xl">
                         </div>
                         <!-- Nuevo Campo para Logo de Empresa -->
@@ -63,7 +67,7 @@
                                     <input type="file" id="company-logo-input" class="hidden" accept="image/*">
                                     <input type="hidden" id="company_logo" name="company_logo">
                                     <button type="button" onclick="document.getElementById('company-logo-input').click()" class="text-sm bg-stone-200 hover:bg-stone-300 text-stone-800 font-bold py-2 px-4 rounded-lg">Subir Logo</button>
-                                    <p class="text-xs text-stone-500 mt-2">Se mostrará en tus páginas de trazabilidad si tienes un plan Profesional.</p>
+                                    <p class="text-xs text-stone-500 mt-2">Se mostrará en tus páginas de trazabilidad y en perfil público en el directorio de "Origen Único".</p>
                                 </div>
                             </div>
                         </div>
