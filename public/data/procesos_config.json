@@ -274,6 +274,7 @@
                 {"label": "Tiempo de Tueste (min)", "name": "tiempoTueste", "type": "number"},
                 {"label": "Temperatura de Carga (°C)", "name": "temperaturaCarga", "type": "number"},
                 {"label": "Temperatura Final (°C)", "name": "temperaturaFinal", "type": "number"},
+                {"label": "Tipo de Tostado", "name": "tipoTostado", "type": "select", "options": ["Claro", "Medio", "Medio-Oscuro", "Oscuro"]},
                 {"label": "Notas de Cata", "name": "notasCata", "type": "textarea"},
                 {"label": "Foto", "name": "imageUrl", "type": "image", "popup": true}]
           }
