@@ -1169,7 +1169,6 @@ const getTrazabilidad = async (req, res) => {
                  const finca = await get('SELECT * FROM fincas WHERE nombre_finca = ? AND user_id = ?', [acopioData.finca_origen, ownerId]);
                  if(finca) history.fincaData = { ...finca, coordenadas: safeJSONParse(finca.coordenadas), imagenes_json: safeJSONParse(finca.imagenes_json), certificaciones_json: safeJSONParse(finca.certificaciones_json), premios_json: safeJSONParse(finca.premios_json) };
             }
-            console.log(allStages);
             const acopioStagesDef = allStages;
             acopioStagesDef.forEach(stageDef => {
                 const suffix = `__${stageDef.orden}`;
