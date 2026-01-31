@@ -682,6 +682,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const fileInputs = modalContent.querySelectorAll('input[type="file"]');
         fileInputs.forEach(input => {
             const fieldName = input.name;
+            // Restaurar vista previa si ya existe imagen en memoria
             if (imagesMap[fieldName]) {
                  const container = input.closest('div').parentElement;
                  const previewImg = container.querySelector('.file-preview-img');
@@ -690,21 +691,44 @@ document.addEventListener('DOMContentLoaded', () => {
                      previewImg.classList.remove('hidden');
                  }
             }
-            input.addEventListener('change', e => {
+
+            // Listener modificado para validar 5MB y Comprimir
+            input.addEventListener('change', async e => {
                 const file = e.target.files[0];
                 const fName = e.target.name; 
                 const container = e.target.closest('div').parentElement; 
                 const previewImg = container.querySelector('.file-preview-img');
                 const nameSpan = container.querySelector('.file-name-display');
+
                 if(file) {
-                    if(nameSpan) nameSpan.textContent = file.name;
-                    const reader = new FileReader();
-                    reader.onload = () => { 
-                        const base64 = reader.result;
+                    // 1. VALIDACIÓN DE 8 MB
+                    if (file.size > 8 * 1024 * 1024) {
+                        alert("La imagen supera el máximo permitido de 5 MB.");
+                        e.target.value = ''; // Limpiar input
+                        if (nameSpan) nameSpan.textContent = "Sin archivo";
+                        if (previewImg) previewImg.classList.add('hidden');
+                        return;
+                    }
+
+                    if(nameSpan) nameSpan.textContent = "Procesando...";
+
+                    try {
+                        // 2. COMPRESIÓN
+                        const base64 = await compressImage(file);
+                        
+                        // Guardar resultado comprimido
                         imagesMap[fName] = base64; 
-                        if(previewImg) { previewImg.src = base64; previewImg.classList.remove('hidden'); }
-                    };
-                    reader.readAsDataURL(file);
+                        
+                        if(nameSpan) nameSpan.textContent = file.name;
+                        if(previewImg) { 
+                            previewImg.src = base64; 
+                            previewImg.classList.remove('hidden'); 
+                        }
+                    } catch (err) {
+                        console.error("Error comprimiendo:", err);
+                        alert("Hubo un error al procesar la imagen.");
+                        if(nameSpan) nameSpan.textContent = "Error";
+                    }
                 }
             });
         });
@@ -721,6 +745,48 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
     }
+
+    const compressImage = (file) => {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = (event) => {
+                const img = new Image();
+                img.src = event.target.result;
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    // Configuración de compresión
+                    const MAX_WIDTH = 1024; 
+                    const MAX_HEIGHT = 1024;
+                    let width = img.width;
+                    let height = img.height;
+
+                    // Redimensionar manteniendo aspecto
+                    if (width > height) {
+                        if (width > MAX_WIDTH) {
+                            height *= MAX_WIDTH / width;
+                            width = MAX_WIDTH;
+                        }
+                    } else {
+                        if (height > MAX_HEIGHT) {
+                            width *= MAX_HEIGHT / height;
+                            height = MAX_HEIGHT;
+                        }
+                    }
+                    
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+                    
+                    // Convertir a JPEG calidad 0.7 (70%)
+                    resolve(canvas.toDataURL('image/jpeg', 0.7));
+                };
+                img.onerror = (err) => reject(err);
+            };
+            reader.onerror = (err) => reject(err);
+        });
+    };
 
     async function api(url, options = {}) {
         options.credentials = 'include';
