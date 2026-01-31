@@ -116,7 +116,8 @@ document.addEventListener('DOMContentLoaded', () => {
         // Inicializar Gráficos con retardo para asegurar dimensiones del DOM
         setTimeout(() => {
             if (h.perfilSensorialData) {
-                initializePerfilChart('sensory-profile-chart', h.perfilSensorialData);
+                const tipoProducto = h.productoFinal ? h.productoFinal.tipo_producto : '';
+                initializePerfilChart('sensory-profile-chart', h.perfilSensorialData, tipoProducto);
             }
         }, 200);
     }
@@ -1030,28 +1031,65 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    function initializePerfilChart(canvasId, perfilData) {
+    function initializePerfilChart(canvasId, perfilData, tipoProducto = '') {
         const chartCanvas = document.getElementById(canvasId);
         if (!chartCanvas || !perfilData) return;
         
         if (chartInstances[canvasId]) {
             chartInstances[canvasId].destroy();
         }
+
+        let atributos = [];
+        let labelColor = 'rgb(141, 110, 99)'; // Marrón Cacao
+        let bgColor = 'rgba(141, 110, 99, 0.2)';
         
-        const atributos = ['cacao', 'acidez', 'amargor', 'astringencia', 'frutaFresca', 'frutaMarron', 'vegetal', 'floral', 'madera', 'especia', 'nuez', 'caramelo'];
-        const data = atributos.map(attr => perfilData[attr] || 0);
+        const type = (tipoProducto || '').toLowerCase();
+
+        console.log(type);
+
+        // Lógica de selección de atributos
+        if (type.includes('caf')) {
+             // Atributos SCA para Café (claves que suelen usarse)
+             // Intentamos detectar las claves comunes
+             const commonCoffeeKeys = ['aroma', 'sabor', 'postgusto', 'acidez', 'cuerpo', 'balance', 'dulzor', 'limpieza', 'uniformidad', 'general'];
+             
+             // Filtramos cuáles existen en la data
+             atributos = commonCoffeeKeys.filter(key => perfilData[key] !== undefined);
+             
+             // Si no encontramos las claves estándar, intentamos fallback dinámico
+             if (atributos.length === 0) {
+                 atributos = Object.keys(perfilData).filter(k => typeof perfilData[k] === 'number' && !['id', 'user_id'].includes(k));
+             }
+
+             labelColor = 'rgb(180, 83, 9)'; // Amber-700 para café
+             bgColor = 'rgba(180, 83, 9, 0.2)';
+        } else {
+             // Cacao (Por defecto)
+             atributos = ['cacao', 'acidez', 'amargor', 'astringencia', 'frutaFresca', 'frutaMarron', 'vegetal', 'floral', 'madera', 'especia', 'nuez', 'caramelo'];
+             // Filtrar solo los que existen para evitar gráfico con ceros innecesarios si el perfil es simple
+             const existingAttrs = atributos.filter(key => perfilData[key] !== undefined);
+             if (existingAttrs.length > 0) atributos = existingAttrs;
+        }
+        
+        if (atributos.length === 0) return; // No hay datos para graficar
+
+        const labels = atributos.map(a => a.charAt(0).toUpperCase() + a.slice(1).replace(/([A-Z])/g, ' $1').trim());
+        const dataValues = atributos.map(attr => perfilData[attr] || 0);
 
         chartInstances[canvasId] = new Chart(chartCanvas, {
             type: 'radar',
             data: { 
-                labels: atributos.map(a => a.charAt(0).toUpperCase() + a.slice(1)), 
+                labels: labels, 
                 datasets: [{ 
                     label: 'Intensidad', 
-                    data: data, 
+                    data: dataValues, 
                     fill: true, 
-                    backgroundColor: 'rgba(141, 110, 99, 0.2)', 
-                    borderColor: 'rgb(141, 110, 99)', 
-                    pointBackgroundColor: 'rgb(141, 110, 99)' 
+                    backgroundColor: bgColor, 
+                    borderColor: labelColor, 
+                    pointBackgroundColor: labelColor,
+                    pointBorderColor: '#fff',
+                    pointHoverBackgroundColor: '#fff',
+                    pointHoverBorderColor: labelColor
                 }] 
             },
             options: { 
@@ -1059,7 +1097,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     r: { 
                         angleLines: { color: 'rgba(0,0,0,0.1)'},
                         grid: { color: 'rgba(0,0,0,0.1)'},
-                        pointLabels: { font: { size: 10, family: "'Inter', sans-serif" }, color: '#57534e' },
+                        pointLabels: { 
+                            font: { size: 11, family: "'Inter', sans-serif", weight: 'bold' }, 
+                            color: '#57534e' 
+                        },
                         suggestedMin: 0, 
                         suggestedMax: 10, 
                         ticks: { display: false, stepSize: 2 },
@@ -1067,8 +1108,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 }, 
                 plugins: { 
                     legend: { display: false } 
-                } 
-            }
+                },
+                maintainAspectRatio: false
+            } 
         });
     }
 
