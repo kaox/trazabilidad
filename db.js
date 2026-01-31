@@ -1221,11 +1221,12 @@ const getTrazabilidad = async (req, res) => {
                 history.perfilSensorialData = safeJSONParse(perfil.perfil_data);
                 // CALCULAR MARIDAJES
                 if (perfil.tipo === 'cacao') {
-                    const allCafes = await all("SELECT * FROM perfiles WHERE tipo = 'cafe' AND user_id = ?", [ownerId]);
+                    //const allCafes = await all("SELECT * FROM perfiles WHERE tipo = 'cafe' AND user_id = ?", [ownerId]);
                     const allVinos = maridajesVinoData.defaultPerfilesVino;
                     const allQuesos = maridajesQuesoData;
 
-                    const recCafe = allCafes.map(cafe => ({ producto: { ...cafe, perfil_data: safeJSONParse(cafe.perfil_data) }, puntuacion: calcularMaridajeCacaoCafe(history.perfilSensorialData, safeJSONParse(cafe.perfil_data)) })).sort((a, b) => b.puntuacion - a.puntuacion).slice(0, 3);
+                    const recCafe = [];
+                    //const recCafe = allCafes.map(cafe => ({ producto: { ...cafe, perfil_data: safeJSONParse(cafe.perfil_data) }, puntuacion: calcularMaridajeCacaoCafe(history.perfilSensorialData, safeJSONParse(cafe.perfil_data)) })).sort((a, b) => b.puntuacion - a.puntuacion).slice(0, 3);
                     const recVino = allVinos.map(vino => ({
                         producto: vino,
                         puntuacion: calcularMaridajeCacaoVino(perfil, vino)
@@ -2604,8 +2605,6 @@ const syncBatchOutputs = async (batchId, etapaId, dataObj) => {
 const getCompanyLandingData = async (req, res) => {
     const { userId } = req.params;
     try {
-        console.log(`[Landing] Cargando datos para usuario ${userId}...`);
-
         // 1. Obtener Datos del Usuario y su Enlace de Entidad
         const user = await get('SELECT id, empresa, company_logo, celular, correo, company_type, company_id FROM users WHERE id = ?', [userId]);
         if(!user) return res.status(404).json({error: "Empresa no encontrada"});
@@ -2668,8 +2667,6 @@ const getCompanyLandingData = async (req, res) => {
             GROUP BY p.id, p.nombre, p.descripcion, p.imagenes_json, p.tipo_producto, p.premios_json
             ORDER BY p.nombre ASC
         `, [String(userId)]);
-
-        console.log(`[Landing] Productos encontrados: ${products.length}`);
 
         // 4. Enriquecer Productos con Lotes Recientes (Carrusel)
         const productsWithBatches = [];
