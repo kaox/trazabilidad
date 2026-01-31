@@ -149,6 +149,65 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>
         `;
 
+        // --- LÓGICA TÉCNICA CAFÉ ---
+        let coffeeTechHtml = '';
+        const isCoffee = (p.tipo_producto || '').toLowerCase().includes('cafe') || (p.nombre || '').toLowerCase().includes('cafe');
+        
+        if (isCoffee) {
+            // 1. Extraer Datos
+            const rawRoast = findValueInStages(h.stages, 'nivelTueste') || findValueInStages(h.stages, 'tipoTueste'); // Intenta agtron o texto
+            const roastLevel = normalizeRoastLevel(rawRoast);
+            const grindLevel = findValueInStages(h.stages, 'tipoMolienda');
+            const processMethod = findValueInStages(h.stages, 'metodoLavado') || findValueInStages(h.stages, 'tipoBeneficio') || 'Lavado'; // Default fallback si no encuentra
+            const scaScore = findValueInStages(h.stages, 'puntuacionSCA');
+
+            // 2. Construir HTML
+            let techDetails = '';
+            
+            // Puntaje SCA (Badge destacado)
+            if (scaScore) {
+                techDetails += `
+                    <div class="flex items-center justify-between bg-stone-900 text-white p-4 rounded-xl mb-6 shadow-md">
+                        <div class="flex items-center gap-3">
+                            <div class="bg-amber-500 p-2 rounded-lg text-stone-900"><i class="fas fa-medal text-xl"></i></div>
+                            <div>
+                                <p class="text-xs font-bold text-stone-400 uppercase tracking-widest">Puntaje SCA</p>
+                                <p class="text-sm text-stone-300">Calidad de Taza</p>
+                            </div>
+                        </div>
+                        <div class="text-3xl font-display font-bold text-amber-400">${parseFloat(scaScore).toFixed(2)}</div>
+                    </div>
+                `;
+            }
+
+            // Metodo Proceso
+            if (processMethod) {
+                 techDetails += `
+                    <div class="mb-5">
+                        <p class="text-xs font-bold text-stone-500 uppercase tracking-widest mb-2">Método de Proceso</p>
+                        <div class="flex items-center gap-2 text-stone-800 font-bold bg-stone-50 p-3 rounded-lg border border-stone-200">
+                            <i class="fas fa-water text-blue-500"></i> ${processMethod}
+                        </div>
+                    </div>
+                 `;
+            }
+
+            // Sliders
+            techDetails += createSegmentedSlider("Nivel de Tostado", ["Claro", "Medio", "Medio-Oscuro", "Oscuro"], roastLevel);
+            techDetails += createSegmentedSlider("Nivel de Molienda", ["Fina", "Media-Fina", "Media", "Media-Gruesa", "Gruesa"], grindLevel);
+
+            if (techDetails) {
+                coffeeTechHtml = `
+                    <div class="bg-white border border-stone-200 rounded-2xl p-6 mt-8 shadow-sm">
+                        <h3 class="text-lg font-display font-bold text-amber-900 mb-6 flex items-center gap-2">
+                            <i class="fas fa-sliders-h"></i> Ficha Técnica del Café
+                        </h3>
+                        ${techDetails}
+                    </div>
+                `;
+            }
+        }
+
         // Contenido Tab 1: Historia (Info General)
         let awardsHtml = '';
         if (p.premios_json && p.premios_json.length > 0) {
@@ -176,6 +235,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     <h4 class="text-xs font-bold text-stone-400 uppercase tracking-widest mb-1">Ingredientes</h4>
                     <p class="text-stone-700 text-sm font-medium">${p.ingredientes}</p>
                 </div>` : ''}
+
+                <!-- INYECCIÓN FICHA TÉCNICA CAFÉ -->
+                ${coffeeTechHtml}
 
                 <div class="flex flex-wrap items-center justify-between mt-auto pt-6 border-t border-stone-100 w-full">
                     ${awardsHtml}
@@ -1670,6 +1732,71 @@ document.addEventListener('DOMContentLoaded', () => {
         ratingContainer.addEventListener('mouseout', () => {
             setRating(currentRating); // Volver a la selección actual
         });
+    }
+
+    function findValueInStages(stages, keySearch) {
+        if (!stages) return null;
+        // Buscar de atrás hacia adelante (dato más reciente)
+        for (let i = stages.length - 1; i >= 0; i--) {
+            const data = stages[i].data;
+            if (data) {
+                // Búsqueda directa
+                if (data[keySearch]) return typeof data[keySearch] === 'object' ? data[keySearch].value : data[keySearch];
+                // Búsqueda aproximada en claves
+                const key = Object.keys(data).find(k => k.toLowerCase().includes(keySearch.toLowerCase()));
+                if (key) return typeof data[key] === 'object' ? data[key].value : data[key];
+            }
+        }
+        return null;
+    }
+
+    // --- NUEVO HELPER: Normalizar Nivel de Tueste (Agtron a Texto) ---
+    function normalizeRoastLevel(val) {
+        if (!val) return null;
+        // Si es número (Agtron)
+        const num = parseFloat(val);
+        if (!isNaN(num)) {
+            if (num > 85) return "Claro";
+            if (num >= 70) return "Medio";
+            if (num >= 55) return "Medio-Oscuro";
+            return "Oscuro";
+        }
+        // Si es texto, intentar normalizar
+        const s = val.toLowerCase();
+        if (s.includes("claro") || s.includes("light")) return "Claro";
+        if (s.includes("medio-oscuro") || s.includes("medium-dark")) return "Medio-Oscuro";
+        if (s.includes("medio") || s.includes("medium")) return "Medio";
+        if (s.includes("oscuro") || s.includes("dark")) return "Oscuro";
+        return val; // Retornar original si no coincide
+    }
+
+    // --- NUEVO HELPER: Generar HTML Slider ---
+    function createSegmentedSlider(label, options, currentValue) {
+        if (!currentValue) return '';
+        
+        const segments = options.map(opt => {
+            const isActive = opt.toLowerCase() === currentValue.toLowerCase();
+            const bgClass = isActive ? 'bg-amber-800 text-white shadow-sm' : 'bg-stone-100 text-stone-400';
+            const borderClass = isActive ? 'border-amber-800' : 'border-stone-200';
+            
+            return `
+                <div class="flex-1 text-center py-1.5 px-1 border-r last:border-r-0 ${borderClass} ${bgClass} first:rounded-l-lg last:rounded-r-lg text-[10px] sm:text-xs font-bold transition-all uppercase tracking-wider">
+                    ${opt}
+                </div>
+            `;
+        }).join('');
+
+        return `
+            <div class="mb-5">
+                <div class="flex justify-between items-end mb-2">
+                    <span class="text-xs font-bold text-stone-500 uppercase tracking-widest">${label}</span>
+                    <span class="text-xs font-bold text-amber-900">${currentValue}</span>
+                </div>
+                <div class="flex w-full border border-stone-200 rounded-lg overflow-hidden">
+                    ${segments}
+                </div>
+            </div>
+        `;
     }
 
     // --- CALLBACK GLOBAL PARA GOOGLE SIGN-IN ---
