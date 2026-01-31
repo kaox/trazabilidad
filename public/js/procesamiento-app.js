@@ -590,12 +590,17 @@ document.addEventListener('DOMContentLoaded', () => {
     function openBatchConfigModal(rootBatch) {
         // Filtrar opciones por tipo de producto (Cacao/Cafe)
         const tmpl = state.userTemplates.find(t => t.id === rootBatch.plantilla_id);
+        
         const tipoProd = tmpl ? (tmpl.nombre_producto.toLowerCase().includes('cafe') ? 'cafe' : 'cacao') : 'otro';
 
         // Filtrar listas
-        const filteredProducts = state.products.filter(p => p.tipo_producto.includes(tipoProd));
-        const filteredProfiles = state.perfilesSensoriales.filter(p => p.tipo === tipoProd);
-        const filteredWheels = state.ruedasSabor.filter(r => r.tipo === tipoProd);
+        //const filteredProducts = state.products.filter(p => p.tipo_producto.includes(tipoProd));
+        //const filteredProfiles = state.perfilesSensoriales.filter(p => p.tipo === tipoProd);
+        //const filteredWheels = state.ruedasSabor.filter(r => r.tipo === tipoProd);
+
+        const filteredProducts = state.products;
+        const filteredProfiles = state.perfilesSensoriales;
+        const filteredWheels = state.ruedasSabor;
 
         const currentSkuId = rootBatch.producto_id || "";
         const currentProfileId = rootBatch.data.target_profile_id?.value || "";
