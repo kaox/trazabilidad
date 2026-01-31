@@ -299,7 +299,6 @@ document.addEventListener('DOMContentLoaded', () => {
     function renderBlockchainCertificate(h) {
         if (!blockchainContainer || !hashDisplay) return;
 
-        console.log(h.stages);
         // Resetear estado (ocultar por defecto)
         blockchainContainer.classList.add('hidden');
 
@@ -1044,8 +1043,6 @@ document.addEventListener('DOMContentLoaded', () => {
         let bgColor = 'rgba(141, 110, 99, 0.2)';
         
         const type = (tipoProducto || '').toLowerCase();
-
-        console.log(type);
 
         // Lógica de selección de atributos
         if (type.includes('caf')) {
