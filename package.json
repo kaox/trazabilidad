@@ -5,12 +5,11 @@
   "main": "server.js",
   "scripts": {
     "db:init": "node db-init.js",
-    "postinstall": "npm run build:css",
-    "start": "NODE_ENV=production node server.js",
+    "start": "cross-env NODE_ENV=production node server.js",
     "dev": "cross-env NODE_ENV=development nodemon server.js",
     "build": "npm run build:css",
-    "dev:css": "npx tailwindcss -i ./src/input.css -o ./public/css/styles.css --watch",
-    "build:css": "./node_modules/.bin/tailwindcss tailwindcss -i ./src/input.css -o ./public/css/styles.css --minify",
+    "dev:css": "tailwindcss -i ./src/input.css -o ./public/css/styles.css --watch",
+    "build:css": "tailwindcss -i ./src/input.css -o ./public/css/styles.css --minify",
     "test": "jest"
   },
   "dependencies": {
@@ -19,6 +18,7 @@
     "bcrypt": "^5.1.1",
     "cookie-parser": "^1.4.6",
     "cors": "^2.8.5",
+    "cross-env": "^7.0.3",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
     "google-auth-library": "^10.4.1",
