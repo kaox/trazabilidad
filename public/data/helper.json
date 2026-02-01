@@ -1,0 +1,55 @@
+[
+  {
+    "actividad": "Crear Site Público Empresa",
+    "tareas": [
+      {
+        "titulo": "Crear nuestra Finca",
+        "link": "/app/fincas"
+      },
+      {
+        "titulo": "Crear nuestra Procesadora",
+        "link": "/app/procesadoras"
+      },
+      {
+        "titulo": "Completar Perfil",
+        "link": "/app/cuenta",
+        "subtareas": [
+          { "titulo": "Ingresar Nombre de Empresa" },
+          { "titulo": "Agregar logo de Empresa" },
+          { "titulo": "Asociar Finca / Procesadora" },
+          { "titulo": "Agregar Celular" }
+        ]
+      }
+    ]
+  },
+  {
+    "actividad": "Crear Producto",
+    "tareas": [
+      { "titulo": "Crear información nutricional", "link": "/app/nutricion" },
+      {
+        "titulo": "Crear Producto",
+        "link": "/app/productos",
+        "subtareas": [
+          { "titulo": "Asociar info Nutricional a Producto"}
+        ]
+      }
+    ]
+  },
+  {
+    "actividad": "Crear Producción",
+    "tareas": [
+      { "titulo": "Crear Lote Acopio", "link": "/app/acopio" },
+      {
+        "titulo": "Crear Nuevo Proceso de Producción",
+        "link": "/app/procesamiento",
+        "subtareas": [
+          { "titulo": "Agregar procesos intermedios" },
+          { "titulo": "Asociar Producto Final" },
+          { "titulo": "Asociar Perfil Sensorial" },
+          { "titulo": "Asociar Rueda de Sabor" },
+          { "titulo": "Finalizar Proceso de Producción" }
+        ]
+      }
+    ]
+  }
+]
