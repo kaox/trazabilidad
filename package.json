@@ -6,7 +6,10 @@
   "scripts": {
     "db:init": "node db-init.js",
     "start": "NODE_ENV=production node server.js",
-    "dev": "NODE_ENV=development nodemon server.js",
+    "build": "npm run build:css",
+    "dev": "cross-env NODE_ENV=development nodemon server.js",
+    "dev:css": "tailwindcss -i ./src/input.css -o ./public/css/styles.css --watch",
+    "build:css": "tailwindcss -i ./src/input.css -o ./public/css/styles.css --minify",
     "test": "jest"
   },
   "dependencies": {
@@ -23,9 +26,12 @@
     "sqlite3": "^5.1.7"
   },
   "devDependencies": {
+    "autoprefixer": "^10.4.24",
     "jest": "^29.7.0",
     "jsdom": "^24.1.0",
-    "nodemon": "^3.1.0"
+    "nodemon": "^3.1.0",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^4.1.18"
   },
   "jest": {
     "testEnvironment": "jsdom",
