@@ -10,7 +10,7 @@
     "dev": "cross-env NODE_ENV=development nodemon server.js",
     "build": "npm run build:css",
     "dev:css": "npx tailwindcss -i ./src/input.css -o ./public/css/styles.css --watch",
-    "build:css": "npx tailwindcss -i ./src/input.css -o ./public/css/styles.css --minify",
+    "build:css": "./node_modules/.bin/tailwindcss tailwindcss -i ./src/input.css -o ./public/css/styles.css --minify",
     "test": "jest"
   },
   "dependencies": {
