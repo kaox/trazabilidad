@@ -547,7 +547,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        // --- CÁLCULO DE CONSUMO ---
+        // --- CÁLCULO DE CONSUMO Y SALDOS ---
         const acqUsageMap = {};
         if (state.batches) {
             const calculateUsage = (nodes) => {
@@ -570,6 +570,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (acop.nombre_producto.includes('Cacao')) { iconClass = 'fa-cookie-bite'; colorClass = 'text-amber-800'; bgClass = 'bg-amber-100'; }
             if (acop.nombre_producto.includes('Café')) { iconClass = 'fa-mug-hot'; colorClass = 'text-red-800'; bgClass = 'bg-red-100'; }
 
+            // VISUALIZACIÓN INTELIGENTE: Peso Original
             let displayWeight = `${acop.peso_kg.toFixed(2)} KG`;
             let displayPrice = acop.precio_unitario ? `$ ${acop.precio_unitario.toFixed(2)}` : '';
             
@@ -580,17 +581,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 displayPrice = `${acop.currency_code} ${acop.original_price}`;
             }
 
+            // --- LÓGICA DE SALDO (BALANCE) ---
             const used = acqUsageMap[acop.id] || 0;
             const remaining = Math.max(0, acop.peso_kg - used);
             const isDepleted = remaining <= 0.1;
             const progressPercent = Math.min(100, (used / acop.peso_kg) * 100);
 
+            console.log(acop);
             const card = document.createElement('div');
             card.className = "bg-white p-5 rounded-xl shadow-sm border border-stone-200 hover:shadow-lg hover:-translate-y-0.5 transition duration-300 group relative";
             card.innerHTML = `
                 <div class="flex justify-between items-start mb-3">
                     <span class="${bgClass} ${colorClass} text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wider border border-white/50 flex items-center gap-1">
                         <i class="fas ${iconClass}"></i> ${acop.nombre_producto} ${acop.subtipo ? `<span class="opacity-75 font-normal ml-1">(${acop.subtipo})</span>` : ''}
+                        ${acop.tipo_acopio ? `- ${acop.tipo_acopio}` : ''}
                     </span>
                     <div class="flex gap-2 opacity-0 group-hover:opacity-100 transition">
                         <button class="edit-acopio-btn text-stone-400 hover:text-green-700 transition" data-id="${acop.id}" title="Editar"><i class="fas fa-pen"></i></button>
@@ -598,25 +602,27 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>
                 </div>
                 <div class="mb-2">
-                    <p class="text-xs text-stone-400 font-medium mb-0.5">Ingreso Original</p>
-                    <p class="text-lg font-display font-bold text-stone-600">${displayWeight}</p>
-                    
-                    <div class="flex justify-between items-end mt-3 border-t border-stone-50 pt-2">
-                         <div>
-                            <p class="text-[10px] text-stone-400 font-bold uppercase tracking-wider">Saldo Disp.</p>
-                            <p class="text-xl font-bold ${isDepleted ? 'text-stone-300' : 'text-green-600'}">
-                                ${remaining.toFixed(2)} <span class="text-xs font-normal">KG</span>
-                            </p>
-                         </div>
-                         <div class="text-right">
-                            <span class="text-xs font-bold ${isDepleted ? 'text-red-500 bg-red-50' : 'text-amber-600 bg-amber-50'} px-2 py-1 rounded-lg">
-                                ${isDepleted ? 'Agotado' : 'Disponible'}
-                            </span>
-                         </div>
+                    <div class="flex justify-between items-baseline mb-1">
+                        <p class="text-xs text-stone-400 font-medium">Ingreso</p>
+                        <p class="text-sm font-bold text-stone-600">${displayWeight}</p>
                     </div>
                     
-                    <div class="w-full bg-stone-100 rounded-full h-1.5 mt-2 overflow-hidden">
-                        <div class="bg-amber-500 h-1.5 rounded-full" style="width: ${progressPercent}%"></div>
+                    <!-- NUEVA SECCIÓN DE SALDO DESTACADO -->
+                    <div class="bg-stone-50 p-3 rounded-lg border border-stone-100 mt-2">
+                        <div class="flex justify-between items-end mb-1">
+                            <p class="text-[10px] text-stone-500 font-bold uppercase tracking-wider">Saldo Disp.</p>
+                            <span class="text-xs font-bold ${isDepleted ? 'text-red-500' : 'text-amber-600'}">
+                                ${isDepleted ? 'Agotado' : 'Disponible'}
+                            </span>
+                        </div>
+                        <p class="text-xl font-display font-bold ${isDepleted ? 'text-stone-300' : 'text-green-700'}">
+                            ${remaining.toFixed(2)} <span class="text-xs font-sans font-normal text-stone-500">KG</span>
+                        </p>
+                        <!-- Barra de progreso -->
+                        <div class="w-full bg-stone-200 rounded-full h-1.5 mt-2 overflow-hidden">
+                            <div class="${isDepleted ? 'bg-red-400' : 'bg-green-500'} h-1.5 rounded-full transition-all duration-500" style="width: ${progressPercent}%"></div>
+                        </div>
+                        <p class="text-[10px] text-stone-400 mt-1 text-right">${(used).toFixed(2)} kg usados</p>
                     </div>
 
                     <div class="flex justify-between items-end mt-3 text-xs text-stone-400">
@@ -629,11 +635,21 @@ document.addEventListener('DOMContentLoaded', () => {
                 ${!isDepleted ? `
                 <div class="pt-3 border-t border-stone-100 flex justify-between items-center">
                     <span class="text-xs font-mono text-stone-300">ID: ${acop.id}</span>
-                    <a href="/app/procesamiento#acopio=${acop.id}" class="text-sm font-bold text-green-700 hover:text-green-900 flex items-center gap-1 transition">
+                    <a href="#" class="new-process-btn text-sm font-bold text-green-700 hover:text-green-900 flex items-center gap-1 transition">
                         Procesar <i class="fas fa-arrow-right text-xs"></i>
                     </a>
                 </div>` : ''}
             `;
+            
+            // Asignar evento al botón "Procesar" dentro del card
+            const processBtn = card.querySelector('.new-process-btn');
+            if(processBtn) {
+                processBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    prepareProcessing(acop); // Pasar el objeto acopio completo con peso actualizado
+                });
+            }
+
             acopioGrid.appendChild(card);
         });
         
