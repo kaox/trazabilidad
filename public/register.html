@@ -106,6 +106,13 @@
         document.addEventListener('DOMContentLoaded', () => {
             const inputPhone = document.querySelector("#phone-number");
             const phoneMsg = document.querySelector("#phone-msg");
+
+            const params = new URLSearchParams(window.location.search);
+            const claimId = params.get('claim_id');
+            if (claimId) {
+                // Guardamos el ID en el navegador para usarlo en el Onboarding después del login
+                localStorage.setItem('pending_claim_id', claimId);
+            }
             
             // Inicializar intl-tel-input
             const iti = window.intlTelInput(inputPhone, {

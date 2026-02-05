@@ -442,6 +442,17 @@ CREATE TABLE IF NOT EXISTS analytics_events (
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE IF NOT EXISTS suggested_companies (
+    id TEXT PRIMARY KEY,
+    type TEXT NOT NULL, -- 'finca' o 'procesadora'
+    name TEXT NOT NULL,
+    social_instagram TEXT,
+    social_facebook TEXT,
+    
+    status TEXT DEFAULT 'pending', -- 'pending', 'verified', 'claimed'
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Agregar campo para controlar la cantidad de insumo utilizada en este proceso
 ALTER TABLE batches 
 ADD COLUMN IF NOT EXISTS input_quantity NUMERIC(10, 2) DEFAULT 0;

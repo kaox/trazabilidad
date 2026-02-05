@@ -426,6 +426,10 @@ app.get('/app/existencias', authenticatePage, (req, res) => res.sendFile(path.jo
 
 app.post('/api/public/analytics', db.trackAnalyticsEvent);
 
+app.post('/api/public/suggest', db.createSuggestion);
+app.get('/api/public/suggestions/:id', db.getSuggestionById);
+app.put('/api/public/suggestions/:id/claim', authenticateApi, db.claimSuggestion);
+
 // --- HELPER PARA SLUGS (Copiar lógica del frontend) ---
 const createSlug = (text) => {
     return text.toString().toLowerCase().trim()

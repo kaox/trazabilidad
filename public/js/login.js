@@ -11,12 +11,13 @@ document.getElementById('login-form').addEventListener('submit', async (e) => {
             body: JSON.stringify(data),
         });
 
-        if (response.ok) {
-            window.location.href = '/app/dashboard';
-        } else {
-            const error = await response.json();
-            alert(`Error: ${error.error}`);
+        const result = await response.json();
+
+        if (!response.ok) {
+            throw new Error(result.error || 'Error al iniciar sesión');
         }
+
+        window.location.href = result.redirect || '/app/dashboard';
     } catch (error) {
         alert('Error de conexión. Inténtalo de nuevo.');
     }

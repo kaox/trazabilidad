@@ -405,6 +405,19 @@ async function initializeDatabase() {
                 )`);
             console.log("Tabla 'traceability_registry' lista.");
 
+            await runQuery(db, `
+                CREATE TABLE IF NOT EXISTS suggested_companies (
+                    id TEXT PRIMARY KEY,
+                    type TEXT NOT NULL, -- 'finca' o 'procesadora'
+                    name TEXT NOT NULL,
+                    social_instagram TEXT,
+                    social_facebook TEXT,
+                    
+                    status TEXT DEFAULT 'pending', -- 'pending', 'verified', 'claimed'
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )`);
+            console.log("Tabla 'suggested_companies' creada.");
+
             // --- NUEVA TABLA: UNIDADES DE MEDIDA ---
             await runQuery(db, `
                 CREATE TABLE IF NOT EXISTS units_of_measure (

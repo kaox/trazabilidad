@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bienvenido - Configura tu Perfil</title>
+    
+    <!-- Enlace al CSS compilado -->
+    <link href="/css/styles.css" rel="stylesheet">
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet">
+    
+    <!-- Librerías Externas -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/intl-tel-input@23.1.0/build/css/intlTelInput.css">
+    
+    <!-- Auth Check -->
+    <script src="/auth.js"></script>
+
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #fdfaf6; }
+        h1, h2, h3, .font-display { font-family: 'Playfair Display', serif; }
+
+        /* Ajustes Intl-Tel-Input */
+        .iti { width: 100%; }
+        .iti__flag { background-image: url("https://cdn.jsdelivr.net/npm/intl-tel-input@23.1.0/build/img/flags.png"); }
+        @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+          .iti__flag { background-image: url("https://cdn.jsdelivr.net/npm/intl-tel-input@23.1.0/build/img/flags@2x.png"); }
+        }
+        .iti__input {
+            padding-top: 1rem;
+            padding-bottom: 1rem;
+            border-radius: 0.75rem; 
+            border-color: #e5e7eb; 
+        }
+        .iti__input:focus {
+            border-color: #f59e0b; 
+            box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.5);
+        }
+    </style>
+</head>
+<body class="text-stone-800 antialiased min-h-screen flex flex-col">
+
+    <!-- Header Simple -->
+    <header class="bg-white border-b border-stone-100 py-4 px-6 sticky top-0 z-50">
+        <div class="max-w-3xl mx-auto flex justify-between items-center">
+            <div class="flex items-center gap-2 text-amber-900">
+                <i class="fa-solid fa-fingerprint text-2xl"></i>
+                <span class="font-bold text-lg font-display">Ruru Lab</span>
+            </div>
+            <button onclick="logout()" class="text-xs font-bold text-stone-400 hover:text-red-500 transition">Cerrar Sesión</button>
+        </div>
+    </header>
+
+    <main class="flex-grow flex items-center justify-center p-4">
+        <div class="w-full max-w-2xl animate-fade-in">
+            
+            <div class="text-center mb-10">
+                <span class="bg-amber-100 text-amber-800 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">Bienvenido</span>
+                <h1 class="text-3xl md:text-4xl font-display font-bold text-stone-900 mt-4 mb-2">Configuremos tu Identidad</h1>
+                <p class="text-stone-500">Esta información creará tu página web automática y tu pasaporte digital.</p>
+            </div>
+
+            <form id="onboarding-form" class="space-y-8">
+                
+                <!-- 1. DATOS DE LA CUENTA (EMPRESA) -->
+                <section class="bg-white p-6 md:p-8 rounded-2xl shadow-lg border border-stone-100">
+                    <h2 class="text-xl font-bold text-amber-900 mb-6 flex items-center gap-2">
+                        <span class="w-8 h-8 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center text-sm">1</span>
+                        Identidad Corporativa
+                    </h2>
+                    
+                    <div class="space-y-6">
+                        <!-- Logo Upload -->
+                        <div class="flex flex-col items-center">
+                            <label class="block text-xs font-bold text-stone-500 mb-2 uppercase tracking-wide">Logo de tu Marca</label>
+                            <div class="relative group cursor-pointer" onclick="document.getElementById('logo-input').click()">
+                                <img id="logo-preview" src="https://placehold.co/150x150/f5f5f4/a8a29e?text=Subir+Logo" class="w-32 h-32 rounded-full object-contain border-4 border-white shadow-md bg-stone-50 group-hover:scale-105 transition duration-300">
+                                <div class="absolute bottom-0 right-0 bg-stone-800 text-white w-8 h-8 rounded-full flex items-center justify-center shadow-lg">
+                                    <i class="fas fa-camera text-xs"></i>
+                                </div>
+                            </div>
+                            <input type="file" id="logo-input" class="hidden" accept="image/*">
+                            <input type="hidden" name="company_logo" id="company_logo">
+                            <p class="text-xs text-stone-400 mt-2">Formatos: PNG, JPG (Máx 2MB)</p>
+                        </div>
+
+                        <!-- Nombre Empresa -->
+                        <div>
+                            <label for="empresa" class="block text-xs font-bold text-stone-500 mb-2 uppercase tracking-wide">Nombre Comercial de la Empresa</label>
+                            <input type="text" id="empresa" name="empresa" class="w-full p-4 bg-white border border-stone-200 rounded-xl text-stone-800 outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-all placeholder-stone-400" placeholder="Ej. Cooperativa El Buen Cacao" required>
+                        </div>
+
+                        <!-- Celular -->
+                        <div>
+                            <label for="celular" class="block text-xs font-bold text-stone-500 mb-2 uppercase tracking-wide">WhatsApp de Ventas / Contacto</label>
+                            <input type="tel" id="celular" class="w-full p-4 bg-white border border-stone-200 rounded-xl text-stone-800 outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-all">
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 2. TIPO DE NEGOCIO -->
+                <section class="bg-white p-6 md:p-8 rounded-2xl shadow-lg border border-stone-100">
+                    <h2 class="text-xl font-bold text-amber-900 mb-6 flex items-center gap-2">
+                        <span class="w-8 h-8 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center text-sm">2</span>
+                        ¿Qué rol desempeñas?
+                    </h2>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <!-- Opción Productor -->
+                        <label class="cursor-pointer relative group">
+                            <input type="radio" name="company_type" value="finca" class="peer sr-only" checked>
+                            <div class="p-5 rounded-xl border-2 border-stone-200 hover:border-amber-400 hover:bg-amber-50/30 peer-checked:border-amber-600 peer-checked:bg-amber-50 peer-checked:ring-2 peer-checked:ring-amber-600/20 transition-all h-full flex flex-col items-center text-center relative overflow-hidden">
+                                <i class="fas fa-check-circle absolute top-3 right-3 text-amber-600 text-xl opacity-0 scale-50 peer-checked:opacity-100 peer-checked:scale-100 transition-all duration-300"></i>
+                                <div class="w-14 h-14 bg-green-100 rounded-full flex items-center justify-center text-green-700 text-2xl mb-3 group-hover:scale-110 transition-transform">
+                                    <i class="fas fa-tractor"></i>
+                                </div>
+                                <h3 class="font-bold text-stone-800">Finca Productora</h3>
+                                <p class="text-xs text-stone-500 mt-2 leading-snug">Cultivo mi propio producto. Quiero mostrar el origen, terroir y mi historia.</p>
+                            </div>
+                        </label>
+
+                        <!-- Opción Procesadora -->
+                        <label class="cursor-pointer relative group">
+                            <input type="radio" name="company_type" value="procesadora" class="peer sr-only">
+                            <div class="p-5 rounded-xl border-2 border-stone-200 hover:border-amber-400 hover:bg-amber-50/30 peer-checked:border-amber-600 peer-checked:bg-amber-50 peer-checked:ring-2 peer-checked:ring-amber-600/20 transition-all h-full flex flex-col items-center text-center relative overflow-hidden">
+                                <i class="fas fa-check-circle absolute top-3 right-3 text-amber-600 text-xl opacity-0 scale-50 peer-checked:opacity-100 peer-checked:scale-100 transition-all duration-300"></i>
+                                <div class="w-14 h-14 bg-blue-100 rounded-full flex items-center justify-center text-blue-700 text-2xl mb-3 group-hover:scale-110 transition-transform">
+                                    <i class="fas fa-industry"></i>
+                                </div>
+                                <h3 class="font-bold text-stone-800">Centro de Procesamiento</h3>
+                                <p class="text-xs text-stone-500 mt-2 leading-snug">Acopio y transformo materia prima. Quiero mostrar calidad industrial y procesos.</p>
+                            </div>
+                        </label>
+                    </div>
+                </section>
+
+                <!-- 3. DETALLES ESPECÍFICOS (DINÁMICO) -->
+                <section id="dynamic-details" class="bg-white p-6 md:p-8 rounded-2xl shadow-lg border border-stone-100 animate-fade-in">
+                    <!-- El contenido cambia según el radio button -->
+                </section>
+
+                <div class="pt-4">
+                    <button type="submit" id="btn-submit" class="w-full bg-amber-800 hover:bg-amber-900 text-white font-bold py-4 px-8 rounded-xl shadow-xl transition transform hover:-translate-y-1 text-lg flex items-center justify-center gap-2">
+                        <span>Finalizar Configuración</span>
+                        <i class="fas fa-arrow-right"></i>
+                    </button>
+                    <p class="text-center text-xs text-stone-400 mt-4">Podrás editar estos datos más tarde en "Mi Cuenta".</p>
+                </div>
+
+            </form>
+        </div>
+    </main>
+
+    <!-- Script de Funcionalidad -->
+    <script src="https://cdn.jsdelivr.net/npm/intl-tel-input@23.1.0/build/js/intlTelInput.min.js"></script>
+    
+    <!-- Google Maps -->
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAM37iJTRcIoSAxESlDzB2DxlNJWKasW5U&libraries=drawing,geometry,places&callback=initMap&v=weekly" defer></script>
+    
+    <script>
+        window.initMap = function() {};
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const form = document.getElementById('onboarding-form');
+            const dynamicContainer = document.getElementById('dynamic-details');
+            const radioButtons = document.querySelectorAll('input[name="company_type"]');
+            let map;
+
+            // 1. Configurar Teléfono
+            const inputPhone = document.querySelector("#celular");
+            const iti = window.intlTelInput(inputPhone, {
+                initialCountry: "pe",
+                separateDialCode: true,
+                strictMode: true,
+                utilsScript: "https://cdn.jsdelivr.net/npm/intl-tel-input@23.1.0/build/js/utils.js",
+            });
+
+            // 2. Manejo de Logo
+            document.getElementById('logo-input').addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (!file) return;
+                if(file.size > 2 * 1024 * 1024) { alert("Max 2MB"); return; }
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('logo-preview').src = e.target.result;
+                    document.getElementById('company_logo').value = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            });
+
+            // 3. Renderizado Dinámico de Campos
+            const inputClass = "w-full p-4 bg-white border border-stone-200 rounded-xl text-stone-800 outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-all placeholder-stone-400";
+            const labelClass = "block text-xs font-bold text-stone-500 mb-2 uppercase tracking-wide";
+
+            const renderProducerFields = (data = {}) => {
+                dynamicContainer.innerHTML = `
+                    <h2 class="text-xl font-bold text-amber-900 mb-6 flex items-center gap-2">
+                        <span class="w-8 h-8 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center text-sm">3</span>
+                        Detalles de la Finca
+                    </h2>
+                    
+                    ${data.isClaim ? `<div class="bg-green-50 text-green-800 p-4 rounded-xl mb-4 border border-green-200 text-sm"><i class="fas fa-check-circle mr-2"></i> Estás reclamando el perfil: <strong>${data.name}</strong></div>` : ''}
+
+                    <div class="space-y-5">
+                        <div>
+                            <label class="${labelClass}">Nombre de la Finca *</label>
+                            <input type="text" name="nombre_finca" class="${inputClass}" value="${data.name || ''}" placeholder="Ej. Finca La Esperanza" required>
+                        </div>
+                        <div>
+                            <label class="${labelClass}">Propietario Principal *</label>
+                            <input type="text" name="propietario" class="${inputClass}" required>
+                        </div>
+                        
+                        <!-- Campos Ocultos Geográficos -->
+                        <input type="hidden" name="pais" value="${data.pais || ''}">
+                        <input type="hidden" name="departamento" value="${data.departamento || ''}">
+                        <input type="hidden" name="provincia" value="${data.provincia || ''}">
+                        <input type="hidden" name="distrito" value="${data.distrito || ''}">
+                        <input type="hidden" name="altura" value="${data.altura || ''}">
+                        <input type="hidden" name="superficie" value="${data.superficie || ''}">
+                        
+                        <!-- CORRECCIÓN: Quitar name="coordenadas" para evitar duplicados en FormData. Usamos ID. -->
+                        <input type="hidden" id="hidden-coords-claim"> 
+
+                        ${data.coordenadas ? `
+                        <div class="rounded-xl overflow-hidden border border-stone-200 h-48 relative">
+                            <div id="claim-map" class="w-full h-full"></div>
+                            <div class="absolute bottom-2 left-2 bg-white/90 px-2 py-1 text-xs rounded shadow font-bold text-stone-600">Ubicación importada</div>
+                        </div>` : ''}
+
+                        <div>
+                            <label class="${labelClass}">Historia / Descripción</label>
+                            <textarea name="historia" rows="3" class="${inputClass}" placeholder="Cuenta el origen..."></textarea>
+                        </div>
+                        
+                        <!-- Foto Productor -->
+                        <div class="bg-stone-50 p-4 rounded-xl border border-stone-200">
+                           <label class="${labelClass} mb-3">Foto del Productor</label>
+                            <div class="flex items-center gap-4">
+                                <div class="relative w-20 h-20 bg-stone-200 rounded-full overflow-hidden flex-shrink-0 cursor-pointer hover:opacity-80 transition" onclick="document.getElementById('prod-foto-input').click()">
+                                    <img id="prod-foto-preview" src="https://placehold.co/100x100?text=+" class="w-full h-full object-cover">
+                                </div>
+                                <div class="flex-grow">
+                                    <input type="file" id="prod-foto-input" class="hidden" accept="image/*" onchange="previewImage(this, 'prod-foto-preview', 'foto_productor')">
+                                    <input type="hidden" name="foto_productor" id="foto_productor">
+                                    <button type="button" onclick="document.getElementById('prod-foto-input').click()" class="text-sm text-amber-700 font-bold hover:underline">Subir Foto</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                if (data.coordenadas && typeof google !== 'undefined') {
+                    setTimeout(() => {
+                        initClaimMap(data.coordenadas, 'polygon');
+                        // Asignar valor JSON stringificado
+                        const hiddenInput = document.getElementById('hidden-coords-claim');
+                        if(hiddenInput) hiddenInput.value = JSON.stringify(data.coordenadas);
+                    }, 200);
+                }
+            };
+
+            const renderProcessorFields = (data = {}) => {
+                dynamicContainer.innerHTML = `
+                    <h2 class="text-xl font-bold text-amber-900 mb-6 flex items-center gap-2">
+                        <span class="w-8 h-8 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center text-sm">3</span>
+                        Detalles de la Planta
+                    </h2>
+                    
+                    ${data.isClaim ? `<div class="bg-green-50 text-green-800 p-4 rounded-xl mb-4 border border-green-200 text-sm"><i class="fas fa-check-circle mr-2"></i> Estás reclamando: <strong>${data.name}</strong></div>` : ''}
+
+                    <div class="space-y-5">
+                        <div>
+                            <label class="${labelClass}">Nombre Comercial *</label>
+                            <input type="text" name="nombre_comercial" class="${inputClass}" value="${data.name || ''}" placeholder="Ej. Central de Beneficio" required>
+                        </div>
+                        
+                        <input type="hidden" name="pais" value="${data.pais || 'Perú'}">
+                        <input type="hidden" name="departamento" value="${data.departamento || ''}">
+                        <input type="hidden" name="provincia" value="${data.provincia || ''}">
+                        <input type="hidden" name="ciudad" value="${data.distrito || ''}">
+                        
+                        <!-- CORRECCIÓN: Quitar name="coordenadas" -->
+                        <input type="hidden" id="hidden-coords-claim"> 
+
+                         ${data.coordenadas ? `
+                        <div class="rounded-xl overflow-hidden border border-stone-200 h-48 relative">
+                            <div id="claim-map" class="w-full h-full"></div>
+                        </div>` : ''}
+                    </div>
+                `;
+                 if (data.coordenadas && typeof google !== 'undefined') {
+                    setTimeout(() => {
+                        initClaimMap(data.coordenadas, 'point');
+                        const hiddenInput = document.getElementById('hidden-coords-claim');
+                        if(hiddenInput) hiddenInput.value = JSON.stringify(data.coordenadas);
+                    }, 200);
+                }
+            };
+
+            // Event Listeners radios
+            radioButtons.forEach(radio => {
+                radio.addEventListener('change', (e) => {
+                    if (e.target.value === 'finca') renderProducerFields();
+                    else renderProcessorFields();
+                });
+            });
+
+            // --- LÓGICA DE RECLAMO INTELIGENTE ---
+            const checkForClaim = async () => {
+                const claimId = localStorage.getItem('pending_claim_id');
+                if (claimId) {
+                    try {
+                        const res = await api(`/api/public/suggestions/${claimId}`);
+                        const suggestion = res;
+                        document.getElementById('empresa').value = suggestion.name;
+                        
+                        const typeRadio = document.querySelector(`input[name="company_type"][value="${suggestion.type}"]`);
+                        if(typeRadio) {
+                            typeRadio.checked = true;
+                            suggestion.isClaim = true;
+                            if (suggestion.type === 'finca') renderProducerFields(suggestion);
+                            else renderProcessorFields(suggestion);
+                        }
+                    } catch (e) { renderProducerFields(); }
+                } else {
+                    renderProducerFields();
+                }
+            };
+
+            checkForClaim();
+
+            // --- HELPER MAPA RECLAMO ---
+            function initClaimMap(coords, type) {
+                const mapDiv = document.getElementById('claim-map');
+                if(!mapDiv) return;
+
+                let paths = coords;
+                if(typeof coords === 'string') try { paths = JSON.parse(coords); } catch(e){}
+
+                const map = new google.maps.Map(mapDiv, {
+                    zoom: 14,
+                    mapTypeId: 'satellite',
+                    disableDefaultUI: true,
+                    draggable: false, 
+                    zoomControl: false,
+                    scrollwheel: false
+                });
+
+                if (type === 'polygon' && Array.isArray(paths) && Array.isArray(paths[0])) {
+                    const polygonPaths = paths.map(p => ({ lat: parseFloat(p[0]), lng: parseFloat(p[1]) }));
+                    const bounds = new google.maps.LatLngBounds();
+                    polygonPaths.forEach(p => bounds.extend(p));
+                    map.fitBounds(bounds);
+
+                    new google.maps.Polygon({
+                        paths: polygonPaths,
+                        strokeColor: "#10b981", 
+                        fillColor: "#10b981",
+                        fillOpacity: 0.4,
+                        map: map
+                    });
+                } else {
+                    let lat = paths.lat || (Array.isArray(paths) ? paths[0] : 0);
+                    let lng = paths.lng || (Array.isArray(paths) ? paths[1] : 0);
+                    const pos = { lat: parseFloat(lat), lng: parseFloat(lng) };
+                    map.setCenter(pos);
+                    new google.maps.Marker({ position: pos, map: map });
+                }
+            }
+
+            // 4. Helper Preview Imágenes
+            window.previewImage = (input, imgId, hiddenInputId) => {
+                const file = input.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById(imgId).src = e.target.result;
+                    document.getElementById(hiddenInputId).value = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            };
+
+            // 5. SUBMIT HANDLER
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const btn = document.getElementById('btn-submit');
+                const originalText = btn.innerHTML;
+                
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fas fa-circle-notch fa-spin mr-2"></i> Guardando...';
+
+                const formData = new FormData(form);
+                const rawData = Object.fromEntries(formData.entries());
+                const fullPhone = iti.getNumber();
+                
+                try {
+                    // Recolección manual de Coordenadas para evitar colisiones
+                    // Prioridad: 1. Mapa dibujado (si existe el input main-map-coords o similar en un futuro paso 2) 
+                    // 2. Input de Reclamo (#hidden-coords-claim)
+                    let coordsValue = null;
+                    const claimCoordsInput = document.getElementById('hidden-coords-claim');
+                    if (claimCoordsInput && claimCoordsInput.value) {
+                         coordsValue = JSON.parse(claimCoordsInput.value);
+                    }
+                    // Nota: Si en el futuro agregas un mapa de dibujo en el paso 2 de este form, deberías leer ese input aquí.
+
+                    const userPayload = {
+                        empresa: rawData.empresa,
+                        company_logo: rawData.company_logo,
+                        celular: fullPhone,
+                        company_type: rawData.company_type,
+                    };
+                    
+                    let entityId = null;
+
+                    if (rawData.company_type === 'finca') {
+                        const fincaPayload = {
+                            nombre_finca: rawData.nombre_finca,
+                            propietario: rawData.propietario,
+                            historia: rawData.historia,
+                            foto_productor: rawData.foto_productor,
+                            pais: rawData.pais || 'Perú',
+                            departamento: rawData.departamento,
+                            provincia: rawData.provincia,
+                            distrito: rawData.distrito,
+                            altura: rawData.altura || 0,
+                            superficie: rawData.superficie || 0,
+                            coordenadas: coordsValue, // Enviar OBJETO, no string
+                            dni_ruc: "" 
+                        };
+                        await api('/api/fincas', { method: 'POST', body: JSON.stringify(fincaPayload) });
+                        
+                        const fincas = await api('/api/fincas');
+                        const createdFinca = fincas.find(f => f.nombre_finca === rawData.nombre_finca);
+                        if (createdFinca) entityId = createdFinca.id;
+
+                    } else {
+                        const procPayload = {
+                            nombre_comercial: rawData.nombre_comercial,
+                            razon_social: rawData.nombre_comercial, 
+                            pais: rawData.pais || 'Perú',
+                            ciudad: rawData.ciudad,
+                            coordenadas: coordsValue, // Enviar OBJETO
+                            ruc: "00000000000"
+                        };
+                        await api('/api/procesadoras', { method: 'POST', body: JSON.stringify(procPayload) });
+                        
+                        const procesadoras = await api('/api/procesadoras');
+                        const createdProc = procesadoras.find(p => p.nombre_comercial === rawData.nombre_comercial);
+                        if (createdProc) entityId = createdProc.id;
+                    }
+
+                    userPayload.company_id = entityId;
+                    await api('/api/user/profile', { method: 'PUT', body: JSON.stringify(userPayload) });
+
+                    const claimId = localStorage.getItem('pending_claim_id');
+                    if (claimId) {
+                        try { await api(`/api/public/suggestions/${claimId}/claim`, { method: 'PUT' }); } catch(e){}
+                        localStorage.removeItem('pending_claim_id');
+                    }
+
+                    window.location.href = '/app/dashboard';
+
+                } catch (err) {
+                    console.error(err);
+                    alert("Error al guardar: " + err.message);
+                    btn.disabled = false;
+                    btn.innerHTML = originalText;
+                }
+            });
+
+            async function api(url, options = {}) {
+                options.credentials = 'include';
+                options.headers = { ...options.headers, 'Content-Type': 'application/json' };
+                const res = await fetch(url, options);
+                if (!res.ok) {
+                    const e = await res.json().catch(() => ({}));
+                    throw new Error(e.error || `Error ${res.status}`);
+                }
+                return res.json();
+            }
+        });
+
+        window.logout = async () => {
+            try { await fetch('/api/logout', { method: 'POST' }); window.location.href = '/login.html'; } catch(e){}
+        };
+    </script>
+</body>
+</html>

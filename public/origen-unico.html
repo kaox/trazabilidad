@@ -22,18 +22,18 @@
     <meta property="twitter:image" content="https://rurulab.com/images/banner_1.png">
 
     <link href="/css/styles.css" rel="stylesheet">
+    
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet" crossorigin>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" crossorigin />
     
-    <!-- CORRECCIÓN: Script de Google Maps Agregado -->
-    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAM37iJTRcIoSAxESlDzB2DxlNJWKasW5U&libraries=geometry&v=weekly" defer></script>
-    
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAM37iJTRcIoSAxESlDzB2DxlNJWKasW5U&libraries=geometry,drawing,places&v=weekly" defer></script>
     <style>
         body { font-family: 'Inter', sans-serif; background-color: #fdfaf6; }
         .font-display { font-family: 'Playfair Display', serif; }
         .card-hover:hover { transform: translateY(-4px); box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1); }
         .fade-in { animation: fadeIn 0.5s ease-in-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        #suggest-map { height: 300px; width: 100%; border-radius: 0.5rem; }
     </style>
 </head>
 <body class="text-stone-800 antialiased min-h-screen flex flex-col">
@@ -99,26 +99,28 @@
             </div>
             <h1 class="text-4xl md:text-6xl font-display font-bold mb-4">Empresas con Origen Único</h1>
             <p class="text-lg text-amber-200 max-w-2xl mx-auto">Descubre productores y marcas comprometidos con la transparencia radical. Cada producto aquí listado cuenta con trazabilidad inmutable blockchain.</p>
+            
+            <!-- Botón Móvil Sugerir -->
+            <div class="mt-6 md:hidden">
+                <button onclick="app.openSuggestModal()" class="bg-white/10 hover:bg-white/20 text-white px-6 py-3 rounded-xl font-bold backdrop-blur transition w-full max-w-xs">
+                    <i class="fas fa-plus-circle mr-2"></i> Sugerir Empresa
+                </button>
+            </div>
         </div>
     </header>
 
     <!-- Contenido Principal -->
     <main class="flex-grow container mx-auto px-6 py-12">
         
-        <!-- Breadcrumbs (Navegación) -->
+        <!-- Breadcrumbs -->
         <div id="breadcrumbs" class="flex items-center gap-2 text-sm text-stone-500 mb-8 hidden">
             <button onclick="app.resetToCompanies()" class="hover:text-amber-800 hover:underline">Empresas</button>
             <i class="fas fa-chevron-right text-xs text-stone-300"></i>
             <span id="breadcrumb-company" class="font-bold text-stone-800"></span>
-            <span id="breadcrumb-product-part" class="hidden flex items-center gap-2">
-                <i class="fas fa-chevron-right text-xs text-stone-300"></i>
-                <span id="breadcrumb-product" class="font-bold text-stone-800"></span>
-            </span>
         </div>
 
         <!-- Contenedor Dinámico -->
         <div id="app-container" class="min-h-[400px]">
-            <!-- Aquí se inyectará el contenido JS -->
             <div class="flex justify-center py-20">
                 <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-900"></div>
             </div>
@@ -126,50 +128,75 @@
 
     </main>
 
-    <!-- SECCIÓN DE CAPTACIÓN -->
-    <section class="bg-stone-900 text-white py-16">
-        <div class="container mx-auto px-6 grid md:grid-cols-2 gap-12 items-center">
-            <div>
-                <h2 class="text-3xl font-display font-bold mb-4 text-amber-400">¿Tu empresa aún no está aquí?</h2>
-                <p class="text-stone-300 mb-6 text-lg">La transparencia es la nueva ventaja competitiva. Únete a Ruru Lab, cumple con la normativa EUDR y obtén tu Pasaporte Digital de Producto hoy mismo.</p>
-                <ul class="space-y-3 mb-8">
-                    <li class="flex items-center gap-3"><i class="fas fa-check-circle text-green-500"></i> <span>Trazabilidad Blockchain Inmutable</span></li>
-                    <li class="flex items-center gap-3"><i class="fas fa-check-circle text-green-500"></i> <span>Validación Satelital de Deforestación</span></li>
-                    <li class="flex items-center gap-3"><i class="fas fa-check-circle text-green-500"></i> <span>Diferenciación ante compradores internacionales</span></li>
-                </ul>
-                <div class="flex flex-col sm:flex-row gap-4">
-                    <a href="/login.html" class="bg-amber-600 hover:bg-amber-700 text-white font-bold py-3 px-8 rounded-xl text-center shadow-lg transition transform hover:-translate-y-1">
-                        Crear Cuenta Gratis
-                    </a>
-                    <a href="http://wa.me/51961222040" target="_blank" class="bg-stone-800 hover:bg-stone-700 border border-stone-700 text-white font-bold py-3 px-8 rounded-xl text-center transition">
-                        Agendar Demo
-                    </a>
-                </div>
+    <!-- Modal Sugerencia -->
+    <dialog id="suggest-modal" class="p-0 rounded-2xl shadow-2xl w-11/12 max-w-2xl backdrop:bg-black/60">
+        <div class="bg-white p-6 md:p-8">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-display text-amber-900 font-bold">Sugerir Empresa</h2>
+                <button onclick="document.getElementById('suggest-modal').close()" class="text-stone-400 hover:text-red-500 transition"><i class="fas fa-times text-xl"></i></button>
             </div>
-            <div class="relative hidden md:block">
-                <!-- Efecto visual decorativo -->
-                <div class="absolute -inset-4 bg-amber-500/10 rounded-full blur-3xl"></div>
-                <div class="relative bg-stone-800 p-8 rounded-2xl border border-stone-700 shadow-2xl transform rotate-2 hover:rotate-0 transition duration-500">
-                    <div class="flex items-center gap-4 mb-6">
-                        <div class="w-12 h-12 rounded-full bg-white flex items-center justify-center text-2xl">🏆</div>
-                        <div>
-                            <h3 class="font-bold text-lg">Certificado de Origen</h3>
-                            <p class="text-xs text-stone-400">Ruru Lab Verified</p>
+            
+            <form id="suggest-form" class="space-y-6">
+                <!-- Tipo (RADIO CARDS MEJORADOS) -->
+                <div class="grid grid-cols-2 gap-4">
+                    <!-- Opción Productor -->
+                    <label class="cursor-pointer relative group">
+                        <input type="radio" name="suggest_type" value="finca" class="peer sr-only" checked onchange="app.toggleMapMode()">
+                        <div class="p-4 rounded-xl border-2 border-stone-200 peer-checked:border-amber-600 peer-checked:bg-amber-50 peer-checked:shadow-md transition-all h-full flex flex-col items-center justify-center relative overflow-hidden">
+                            <!-- Icono de Check (Solo visible al seleccionar) -->
+                            <div class="absolute top-2 right-2 text-amber-600 opacity-0 peer-checked:opacity-100 transition-opacity transform peer-checked:scale-100 scale-50">
+                                <i class="fas fa-check-circle text-lg"></i>
+                            </div>
+                            
+                            <div class="w-12 h-12 rounded-full bg-stone-100 peer-checked:bg-amber-200 flex items-center justify-center mb-2 transition-colors">
+                                 <i class="fas fa-tractor text-2xl text-stone-400 peer-checked:text-amber-800 transition-colors"></i>
+                            </div>
+                            <p class="font-bold text-sm text-stone-500 peer-checked:text-amber-900 transition-colors">Productor</p>
                         </div>
+                    </label>
+
+                    <!-- Opción Procesadora -->
+                    <label class="cursor-pointer relative group">
+                        <input type="radio" name="suggest_type" value="procesadora" class="peer sr-only" onchange="app.toggleMapMode()">
+                        <div class="p-4 rounded-xl border-2 border-stone-200 peer-checked:border-blue-600 peer-checked:bg-blue-50 peer-checked:shadow-md transition-all h-full flex flex-col items-center justify-center relative overflow-hidden">
+                            <!-- Icono de Check -->
+                            <div class="absolute top-2 right-2 text-blue-600 opacity-0 peer-checked:opacity-100 transition-opacity transform peer-checked:scale-100 scale-50">
+                                <i class="fas fa-check-circle text-lg"></i>
+                            </div>
+
+                            <div class="w-12 h-12 rounded-full bg-stone-100 peer-checked:bg-blue-200 flex items-center justify-center mb-2 transition-colors">
+                                <i class="fas fa-industry text-2xl text-stone-400 peer-checked:text-blue-800 transition-colors"></i>
+                            </div>
+                            <p class="font-bold text-sm text-stone-500 peer-checked:text-blue-900 transition-colors">Procesador</p>
+                        </div>
+                    </label>
+                </div>
+
+                <!-- Datos Básicos -->
+                <div>
+                    <label class="block text-xs font-bold text-stone-500 mb-1 uppercase" id="name-label">Nombre de la Empresa</label>
+                    <input type="text" name="name" class="w-full p-3 border border-stone-300 rounded-lg outline-none focus:ring-2 focus:ring-amber-500" required>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-stone-500 mb-1 uppercase"><i class="fab fa-instagram"></i> Instagram (Opcional)</label>
+                        <input type="text" name="instagram" class="w-full p-3 border border-stone-300 rounded-lg outline-none focus:ring-2 focus:ring-pink-500" placeholder="@usuario">
                     </div>
-                    <div class="space-y-4">
-                        <div class="h-2 bg-stone-700 rounded w-3/4"></div>
-                        <div class="h-2 bg-stone-700 rounded w-full"></div>
-                        <div class="h-2 bg-stone-700 rounded w-5/6"></div>
-                    </div>
-                    <div class="mt-6 pt-6 border-t border-stone-700 flex justify-between items-center">
-                        <span class="text-amber-400 font-mono text-xs">VERIFIED_HASH_X92</span>
-                        <i class="fas fa-fingerprint text-3xl text-stone-600"></i>
+                    <div>
+                        <label class="block text-xs font-bold text-stone-500 mb-1 uppercase"><i class="fab fa-facebook"></i> Facebook (Opcional)</label>
+                        <input type="text" name="facebook" class="w-full p-3 border border-stone-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500" placeholder="/pagina">
                     </div>
                 </div>
-            </div>
+
+                <div class="pt-4 border-t border-stone-100">
+                    <button type="submit" id="btn-submit-suggest" class="w-full bg-amber-800 hover:bg-amber-900 text-white font-bold py-3 rounded-xl shadow-lg transition transform hover:-translate-y-1 disabled:opacity-50 flex items-center justify-center gap-2">
+                        <i class="fas fa-paper-plane"></i> Enviar Sugerencia
+                    </button>
+                </div>
+            </form>
         </div>
-    </section>
+    </dialog>
 
     <footer class="bg-stone-950 text-stone-500 py-8 border-t border-stone-800">
         <div class="container mx-auto px-6 text-center">

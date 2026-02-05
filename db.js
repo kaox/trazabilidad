@@ -172,7 +172,14 @@ const loginUser = async (req, res) => {
             const tokenPayload = { id: user.id, username: user.usuario, role: user.role };
             const token = jwt.sign(tokenPayload, process.env.JWT_SECRET || 'supersecretkey', { expiresIn: '1h' });
             res.cookie('token', token, { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', path: '/' });
-            res.status(200).json({ message: "Inicio de sesión exitoso.", token });
+
+            let nextStep = '/app/dashboard';
+            
+            if (!user.company_type && user.role !== 'admin') {
+                nextStep = '/onboarding.html';
+            }
+
+            res.status(200).json({ message: "Inicio de sesión exitoso.", token, redirect: nextStep });
         } else {
             res.status(401).json({ error: "Credenciales inválidas." });
         }
@@ -2350,23 +2357,52 @@ const ensureTemplateAndStageExists = async (userId, systemTemplateName, stageNam
 
 const getPublicCompaniesWithImmutable = async (req, res) => {
     try {
-        // CAMBIO: LEFT JOIN para incluir empresas sin lotes certificados aún.
-        // Filtramos para que solo traiga usuarios que tengan un nombre de empresa configurado.
-        const sql = `
-            SELECT u.id, u.empresa, u.company_logo, 
-                   COUNT(DISTINCT tr.id) as total_lotes_certificados
+        // A. Empresas Verificadas (Usuarios del sistema)
+        const sqlVerified = `
+            SELECT 
+                CAST(u.id AS TEXT) as id, 
+                u.empresa as name, 
+                u.company_logo as logo, 
+                u.company_type as type,
+                'verified' as status,
+                COUNT(DISTINCT tr.id) as lotes_count
             FROM users u
             LEFT JOIN traceability_registry tr ON CAST(u.id AS TEXT) = CAST(tr.user_id AS TEXT)
                 AND tr.blockchain_hash IS NOT NULL 
                 AND tr.blockchain_hash != ''
             WHERE u.empresa IS NOT NULL AND u.empresa != ''
-            GROUP BY u.id, u.empresa, u.company_logo
-            ORDER BY total_lotes_certificados DESC, u.empresa ASC
+            GROUP BY u.id, u.empresa, u.company_logo, u.company_type
         `;
-        const rows = await all(sql);
-        res.status(200).json(rows);
+
+        // B. Empresas Sugeridas (Pendientes)
+        const sqlSuggested = `
+            SELECT 
+                id, 
+                name, 
+                NULL as logo, 
+                type,
+                'pending' as status,
+                0 as lotes_count
+            FROM suggested_companies
+            WHERE status = 'pending'
+        `;
+
+        // Ejecutamos ambas y unimos
+        const [verified, suggested] = await Promise.all([
+            all(sqlVerified),
+            all(sqlSuggested)
+        ]);
+
+        // Combinar y ordenar (Verificados primero, luego por nombre)
+        const combined = [...verified, ...suggested].sort((a, b) => {
+            if (a.status === 'verified' && b.status !== 'verified') return -1;
+            if (a.status !== 'verified' && b.status === 'verified') return 1;
+            return a.name.localeCompare(b.name);
+        });
+
+        res.status(200).json(combined);
     } catch (err) {
-        console.error("Error getPublicCompaniesWithImmutable:", err);
+        console.error("Error getPublicCompanies:", err);
         res.status(500).json({ error: err.message });
     }
 };
@@ -2605,135 +2641,167 @@ const syncBatchOutputs = async (batchId, etapaId, dataObj) => {
 const getCompanyLandingData = async (req, res) => {
     const { userId } = req.params;
     try {
-        // 1. Obtener Datos del Usuario y su Enlace de Entidad
-        const user = await get('SELECT id, empresa, company_logo, celular, correo, company_type, company_id FROM users WHERE id = ?', [userId]);
-        if(!user) return res.status(404).json({error: "Empresa no encontrada"});
-
-        let entityData = {};
+        let isSuggested = userId.startsWith('SUG-');
         
-        // 2. Obtener Datos Profundos de la Entidad
-        if (user.company_type === 'finca' && user.company_id) {
-            entityData = await get('SELECT * FROM fincas WHERE id = ?', [user.company_id]);
-            if(entityData) entityData.type_label = 'Finca Productora';
-        } else if (user.company_type === 'procesadora' && user.company_id) {
-            entityData = await get('SELECT * FROM procesadoras WHERE id = ?', [user.company_id]);
-            if(entityData) entityData.type_label = 'Planta de Procesamiento';
-        }
+        if (isSuggested) {
+            // --- Lógica para Empresa Sugerida ---
+            const suggestion = await get('SELECT * FROM suggested_companies WHERE id = ?', [userId]);
+            if (!suggestion) return res.status(404).json({ error: "Sugerencia no encontrada" });
 
-        if(entityData && entityData.id) {
-            entityData.imagenes = safeJSONParse(entityData.imagenes_json || '[]');
-            entityData.certificaciones = safeJSONParse(entityData.certificaciones_json || '[]');
-            entityData.premios = safeJSONParse(entityData.premios_json || '[]');
-            entityData.coordenadas = safeJSONParse(entityData.coordenadas || 'null');
-        }
+            // Mapeamos al formato esperado por el frontend
+            const mockUser = {
+                id: suggestion.id,
+                empresa: suggestion.name,
+                company_logo: null, // Sin logo aún
+                company_type: suggestion.type,
+                is_suggested: true // Flag clave
+            };
 
-        // 3. Obtener Productos con Trazabilidad (Consulta Mejorada)
-        // Estrategia: Buscar cualquier lote con hash, subir hasta encontrar su producto y agrupar.
-        const products = await all(`
-            WITH RECURSIVE BatchLineage AS (
-                -- 1. Ancla: Todos los lotes que tienen hash (sean finales o no)
-                SELECT 
-                    b.id as target_batch_id, 
-                    b.parent_id, 
-                    b.producto_id
-                FROM batches b
-                WHERE b.blockchain_hash IS NOT NULL AND b.blockchain_hash != ''
-                
-                UNION ALL
-                
-                -- 2. Recursión: Subir buscando el producto padre
-                SELECT 
-                    bl.target_batch_id, 
-                    parent.parent_id, 
-                    parent.producto_id
-                FROM batches parent
-                JOIN BatchLineage bl ON CAST(bl.parent_id AS TEXT) = CAST(parent.id AS TEXT)
-            ),
-            ResolvedProducts AS (
-                -- 3. Consolidar: Para cada lote certificado, obtener el primer producto_id no nulo que encuentre hacia arriba
-                SELECT 
-                    target_batch_id,
-                    MAX(producto_id) as producto_id
-                FROM BatchLineage
-                WHERE producto_id IS NOT NULL AND producto_id != ''
-                GROUP BY target_batch_id
-            )
-            -- 4. Consulta Final: Productos del usuario que tienen lotes certificados vinculados
-            SELECT DISTINCT p.id, p.nombre, p.descripcion, p.imagenes_json, p.tipo_producto, p.premios_json,
-                   COUNT(rp.target_batch_id) as lotes_count
-            FROM productos p
-            JOIN ResolvedProducts rp ON CAST(p.id AS TEXT) = CAST(rp.producto_id AS TEXT)
-            WHERE CAST(p.user_id AS TEXT) = ?
-            GROUP BY p.id, p.nombre, p.descripcion, p.imagenes_json, p.tipo_producto, p.premios_json
-            ORDER BY p.nombre ASC
-        `, [String(userId)]);
+            const mockEntity = {
+                nombre_finca: suggestion.type === 'finca' ? suggestion.name : null,
+                nombre_comercial: suggestion.type === 'procesadora' ? suggestion.name : null,
+                pais: suggestion.pais,
+                departamento: suggestion.departamento,
+                provincia: suggestion.provincia,
+                distrito: suggestion.distrito,
+                altura: suggestion.altura,
+                superficie: suggestion.superficie,
+                coordenadas: safeJSONParse(suggestion.coordenadas_json),
+                type_label: suggestion.type === 'finca' ? 'Finca Sugerida' : 'Planta Sugerida',
+                historia: "Esta empresa fue sugerida por la comunidad. La información mostrada es referencial basada en datos satelitales.",
+                social_instagram: suggestion.social_instagram,
+                social_facebook: suggestion.social_facebook
+            };
 
-        // 4. Enriquecer Productos con Lotes Recientes (Carrusel)
-        const productsWithBatches = [];
-        for(const p of products) {
-            // Misma lógica recursiva para encontrar los lotes específicos de este producto
-            const batches = await all(`
+            return res.json({
+                user: mockUser,
+                entity: mockEntity,
+                products: [] // Sin productos aún
+            });
+
+        } else {
+            // --- Lógica existente para Empresa Verificada ---
+            const user = await get('SELECT id, empresa, company_logo, celular, correo, company_type, company_id FROM users WHERE id = ?', [userId]);
+            if(!user) return res.status(404).json({error: "Empresa no encontrada"});
+
+            let entityData = {};
+            if (user.company_type === 'finca' && user.company_id) {
+                entityData = await get('SELECT * FROM fincas WHERE id = ?', [user.company_id]);
+                if(entityData) entityData.type_label = 'Finca Productora';
+            } else if (user.company_type === 'procesadora' && user.company_id) {
+                entityData = await get('SELECT * FROM procesadoras WHERE id = ?', [user.company_id]);
+                if(entityData) entityData.type_label = 'Planta de Procesamiento';
+            }
+
+            if(entityData && entityData.id) {
+                entityData.imagenes = safeJSONParse(entityData.imagenes_json || '[]');
+                entityData.certificaciones = safeJSONParse(entityData.certificaciones_json || '[]');
+                entityData.premios = safeJSONParse(entityData.premios_json || '[]');
+                entityData.coordenadas = safeJSONParse(entityData.coordenadas || 'null');
+            }
+
+            // Productos (mismo código anterior...)
+            const products = await all(`
                 WITH RECURSIVE BatchLineage AS (
-                    -- Empezar desde los lotes con hash
-                    SELECT b.id as target_batch_id, b.parent_id, b.producto_id, b.acquisition_id, b.blockchain_hash, b.created_at
+                    SELECT b.id as target_batch_id, b.parent_id, b.producto_id
                     FROM batches b
                     WHERE b.blockchain_hash IS NOT NULL AND b.blockchain_hash != ''
-                    
                     UNION ALL
-                    
-                    -- Subir
-                    SELECT bl.target_batch_id, parent.parent_id, parent.producto_id, parent.acquisition_id, bl.blockchain_hash, bl.created_at
+                    SELECT bl.target_batch_id, parent.parent_id, parent.producto_id
                     FROM batches parent
                     JOIN BatchLineage bl ON CAST(bl.parent_id AS TEXT) = CAST(parent.id AS TEXT)
                 ),
-                BatchDetails AS (
-                    SELECT 
-                        target_batch_id, 
-                        MAX(producto_id) as resolved_product_id, 
-                        MAX(acquisition_id) as resolved_acquisition_id, 
-                        MAX(blockchain_hash) as hash, 
-                        MAX(created_at) as created
+                ResolvedProducts AS (
+                    SELECT target_batch_id, MAX(producto_id) as producto_id
                     FROM BatchLineage
+                    WHERE producto_id IS NOT NULL AND producto_id != ''
                     GROUP BY target_batch_id
                 )
-                SELECT 
-                    bd.target_batch_id as id, 
-                    bd.hash as blockchain_hash, 
-                    bd.created as fecha_finalizacion, -- Usamos created_at del lote si no hay fecha en registro
-                    tr.fecha_finalizacion as fecha_registro,
-                    acq.finca_origen, f.pais, f.departamento, f.provincia
-                FROM BatchDetails bd
-                LEFT JOIN traceability_registry tr ON CAST(bd.target_batch_id AS TEXT) = CAST(tr.batch_id AS TEXT)
-                LEFT JOIN acquisitions acq ON bd.resolved_acquisition_id = acq.id
-                LEFT JOIN fincas f ON acq.finca_origen = f.nombre_finca
-                WHERE CAST(bd.resolved_product_id AS TEXT) = ?
-                ORDER BY bd.created DESC
-                LIMIT 5
-            `, [String(p.id)]);
+                SELECT DISTINCT p.id, p.nombre, p.descripcion, p.imagenes_json, p.tipo_producto, p.premios_json,
+                       COUNT(rp.target_batch_id) as lotes_count
+                FROM productos p
+                JOIN ResolvedProducts rp ON CAST(p.id AS TEXT) = CAST(rp.producto_id AS TEXT)
+                WHERE CAST(p.user_id AS TEXT) = ?
+                GROUP BY p.id, p.nombre, p.descripcion, p.imagenes_json, p.tipo_producto, p.premios_json
+                ORDER BY p.nombre ASC
+            `, [String(userId)]);
 
-            // Normalizar fecha (preferir la del registro, sino la del lote)
-            const cleanBatches = batches.map(b => ({
-                ...b,
-                fecha_finalizacion: b.fecha_registro || b.fecha_finalizacion
-            }));
+            // Carrusel de lotes (mismo código anterior...)
+            const productsWithBatches = [];
+            for(const p of products) {
+                const batches = await all(`
+                    WITH RECURSIVE BatchLineage AS (
+                        SELECT b.id as target_batch_id, b.parent_id, b.producto_id, b.acquisition_id, b.blockchain_hash, b.created_at
+                        FROM batches b
+                        WHERE b.blockchain_hash IS NOT NULL AND b.blockchain_hash != ''
+                        UNION ALL
+                        SELECT bl.target_batch_id, parent.parent_id, parent.producto_id, parent.acquisition_id, bl.blockchain_hash, bl.created_at
+                        FROM batches parent
+                        JOIN BatchLineage bl ON CAST(bl.parent_id AS TEXT) = CAST(parent.id AS TEXT)
+                    ),
+                    BatchDetails AS (
+                        SELECT 
+                            target_batch_id, 
+                            MAX(producto_id) as resolved_product_id, 
+                            MAX(acquisition_id) as resolved_acquisition_id, 
+                            MAX(blockchain_hash) as hash, 
+                            MAX(created_at) as created
+                        FROM BatchLineage
+                        GROUP BY target_batch_id
+                    )
+                    SELECT 
+                        bd.target_batch_id as id, 
+                        bd.hash as blockchain_hash, 
+                        bd.created as fecha_finalizacion,
+                        acq.finca_origen, f.pais, f.departamento, f.provincia
+                    FROM BatchDetails bd
+                    LEFT JOIN acquisitions acq ON bd.resolved_acquisition_id = acq.id
+                    LEFT JOIN fincas f ON acq.finca_origen = f.nombre_finca
+                    WHERE CAST(bd.resolved_product_id AS TEXT) = ?
+                    ORDER BY bd.created DESC
+                    LIMIT 5
+                `, [String(p.id)]);
 
-            productsWithBatches.push({
-                ...p,
-                imagenes: safeJSONParse(p.imagenes_json || '[]'),
-                premios: safeJSONParse(p.premios_json || '[]'),
-                recent_batches: cleanBatches
+                productsWithBatches.push({
+                    ...p,
+                    imagenes: safeJSONParse(p.imagenes_json || '[]'),
+                    premios: safeJSONParse(p.premios_json || '[]'),
+                    recent_batches: batches
+                });
+            }
+
+            res.json({
+                user: { ...user, is_suggested: false },
+                entity: entityData || {},
+                products: productsWithBatches
             });
         }
-
-        res.json({
-            user: user,
-            entity: entityData || {},
-            products: productsWithBatches
-        });
 
     } catch (e) {
         console.error("Error Landing:", e);
         res.status(500).json({ error: e.message });
+    }
+};
+
+const createSuggestion = async (req, res) => {
+    const { type, name, instagram, facebook, coordenadas, pais, departamento, provincia, distrito, altura, superficie } = req.body;
+    const id = `SUG-${require('crypto').randomUUID().substring(0,8).toUpperCase()}`;
+
+    try {
+        await run(`
+            INSERT INTO suggested_companies (
+                id, type, name, social_instagram, social_facebook
+            ) VALUES (?, ?, ?, ?, ?)
+        `, [
+            id, type, name, instagram, facebook,
+            pais, departamento, provincia, distrito, altura, superficie,
+            JSON.stringify(coordenadas)
+        ]);
+        
+        res.status(201).json({ message: "Sugerencia enviada", id });
+    } catch (err) {
+        console.error("Error createSuggestion:", err);
+        res.status(500).json({ error: err.message });
     }
 };
 
@@ -2770,6 +2838,29 @@ const getPublicCompaniesDataInternal = async () => {
     } catch (err) {
         console.error("Error interno fetching companies:", err);
         return [];
+    }
+};
+
+const getSuggestionById = async (req, res) => {
+    const { id } = req.params;
+    try {
+        const suggestion = await get('SELECT * FROM suggested_companies WHERE id = ?', [id]);
+        if (!suggestion) return res.status(404).json({ error: "Sugerencia no encontrada" });
+        
+        res.json(suggestion);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};
+
+const claimSuggestion = async (req, res) => {
+    const { id } = req.params;
+    try {
+        await run("UPDATE suggested_companies SET status = 'claimed' WHERE id = ?", [id]);
+        res.json({ message: "Sugerencia marcada como reclamada." });
+    } catch (err) {
+        console.error("Error claimSuggestion:", err);
+        res.status(500).json({ error: err.message });
     }
 };
 
@@ -2811,5 +2902,6 @@ module.exports = {
     getCurrencies, getUnits,
     getCompanyLandingData,
     trackAnalyticsEvent,
-    getPublicCompaniesDataInternal
+    getPublicCompaniesDataInternal,
+    createSuggestion, getSuggestionById, claimSuggestion
 };
