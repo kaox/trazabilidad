@@ -56,7 +56,7 @@ const app = {
         } catch(e){} 
     },
 
-    // --- UTILS URL ---
+    // --- UTILS ---
     createSlug: function(text) { 
         if (!text) return '';
         return text.toString().toLowerCase().trim()
@@ -64,6 +64,13 @@ const app = {
             .replace(/\s+/g, '-')
             .replace(/[^\w\-]+/g, '')
             .replace(/\-\-+/g, '-'); 
+    },
+
+    toTitleCase: function(str) {
+        if (!str) return '';
+        return str.toLowerCase().split(' ').map(word => {
+            return word.charAt(0).toUpperCase() + word.slice(1);
+        }).join(' ');
     },
     
     resolveSlugAndLoad: async function(slug) {
@@ -84,7 +91,7 @@ const app = {
         } catch(e) { this.loadCompanies(false); }
     },
 
-    // --- NIVEL 1: LISTADO DE EMPRESAS ---
+    // --- NIVEL 1: LISTADO DE EMPRESAS (DISEÑO MEJORADO) ---
     loadCompanies: async function(pushState = true) {
         this.state.view = 'companies';
         this.updateBreadcrumbs();
@@ -97,68 +104,121 @@ const app = {
             const res = await fetch('/api/public/companies');
             const companies = await res.json();
 
-            // Inicio del Grid
             let html = `<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 fade-in">`;
             
             if (companies.length > 0) {
                 companies.forEach(c => {
                     const logo = c.logo || `https://ui-avatars.com/api/?name=${encodeURIComponent(c.name)}&background=f5f5f4&color=78350f&size=128`;
                     const isPending = c.status === 'pending';
+                    const isFinca = c.type === 'finca';
                     
-                    // Definir Tipo de Empresa y Ubicación
-                    const typeLabel = c.type === 'finca' ? 'Productor' : (c.type === 'procesadora' ? 'Procesadora' : 'Empresa');
-                    const locationParts = [c.provincia, c.departamento, c.pais].filter(Boolean);
-                    const locationStr = locationParts.length > 0 ? locationParts.join(', ') : 'Ubicación no registrada';
-                    console.log(c);
+                    const typeLabel = isFinca ? 'Productor de Origen' : (c.type === 'procesadora' ? 'Planta de Procesamiento' : 'Empresa Aliada');
+                    const typeColor = isFinca ? 'amber' : 'blue';
+                    
+                    const locationParts = [c.provincia, c.departamento, c.pais]
+                        .filter(Boolean)
+                        .map(p => this.toTitleCase(p));
+                    const locationStr = locationParts.length > 0 ? locationParts.join(', ') : 'Ubicación por verificar';
+                    
                     let badgeHtml = '';
                     if (isPending) {
-                        badgeHtml = `<span class="text-[10px] font-bold text-amber-700 bg-amber-100 px-2 py-0.5 rounded border border-amber-200 inline-block mt-2"><i class="fas fa-clock mr-1"></i> Sugerido (Pendiente)</span>`;
-                    } else if (c.total_lotes_certificados > 0) {
-                        badgeHtml = `<span class="text-[10px] font-bold text-green-700 bg-green-50 px-2 py-0.5 rounded border border-green-100 inline-block mt-2"><i class="fas fa-check-circle mr-1"></i> ${c.total_lotes_certificados} Lotes Certificados</span>`;
+                        badgeHtml = `
+                            <div class="flex items-center gap-1.5 text-[10px] font-bold text-amber-600 bg-amber-50 px-2 py-1 rounded-full border border-amber-100 shadow-sm">
+                                <span class="relative flex h-2 w-2">
+                                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                                    <span class="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
+                                </span>
+                                Sugerido
+                            </div>`;
                     } else {
-                        badgeHtml = `<span class="text-[10px] font-bold text-stone-500 bg-stone-100 px-2 py-0.5 rounded border border-stone-200 inline-block mt-2">En Proceso</span>`;
+                        badgeHtml = `
+                            <div class="flex items-center gap-1.5 text-[10px] font-bold text-green-700 bg-green-50 px-2 py-1 rounded-full border border-green-100 shadow-sm">
+                                <i class="fas fa-check-circle"></i> Verificado
+                            </div>`;
                     }
 
-                    const opacityClass = isPending ? 'opacity-90' : '';
-                    const grayscaleClass = isPending ? 'grayscale-[0.3]' : '';
+                    const opacityClass = isPending ? 'opacity-95' : '';
 
                     html += `
-                        <div onclick="app.loadLanding('${c.id}', true)" class="bg-white rounded-2xl shadow-sm border border-stone-200 p-6 cursor-pointer card-hover transition-all duration-300 group ${opacityClass} flex flex-col h-full">
-                            <div class="flex items-start gap-4 mb-4 flex-grow">
-                                <img src="${logo}" alt="${c.name}" class="w-16 h-16 rounded-full object-cover border border-stone-100 ${grayscaleClass} flex-shrink-0">
-                                <div>
-                                    <p class="text-[10px] font-bold text-stone-400 uppercase tracking-wider mb-0.5">${typeLabel}</p>
-                                    <h3 class="text-xl font-display font-bold text-stone-900 group-hover:text-amber-800 transition line-clamp-1 leading-tight" title="${c.name}">${c.name}</h3>
-                                    <p class="text-xs text-stone-500 mt-1 flex items-center gap-1">
-                                        <i class="fas fa-map-marker-alt text-amber-600"></i> ${locationStr}
-                                    </p>
+                        <div onclick="app.loadLanding('${c.id}', true)" 
+                             class="group relative bg-white rounded-3xl border border-stone-200 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-500 cursor-pointer overflow-hidden flex flex-col h-full ${opacityClass}">
+                            
+                            <!-- Acento de Color Superior -->
+                            <div class="h-2 w-full bg-${typeColor}-600/20 group-hover:bg-${typeColor}-600 transition-colors duration-500"></div>
+                            
+                            <div class="p-6 flex flex-col h-full">
+                                <!-- Cabecera: Logo y Badges -->
+                                <div class="flex justify-between items-start mb-6">
+                                    <div class="relative">
+                                        <div class="absolute inset-0 bg-${typeColor}-600/10 rounded-2xl blur-lg group-hover:blur-xl transition-all opacity-0 group-hover:opacity-100"></div>
+                                        <img src="${logo}" alt="${c.name}" 
+                                             class="relative w-20 h-20 rounded-2xl object-cover border-2 border-white shadow-md group-hover:scale-105 transition-transform duration-500 bg-white">
+                                    </div>
                                     ${badgeHtml}
                                 </div>
+
+                                <!-- Información Principal -->
+                                <div class="space-y-2 flex-grow">
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-[10px] font-black uppercase tracking-[0.15em] text-${typeColor}-600 bg-${typeColor}-50 px-2 py-0.5 rounded">
+                                            ${isFinca ? '<i class="fas fa-leaf mr-1"></i>' : '<i class="fas fa-industry mr-1"></i>'}${c.type || 'Empresa'}
+                                        </span>
+                                    </div>
+                                    
+                                    <h3 class="text-2xl font-display font-black text-stone-900 leading-tight group-hover:text-amber-900 transition-colors duration-300 line-clamp-2">
+                                        ${c.name}
+                                    </h3>
+                                    
+                                    <p class="text-sm text-stone-500 flex items-center gap-2 font-medium">
+                                        <i class="fas fa-map-marker-alt text-stone-300 group-hover:text-amber-600 transition-colors"></i> 
+                                        ${locationStr}
+                                    </p>
+                                </div>
+
+                                <!-- Stats / Footer de Tarjeta -->
+                                <div class="mt-8 pt-5 border-t border-stone-100 flex items-center justify-between">
+                                    <div class="flex flex-col">
+                                        <span class="text-[10px] font-bold text-stone-400 uppercase tracking-tighter">Lotes</span>
+                                        <span class="text-lg font-black text-stone-800">${c.total_lotes_certificados || 0}</span>
+                                    </div>
+                                    
+                                    <div class="flex items-center gap-2 text-sm font-bold text-amber-800 opacity-0 group-hover:opacity-100 -translate-x-2 group-hover:translate-x-0 transition-all duration-500">
+                                        Ver Perfil <i class="fas fa-arrow-right text-xs"></i>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="text-right border-t border-stone-100 pt-3 mt-auto">
-                                <span class="text-sm font-bold text-amber-700 group-hover:underline">Ver Perfil <i class="fas fa-arrow-right ml-1"></i></span>
-                            </div>
+
+                            <!-- Efecto de Brillo al Hover -->
+                            <div class="absolute inset-0 pointer-events-none border-2 border-transparent group-hover:border-amber-600/10 rounded-3xl transition-all duration-500"></div>
                         </div>
                     `;
                 });
             }
 
-            // Tarjeta "Tu Marca Aquí" (Growth Hacking)
+            // Tarjeta "Tu Marca Aquí" Mejorada
             html += `
-                <div onclick="app.openSuggestModal()" class="flex flex-col items-center justify-center p-6 rounded-2xl border-2 border-dashed border-amber-300 bg-amber-50/50 hover:bg-amber-50 cursor-pointer transition-all group opacity-80 hover:opacity-100 h-full min-h-[180px]">
-                    <div class="w-14 h-14 rounded-full bg-white border border-amber-200 flex items-center justify-center mb-3 shadow-sm group-hover:scale-110 transition">
-                        <i class="fas fa-plus text-2xl text-amber-500"></i>
+                <div onclick="app.openSuggestModal()" 
+                     class="group relative flex flex-col items-center justify-center p-8 rounded-3xl border-2 border-dashed border-amber-200 bg-amber-50/30 hover:bg-amber-50 hover:border-amber-400 cursor-pointer transition-all duration-500 h-full min-h-[280px]">
+                    <div class="w-16 h-16 rounded-2xl bg-white border border-amber-100 flex items-center justify-center mb-4 shadow-sm group-hover:scale-110 group-hover:rotate-6 transition-all duration-500">
+                        <i class="fas fa-plus text-3xl text-amber-500"></i>
                     </div>
-                    <h3 class="text-lg font-display font-bold text-amber-900 mb-1">¿Tu Marca Aquí?</h3>
-                    <p class="text-xs text-stone-600 text-center mb-3">Únete al directorio de empresas verificadas.</p>
-                    <span class="bg-amber-600 text-white text-xs font-bold px-4 py-2 rounded-lg shadow-md hover:bg-amber-700 transition">Sugerir / Reclamar</span>
+                    <div class="text-center">
+                        <h3 class="text-xl font-display font-bold text-amber-900 mb-2">¿Tu Marca Aquí?</h3>
+                        <p class="text-sm text-stone-600 max-w-[200px] mx-auto mb-6 leading-relaxed">Únete a la red de transparencia y trazabilidad más grande de la región.</p>
+                        <span class="inline-flex items-center gap-2 bg-amber-800 text-white text-xs font-bold px-6 py-3 rounded-xl shadow-lg group-hover:bg-amber-900 group-hover:shadow-amber-900/20 transition-all">
+                            Sugerir Empresa <i class="fas fa-chevron-right text-[10px]"></i>
+                        </span>
+                    </div>
                 </div>
             `;
 
             html += `</div>`;
             this.container.innerHTML = html;
 
-        } catch (e) { console.error(e); }
+        } catch (e) { 
+            console.error(e); 
+            this.container.innerHTML = '<p class="text-center py-10 text-stone-500">Error al cargar las empresas. Inténtalo de nuevo.</p>';
+        }
     },
 
     // --- NIVEL 2: LANDING PAGE DE EMPRESA ---
@@ -196,9 +256,9 @@ const app = {
             const typeLabel = isFinca ? 'Finca de Origen' : 'Planta de Procesamiento';
             
             const locationParts = [];
-            if (entity.distrito) locationParts.push(entity.distrito);
-            if (entity.departamento) locationParts.push(entity.departamento);
-            if (entity.pais) locationParts.push(entity.pais);
+            if (entity.distrito) locationParts.push(this.toTitleCase(entity.distrito));
+            if (entity.departamento) locationParts.push(this.toTitleCase(entity.departamento));
+            if (entity.pais) locationParts.push(this.toTitleCase(entity.pais));
             const locationStr = locationParts.join(', ') || 'Ubicación no registrada';
             
             const historyText = entity.historia || user.historia_empresa || 'Comprometidos con la calidad y la transparencia en cada grano.';
@@ -383,7 +443,7 @@ const app = {
         } catch (e) { console.error(e); }
     },
 
-    // --- FORMULARIO DE SUGERENCIA INTELIGENTE ---
+    // --- RESTO DE FUNCIONES (MAPAS, MODALES, ETC.) ---
     openSuggestModal: function() {
         const modalContent = document.querySelector('#suggest-modal > div');
         if (modalContent) {
@@ -407,8 +467,8 @@ const app = {
             this.drawingManager.setDrawingMode(null);
             
             if (type === 'finca') {
-                mapLabel.textContent = "Modo: Dibujar Polígono";
-                instruction.textContent = "Dibuja el perímetro de la finca.";
+                if(mapLabel) mapLabel.textContent = "Modo: Dibujar Polígono";
+                if(instruction) instruction.textContent = "Dibuja el perímetro de la finca.";
                 this.drawingManager.setOptions({
                     drawingMode: google.maps.drawing.OverlayType.POLYGON,
                     drawingControl: true,
@@ -416,8 +476,8 @@ const app = {
                 });
                 if(areaContainer) areaContainer.parentElement.classList.remove('hidden');
             } else {
-                mapLabel.textContent = "Modo: Marcar Punto";
-                instruction.textContent = "Haz clic para ubicar la planta.";
+                if(mapLabel) mapLabel.textContent = "Modo: Marcar Punto";
+                if(instruction) instruction.textContent = "Haz clic para ubicar la planta.";
                 this.drawingManager.setOptions({
                     drawingMode: google.maps.drawing.OverlayType.MARKER,
                     drawingControl: true,
@@ -528,12 +588,13 @@ const app = {
     },
 
     updateBreadcrumbs: function() {
+        if (!this.breadcrumbs) return;
         if (this.state.view === 'companies') {
             this.breadcrumbs.classList.add('hidden');
         } else {
             this.breadcrumbs.classList.remove('hidden');
             const compSpan = document.getElementById('breadcrumb-company');
-            compSpan.textContent = this.state.selectedCompany?.name || 'Perfil';
+            if(compSpan) compSpan.textContent = this.state.selectedCompany?.name || 'Perfil';
         }
     },
 

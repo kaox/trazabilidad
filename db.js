@@ -5,6 +5,15 @@ const fs = require('fs');
 const path = require('path');
 const ee = require('@google/earthengine'); 
 
+// --- Importación de Helpers (Utilidades) ---
+const { 
+    safeJSONParse, 
+    sanitizeNumber, 
+    createSlug, 
+    toCamelCase 
+} = require('./utils/helpers.js');
+
+
 // Importar las clases necesarias del SDK v3 de Mercado Pago
 const { MercadoPagoConfig, Preference, Payment } = require('mercadopago');
 
@@ -98,29 +107,6 @@ if (environment === 'production') {
     get = (sql, params = []) => new Promise((resolve, reject) => db.get(sql, params, (err, row) => err ? reject(err) : resolve(row)));
     run = (sql, params = []) => new Promise((resolve, reject) => db.run(sql, params, function(err) { err ? reject(err) : resolve({ changes: this.changes, lastID: this.lastID }); }));
 }
-
-// --- Helper para parsear JSON de forma segura ---
-const safeJSONParse = (data) => typeof data === 'string' ? JSON.parse(data) : data;
-
-// --- Helper para sanitizar números (CORRECCIÓN DEL ERROR) ---
-// Convierte "" (string vacío) o undefined a null, para que Postgres no falle con tipos INTEGER/REAL
-const sanitizeNumber = (val) => {
-    if (val === '' || val === null || val === undefined) return null;
-    const num = Number(val);
-    return isNaN(num) ? null : num;
-};
-
-// --- Helper para crear Slugs ---
-const createSlug = (text) => {
-    return text
-        .toString()
-        .toLowerCase()
-        .trim()
-        .replace(/\s+/g, '-')     // Reemplazar espacios con -
-        .replace(/[^\w\-]+/g, '') // Eliminar caracteres no palabras
-        .replace(/\-\-+/g, '-')   // Reemplazar múltiples - con uno solo
-        + '-' + Math.floor(Math.random() * 1000); // Añadir sufijo aleatorio para unicidad
-};
 
 // --- Helper para Generar ID de Lote/Batch Único ---
 const generateUniqueBatchId = async (prefix) => {
@@ -2878,13 +2864,6 @@ const claimSuggestion = async (req, res) => {
         console.error("Error claimSuggestion:", err);
         res.status(500).json({ error: err.message });
     }
-};
-
-// --- HELPER: Normalizar claves (Igual que en Frontend) ---
-const toCamelCase = (str) => {
-    return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "") // Elimina acentos (á -> a)
-        .replace(/(?:^\w|[A-Z]|\b\w)/g, (word, index) => index === 0 ? word.toLowerCase() : word.toUpperCase()) // Convierte primera letra a minuscula, resto a Mayuscula (Camel)
-        .replace(/\s+/g, ''); // Elimina espacios
 };
 
 module.exports = {
