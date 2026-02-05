@@ -2358,6 +2358,7 @@ const ensureTemplateAndStageExists = async (userId, systemTemplateName, stageNam
 const getPublicCompaniesWithImmutable = async (req, res) => {
     try {
         // A. Empresas Verificadas (Usuarios del sistema)
+        // Hacemos JOIN con fincas y procesadoras para obtener la ubicación
         const sqlVerified = `
             SELECT 
                 CAST(u.id AS TEXT) as id, 
@@ -2365,16 +2366,23 @@ const getPublicCompaniesWithImmutable = async (req, res) => {
                 u.company_logo as logo, 
                 u.company_type as type,
                 'verified' as status,
-                COUNT(DISTINCT tr.id) as lotes_count
+                COUNT(DISTINCT tr.id) as lotes_count,
+                -- Recuperar ubicación según el tipo de empresa
+                COALESCE(f.pais, p.pais) as pais,
+                COALESCE(f.departamento, p.departamento) as departamento,
+                COALESCE(f.provincia, p.provincia) as provincia
             FROM users u
+            LEFT JOIN fincas f ON u.company_type = 'finca' AND u.company_id = f.id
+            LEFT JOIN procesadoras p ON u.company_type = 'procesadora' AND u.company_id = p.id
             LEFT JOIN traceability_registry tr ON CAST(u.id AS TEXT) = CAST(tr.user_id AS TEXT)
                 AND tr.blockchain_hash IS NOT NULL 
                 AND tr.blockchain_hash != ''
             WHERE u.empresa IS NOT NULL AND u.empresa != ''
-            GROUP BY u.id, u.empresa, u.company_logo, u.company_type
+            GROUP BY u.id, u.empresa, u.company_logo, u.company_type, f.pais, f.departamento, f.provincia, p.pais, p.departamento, p.provincia
         `;
 
         // B. Empresas Sugeridas (Pendientes)
+        // Estas ya tienen las columnas en su tabla plana
         const sqlSuggested = `
             SELECT 
                 id, 
@@ -2387,22 +2395,30 @@ const getPublicCompaniesWithImmutable = async (req, res) => {
             WHERE status = 'pending'
         `;
 
-        // Ejecutamos ambas y unimos
+        // Ejecutamos ambas consultas en paralelo
         const [verified, suggested] = await Promise.all([
             all(sqlVerified),
             all(sqlSuggested)
         ]);
 
-        // Combinar y ordenar (Verificados primero, luego por nombre)
+        // Combinar y ordenar (Verificados primero por cantidad de lotes, luego alfabético)
         const combined = [...verified, ...suggested].sort((a, b) => {
+            // Prioridad a verificados
             if (a.status === 'verified' && b.status !== 'verified') return -1;
             if (a.status !== 'verified' && b.status === 'verified') return 1;
+            
+            // Dentro de verificados, prioridad a los que tienen más lotes
+            if (a.status === 'verified' && b.status === 'verified') {
+                if (b.lotes_count !== a.lotes_count) return b.lotes_count - a.lotes_count;
+            }
+            
+            // Finalmente alfabético
             return a.name.localeCompare(b.name);
         });
 
         res.status(200).json(combined);
     } catch (err) {
-        console.error("Error getPublicCompanies:", err);
+        console.error("Error getPublicCompaniesWithImmutable:", err);
         res.status(500).json({ error: err.message });
     }
 };

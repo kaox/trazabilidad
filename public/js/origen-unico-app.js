@@ -105,28 +105,37 @@ const app = {
                     const logo = c.logo || `https://ui-avatars.com/api/?name=${encodeURIComponent(c.name)}&background=f5f5f4&color=78350f&size=128`;
                     const isPending = c.status === 'pending';
                     
+                    // Definir Tipo de Empresa y Ubicación
+                    const typeLabel = c.type === 'finca' ? 'Productor' : (c.type === 'procesadora' ? 'Procesadora' : 'Empresa');
+                    const locationParts = [c.provincia, c.departamento, c.pais].filter(Boolean);
+                    const locationStr = locationParts.length > 0 ? locationParts.join(', ') : 'Ubicación no registrada';
+                    console.log(c);
                     let badgeHtml = '';
                     if (isPending) {
-                        badgeHtml = `<span class="text-[10px] font-bold text-amber-700 bg-amber-100 px-2 py-0.5 rounded border border-amber-200 inline-block mt-1"><i class="fas fa-clock mr-1"></i> Sugerido (Pendiente)</span>`;
+                        badgeHtml = `<span class="text-[10px] font-bold text-amber-700 bg-amber-100 px-2 py-0.5 rounded border border-amber-200 inline-block mt-2"><i class="fas fa-clock mr-1"></i> Sugerido (Pendiente)</span>`;
                     } else if (c.total_lotes_certificados > 0) {
-                        badgeHtml = `<span class="text-[10px] font-bold text-green-700 bg-green-50 px-2 py-0.5 rounded border border-green-100 inline-block mt-1"><i class="fas fa-check-circle mr-1"></i> ${c.total_lotes_certificados} Lotes Certificados</span>`;
+                        badgeHtml = `<span class="text-[10px] font-bold text-green-700 bg-green-50 px-2 py-0.5 rounded border border-green-100 inline-block mt-2"><i class="fas fa-check-circle mr-1"></i> ${c.total_lotes_certificados} Lotes Certificados</span>`;
                     } else {
-                        badgeHtml = `<span class="text-[10px] font-bold text-stone-500 bg-stone-100 px-2 py-0.5 rounded border border-stone-200 inline-block mt-1">En Proceso</span>`;
+                        badgeHtml = `<span class="text-[10px] font-bold text-stone-500 bg-stone-100 px-2 py-0.5 rounded border border-stone-200 inline-block mt-2">En Proceso</span>`;
                     }
 
                     const opacityClass = isPending ? 'opacity-90' : '';
                     const grayscaleClass = isPending ? 'grayscale-[0.3]' : '';
 
                     html += `
-                        <div onclick="app.loadLanding('${c.id}', true)" class="bg-white rounded-2xl shadow-sm border border-stone-200 p-6 cursor-pointer card-hover transition-all duration-300 group ${opacityClass}">
-                            <div class="flex items-center gap-4 mb-4">
-                                <img src="${logo}" alt="${c.name}" class="w-16 h-16 rounded-full object-cover border border-stone-100 ${grayscaleClass}">
+                        <div onclick="app.loadLanding('${c.id}', true)" class="bg-white rounded-2xl shadow-sm border border-stone-200 p-6 cursor-pointer card-hover transition-all duration-300 group ${opacityClass} flex flex-col h-full">
+                            <div class="flex items-start gap-4 mb-4 flex-grow">
+                                <img src="${logo}" alt="${c.name}" class="w-16 h-16 rounded-full object-cover border border-stone-100 ${grayscaleClass} flex-shrink-0">
                                 <div>
-                                    <h3 class="text-xl font-display font-bold text-stone-900 group-hover:text-amber-800 transition line-clamp-1" title="${c.name}">${c.name}</h3>
+                                    <p class="text-[10px] font-bold text-stone-400 uppercase tracking-wider mb-0.5">${typeLabel}</p>
+                                    <h3 class="text-xl font-display font-bold text-stone-900 group-hover:text-amber-800 transition line-clamp-1 leading-tight" title="${c.name}">${c.name}</h3>
+                                    <p class="text-xs text-stone-500 mt-1 flex items-center gap-1">
+                                        <i class="fas fa-map-marker-alt text-amber-600"></i> ${locationStr}
+                                    </p>
                                     ${badgeHtml}
                                 </div>
                             </div>
-                            <div class="text-right">
+                            <div class="text-right border-t border-stone-100 pt-3 mt-auto">
                                 <span class="text-sm font-bold text-amber-700 group-hover:underline">Ver Perfil <i class="fas fa-arrow-right ml-1"></i></span>
                             </div>
                         </div>
