@@ -2373,7 +2373,7 @@ const getPublicCompaniesWithImmutable = async (req, res) => {
             SELECT 
                 id, 
                 name, 
-                NULL as logo, 
+                logo, 
                 type,
                 'pending' as status,
                 0 as lotes_count
@@ -2654,10 +2654,11 @@ const getCompanyLandingData = async (req, res) => {
             const mockUser = {
                 id: suggestion.id,
                 empresa: suggestion.name,
-                company_logo: null, // Sin logo aún
+                company_logo: suggestion.logo, // Sin logo aún
                 company_type: suggestion.type,
                 is_suggested: true // Flag clave
             };
+            console.log(mockUser);
 
             const mockEntity = {
                 nombre_finca: suggestion.type === 'finca' ? suggestion.name : null,
@@ -2786,18 +2787,16 @@ const getCompanyLandingData = async (req, res) => {
 };
 
 const createSuggestion = async (req, res) => {
-    const { type, name, instagram, facebook, coordenadas, pais, departamento, provincia, distrito, altura, superficie } = req.body;
+    const { type, name, logo, instagram, facebook } = req.body;
     const id = `SUG-${require('crypto').randomUUID().substring(0,8).toUpperCase()}`;
 
     try {
         await run(`
             INSERT INTO suggested_companies (
-                id, type, name, social_instagram, social_facebook
-            ) VALUES (?, ?, ?, ?, ?)
+                id, type, name, logo, social_instagram, social_facebook
+            ) VALUES (?, ?, ?, ?, ?, ?)
         `, [
-            id, type, name, instagram, facebook,
-            pais, departamento, provincia, distrito, altura, superficie,
-            JSON.stringify(coordenadas)
+            id, type, name, logo, instagram, facebook
         ]);
         
         res.status(201).json({ message: "Sugerencia enviada", id });

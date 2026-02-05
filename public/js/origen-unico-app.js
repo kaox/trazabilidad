@@ -445,13 +445,68 @@ const app = {
 
     // --- RESTO DE FUNCIONES (MAPAS, MODALES, ETC.) ---
     openSuggestModal: function() {
-        const modalContent = document.querySelector('#suggest-modal > div');
-        if (modalContent) {
-            const radios = modalContent.querySelectorAll('input[name="suggest_type"]');
-            radios.forEach(r => r.addEventListener('change', () => app.toggleMapMode()));
+        const modal = document.getElementById('suggest-modal');
+        if (!modal) return;
+
+        // Inyectar dinámicamente el campo de logo si no existe en el HTML
+        // Esto evita tener que editar el HTML manualmente si prefieres gestionarlo desde JS
+        const form = document.getElementById('suggest-form');
+        if (form && !document.getElementById('logo-container')) {
+            const logoHtml = `
+                <div id="logo-container" class="space-y-2">
+                    <label class="block text-xs font-bold text-stone-500 uppercase">Logo de la Empresa (Máx 5MB)</label>
+                    <div class="flex items-center gap-4">
+                        <div id="logo-preview" class="w-16 h-16 rounded-xl border-2 border-dashed border-stone-200 flex items-center justify-center bg-stone-50 overflow-hidden">
+                            <i class="fas fa-image text-stone-300"></i>
+                        </div>
+                        <div class="flex-grow">
+                            <input type="file" id="input-logo" accept="image/*" class="block w-full text-xs text-stone-500
+                                file:mr-4 file:py-2 file:px-4
+                                file:rounded-full file:border-0
+                                file:text-xs file:font-semibold
+                                file:bg-amber-50 file:text-amber-700
+                                hover:file:bg-amber-100 cursor-pointer">
+                        </div>
+                    </div>
+                    <p id="logo-error" class="text-[10px] text-red-500 hidden font-bold">El archivo es demasiado grande (Máx 5MB)</p>
+                </div>
+            `;
+            // Insertar antes de los campos de redes sociales
+            const nameLabel = document.getElementById('name-label')?.parentElement;
+            if (nameLabel) nameLabel.insertAdjacentHTML('afterend', logoHtml);
+            
+            this.bindLogoEvents();
         }
-        
-        document.getElementById('suggest-modal').showModal();
+
+        modal.showModal();
+    },
+
+    bindLogoEvents: function() {
+        const input = document.getElementById('input-logo');
+        const preview = document.getElementById('logo-preview');
+        const errorMsg = document.getElementById('logo-error');
+
+        input.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            // Validación de tamaño (5MB = 5242880 bytes)
+            if (file.size > 5 * 1024 * 1024) {
+                errorMsg.classList.remove('hidden');
+                input.value = "";
+                this.pendingLogoBase64 = null;
+                preview.innerHTML = '<i class="fas fa-times text-red-300"></i>';
+                return;
+            }
+
+            errorMsg.classList.add('hidden');
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                this.pendingLogoBase64 = event.target.result;
+                preview.innerHTML = `<img src="${this.pendingLogoBase64}" class="w-full h-full object-cover">`;
+            };
+            reader.readAsDataURL(file);
+        });
     },
 
     toggleMapMode: function() {
@@ -495,15 +550,20 @@ const app = {
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
             const btn = document.getElementById('btn-submit-suggest');
-            btn.disabled = true; btn.textContent = 'Enviando...';
+            btn.disabled = true; 
+            btn.innerHTML = '<i class="fas fa-spinner animate-spin mr-2"></i> Enviando...';
 
             const formData = new FormData(e.target);
             const data = Object.fromEntries(formData.entries());
             
+            // Mapear campos y agregar el logo
             data.type = data.suggest_type;
+            data.logo = this.pendingLogoBase64; // Agregar el Base64
             delete data.suggest_type;
 
-            if(data.coordenadas) data.coordenadas = JSON.parse(data.coordenadas);
+            if(data.coordenadas) {
+                try { data.coordenadas = JSON.parse(data.coordenadas); } catch(e) { data.coordenadas = null; }
+            }
 
             try {
                 const res = await fetch('/api/public/suggest', {
@@ -512,16 +572,23 @@ const app = {
                     body: JSON.stringify(data)
                 });
                 
-                if(!res.ok) throw new Error("Error al enviar");
+                if(!res.ok) throw new Error("Error al enviar la sugerencia");
                 
-                alert("¡Gracias! Tu sugerencia ha sido enviada y será revisada.");
+                // Limpiar estado
+                this.pendingLogoBase64 = null;
+                e.target.reset();
+                const preview = document.getElementById('logo-preview');
+                if (preview) preview.innerHTML = '<i class="fas fa-image text-stone-300"></i>';
+
+                alert("¡Gracias! Tu sugerencia ha sido enviada con éxito.");
                 document.getElementById('suggest-modal').close();
                 this.loadCompanies(); 
 
             } catch(err) {
-                alert("Error: " + err.message);
+                alert("Hubo un problema: " + err.message);
             } finally {
-                btn.disabled = false; btn.textContent = 'Enviar Sugerencia';
+                btn.disabled = false; 
+                btn.innerHTML = '<i class="fas fa-paper-plane mr-2"></i> Enviar Sugerencia';
             }
         });
     },
