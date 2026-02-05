@@ -235,5 +235,49 @@
     </footer>
 
     <script src="/js/origen-unico-app.js"></script>
+    <script>
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const menuButton = document.getElementById('menu-button');
+            const closeMenuButton = document.getElementById('close-menu-button');
+            const mobileMenu = document.getElementById('mobile-menu');
+            const menuLinks = mobileMenu.querySelectorAll('a');
+
+            function openMenu() {
+                mobileMenu.classList.remove('-translate-x-full');
+                closeMenuButton.classList.remove('hidden');
+                menuButton.classList.add('hidden');
+            }
+
+            function closeMenu() {
+                mobileMenu.classList.add('-translate-x-full');
+                closeMenuButton.classList.add('hidden');
+                menuButton.classList.remove('hidden');
+            }
+
+            menuButton.addEventListener('click', openMenu);
+            closeMenuButton.addEventListener('click', closeMenu);
+            menuLinks.forEach(link => {
+                link.addEventListener('click', closeMenu);
+            });
+        });
+
+        // Script para menú desplegable de escritorio
+        document.addEventListener('DOMContentLoaded', () => {
+            document.querySelectorAll('[data-menu]').forEach(item => {
+                const button = item.querySelector('button');
+                const content = item.querySelector('[data-menu-content]');
+                button.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    content.classList.toggle('hidden');
+                });
+            });
+            document.addEventListener('click', () => {
+                 document.querySelectorAll('[data-menu-content]').forEach(content => {
+                    content.classList.add('hidden');
+                 });
+            });
+        });
+    </script>
 </body>
 </html>
