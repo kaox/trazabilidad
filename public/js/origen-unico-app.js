@@ -1,7 +1,9 @@
 const app = {
     state: {
         view: 'companies',
-        selectedCompany: null
+        selectedCompany: null,
+        companies: [], // Almacén para evitar peticiones repetidas
+        currentFilter: 'all'
     },
 
     container: document.getElementById('app-container'),
@@ -91,140 +93,118 @@ const app = {
         } catch(e) { this.loadCompanies(false); }
     },
 
+    setFilter: function(filterType) {
+        this.state.currentFilter = filterType;
+        
+        // Actualizar UI de botones
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            if (btn.getAttribute('data-filter') === filterType) {
+                btn.classList.add('active');
+            } else {
+                btn.classList.remove('active');
+            }
+        });
+
+        this.renderCompanies();
+    },
+
     // --- NIVEL 1: LISTADO DE EMPRESAS (DISEÑO MEJORADO) ---
     loadCompanies: async function(pushState = true) {
         this.state.view = 'companies';
         this.updateBreadcrumbs();
+
+        // Mostrar barra de filtros si estamos en vista de empresas
+        document.getElementById('filters-section')?.classList.remove('hidden');
         
         if (pushState) history.pushState({ view: 'companies' }, "Directorio", "/origen-unico");
+
+        // Si ya tenemos los datos, solo renderizamos
+        if (this.state.companies.length > 0) {
+            this.renderCompanies();
+            return;
+        }
 
         this.container.innerHTML = '<div class="flex justify-center py-20"><div class="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-900"></div></div>';
 
         try {
             const res = await fetch('/api/public/companies');
-            const companies = await res.json();
-
-            let html = `<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 fade-in">`;
-            
-            if (companies.length > 0) {
-                companies.forEach(c => {
-                    const logo = c.logo || `https://ui-avatars.com/api/?name=${encodeURIComponent(c.name)}&background=f5f5f4&color=78350f&size=128`;
-                    const isPending = c.status === 'pending';
-                    const isFinca = c.type === 'finca';
-                    
-                    const typeLabel = isFinca ? 'Productor de Origen' : (c.type === 'procesadora' ? 'Planta de Procesamiento' : 'Empresa Aliada');
-                    const typeColor = isFinca ? 'amber' : 'blue';
-                    
-                    const locationParts = [c.provincia, c.departamento, c.pais]
-                        .filter(Boolean)
-                        .map(p => this.toTitleCase(p));
-                    const locationStr = locationParts.length > 0 ? locationParts.join(', ') : 'Ubicación por verificar';
-                    
-                    let badgeHtml = '';
-                    if (isPending) {
-                        badgeHtml = `
-                            <div class="flex items-center gap-1.5 text-[10px] font-bold text-amber-600 bg-amber-50 px-2 py-1 rounded-full border border-amber-100 shadow-sm">
-                                <span class="relative flex h-2 w-2">
-                                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
-                                    <span class="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
-                                </span>
-                                Sugerido
-                            </div>`;
-                    } else {
-                        badgeHtml = `
-                            <div class="flex items-center gap-1.5 text-[10px] font-bold text-green-700 bg-green-50 px-2 py-1 rounded-full border border-green-100 shadow-sm">
-                                <i class="fas fa-check-circle"></i> Verificado
-                            </div>`;
-                    }
-
-                    const opacityClass = isPending ? 'opacity-95' : '';
-
-                    html += `
-                        <div onclick="app.loadLanding('${c.id}', true)" 
-                             class="group relative bg-white rounded-3xl border border-stone-200 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-500 cursor-pointer overflow-hidden flex flex-col h-full ${opacityClass}">
-                            
-                            <!-- Acento de Color Superior -->
-                            <div class="h-2 w-full bg-${typeColor}-600/20 group-hover:bg-${typeColor}-600 transition-colors duration-500"></div>
-                            
-                            <div class="p-6 flex flex-col h-full">
-                                <!-- Cabecera: Logo y Badges -->
-                                <div class="flex justify-between items-start mb-6">
-                                    <div class="relative">
-                                        <div class="absolute inset-0 bg-${typeColor}-600/10 rounded-2xl blur-lg group-hover:blur-xl transition-all opacity-0 group-hover:opacity-100"></div>
-                                        <img src="${logo}" alt="${c.name}" 
-                                             class="relative w-20 h-20 rounded-2xl object-cover border-2 border-white shadow-md group-hover:scale-105 transition-transform duration-500 bg-white">
-                                    </div>
-                                    ${badgeHtml}
-                                </div>
-
-                                <!-- Información Principal -->
-                                <div class="space-y-2 flex-grow">
-                                    <div class="flex items-center gap-2">
-                                        <span class="text-[10px] font-black uppercase tracking-[0.15em] text-${typeColor}-600 bg-${typeColor}-50 px-2 py-0.5 rounded">
-                                            ${isFinca ? '<i class="fas fa-leaf mr-1"></i>' : '<i class="fas fa-industry mr-1"></i>'}${c.type || 'Empresa'}
-                                        </span>
-                                    </div>
-                                    
-                                    <h3 class="text-2xl font-display font-black text-stone-900 leading-tight group-hover:text-amber-900 transition-colors duration-300 line-clamp-2">
-                                        ${c.name}
-                                    </h3>
-                                    
-                                    <p class="text-sm text-stone-500 flex items-center gap-2 font-medium">
-                                        <i class="fas fa-map-marker-alt text-stone-300 group-hover:text-amber-600 transition-colors"></i> 
-                                        ${locationStr}
-                                    </p>
-                                </div>
-
-                                <!-- Stats / Footer de Tarjeta -->
-                                <div class="mt-8 pt-5 border-t border-stone-100 flex items-center justify-between">
-                                    <div class="flex flex-col">
-                                        <span class="text-[10px] font-bold text-stone-400 uppercase tracking-tighter">Lotes</span>
-                                        <span class="text-lg font-black text-stone-800">${c.total_lotes_certificados || 0}</span>
-                                    </div>
-                                    
-                                    <div class="flex items-center gap-2 text-sm font-bold text-amber-800 opacity-0 group-hover:opacity-100 -translate-x-2 group-hover:translate-x-0 transition-all duration-500">
-                                        Ver Perfil <i class="fas fa-arrow-right text-xs"></i>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Efecto de Brillo al Hover -->
-                            <div class="absolute inset-0 pointer-events-none border-2 border-transparent group-hover:border-amber-600/10 rounded-3xl transition-all duration-500"></div>
-                        </div>
-                    `;
-                });
-            }
-
-            // Tarjeta "Tu Marca Aquí" Mejorada
-            html += `
-                <div onclick="app.openSuggestModal()" 
-                     class="group relative flex flex-col items-center justify-center p-8 rounded-3xl border-2 border-dashed border-amber-200 bg-amber-50/30 hover:bg-amber-50 hover:border-amber-400 cursor-pointer transition-all duration-500 h-full min-h-[280px]">
-                    <div class="w-16 h-16 rounded-2xl bg-white border border-amber-100 flex items-center justify-center mb-4 shadow-sm group-hover:scale-110 group-hover:rotate-6 transition-all duration-500">
-                        <i class="fas fa-plus text-3xl text-amber-500"></i>
-                    </div>
-                    <div class="text-center">
-                        <h3 class="text-xl font-display font-bold text-amber-900 mb-2">¿Tu Marca Aquí?</h3>
-                        <p class="text-sm text-stone-600 max-w-[200px] mx-auto mb-6 leading-relaxed">Únete a la red de transparencia y trazabilidad más grande de la región.</p>
-                        <span class="inline-flex items-center gap-2 bg-amber-800 text-white text-xs font-bold px-6 py-3 rounded-xl shadow-lg group-hover:bg-amber-900 group-hover:shadow-amber-900/20 transition-all">
-                            Sugerir Empresa <i class="fas fa-chevron-right text-[10px]"></i>
-                        </span>
-                    </div>
-                </div>
-            `;
-
-            html += `</div>`;
-            this.container.innerHTML = html;
-
+            this.state.companies = await res.json();
+            this.renderCompanies();
         } catch (e) { 
-            console.error(e); 
-            this.container.innerHTML = '<p class="text-center py-10 text-stone-500">Error al cargar las empresas. Inténtalo de nuevo.</p>';
+            console.error(e);
+            this.container.innerHTML = '<p class="text-center py-20 text-stone-400 font-medium">No se pudo cargar el directorio. Reintenta en unos momentos.</p>';
         }
+    },
+
+    renderCompanies: function() {
+        const filter = this.state.currentFilter;
+        
+        // Filtrar datos
+        const filtered = filter === 'all' 
+            ? this.state.companies 
+            : this.state.companies.filter(c => c.type === filter);
+
+        let html = `<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 fade-in">`;
+        
+        if (filtered.length > 0) {
+            filtered.forEach(c => {
+                const logo = c.logo || `https://ui-avatars.com/api/?name=${encodeURIComponent(c.name)}&background=f5f5f4&color=78350f&size=128`;
+                const isFinca = c.type === 'finca';
+                const typeColor = isFinca ? 'amber' : 'blue';
+                const locationStr = [c.departamento, c.pais].filter(Boolean).map(p => this.toTitleCase(p)).join(', ') || 'Ubicación por verificar';
+                
+                html += `
+                    <div onclick="app.loadLanding('${c.id}', true)" 
+                         class="group relative bg-white rounded-3xl border border-stone-200 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-500 cursor-pointer overflow-hidden flex flex-col h-full">
+                        <div class="h-2 w-full bg-${typeColor}-600/20 group-hover:bg-${typeColor}-600 transition-colors duration-500"></div>
+                        <div class="p-6 flex flex-col h-full">
+                            <div class="flex justify-between items-start mb-6">
+                                <img src="${logo}" class="w-20 h-20 rounded-2xl object-cover border-2 border-white shadow-md bg-white">
+                                ${c.status === 'pending' ? 
+                                    '<span class="text-[10px] font-bold text-amber-600 bg-amber-50 px-2 py-1 rounded-full border border-amber-100">Sugerido</span>' : 
+                                    '<span class="text-[10px] font-bold text-green-700 bg-green-50 px-2 py-1 rounded-full border border-green-100"><i class="fas fa-check-circle"></i> Verificado</span>'}
+                            </div>
+                            <div class="flex-grow">
+                                <span class="text-[10px] font-black uppercase tracking-[0.15em] text-${typeColor}-600 mb-1 block">
+                                    ${isFinca ? '<i class="fas fa-leaf mr-1"></i> Productor' : '<i class="fas fa-industry mr-1"></i> Procesadora'}
+                                </span>
+                                <h3 class="text-2xl font-display font-black text-stone-900 leading-tight group-hover:text-amber-900 transition-colors line-clamp-2">${c.name}</h3>
+                                <p class="text-sm text-stone-500 mt-2 flex items-center gap-2 font-medium"><i class="fas fa-map-marker-alt text-stone-300 group-hover:text-amber-600 transition-colors"></i> ${locationStr}</p>
+                            </div>
+                            <div class="mt-8 pt-5 border-t border-stone-100 flex items-center justify-between">
+                                <div class="flex flex-col"><span class="text-[10px] font-bold text-stone-400 uppercase">Lotes</span><span class="text-lg font-black text-stone-800">${c.total_lotes_certificados || 0}</span></div>
+                                <div class="text-sm font-bold text-amber-800 opacity-0 group-hover:opacity-100 transition-all transform -translate-x-2 group-hover:translate-x-0">Ver Perfil <i class="fas fa-arrow-right ml-1"></i></div>
+                            </div>
+                        </div>
+                    </div>`;
+            });
+        } else {
+            html += `<div class="col-span-full py-20 text-center">
+                        <i class="fas fa-search text-stone-200 text-5xl mb-4"></i>
+                        <p class="text-stone-400 font-medium">No se encontraron empresas en esta categoría.</p>
+                     </div>`;
+        }
+
+        // Tarjeta "Tu Marca Aquí" (Solo aparece si filtramos 'all' o categorías específicas según desees)
+        html += `
+            <div onclick="app.openSuggestModal()" class="flex flex-col items-center justify-center p-8 rounded-3xl border-2 border-dashed border-amber-200 bg-amber-50/30 hover:bg-amber-50 hover:border-amber-400 cursor-pointer transition-all duration-500 min-h-[280px]">
+                <div class="w-16 h-16 rounded-2xl bg-white border border-amber-100 flex items-center justify-center mb-4 shadow-sm"><i class="fas fa-plus text-3xl text-amber-500"></i></div>
+                <h3 class="text-xl font-display font-bold text-amber-900 mb-2">¿Tu Marca Aquí?</h3>
+                <p class="text-sm text-stone-600 text-center mb-6 max-w-[200px]">Únete a la red de transparencia global.</p>
+                <span class="bg-amber-800 text-white text-xs font-bold px-6 py-3 rounded-xl shadow-lg hover:bg-amber-900 transition-all">Sugerir Empresa</span>
+            </div></div>`;
+
+        this.container.innerHTML = html;
     },
 
     // --- NIVEL 2: LANDING PAGE DE EMPRESA ---
     loadLanding: async function(userId, pushState = true) {
         this.state.view = 'landing';
         this.updateBreadcrumbs();
+
+        // Ocultar filtros en la landing
+        document.getElementById('filters-section')?.classList.add('hidden');
+        
         this.container.innerHTML = '<div class="flex justify-center py-20"><div class="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-900"></div></div>';
 
         // Tracking
