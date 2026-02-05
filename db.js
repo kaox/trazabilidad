@@ -2658,7 +2658,6 @@ const getCompanyLandingData = async (req, res) => {
                 company_type: suggestion.type,
                 is_suggested: true // Flag clave
             };
-            console.log(mockUser);
 
             const mockEntity = {
                 nombre_finca: suggestion.type === 'finca' ? suggestion.name : null,
