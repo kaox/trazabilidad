@@ -2833,12 +2833,23 @@ const trackAnalyticsEvent = async (req, res) => {
 
 const getPublicCompaniesDataInternal = async () => {
     try {
-        const sql = `
-            SELECT id, empresa, company_logo
+        // 1. Obtener empresas verificadas (tabla users)
+        const users = await all(`
+            SELECT id, empresa, company_logo 
             FROM users 
             WHERE empresa IS NOT NULL AND empresa != ''
-        `;
-        return await all(sql);
+        `);
+
+        // 2. Obtener empresas sugeridas (tabla suggested_companies)
+        // Mapeamos los campos para que coincidan con la estructura de 'users'
+        const suggestions = await all(`
+            SELECT id, name as empresa, logo as company_logo 
+            FROM suggested_companies
+        `);
+
+        // 3. Combinar ambos resultados
+        return [...users, ...suggestions];
+
     } catch (err) {
         console.error("Error interno fetching companies:", err);
         return [];
