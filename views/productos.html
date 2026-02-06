@@ -11,6 +11,15 @@
     <style>
         body { font-family: 'Inter', sans-serif; background-color: #fdfaf6; }
         .font-display { font-family: 'Playfair Display', serif; }
+        
+        /* Toggle Switch Styles */
+        .toggle-checkbox:checked {
+            right: 0;
+            border-color: #10B981;
+        }
+        .toggle-checkbox:checked + .toggle-label {
+            background-color: #10B981;
+        }
     </style>
 </head>
 <body class="text-stone-800 antialiased">
@@ -68,6 +77,18 @@
                         <div>
                             <label class="block text-sm font-medium text-stone-700 mb-1">Peso / Presentación</label>
                             <input type="text" id="peso" class="w-full p-3 border border-stone-300 rounded-xl" placeholder="Ej: 250g, 1kg, 10 Barras">
+                        </div>
+                    </div>
+
+                    <!-- ESTADO PUBLICADO (NUEVO) -->
+                    <div class="bg-stone-50 p-4 rounded-xl border border-stone-200 flex items-center justify-between">
+                        <div>
+                            <span class="font-bold text-stone-800 text-sm block">Visible en Catálogo</span>
+                            <span class="text-xs text-stone-500">Si desactivas esto, el producto no aparecerá en tu perfil público.</span>
+                        </div>
+                        <div class="relative inline-block w-12 mr-2 align-middle select-none transition duration-200 ease-in">
+                            <input type="checkbox" name="is_published" id="is_published" class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer border-stone-300"/>
+                            <label for="is_published" class="toggle-label block overflow-hidden h-6 rounded-full bg-stone-300 cursor-pointer"></label>
                         </div>
                     </div>
 
@@ -135,7 +156,6 @@
             
             <div class="p-6 border-t border-stone-100 bg-stone-50 sticky bottom-0 flex justify-end gap-3 rounded-b-2xl">
                 <button type="button" onclick="document.getElementById('product-modal').close()" class="text-stone-500 font-bold px-6 py-2 hover:bg-stone-200 rounded-xl transition">Cancelar</button>
-                <!-- CORRECCIÓN: Agregado ID para seleccionarlo correctamente desde JS -->
                 <button type="submit" form="product-form" id="save-product-btn" class="bg-amber-800 text-white font-bold px-8 py-2 rounded-xl hover:bg-amber-900 shadow-md transition">Guardar Producto</button>
             </div>
         </div>
@@ -317,8 +337,14 @@
                     const mainImage = (p.imagenes_json && p.imagenes_json.length > 0) ? p.imagenes_json[0] : 'https://placehold.co/100?text=Producto';
                     const tipoIcon = p.tipo_producto === 'cafe' ? 'fa-mug-hot' : (p.tipo_producto === 'cacao' ? 'fa-cookie-bite' : 'fa-jar');
                     
+                    // Manejo visual de productos no publicados
+                    const isPublished = (p.is_published !== 0 && p.is_published !== false);
+                    const opacityClass = isPublished ? '' : 'opacity-60 grayscale-[0.5] border-dashed';
+                    const statusBadge = isPublished ? '' : `<span class="absolute top-2 right-2 bg-stone-200 text-stone-600 text-[10px] font-bold px-2 py-1 rounded shadow-sm z-10">BORRADOR</span>`;
+
                     return `
-                    <div class="bg-white p-5 rounded-2xl shadow-sm border border-stone-100 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 flex flex-col group">
+                    <div class="bg-white p-5 rounded-2xl shadow-sm border border-stone-100 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 flex flex-col group ${opacityClass} relative">
+                        ${statusBadge}
                         <div class="flex gap-4 mb-4">
                             <div class="relative w-20 h-20 flex-shrink-0">
                                 <img src="${mainImage}" class="w-full h-full object-cover rounded-xl border border-stone-100">
@@ -376,6 +402,9 @@
             currentAwards = [];
             document.getElementById('awards-section').classList.add('hidden');
             
+            // Default published state: true
+            document.getElementById('is_published').checked = true;
+            
             if (id) {
                 const p = productsCache.find(x => x.id === id);
                 if (p) {
@@ -386,6 +415,9 @@
                     document.getElementById('descripcion').value = p.descripcion || '';
                     document.getElementById('ingredientes').value = p.ingredientes || '';
                     document.getElementById('peso').value = p.peso || '';
+                    
+                    // Set published state
+                    document.getElementById('is_published').checked = (p.is_published !== 0 && p.is_published !== false);
                     
                     // Trigger manual del evento change para cargar las opciones de premios correctas
                     const tipoSelect = document.getElementById('tipo_producto');
@@ -436,7 +468,9 @@
                 tipo_producto: document.getElementById('tipo_producto').value,
                 receta_nutricional_id: document.getElementById('receta_nutricional').value,
                 imagenes_json: currentImages,
-                premios_json: currentAwards
+                premios_json: currentAwards,
+                // Capturar valor del checkbox publicado
+                is_published: document.getElementById('is_published').checked
             };
 
             try {

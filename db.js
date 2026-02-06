@@ -1916,8 +1916,8 @@ const getProductos = async (req, res) => {
 
 const createProducto = async (req, res) => {
     const userId = req.user.id;
-    // Agregamos receta_nutricional_id
-    const { nombre, descripcion, gtin, is_formal_gtin, imagenes_json, ingredientes, tipo_producto, peso, premios_json, receta_nutricional_id } = req.body;
+    // Agregamos is_published
+    const { nombre, descripcion, gtin, is_formal_gtin, imagenes_json, ingredientes, tipo_producto, peso, premios_json, receta_nutricional_id, is_published } = req.body;
     const id = require('crypto').randomUUID();
 
     let finalGtin = gtin;
@@ -1927,11 +1927,14 @@ const createProducto = async (req, res) => {
     
     // Sanitizar receta_id (si viene vacío, es null)
     const recetaId = (receta_nutricional_id && receta_nutricional_id.trim() !== "") ? receta_nutricional_id : null;
+    // Por defecto true si no viene definido
+    const published = is_published !== undefined ? is_published : true;
 
     try {
+        // Asegúrate de correr: ALTER TABLE productos ADD COLUMN is_published BOOLEAN DEFAULT TRUE;
         await run(
-            'INSERT INTO productos (id, user_id, nombre, descripcion, gtin, is_formal_gtin, imagenes_json, ingredientes, tipo_producto, peso, premios_json, receta_nutricional_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-            [id, userId, nombre, descripcion, finalGtin, is_formal_gtin || false, JSON.stringify(imagenes_json || []), ingredientes, tipo_producto, peso, JSON.stringify(premios_json || []), recetaId]
+            'INSERT INTO productos (id, user_id, nombre, descripcion, gtin, is_formal_gtin, imagenes_json, ingredientes, tipo_producto, peso, premios_json, receta_nutricional_id, is_published) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            [id, userId, nombre, descripcion, finalGtin, is_formal_gtin || false, JSON.stringify(imagenes_json || []), ingredientes, tipo_producto, peso, JSON.stringify(premios_json || []), recetaId, published]
         );
         res.status(201).json({ message: "Producto creado", id });
     } catch (err) {
@@ -1943,15 +1946,15 @@ const createProducto = async (req, res) => {
 const updateProducto = async (req, res) => {
     const userId = req.user.id;
     const { id } = req.params;
-    // Agregamos receta_nutricional_id
-    const { nombre, descripcion, gtin, imagenes_json, ingredientes, tipo_producto, peso, premios_json, receta_nutricional_id } = req.body;
+    // Agregamos is_published
+    const { nombre, descripcion, gtin, imagenes_json, ingredientes, tipo_producto, peso, premios_json, receta_nutricional_id, is_published } = req.body;
 
     const recetaId = (receta_nutricional_id && receta_nutricional_id.trim() !== "") ? receta_nutricional_id : null;
 
     try {
         await run(
-            'UPDATE productos SET nombre = ?, descripcion = ?, gtin = ?, imagenes_json = ?, ingredientes = ?, tipo_producto = ?, peso = ?, premios_json = ?, receta_nutricional_id = ? WHERE id = ? AND user_id = ?',
-            [nombre, descripcion, gtin, JSON.stringify(imagenes_json || []), ingredientes, tipo_producto, peso, JSON.stringify(premios_json || []), recetaId, id, userId]
+            'UPDATE productos SET nombre = ?, descripcion = ?, gtin = ?, imagenes_json = ?, ingredientes = ?, tipo_producto = ?, peso = ?, premios_json = ?, receta_nutricional_id = ?, is_published = ? WHERE id = ? AND user_id = ?',
+            [nombre, descripcion, gtin, JSON.stringify(imagenes_json || []), ingredientes, tipo_producto, peso, JSON.stringify(premios_json || []), recetaId, is_published, id, userId]
         );
         res.status(200).json({ message: "Producto actualizado" });
     } catch (err) {
@@ -2440,16 +2443,16 @@ const getPublicProductsWithImmutable = async (req, res) => {
                 JOIN BatchLineage bl ON CAST(bl.parent_id AS TEXT) = CAST(parent.id AS TEXT)
             ),
             ResolvedProducts AS (
-                -- 3. Consolidación: Para cada lote certificado, tomamos el primer producto_id que encontremos en su historia
+                -- 3. Consolidación
                 SELECT 
                     target_batch_id,
                     registry_id,
-                    MAX(producto_id) as producto_id -- Tomamos el valor no nulo
+                    MAX(producto_id) as producto_id
                 FROM BatchLineage
                 WHERE producto_id IS NOT NULL AND producto_id != ''
                 GROUP BY target_batch_id, registry_id
             )
-            -- 4. Consulta Final: Listar productos encontrados para este usuario
+            -- 4. Consulta Final: Solo productos ACTIVOS y PUBLICADOS
             SELECT DISTINCT 
                 p.id, 
                 p.nombre, 
@@ -2459,7 +2462,9 @@ const getPublicProductsWithImmutable = async (req, res) => {
                 COUNT(rp.registry_id) as lotes_count
             FROM productos p
             JOIN ResolvedProducts rp ON CAST(p.id AS TEXT) = CAST(rp.producto_id AS TEXT)
-            WHERE CAST(p.user_id AS TEXT) = ?
+            WHERE CAST(p.user_id AS TEXT) = ? 
+              AND (p.is_published IS TRUE OR p.is_published IS NULL) -- Compatibilidad con registros viejos
+              AND p.deleted_at IS NULL
             GROUP BY p.id, p.nombre, p.descripcion, p.imagenes_json, p.tipo_producto
             ORDER BY p.nombre ASC
         `;
