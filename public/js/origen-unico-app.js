@@ -172,7 +172,7 @@ const app = {
                                 <p class="text-sm text-stone-500 mt-2 flex items-center gap-2 font-medium"><i class="fas fa-map-marker-alt text-stone-300 group-hover:text-amber-600 transition-colors"></i> ${locationStr}</p>
                             </div>
                             <div class="mt-8 pt-5 border-t border-stone-100 flex items-center justify-between">
-                                <div class="flex flex-col"><span class="text-[10px] font-bold text-stone-400 uppercase">Lotes</span><span class="text-lg font-black text-stone-800">${c.total_lotes_certificados || 0}</span></div>
+                                <div class="flex flex-col"><span class="text-[10px] font-bold text-stone-400 uppercase"></span><span class="text-lg font-black text-stone-800"></span></div>
                                 <div class="text-sm font-bold text-amber-800 opacity-0 group-hover:opacity-100 transition-all transform -translate-x-2 group-hover:translate-x-0">Ver Perfil <i class="fas fa-arrow-right ml-1"></i></div>
                             </div>
                         </div>
