@@ -2655,7 +2655,7 @@ const getCompanyLandingData = async (req, res) => {
         let isSuggested = userId.startsWith('SUG-');
         
         if (isSuggested) {
-            // --- Lógica para Empresa Sugerida ---
+            // ... (Lógica para sugeridos se mantiene igual) ...
             const suggestion = await get('SELECT * FROM suggested_companies WHERE id = ?', [userId]);
             if (!suggestion) return res.status(404).json({ error: "Sugerencia no encontrada" });
 
@@ -2679,7 +2679,6 @@ const getCompanyLandingData = async (req, res) => {
                 coordenadas: safeJSONParse(suggestion.coordenadas_json),
                 type_label: suggestion.type === 'finca' ? 'Finca Sugerida' : 'Planta Sugerida',
                 historia: "Esta empresa fue sugerida por la comunidad. La información mostrada es referencial basada en datos satelitales.",
-                // Datos sociales ya existen en la tabla suggested_companies
                 social_instagram: suggestion.social_instagram,
                 social_facebook: suggestion.social_facebook
             };
@@ -2692,7 +2691,6 @@ const getCompanyLandingData = async (req, res) => {
 
         } else {
             // --- Lógica para Empresa Verificada ---
-            // CORRECCIÓN: Agregamos social_instagram y social_facebook a la consulta
             const user = await get('SELECT id, empresa, company_logo, celular, correo, company_type, company_id, social_instagram, social_facebook FROM users WHERE id = ?', [userId]);
             if(!user) return res.status(404).json({error: "Empresa no encontrada"});
 
@@ -2712,34 +2710,19 @@ const getCompanyLandingData = async (req, res) => {
                 entityData.coordenadas = safeJSONParse(entityData.coordenadas || 'null');
             }
 
-            // ... (Resto de la lógica de productos se mantiene igual) ...
+            // CORRECCIÓN: Traer TODOS los productos publicados, no solo los que tienen lotes
             const products = await all(`
-                WITH RECURSIVE BatchLineage AS (
-                    SELECT b.id as target_batch_id, b.parent_id, b.producto_id
-                    FROM batches b
-                    WHERE b.blockchain_hash IS NOT NULL AND b.blockchain_hash != ''
-                    UNION ALL
-                    SELECT bl.target_batch_id, parent.parent_id, parent.producto_id
-                    FROM batches parent
-                    JOIN BatchLineage bl ON CAST(bl.parent_id AS TEXT) = CAST(parent.id AS TEXT)
-                ),
-                ResolvedProducts AS (
-                    SELECT target_batch_id, MAX(producto_id) as producto_id
-                    FROM BatchLineage
-                    WHERE producto_id IS NOT NULL AND producto_id != ''
-                    GROUP BY target_batch_id
-                )
-                SELECT DISTINCT p.id, p.nombre, p.descripcion, p.imagenes_json, p.tipo_producto, p.premios_json,
-                       COUNT(rp.target_batch_id) as lotes_count
-                FROM productos p
-                JOIN ResolvedProducts rp ON CAST(p.id AS TEXT) = CAST(rp.producto_id AS TEXT)
-                WHERE CAST(p.user_id AS TEXT) = ?
-                GROUP BY p.id, p.nombre, p.descripcion, p.imagenes_json, p.tipo_producto, p.premios_json
-                ORDER BY p.nombre ASC
+                SELECT id, nombre, descripcion, imagenes_json, tipo_producto, premios_json
+                FROM productos 
+                WHERE CAST(user_id AS TEXT) = ? 
+                  AND deleted_at IS NULL 
+                  AND (is_published IS TRUE OR is_published IS NULL)
+                ORDER BY nombre ASC
             `, [String(userId)]);
 
             const productsWithBatches = [];
             for(const p of products) {
+                // Buscamos si tiene lotes con trazabilidad inmutable
                 const batches = await all(`
                     WITH RECURSIVE BatchLineage AS (
                         SELECT b.id as target_batch_id, b.parent_id, b.producto_id, b.acquisition_id, b.blockchain_hash, b.created_at
@@ -2777,7 +2760,7 @@ const getCompanyLandingData = async (req, res) => {
                     ...p,
                     imagenes: safeJSONParse(p.imagenes_json || '[]'),
                     premios: safeJSONParse(p.premios_json || '[]'),
-                    recent_batches: batches
+                    recent_batches: batches // Será un array vacío si no tiene trazabilidad
                 });
             }
 
