@@ -525,8 +525,14 @@
                 if (!res.ok) throw new Error('Error API');
                 let companies = await res.json();
                 
-                // Filtrar solo empresas verificadas y tomar las 10 principales para el carrusel
-                companies = companies.filter(c => c.status === 'verified').slice(0, 10);
+                // Filtrar solo empresas verificadas
+                let verifiedCompanies = companies.filter(c => c.status === 'verified');
+                
+                // Aleatorizar el orden para mostrar variedad en cada visita
+                verifiedCompanies.sort(() => Math.random() - 0.5);
+                
+                // Tomar las 10 primeras después de aleatorizar
+                companies = verifiedCompanies.slice(0, 10);
 
                 if (companies.length === 0) {
                     carousel.innerHTML = '<p class="text-center text-stone-400 text-sm w-full">Únete a nuestra red de productores verificados.</p>';
