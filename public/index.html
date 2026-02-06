@@ -86,6 +86,9 @@
         #mobile-menu {
             transition: transform 0.3s ease-in-out;
         }
+        /* Scrollbar oculto para carruseles */
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
 </head>
 <body class="text-stone-800 antialiased">
@@ -180,6 +183,25 @@
                         <div class="mt-6 flex justify-between items-end">
                             <div class="text-xs text-stone-400 font-mono">HASH: 8f4a...2b19</div>
                             <i class="fas fa-qrcode text-4xl text-white"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- NUEVA SECCIÓN: Carrusel de Empresas Confianza -->
+        <section class="py-10 bg-stone-50 border-b border-stone-200">
+            <div class="container mx-auto px-6">
+                <p class="text-center text-stone-400 text-xs font-bold uppercase tracking-widest mb-8">Empresas que confían en Ruru Lab</p>
+                
+                <!-- Carrusel scrollable -->
+                <div id="companies-carousel" class="flex items-center justify-start md:justify-center gap-10 md:gap-16 overflow-x-auto hide-scrollbar pb-4 md:pb-0 px-4 min-h-[60px]">
+                    <!-- Cargando... (Placeholder) -->
+                    <div class="flex justify-center w-full">
+                        <div class="animate-pulse flex space-x-12">
+                            <div class="h-10 w-32 bg-stone-200 rounded"></div>
+                            <div class="h-10 w-32 bg-stone-200 rounded hidden md:block"></div>
+                            <div class="h-10 w-32 bg-stone-200 rounded hidden md:block"></div>
                         </div>
                     </div>
                 </div>
@@ -490,6 +512,62 @@
                     content.classList.add('hidden');
                  });
             });
+        });
+
+        // --- CARGA DINÁMICA DE EMPRESAS ---
+        document.addEventListener('DOMContentLoaded', async () => {
+            const carousel = document.getElementById('companies-carousel');
+            if (!carousel) return;
+
+            try {
+                // Obtener datos reales de la base de datos
+                const res = await fetch('/api/public/companies');
+                if (!res.ok) throw new Error('Error API');
+                let companies = await res.json();
+                
+                // Filtrar solo empresas verificadas y tomar las 10 principales para el carrusel
+                companies = companies.filter(c => c.status === 'verified').slice(0, 10);
+
+                if (companies.length === 0) {
+                    carousel.innerHTML = '<p class="text-center text-stone-400 text-sm w-full">Únete a nuestra red de productores verificados.</p>';
+                    return;
+                }
+
+                carousel.innerHTML = ''; // Limpiar el esqueleto de carga
+
+                companies.forEach(c => {
+                    // Generar slug para la URL
+                    const slug = c.name.toString().toLowerCase().trim()
+                        .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+                        .replace(/\s+/g, '-')
+                        .replace(/[^\w\-]+/g, '')
+                        .replace(/\-\-+/g, '-');
+
+                    // Usar logo real si existe, o generar avatar
+                    const logoSrc = c.logo || `https://ui-avatars.com/api/?name=${encodeURIComponent(c.name)}&background=f5f5f4&color=78350f&size=128`;
+                    
+                    const item = document.createElement('a');
+                    item.href = `/origen-unico/${slug}`;
+                    item.className = "flex-shrink-0 group opacity-70 hover:opacity-100 transition duration-300";
+                    item.innerHTML = `
+                        <div class="flex items-center gap-3">
+                            <img src="${logoSrc}" alt="${c.name}" class="h-10 w-10 rounded-full object-cover border border-stone-200 shadow-sm group-hover:scale-110 transition bg-white">
+                            <span class="font-display font-bold text-stone-700 text-lg group-hover:text-amber-900 whitespace-nowrap">${c.name}</span>
+                        </div>
+                    `;
+                    carousel.appendChild(item);
+                });
+
+                // Botón "Ver todas" al final
+                const viewAll = document.createElement('a');
+                viewAll.href = "/origen-unico";
+                viewAll.className = "flex-shrink-0 text-xs font-bold text-stone-400 hover:text-amber-800 uppercase tracking-wider transition ml-4 whitespace-nowrap";
+                viewAll.innerHTML = 'Ver todas <i class="fas fa-arrow-right ml-1"></i>';
+                carousel.appendChild(viewAll);
+
+            } catch (error) {
+                console.error("Error cargando empresas:", error);
+            }
         });
     </script>
 </body>
