@@ -219,8 +219,8 @@ const logoutUser = (req, res) => {
 const getUserProfile = async (req, res) => {
     const userId = req.user.id;
     try {
-        // AGREGAMOS company_type y company_id a la consulta
-        let user = await get('SELECT id, usuario, nombre, apellido, dni, ruc, empresa, company_logo, celular, correo, role, subscription_tier, trial_ends_at, default_currency, default_unit, company_type, company_id FROM users WHERE id = ?', [userId]);
+        // AGREGADOS: social_instagram, social_facebook
+        let user = await get('SELECT id, usuario, nombre, apellido, dni, ruc, empresa, company_logo, celular, correo, role, subscription_tier, trial_ends_at, default_currency, default_unit, company_type, company_id, social_instagram, social_facebook FROM users WHERE id = ?', [userId]);
         if (!user) return res.status(404).json({ error: "Usuario no encontrado." });
 
         if (!user.trial_ends_at) {
@@ -236,11 +236,11 @@ const getUserProfile = async (req, res) => {
 
 const updateUserProfile = async (req, res) => {
     const userId = req.user.id;
-    // AGREGAMOS company_type y company_id al body
-    const { nombre, apellido, dni, ruc, empresa, company_logo, celular, correo, default_currency, default_unit, company_type, company_id } = req.body;
+    // AGREGADOS: social_instagram, social_facebook
+    const { nombre, apellido, dni, ruc, empresa, company_logo, celular, correo, default_currency, default_unit, company_type, company_id, social_instagram, social_facebook } = req.body;
     try {
-        await run('UPDATE users SET nombre = ?, apellido = ?, dni = ?, ruc = ?, empresa = ?, company_logo = ?, celular = ?, correo = ?, default_currency = ?, default_unit = ?, company_type = ?, company_id = ? WHERE id = ?', 
-            [nombre, apellido, dni, ruc, empresa, company_logo, celular, correo, default_currency, default_unit, company_type, company_id, userId]);
+        await run('UPDATE users SET nombre = ?, apellido = ?, dni = ?, ruc = ?, empresa = ?, company_logo = ?, celular = ?, correo = ?, default_currency = ?, default_unit = ?, company_type = ?, company_id = ?, social_instagram = ?, social_facebook = ? WHERE id = ?', 
+            [nombre, apellido, dni, ruc, empresa, company_logo, celular, correo, default_currency, default_unit, company_type, company_id, social_instagram, social_facebook, userId]);
         res.status(200).json({ message: "Perfil actualizado." });
     } catch (err) { res.status(500).json({ error: err.message }); }
 };
@@ -2654,13 +2654,12 @@ const getCompanyLandingData = async (req, res) => {
             const suggestion = await get('SELECT * FROM suggested_companies WHERE id = ?', [userId]);
             if (!suggestion) return res.status(404).json({ error: "Sugerencia no encontrada" });
 
-            // Mapeamos al formato esperado por el frontend
             const mockUser = {
                 id: suggestion.id,
                 empresa: suggestion.name,
-                company_logo: suggestion.logo, // Sin logo aún
+                company_logo: null,
                 company_type: suggestion.type,
-                is_suggested: true // Flag clave
+                is_suggested: true
             };
 
             const mockEntity = {
@@ -2675,6 +2674,7 @@ const getCompanyLandingData = async (req, res) => {
                 coordenadas: safeJSONParse(suggestion.coordenadas_json),
                 type_label: suggestion.type === 'finca' ? 'Finca Sugerida' : 'Planta Sugerida',
                 historia: "Esta empresa fue sugerida por la comunidad. La información mostrada es referencial basada en datos satelitales.",
+                // Datos sociales ya existen en la tabla suggested_companies
                 social_instagram: suggestion.social_instagram,
                 social_facebook: suggestion.social_facebook
             };
@@ -2682,12 +2682,13 @@ const getCompanyLandingData = async (req, res) => {
             return res.json({
                 user: mockUser,
                 entity: mockEntity,
-                products: [] // Sin productos aún
+                products: []
             });
 
         } else {
-            // --- Lógica existente para Empresa Verificada ---
-            const user = await get('SELECT id, empresa, company_logo, celular, correo, company_type, company_id FROM users WHERE id = ?', [userId]);
+            // --- Lógica para Empresa Verificada ---
+            // CORRECCIÓN: Agregamos social_instagram y social_facebook a la consulta
+            const user = await get('SELECT id, empresa, company_logo, celular, correo, company_type, company_id, social_instagram, social_facebook FROM users WHERE id = ?', [userId]);
             if(!user) return res.status(404).json({error: "Empresa no encontrada"});
 
             let entityData = {};
@@ -2706,7 +2707,7 @@ const getCompanyLandingData = async (req, res) => {
                 entityData.coordenadas = safeJSONParse(entityData.coordenadas || 'null');
             }
 
-            // Productos (mismo código anterior...)
+            // ... (Resto de la lógica de productos se mantiene igual) ...
             const products = await all(`
                 WITH RECURSIVE BatchLineage AS (
                     SELECT b.id as target_batch_id, b.parent_id, b.producto_id
@@ -2732,7 +2733,6 @@ const getCompanyLandingData = async (req, res) => {
                 ORDER BY p.nombre ASC
             `, [String(userId)]);
 
-            // Carrusel de lotes (mismo código anterior...)
             const productsWithBatches = [];
             for(const p of products) {
                 const batches = await all(`

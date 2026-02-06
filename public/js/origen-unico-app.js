@@ -243,6 +243,8 @@ const app = {
             const locationStr = locationParts.join(', ') || 'Ubicación no registrada';
             
             const historyText = entity.historia || user.historia_empresa || 'Comprometidos con la calidad y la transparencia en cada grano.';
+            const instagram = user.social_instagram || entity.social_instagram;
+            const facebook = user.social_facebook || entity.social_facebook;
             const producerName = entity.propietario || (user.nombre ? user.nombre + ' ' + user.apellido : 'Productor');
             const producerPhoto = entity.foto_productor || 'https://placehold.co/150x150/e0e0e0/757575?text=Productor';
             
@@ -259,6 +261,37 @@ const app = {
 
             const cleanPhone = user.celular ? user.celular.replace(/\D/g,'') : '';
             const waBase = cleanPhone ? `https://wa.me/${cleanPhone}` : '#';
+
+            // Generador de Links Sociales
+            let socialHtml = '';
+            if (instagram || facebook) {
+                socialHtml += `<div class="flex gap-3 justify-center mt-6 pt-4 border-t border-stone-100">`;
+                
+                if (instagram) {
+                    // Limpiar usuario si tiene @ o es url completa
+                    let instaUser = instagram.replace('@', '');
+                    if(instaUser.startsWith('http')) {
+                        // Si es url completa, usarla tal cual
+                        // Si no, construirla
+                    } else {
+                        // Asumimos usuario
+                    }
+                    const instaUrl = instagram.startsWith('http') ? instagram : `https://instagram.com/${instagram.replace('@', '')}`;
+                    socialHtml += `
+                        <a href="${instaUrl}" target="_blank" class="w-10 h-10 rounded-full bg-pink-50 text-pink-600 flex items-center justify-center hover:bg-pink-100 transition shadow-sm" title="Instagram">
+                            <i class="fab fa-instagram text-xl"></i>
+                        </a>`;
+                }
+
+                if (facebook) {
+                    const fbUrl = facebook.startsWith('http') ? facebook : `https://facebook.com/${facebook}`;
+                    socialHtml += `
+                        <a href="${fbUrl}" target="_blank" class="w-10 h-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center hover:bg-blue-100 transition shadow-sm" title="Facebook">
+                            <i class="fab fa-facebook text-xl"></i>
+                        </a>`;
+                }
+                socialHtml += `</div>`;
+            }
 
             let claimBanner = '';
             if (isSuggested) {
@@ -284,7 +317,7 @@ const app = {
                 ${claimBanner}
                 
                 <!-- HERO SECTION -->
-                <div class="relative w-full h-64 md:h-80 rounded-3xl overflow-hidden mb-8 shadow-xl group ${unverifiedStyle}">
+                <div class="relative w-full h-64 md:h-80 rounded-3xl overflow-hidden mb-8 shadow-xl group ${unverifiedStyle} cursor-pointer" onclick="app.openGallery(0, ${JSON.stringify(entity.imagenes || [coverImage]).replace(/"/g, '&quot;')})">
                    <img src="${coverImage}" class="w-full h-full object-cover transform group-hover:scale-105 transition duration-700">
                    <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent"></div>
                    <div class="absolute bottom-0 left-0 w-full p-6 md:p-8 flex items-end gap-6">
@@ -295,6 +328,9 @@ const app = {
                            <p class="text-amber-100 flex items-center gap-2 text-sm md:text-base opacity-90"><i class="fas fa-map-marker-alt"></i> ${locationStr}</p>
                        </div>
                    </div>
+                   <div class="absolute top-4 right-4 bg-black/50 backdrop-blur px-3 py-1.5 rounded-full text-white text-[10px] font-bold uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity">
+                       <i class="fas fa-expand-alt mr-1"></i> Ver Galería
+                   </div>
                 </div>
 
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 ${unverifiedStyle}">
@@ -303,16 +339,12 @@ const app = {
                     <div class="lg:col-span-1 space-y-8">
                         <div class="bg-white p-6 rounded-2xl shadow-sm border border-stone-100">
                             <h3 class="text-xl font-display font-bold text-amber-900 mb-4 border-b pb-2">Identidad</h3>
-                            ${isFinca ? `
-                            <div class="flex items-center gap-4 mb-4 bg-stone-50 p-3 rounded-xl border border-stone-100">
-                                <img src="${producerPhoto}" class="w-14 h-14 rounded-full object-cover border-2 border-white shadow-sm">
-                                <div>
-                                    <p class="text-[10px] text-stone-400 font-bold uppercase tracking-wider">Productor</p>
-                                    <p class="font-bold text-stone-800 text-sm">${producerName}</p>
-                                </div>
-                            </div>` : ''}
                             <div class="prose prose-sm text-stone-600 mb-4"><p class="italic">"${historyText}"</p></div>
                             ${galleryHtml}
+                            
+                            <!-- REDES SOCIALES -->
+                            ${socialHtml}
+
                             <div class="flex gap-2 mt-6">
                                 <button onclick="if(navigator.share) navigator.share({title: '${entityName}', url: window.location.href}); else alert('URL: ' + window.location.href);" class="flex-1 bg-stone-100 hover:bg-stone-200 text-stone-600 font-bold py-2 rounded-lg transition flex items-center justify-center gap-2 text-sm"><i class="fas fa-share-alt"></i> Compartir</button>
                                 ${waBase !== '#' ? `<a href="${waBase}" target="_blank" onclick="app.trackEvent('buy_click', '${userId}')" class="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-2 rounded-lg text-center transition flex items-center justify-center gap-2 text-sm"><i class="fab fa-whatsapp text-lg"></i> Contactar</a>` : ''}
@@ -376,7 +408,6 @@ const app = {
                                 const prodImage = (prod.imagenes && prod.imagenes.length > 0) ? prod.imagenes[0] : 'https://placehold.co/400x300/f5f5f4/a8a29e?text=Producto';
                                 const batchesHtml = prod.recent_batches.map(b => {
                                     const batchDate = new Date(b.fecha_finalizacion || Date.now()).toLocaleDateString();
-                                    const batchLocation = [b.finca_origen, b.provincia].filter(Boolean).join(', ') || 'Origen único';
                                     return `
                                     <a href="/${b.id}" target="_blank" onclick="app.trackEvent('trace_view', '${userId}', '${prod.id}')" class="flex-shrink-0 w-64 bg-stone-50 border border-stone-200 rounded-xl p-3 hover:border-amber-400 hover:shadow-md transition group no-underline text-left">
                                         <div class="flex justify-between items-start mb-2"><span class="font-mono text-[10px] font-bold text-stone-500 bg-white px-2 py-1 rounded border border-stone-100">${b.id}</span><i class="fas fa-external-link-alt text-stone-300 group-hover:text-amber-500 text-xs"></i></div>

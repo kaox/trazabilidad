@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mi Cuenta - RuruLab</title>
+    <title>Mi Cuenta - Ruru Lab</title>
     <script src="/auth.js"></script>
     <link href="/css/styles.css" rel="stylesheet">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -29,56 +29,83 @@
             <div class="lg:col-span-2 space-y-8">
                 <div class="bg-white p-6 rounded-2xl shadow-lg">
                     <h2 class="text-2xl font-display text-amber-900 border-b pb-2 mb-6">Información de Perfil</h2>
-                    <form id="profile-form" class="space-y-4">
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <label for="nombre" class="block text-sm font-medium text-stone-700 mb-1">Nombre</label>
-                                <input type="text" id="nombre" name="nombre" class="w-full p-3 border border-stone-300 rounded-xl">
-                            </div>
-                            <div>
-                                <label for="apellido" class="block text-sm font-medium text-stone-700 mb-1">Apellido</label>
-                                <input type="text" id="apellido" name="apellido" class="w-full p-3 border border-stone-300 rounded-xl">
-                            </div>
-                        </div>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <label for="dni" class="block text-sm font-medium text-stone-700 mb-1">DNI</label>
-                                <input type="text" id="dni" name="dni" class="w-full p-3 border border-stone-300 rounded-xl">
-                            </div>
-                            <div>
-                                <label for="ruc" class="block text-sm font-medium text-stone-700 mb-1">RUC</label>
-                                <input type="text" id="ruc" name="ruc" class="w-full p-3 border border-stone-300 rounded-xl">
-                            </div>
-                        </div>
+                    <form id="profile-form" class="space-y-6">
+                        
+                        <!-- SECCIÓN 1: DATOS PERSONALES -->
                         <div>
-                            <label for="empresa" class="block text-sm font-medium text-stone-700 mb-1">Empresa *</label>
-                            <p class="text-xs text-stone-500 mb-3 bg-blue-50 text-blue-700 p-3 rounded-lg border border-blue-100">
-                                <i class="fas fa-info-circle mr-1"></i>
-                                Este es el nombre que se generará en tu la url de tu perfil público en el directorio de "Origen Único".
-                            </p>
-                            <input type="text" id="empresa" name="empresa" class="w-full p-3 border border-stone-300 rounded-xl">
+                            <h3 class="text-lg font-bold text-stone-700 mb-4">Datos Personales</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                <div>
+                                    <label for="nombre" class="block text-sm font-medium text-stone-700 mb-1">Nombre</label>
+                                    <input type="text" id="nombre" name="nombre" class="w-full p-3 border border-stone-300 rounded-xl">
+                                </div>
+                                <div>
+                                    <label for="apellido" class="block text-sm font-medium text-stone-700 mb-1">Apellido</label>
+                                    <input type="text" id="apellido" name="apellido" class="w-full p-3 border border-stone-300 rounded-xl">
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                <div>
+                                    <label for="dni" class="block text-sm font-medium text-stone-700 mb-1">DNI</label>
+                                    <input type="text" id="dni" name="dni" class="w-full p-3 border border-stone-300 rounded-xl">
+                                </div>
+                                <div>
+                                    <label for="ruc" class="block text-sm font-medium text-stone-700 mb-1">RUC</label>
+                                    <input type="text" id="ruc" name="ruc" class="w-full p-3 border border-stone-300 rounded-xl">
+                                </div>
+                            </div>
+                            <div>
+                                <label for="correo" class="block text-sm font-medium text-stone-700 mb-1">Correo Electrónico</label>
+                                <input type="email" id="correo" name="correo" class="w-full p-3 border border-stone-300 rounded-xl bg-gray-50">
+                            </div>
                         </div>
-                        <!-- Nuevo Campo para Logo de Empresa -->
-                        <div class="pt-4 border-t">
-                            <label class="block text-lg font-medium text-stone-800 mb-2">Logo de la Empresa</label>
-                            <div class="flex items-center gap-4">
+
+                        <!-- SECCIÓN 2: PERFIL PÚBLICO -->
+                        <div class="pt-6 border-t border-stone-100">
+                            <h3 class="text-lg font-bold text-amber-900 mb-2">Perfil Público & Landing Page</h3>
+                            <p class="text-sm text-stone-500 mb-4 bg-amber-50 p-3 rounded-lg border border-amber-100">
+                                <i class="fas fa-info-circle mr-1"></i>
+                                Estos datos se mostrarán en tu página web pública (rurulab.com/origen-unico/tu-empresa).
+                            </p>
+
+                            <div class="mb-4">
+                                <label for="empresa" class="block text-sm font-medium text-stone-700 mb-1">Nombre Comercial (Empresa) *</label>
+                                <input type="text" id="empresa" name="empresa" class="w-full p-3 border border-stone-300 rounded-xl font-bold text-stone-800">
+                            </div>
+
+                            <div class="flex items-center gap-4 mb-6">
                                 <img id="company-logo-preview" src="https://placehold.co/100x100/e0e0e0/757575?text=Logo" class="w-24 h-24 rounded-lg object-contain border-2 border-stone-200 bg-stone-50">
                                 <div class="w-full">
+                                    <label class="block text-sm font-medium text-stone-700 mb-1">Logo de la Empresa</label>
                                     <input type="file" id="company-logo-input" class="hidden" accept="image/*">
                                     <input type="hidden" id="company_logo" name="company_logo">
-                                    <button type="button" onclick="document.getElementById('company-logo-input').click()" class="text-sm bg-stone-200 hover:bg-stone-300 text-stone-800 font-bold py-2 px-4 rounded-lg">Subir Logo</button>
-                                    <p class="text-xs text-stone-500 mt-2">Se mostrará en tus páginas de trazabilidad y en perfil público en el directorio de "Origen Único".</p>
+                                    <button type="button" onclick="document.getElementById('company-logo-input').click()" class="text-sm bg-stone-200 hover:bg-stone-300 text-stone-800 font-bold py-2 px-4 rounded-lg">Subir Imagen</button>
+                                    <p class="text-xs text-stone-400 mt-1">Recomendado: 300x300px (PNG/JPG)</p>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label for="celular" class="block text-sm font-medium text-stone-700 mb-1">WhatsApp de Contacto</label>
+                                    <input type="tel" id="celular" name="celular" placeholder="+51 999 999 999" class="w-full p-3 border border-stone-300 rounded-xl">
+                                </div>
+                                <div>
+                                    <label for="social_instagram" class="block text-sm font-medium text-stone-700 mb-1">Instagram (Usuario)</label>
+                                    <div class="flex">
+                                        <span class="inline-flex items-center px-3 rounded-l-xl border border-r-0 border-stone-300 bg-stone-50 text-stone-500 text-sm">@</span>
+                                        <input type="text" id="social_instagram" name="social_instagram" placeholder="usuario" class="w-full p-3 border border-stone-300 rounded-r-xl">
+                                    </div>
+                                </div>
+                                <div class="md:col-span-2">
+                                    <label for="social_facebook" class="block text-sm font-medium text-stone-700 mb-1">Facebook (URL Completa)</label>
+                                    <input type="url" id="social_facebook" name="social_facebook" placeholder="https://facebook.com/pagina" class="w-full p-3 border border-stone-300 rounded-xl">
                                 </div>
                             </div>
                         </div>
-                        <!-- SECCIÓN NUEVA: Enlace de Entidad Productiva -->
-                        <div class="pt-4 border-t border-stone-100">
-                            <label class="block text-lg font-medium text-stone-800 mb-2">Enlace de Entidad Productiva</label>
-                            <p class="text-xs text-stone-500 mb-3 bg-blue-50 text-blue-700 p-3 rounded-lg border border-blue-100">
-                                <i class="fas fa-info-circle mr-1"></i>
-                                Selecciona tu finca o procesadora principal. Esta información se usará para completar automáticamente tu perfil público en el directorio de "Origen Único".
-                            </p>
-                            
+
+                        <!-- SECCIÓN 3: VINCULACIÓN -->
+                        <div class="pt-6 border-t border-stone-100">
+                            <h3 class="text-lg font-bold text-stone-700 mb-4">Vinculación de Origen</h3>
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
                                     <label for="company_type" class="block text-sm font-medium text-stone-700 mb-1">Tipo de Entidad</label>
@@ -96,19 +123,10 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                             <div>
-                                <label for="celular" class="block text-sm font-medium text-stone-700 mb-1">Celular</label>
-                                <input type="tel" id="celular" name="celular" class="w-full p-3 border border-stone-300 rounded-xl">
-                            </div>
-                            <div>
-                                <label for="correo" class="block text-sm font-medium text-stone-700 mb-1">Correo Electrónico</label>
-                                <input type="email" id="correo" name="correo" class="w-full p-3 border border-stone-300 rounded-xl">
-                            </div>
-                        </div>
-                        <!-- Sección de Configuración de Sistema (Integrada en el formulario de perfil) -->
-                        <div class="pt-4 border-t border-stone-100">
-                            <h3 class="text-lg font-medium text-stone-800 mb-4">Preferencias del Sistema</h3>
+
+                        <!-- SECCIÓN 4: PREFERENCIAS -->
+                        <div class="pt-6 border-t border-stone-100">
+                            <h3 class="text-lg font-bold text-stone-700 mb-4">Preferencias del Sistema</h3>
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
                                     <label for="default_currency" class="block text-sm font-medium text-stone-700 mb-1">Moneda Principal</label>
@@ -124,11 +142,13 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="pt-4 flex justify-end">
-                            <button type="submit" class="bg-amber-800 hover:bg-amber-900 text-white font-bold py-2 px-6 rounded-xl">Actualizar Perfil</button>
+
+                        <div class="pt-6 flex justify-end border-t mt-4">
+                            <button type="submit" class="bg-amber-800 hover:bg-amber-900 text-white font-bold py-3 px-8 rounded-xl shadow-md transition transform hover:-translate-y-1">Guardar Cambios</button>
                         </div>
                     </form>
                 </div>
+
                 <div class="bg-white p-6 rounded-2xl shadow-lg">
                     <h2 class="text-2xl font-display text-amber-900 border-b pb-2 mb-6">Cambiar Contraseña</h2>
                     <form id="password-form" class="space-y-4">
@@ -147,14 +167,14 @@
                             </div>
                         </div>
                          <div class="pt-4 flex justify-end">
-                            <button type="submit" class="bg-amber-800 hover:bg-amber-900 text-white font-bold py-2 px-6 rounded-xl">Cambiar Contraseña</button>
+                            <button type="submit" class="bg-stone-600 hover:bg-stone-700 text-white font-bold py-2 px-6 rounded-xl">Actualizar Contraseña</button>
                         </div>
                     </form>
                 </div>
             </div>
 
             <!-- Columna de Suscripción -->
-            <div class="bg-white p-6 rounded-2xl shadow-lg">
+            <!--div class="bg-white p-6 rounded-2xl shadow-lg h-fit sticky top-4">
                 <h2 class="text-2xl font-display text-amber-900 border-b pb-2 mb-6">Plan y Suscripción</h2>
                 <div id="subscription-info" class="space-y-4">
                     <div>
@@ -166,7 +186,7 @@
                         <p class="text-sm text-amber-700">Te quedan <strong id="trial-days-left"></strong> días para disfrutar de todas las funcionalidades.</p>
                     </div>
                     <div>
-                        <a href="/app/pricing" class="w-full text-center block bg-amber-800 hover:bg-amber-900 text-white font-bold py-3 px-6 rounded-xl shadow-md">
+                        <a href="/app/pricing" class="w-full text-center block bg-amber-800 hover:bg-amber-900 text-white font-bold py-3 px-6 rounded-xl shadow-md transition">
                             Ver Planes y Precios
                         </a>
                     </div>
@@ -180,7 +200,7 @@
                         </ul>
                     </div>
                 </div>
-            </div>
+            </div-->
         </div>
     </div>
     
@@ -189,4 +209,3 @@
     <script src="/js/help-menu.js"></script>
 </body>
 </html>
-

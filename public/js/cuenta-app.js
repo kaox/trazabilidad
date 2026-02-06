@@ -16,13 +16,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const currencySelect = document.getElementById('default_currency');
     const unitSelect = document.getElementById('default_unit');
 
-    // Selectores de Entidad Productiva (NUEVO)
+    // Selectores de Entidad Productiva
     const companyTypeSelect = document.getElementById('company_type');
     const companyIdSelect = document.getElementById('company_id');
 
     async function init() {
         await loadConfigOptions(); // Cargar combos primero
-        await loadEntityOptions(); // Cargar fincas y procesadoras (NUEVO)
+        await loadEntityOptions(); // Cargar fincas y procesadoras
         await loadProfile();       // Luego cargar datos del usuario y setear valores
         setupEventListeners();
     }
@@ -54,7 +54,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // NUEVO: Cargar Fincas y Procesadoras para el combo
+    // Cargar Fincas y Procesadoras para el combo
     let fincasCache = [];
     let procesadorasCache = [];
 
@@ -93,13 +93,18 @@ document.addEventListener('DOMContentLoaded', () => {
             
             // Poblar formulario de perfil
             if (profileForm) {
+                // Sección Personal
                 profileForm.nombre.value = user.nombre || '';
                 profileForm.apellido.value = user.apellido || '';
                 profileForm.dni.value = user.dni || '';
                 profileForm.ruc.value = user.ruc || '';
+                profileForm.correo.value = user.correo || '';
+
+                // Sección Pública / Landing
                 profileForm.empresa.value = user.empresa || '';
                 profileForm.celular.value = user.celular || '';
-                profileForm.correo.value = user.correo || '';
+                profileForm.social_instagram.value = user.social_instagram || '';
+                profileForm.social_facebook.value = user.social_facebook || '';
 
                 // Poblar configuración
                 if (user.default_currency) currencySelect.value = user.default_currency;
@@ -140,7 +145,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         } catch (error) {
             console.error("Error al cargar perfil:", error);
-            // alert("No se pudo cargar la información de tu perfil."); 
         }
     }
 
