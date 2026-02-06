@@ -2376,6 +2376,10 @@ const getPublicCompaniesWithImmutable = async (req, res) => {
                 logo, 
                 type,
                 'pending' as status,
+                pais,
+                departamento,
+                provincia,
+                distrito,
                 0 as lotes_count
             FROM suggested_companies
             WHERE status = 'pending'

@@ -237,6 +237,7 @@ const app = {
             
             const locationParts = [];
             if (entity.distrito) locationParts.push(this.toTitleCase(entity.distrito));
+            if (entity.provincia) locationParts.push(this.toTitleCase(entity.provincia));
             if (entity.departamento) locationParts.push(this.toTitleCase(entity.departamento));
             if (entity.pais) locationParts.push(this.toTitleCase(entity.pais));
             const locationStr = locationParts.join(', ') || 'Ubicación no registrada';
