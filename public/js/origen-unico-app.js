@@ -151,7 +151,7 @@ const app = {
                 const logo = c.logo || `https://ui-avatars.com/api/?name=${encodeURIComponent(c.name)}&background=f5f5f4&color=78350f&size=128`;
                 const isFinca = c.type === 'finca';
                 const typeColor = isFinca ? 'amber' : 'blue';
-                const locationStr = [c.departamento, c.pais].filter(Boolean).map(p => this.toTitleCase(p)).join(', ') || 'Ubicación por verificar';
+                const locationStr = [c.distrito, c.provincia, c.departamento, c.pais].filter(Boolean).map(p => this.toTitleCase(p)).join(', ') || 'Ubicación por verificar';
                 
                 html += `
                     <div onclick="app.loadLanding('${c.id}', true)" 
@@ -204,7 +204,7 @@ const app = {
 
         // Ocultar filtros en la landing
         document.getElementById('filters-section')?.classList.add('hidden');
-        
+
         this.container.innerHTML = '<div class="flex justify-center py-20"><div class="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-900"></div></div>';
 
         // Tracking

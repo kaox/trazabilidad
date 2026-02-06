@@ -412,6 +412,11 @@ async function initializeDatabase() {
                     name TEXT NOT NULL,
                     social_instagram TEXT,
                     social_facebook TEXT,
+
+                    pais TEXT,
+                    departamento TEXT,
+                    provincia TEXT,
+                    distrito TEXT,
                     
                     status TEXT DEFAULT 'pending', -- 'pending', 'verified', 'claimed'
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
