@@ -226,7 +226,6 @@ const app = {
                 history.pushState({ view: 'landing', userId: userId }, user.empresa, `/origen-unico/${slug}`);
             }
 
-            // ... (Mantener lógica de datos de empresa, galería, redes sociales, etc.) ...
             // Datos de la empresa
             const isSuggested = user.is_suggested;
             const isFinca = user.company_type === 'finca';
@@ -288,12 +287,10 @@ const app = {
 
             const unverifiedStyle = isSuggested ? 'opacity-80 grayscale-[0.2]' : '';
 
-            // ... (HTML de Hero y Columna Izquierda se mantiene igual) ...
-            
             let html = `
                 ${claimBanner}
                 
-                <!-- HERO SECTION (Igual al anterior) -->
+                <!-- HERO SECTION -->
                 <div class="relative w-full h-64 md:h-80 rounded-3xl overflow-hidden mb-8 shadow-xl group ${unverifiedStyle} cursor-pointer" onclick="app.openGallery(0, ${JSON.stringify(entity.imagenes || [coverImage]).replace(/"/g, '&quot;')})">
                    <img src="${coverImage}" class="w-full h-full object-cover transform group-hover:scale-105 transition duration-700">
                    <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent"></div>
@@ -312,7 +309,7 @@ const app = {
 
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 ${unverifiedStyle}">
                     
-                    <!-- COLUMNA IZQUIERDA: IDENTIDAD (Igual al anterior) -->
+                    <!-- COLUMNA IZQUIERDA: IDENTIDAD -->
                     <div class="lg:col-span-1 space-y-8">
                         <div class="bg-white p-6 rounded-2xl shadow-sm border border-stone-100">
                             <h3 class="text-xl font-display font-bold text-amber-900 mb-4 border-b pb-2">Identidad</h3>
@@ -325,7 +322,7 @@ const app = {
                             </div>
                         </div>
 
-                        <!-- FICHA TÉCNICA (Igual al anterior) -->
+                        <!-- FICHA TÉCNICA -->
                         <div class="bg-stone-50 p-6 rounded-2xl border border-stone-200">
                             <h3 class="text-lg font-bold text-stone-700 mb-4 flex items-center gap-2">
                                 <i class="fas fa-mountain text-amber-600"></i> ${isFinca ? 'Terroir & Origen' : 'Ubicación & Calidad'}
@@ -342,7 +339,6 @@ const app = {
                                     ${(!entity.certificaciones?.length) ? '<span class="text-stone-400 text-xs italic">--</span>' : ''}
                                 </div>
                             </div>
-                            <!-- ... resto de premios y satélite ... -->
                              ${isFinca ? `
                             <div class="mt-6 bg-green-100 border border-green-200 p-3 rounded-xl flex items-center gap-3">
                                 <div class="bg-white p-1.5 rounded-full text-green-600 border border-green-100"><i class="fas fa-satellite"></i></div>
@@ -364,6 +360,11 @@ const app = {
                                 const prodImage = (prod.imagenes && prod.imagenes.length > 0) ? prod.imagenes[0] : 'https://placehold.co/400x300/f5f5f4/a8a29e?text=Producto';
                                 const hasTraceability = prod.recent_batches && prod.recent_batches.length > 0;
                                 
+                                // Estilos condicionales: Si tiene trazabilidad, se destaca como Premium con borde Esmeralda
+                                const cardClasses = hasTraceability 
+                                    ? 'border-2 border-emerald-500/30 shadow-xl hover:shadow-2xl ring-1 ring-emerald-50/50' 
+                                    : 'border border-stone-200 shadow-sm hover:shadow-lg';
+
                                 const batchesHtml = hasTraceability ? prod.recent_batches.map(b => {
                                     const batchDate = new Date(b.fecha_finalizacion || Date.now()).toLocaleDateString();
                                     return `
@@ -377,16 +378,35 @@ const app = {
                                 const buyLink = waBase !== '#' ? `${waBase}?text=Hola, estoy interesado en comprar el producto: *${encodeURIComponent(prod.nombre)}*` : '#';
 
                                 return `
-                                <div class="bg-white rounded-2xl shadow-sm border border-stone-200 overflow-hidden hover:shadow-lg transition duration-300">
+                                <div class="bg-white rounded-2xl ${cardClasses} overflow-hidden transition-all duration-300 transform hover:-translate-y-1 relative">
                                     <div class="flex flex-col md:flex-row">
-                                        <div class="md:w-1/3 h-56 md:h-auto relative">
-                                            <img src="${prodImage}" class="w-full h-full object-cover">
-                                            <div class="absolute top-2 left-2 bg-black/70 text-white text-[10px] font-bold px-2 py-1 rounded backdrop-blur uppercase tracking-wider">${prod.tipo_producto || 'Especialidad'}</div>
+                                        <div class="md:w-1/3 h-64 md:h-auto relative group overflow-hidden">
+                                            <img src="${prodImage}" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110">
                                             
-                                            <!-- BADGE TRAZABILIDAD (NUEVO) -->
+                                            <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-60"></div>
+                                            
+                                            <div class="absolute top-3 left-3 bg-black/40 backdrop-blur-md text-white text-[10px] font-bold px-2 py-1 rounded border border-white/20 uppercase tracking-wider">
+                                                ${prod.tipo_producto || 'Especialidad'}
+                                            </div>
+
+                                            <!-- BADGE TRAZABILIDAD VERIFICADA -->
                                             ${hasTraceability ? 
-                                                `<div class="absolute bottom-2 left-2 bg-green-600/90 text-white text-[10px] font-bold px-2 py-1 rounded backdrop-blur uppercase tracking-wider flex items-center gap-1 shadow-lg border border-green-400/50">
-                                                    <i class="fas fa-check-circle"></i> Trazable
+                                                `<div class="absolute top-0 right-0 z-20">
+                                                    <div class="bg-gradient-to-r from-emerald-600 to-emerald-500 text-white text-[10px] font-black px-3 py-1.5 rounded-bl-2xl shadow-lg flex items-center gap-1.5">
+                                                        <i class="fas fa-check-circle text-emerald-100 animate-pulse"></i>
+                                                        <span class="tracking-wider">VERIFICADO</span>
+                                                    </div>
+                                                </div>
+                                                <div class="absolute bottom-3 left-3 right-3 z-20">
+                                                    <div class="bg-white/95 backdrop-blur-md p-2.5 rounded-xl shadow-xl border border-emerald-100 flex items-center gap-3">
+                                                        <div class="bg-emerald-50 p-2 rounded-lg text-emerald-600">
+                                                            <i class="fas fa-link text-lg"></i>
+                                                        </div>
+                                                        <div class="flex flex-col leading-none">
+                                                            <span class="text-[9px] text-stone-400 uppercase tracking-widest font-bold">Insignia Digital</span>
+                                                            <span class="font-bold text-stone-800 text-sm">Trazabilidad Blockchain</span>
+                                                        </div>
+                                                    </div>
                                                 </div>` : ''}
                                         </div>
                                         <div class="p-6 md:w-2/3 flex flex-col justify-between">
@@ -399,14 +419,14 @@ const app = {
                                             </div>
                                             <div class="flex items-center justify-between mt-4 pt-4 border-t border-stone-100">
                                                 ${hasTraceability ? 
-                                                    `<span class="text-xs font-bold text-stone-400 uppercase tracking-widest"><i class="fas fa-cubes mr-1"></i> ${prod.recent_batches.length} Lotes</span>` : 
+                                                    `<span class="text-xs font-bold text-emerald-600 uppercase tracking-widest flex items-center gap-1"><i class="fas fa-cubes"></i> ${prod.recent_batches.length} Lotes Disponibles</span>` : 
                                                     `<span class="text-xs font-bold text-stone-400 uppercase tracking-widest italic">Sin historial público</span>`
                                                 }
                                                 ${waBase !== '#' ? `<a href="${buyLink}" target="_blank" onclick="app.trackEvent('buy_click', '${userId}', '${prod.id}')" class="bg-stone-900 hover:bg-stone-800 text-white px-6 py-2.5 rounded-xl text-sm font-bold transition flex items-center gap-2 shadow-lg"><i class="fas fa-shopping-cart"></i> Comprar</a>` : ''}
                                             </div>
                                         </div>
                                     </div>
-                                    ${batchesHtml ? `<div class="bg-stone-50/80 p-4 border-t border-stone-100 backdrop-blur-sm"><p class="text-[10px] font-bold text-stone-400 mb-3 uppercase tracking-widest"><i class="fas fa-history text-amber-500 mr-1"></i> Historial de Lotes</p><div class="flex gap-3 overflow-x-auto pb-2 scrollbar-hide snap-x">${batchesHtml}</div></div>` : ''}
+                                    ${batchesHtml ? `<div class="bg-emerald-50/50 p-4 border-t border-emerald-100/50 backdrop-blur-sm"><p class="text-[10px] font-bold text-stone-400 mb-3 uppercase tracking-widest"><i class="fas fa-history text-emerald-500 mr-1"></i> Historial de Lotes</p><div class="flex gap-3 overflow-x-auto pb-2 scrollbar-hide snap-x">${batchesHtml}</div></div>` : ''}
                                 </div>`;
                             }).join('')}
                         </div>
