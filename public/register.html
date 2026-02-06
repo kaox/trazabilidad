@@ -69,6 +69,7 @@
                 <div class="pt-4 border-t border-stone-100">
                     <label for="usuario" class="block text-sm font-medium text-stone-700 mb-1">Nombre de Usuario</label>
                     <input type="text" id="usuario" name="usuario" class="w-full p-3 border border-stone-300 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none transition" required>
+                    <p class="text-xs text-stone-400 mt-1">Permitidos: Letras (a-z), números (0-9), puntos (.) y guiones bajos (_).</p>
                 </div>
                 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -106,6 +107,15 @@
         document.addEventListener('DOMContentLoaded', () => {
             const inputPhone = document.querySelector("#phone-number");
             const phoneMsg = document.querySelector("#phone-msg");
+
+            // --- VALIDACIÓN DE USUARIO ---
+            const usuarioInput = document.getElementById('usuario');
+            if (usuarioInput) {
+                usuarioInput.addEventListener('input', function() {
+                    // Convertir a minúsculas y eliminar todo lo que no sea letra (a-z), número (0-9), punto (.) o guion bajo (_)
+                    this.value = this.value.toLowerCase().replace(/[^a-z0-9._]/g, '');
+                });
+            }
 
             const params = new URLSearchParams(window.location.search);
             const claimId = params.get('claim_id');
