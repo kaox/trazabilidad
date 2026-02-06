@@ -130,13 +130,15 @@ app.get('/origen-unico/:slug', async (req, res) => {
                 const title = `${company.empresa} - Origen Único Verificado`;
                 const description = `Conoce la trazabilidad y origen de ${company.empresa} en Ruru Lab.`;
                 let image = "https://rurulab.com/images/banner_1.png";
-                if (company.company_logo && company.company_logo.startsWith('http')) image = company.company_logo;
+                if (company.company_logo) {
+                    image = company.company_logo;
+                }
 
                 let injectedHtml = htmlData
                     .replace('<title>Empresas con Origen Único - Rurulab</title>', `<title>${title}</title>`)
                     .replace(/content="RuruLab - Trazabilidad y Pasaporte Digital para Café y Cacao"/g, `content="${title}"`)
                     .replace(/content="Crea un pasaporte digital para tu producto..."/g, `content="${description}"`)
-                    .replace(/content="https:\/\/images.unsplash.com\/photo-1579532824334-a8c095a59d35\?q=80&w=1200&auto=format&fit=crop"/g, `content="${image}"`);
+                    .replace(/content="https:\/\/rurulab\.com\/images\/banner_1\.png"/g, `content="${image}"`);
                 
                 res.send(injectedHtml);
             } else {
