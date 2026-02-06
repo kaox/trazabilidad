@@ -2868,6 +2868,54 @@ const claimSuggestion = async (req, res) => {
     }
 };
 
+const serveCompanyLogo = async (req, res) => {
+    const { id } = req.params;
+    try {
+        // 1. Buscar en usuarios verificados
+        let user = await get('SELECT company_logo FROM users WHERE id = ?', [id]);
+        
+        // 2. Si no, buscar en empresas sugeridas
+        if (!user) {
+             user = await get('SELECT logo as company_logo FROM suggested_companies WHERE id = ?', [id]);
+        }
+
+        if (!user || !user.company_logo) {
+            // Si no tiene logo, redirigir a imagen por defecto
+            return res.redirect('https://rurulab.com/images/banner_1.png');
+        }
+
+        const logoData = user.company_logo;
+
+        // 3. Procesar Base64
+        if (logoData.startsWith('data:image')) {
+            const matches = logoData.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
+            if (!matches || matches.length !== 3) {
+                return res.redirect('https://rurulab.com/images/banner_1.png');
+            }
+            
+            const type = matches[1]; // ej: image/png
+            const buffer = Buffer.from(matches[2], 'base64'); // Convertir a binario
+
+            res.writeHead(200, {
+                'Content-Type': type,
+                'Content-Length': buffer.length,
+                'Cache-Control': 'public, max-age=86400' // Cachear por 1 día
+            });
+            res.end(buffer);
+        } else if (logoData.startsWith('http')) {
+            // Si ya es URL externa, redirigir
+            res.redirect(logoData);
+        } else {
+             res.redirect('https://rurulab.com/images/banner_1.png');
+        }
+
+    } catch (err) {
+        console.error("Error fetching logo:", err);
+        // Fallback a imagen por defecto en caso de error
+        res.redirect('https://rurulab.com/images/banner_1.png');
+    }
+};
+
 module.exports = {
     registerUser, loginUser, logoutUser, handleGoogleLogin,
     getFincas, createFinca, updateFinca, deleteFinca, generateFincaToken, getFincaByToken, updateFincaByToken,
@@ -2900,5 +2948,6 @@ module.exports = {
     getCompanyLandingData,
     trackAnalyticsEvent,
     getPublicCompaniesDataInternal,
-    createSuggestion, getSuggestionById, claimSuggestion
+    createSuggestion, getSuggestionById, claimSuggestion,
+    serveCompanyLogo
 };

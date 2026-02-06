@@ -97,6 +97,7 @@ app.get('/api/blog/:slug', db.getBlogPostBySlug);
 app.post('/api/public/analytics', db.trackAnalyticsEvent);
 app.post('/api/public/suggest', db.createSuggestion);
 app.get('/api/public/suggestions/:id', db.getSuggestionById);
+app.get('/api/public/companies/:id/logo', db.serveCompanyLogo); 
 
 // 6. RUTAS PÚBLICAS (PÁGINAS Y SEO)
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
@@ -126,12 +127,22 @@ app.get('/origen-unico/:slug', async (req, res) => {
             const company = companies.find(c => createSlug(c.empresa) === slug);
             
             if (company) {
-                console.log(company);
                 const title = `${company.empresa} - Origen Único Verificado`;
                 const description = `Conoce la trazabilidad y origen de ${company.empresa} en Ruru Lab.`;
-                let image = "https://rurulab.com/images/banner_1.png";
+
+                // CAMBIO IMPORTANTE: Generar URL absoluta para que WhatsApp la reconozca
+                const protocol = req.headers['x-forwarded-proto'] || req.protocol; 
+                const host = req.get('host');
+                let image = `https://rurulab.com/images/banner_1.png`;
+
                 if (company.company_logo) {
-                    image = company.company_logo;
+                    if (company.company_logo.startsWith('http')) {
+                        // Si ya es URL externa (ej. Cloudinary), la usamos
+                        image = company.company_logo;
+                    } else {
+                        // Si es Base64, usamos nuestra nueva ruta de servidor de archivos
+                        image = `${protocol}://${host}/api/public/companies/${company.id}/logo`;
+                    }
                 }
 
                 let injectedHtml = htmlData
