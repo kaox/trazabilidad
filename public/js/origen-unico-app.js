@@ -605,11 +605,7 @@ const app = {
             const mapOptions = {
                 zoom: 13,
                 mapTypeId: 'satellite',
-                disableDefaultUI: true, 
-                draggable: false,       
-                zoomControl: false,
-                scrollwheel: false,
-                disableDoubleClickZoom: true
+                streetViewControl: false
             };
             const map = new google.maps.Map(document.getElementById('mini-map'), mapOptions);
 
