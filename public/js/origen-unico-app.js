@@ -332,6 +332,7 @@ const app = {
                             <ul class="space-y-3 text-sm">
                                 ${isFinca && entity.altura ? `<li class="flex justify-between border-b border-stone-200 pb-2"><span class="text-stone-500">Altitud</span><span class="font-bold text-stone-800">${entity.altura} msnm</span></li>` : ''}
                             </ul>
+                            
                             <div class="mt-4">
                                 <span class="text-xs font-bold text-stone-400 uppercase block mb-2">Certificaciones</span>
                                 <div class="flex flex-wrap gap-2">
@@ -339,6 +340,23 @@ const app = {
                                     ${(!entity.certificaciones?.length) ? '<span class="text-stone-400 text-xs italic">--</span>' : ''}
                                 </div>
                             </div>
+
+                            <!-- SECCIÓN RESTAURADA: PREMIOS -->
+                            <div class="mt-4">
+                                <span class="text-xs font-bold text-stone-400 uppercase block mb-2">Premios</span>
+                                <div class="flex flex-wrap gap-3">
+                                    ${(entity.premios || []).map(p => `
+                                        <div class="flex flex-col items-center">
+                                            <div class="bg-white p-1.5 rounded-lg border border-stone-200 shadow-sm mb-1" title="${p.nombre}">
+                                                <img src="${p.logo_url}" class="h-8 w-8 object-contain" alt="${p.nombre}">
+                                            </div>
+                                            <span class="text-[10px] font-bold text-amber-700 bg-amber-50 px-1.5 rounded">${p.ano || p.year || ''}</span>
+                                        </div>
+                                    `).join('')}
+                                    ${(!entity.premios?.length) ? '<span class="text-stone-400 text-xs italic">--</span>' : ''}
+                                </div>
+                            </div>
+
                              ${isFinca ? `
                             <div class="mt-6 bg-green-100 border border-green-200 p-3 rounded-xl flex items-center gap-3">
                                 <div class="bg-white p-1.5 rounded-full text-green-600 border border-green-100"><i class="fas fa-satellite"></i></div>
