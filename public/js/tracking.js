@@ -1196,12 +1196,10 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- NUEVA FUNCIÓN ---
     function initializeRuedaChart(baseId, ruedaData) {
         const ctxL1 = document.getElementById(`${baseId}-l1`);
-        const ctxL2 = document.getElementById(`${baseId}-l2`);
-        if (!ctxL1 || !ctxL2 || !ruedaData || !ruedaData.notas_json) return;
+        if (!ctxL1 || !ruedaData || !ruedaData.notas_json) return;
 
         // Destruir instancias anteriores si existen
         if (chartInstances[baseId + '-l1']) chartInstances[baseId + '-l1'].destroy();
-        if (chartInstances[baseId + '-l2']) chartInstances[baseId + '-l2'].destroy();
 
         const notes = ruedaData.notas_json;
         const FLAVOR_DATA = ruedaData.tipo === 'cafe' ? FLAVOR_WHEELS_DATA.cafe : FLAVOR_WHEELS_DATA.cacao;
@@ -1240,22 +1238,22 @@ document.addEventListener('DOMContentLoaded', () => {
                         backgroundColor: l2_colors,
                         borderColor: '#ffffff',
                         borderWidth: 1,
-                        weight: 1 
+                        weight: 1.2 // Más grueso
                     },
                     // ANILLO INTERIOR (Dataset 1)
                     {
                         data: l1_data,
                         backgroundColor: l1_colors,
                         borderColor: '#ffffff',
-                        borderWidth: 2,
-                        weight: 0.6 
+                        borderWidth: 1,
+                        weight: 0.8 
                     }
                 ]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                cutout: '0%', // Agujero central un poco más pequeño para dar espacio al texto
+                cutout: '25%', // Agujero central
                 layout: {
                     top: 0,
                     left: 0,
@@ -1275,17 +1273,18 @@ document.addEventListener('DOMContentLoaded', () => {
                     },
                     // CONFIGURACIÓN DATALABELS
                     datalabels: {
-                        color: '#ffffff',
+                        color: '#444444', // Gris oscuro para mejor contraste
                         font: function(context) {
                             var width = context.chart.width;
                             var size = Math.round(width / 45); // Tamaño dinámico basado en el ancho
                             // Límites para el tamaño de fuente
                             if (size > 14) size = 14;
-                            if (size < 6) size = 6;
+                            if (size < 8) size = 8;
                             
                             return {
                                 size: size,
-                                family: 'Arial'
+                                family: 'Arial',
+                                weight: 'bold'
                             };
                         },
                         formatter: function(value, context) {
@@ -1295,27 +1294,43 @@ document.addEventListener('DOMContentLoaded', () => {
                                 });
                                 return resultado ? l2_labels[context.dataIndex] : "";
                             } else {
-                                //l1_labels[context.dataIndex]
                                 return selectedCategories[l1_labels[context.dataIndex]] ? l1_labels[context.dataIndex] : "";
                             }
                         },
                         anchor: 'center',
                         align: 'center',
-                        // Rotación del texto
+                        // Rotación del texto INTELIGENTE (Horizontal o Radial)
                         rotation: function(ctx) {
                             const valuesBefore = ctx.dataset.data.slice(0, ctx.dataIndex).reduce((a, b) => a + b, 0);
                             const sum = ctx.dataset.data.reduce((a, b) => a + b, 0);
                             const currentVal = ctx.dataset.data[ctx.dataIndex];
+                            
+                            // 1. Calcular el ancho angular de la sección en grados
+                            const spanAngle = (currentVal / sum) * 360;
+
+                            // 2. Si el espacio es amplio (> 40 grados), mantener texto horizontal (0°)
+                            // Esto evita que textos en secciones grandes queden inclinados innecesariamente
+                            if (spanAngle > 40) {
+                                return 0;
+                            }
+
+                            // 3. Si el espacio es estrecho, usar alineación RADIAL (desde el centro hacia afuera)
                             const angle = Math.PI * 2 * (valuesBefore + currentVal / 2) / sum - Math.PI / 2;
                             var degree = angle * 180 / Math.PI;
                             
-                            // Voltear texto en el lado izquierdo
-                            if (degree > 90 && degree < 270) {
-                                degree += 180;
+                            let normalizedDegree = degree;
+                            if (normalizedDegree < 0) normalizedDegree += 360;
+
+                            let rotation = degree;
+
+                            // Si está en el lado izquierdo (90 a 270 grados), girar 180 para que el texto no quede "cabeza abajo"
+                            if (normalizedDegree > 90 && normalizedDegree < 270) {
+                                rotation += 180;
                             }
-                            return degree;
+                            
+                            return rotation;
                         },
-                        textStrokeColor: 'rgba(0,0,0,0.6)',
+                        textStrokeColor: 'rgba(255,255,255,0.8)',
                         textStrokeWidth: 2
                     }
                 }
