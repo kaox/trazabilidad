@@ -198,7 +198,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (techDetails) {
                 coffeeTechHtml = `
-                    <div class="bg-white border border-stone-200 rounded-2xl p-6 mt-8 shadow-sm">
+                    <div class="bg-white border border-stone-200 rounded-2xl p-4 mt-8 shadow-sm">
                         <h3 class="text-lg font-display font-bold text-amber-900 mb-6 flex items-center gap-2">
                             <i class="fas fa-sliders-h"></i> Ficha Técnica del Café
                         </h3>
@@ -280,35 +280,35 @@ document.addEventListener('DOMContentLoaded', () => {
         ` : '';
 
         return `
-            <section class="bg-white rounded-3xl shadow-sm border border-stone-200 overflow-hidden mb-12 animate-fade-in mx-4 md:mx-0">
+            <section class="bg-white rounded-3xl shadow-sm border border-stone-200 overflow-hidden mb-12">
                 <div class="flex flex-col md:flex-row">
+                    
                     ${mainImage ? `
-                    <div class="md:w-2/5 relative min-h-[300px] md:min-h-[500px] bg-stone-100">
+                    <div class="md:w-1/3 relative min-h-[400px] md:min-h-[600px] bg-stone-100">
                         <img src="${mainImage}" class="absolute inset-0 w-full h-full object-cover" alt="${p.nombre}">
                     </div>
                     ` : ''}
-                    <div class="${mainImage ? 'md:w-3/5' : 'w-full'} p-8 md:p-10 flex flex-col">
+
+                    <div class="${mainImage ? 'md:w-2/3' : 'w-full'} p-8 md:p-16 md:pr-20 flex flex-col">
                         <div class="mb-4 flex items-center gap-3">
                             <span class="px-3 py-1 rounded-full bg-amber-100 text-amber-800 text-xs font-bold uppercase tracking-wider border border-amber-200">
                                 ${p.tipo_producto || 'Producto'}
                             </span>
-                            ${p.gtin ? `<span class="text-xs font-mono text-stone-400 bg-stone-50 px-2 py-0.5 rounded border border-stone-100"><i class="fas fa-barcode mr-1"></i>${p.gtin}</span>` : ''}
                         </div>
                         
-                        <h2 class="text-3xl md:text-4xl font-display font-bold text-stone-900 mb-6 leading-tight">
-                            ${p.nombre} ${p.peso ? `<div class="text-stone-800 font-bold text-lg">${p.peso}</div>` : '<div></div>'}
+                        <h2 class="text-4xl md:text-6xl font-display font-bold text-stone-900 mb-8">
+                            ${p.nombre}
                         </h2>
 
-                        <!-- TABS NAVEGACIÓN -->
-                        ${tabsNav}
-
-                        <!-- TABS CONTENIDO -->
-                        ${tabStory}
-                        ${hasSensory ? tabSensory : ''}
-                        ${hasWheel ? tabWheel : ''}
-                        ${tabNutrition}
-
+                        <div class="w-full">
+                            ${tabsNav}
+                            <div class="mt-8">
+                                ${tabStory}
+                                ${tabNutrition}
+                            </div>
+                        </div>
                     </div>
+
                 </div>
             </section>
         `;
@@ -576,7 +576,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <img src="${fincaData?.foto_productor || 'https://placehold.co/600x400/3E2723/FFFFFF?text=Productor'}" alt="Foto del Productor" class="w-full h-80 object-cover rounded-md mb-4">
                     <h2 class="text-3xl font-display font-bold text-amber-900">${fincaData?.propietario || 'Nombre del Productor'}</h2>
                     <p class="text-stone-500 my-2 font-semibold">${fincaData?.nombre_finca || 'Nombre de la Finca'}</p>
-                    <p class="text-stone-600 mt-4">${fincaData?.historia || 'La historia de este productor y su dedicación al cultivo de alta calidad.'}</p>
+                    <p class="text-stone-600 mt-4 p-2">${fincaData?.historia || 'La historia de este productor y su dedicación al cultivo de alta calidad.'}</p>
                 </div>
 
                 <!-- Columna Derecha: Pestañas de Trazabilidad -->
@@ -586,7 +586,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         <button class="tab-button flex-1 flex items-center justify-center gap-2 p-4 border-b-2 border-transparent" data-tab="productor"><i class="fas fa-leaf"></i> Productor</button>
                         ${routePoints.length >= 1 ? `<button class="tab-button flex-1 flex items-center justify-center gap-2 p-4 border-b-2 border-transparent" data-tab="ruta"><i class="fas fa-route"></i> Ruta</button>` : ''}
                     </div>
-                    <div class="bg-white p-6 rounded-lg shadow-md">
+                    <div class="bg-white p-4 rounded-lg shadow-md">
                         <div id="tab-terroir" class="tab-panel space-y-4">
                             <div><i class="fa-solid fa-globe"></i> <strong>País:</strong> ${fincaData?.pais || 'N/A'}</div>
                             <div><i class="fa-solid fa-location-dot"></i> <strong>Ciudad:</strong> ${fincaData?.distrito || ''} - ${fincaData?.provincia ||  ''} - ${fincaData?.departamento || ''}</div>
@@ -774,7 +774,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         return `
             <div class="timeline-item animate">
-                <div class="bg-white p-6 rounded-lg shadow-lg">
+                <div class="bg-white p-3 rounded-lg shadow-lg">
                     <div class="flex items-center gap-3 mb-2">
                          <i class="fas ${details.icon} text-amber-800 text-2xl w-8 text-center"></i>
                          <h3 class="font-bold text-amber-900 font-display text-xl">${details.title}</h3>
