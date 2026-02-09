@@ -167,7 +167,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // Puntaje SCA (Badge destacado)
             if (scaScore) {
                 techDetails += `
-                    <div class="flex items-center justify-between bg-stone-900 text-white p-4 rounded-xl mb-6 shadow-md">
+                    <div class="flex flex-col sm:flex-row items-center justify-between gap-3 bg-stone-900 text-white p-4 rounded-xl mb-6 shadow-md text-center sm:text-left">
                         <div class="flex items-center gap-3">
                             <div class="bg-amber-500 p-2 rounded-lg text-stone-900"><i class="fas fa-medal text-xl"></i></div>
                             <div>
@@ -622,7 +622,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     function createAdditionalInfoSection(h) {
         const { maridajesRecomendados, ruedaSaborData } = h;
-        let maridajesHtml = '<p class="text-stone-500 italic text-center p-4">No se encontraron recomendaciones automáticas.</p>';
+        let maridajesHtml = '';
 
         if (maridajesRecomendados && Object.keys(maridajesRecomendados).length > 0) {
             const renderMaridajeGroup = (recs, type) => {
@@ -645,21 +645,25 @@ document.addEventListener('DOMContentLoaded', () => {
                 return groupHtml;
             };
 
-            maridajesHtml = Object.entries(maridajesRecomendados).map(([type, recs]) => {
+            // Construir HTML solo si hay contenido real
+            const tempHtml = Object.entries(maridajesRecomendados).map(([type, recs]) => {
                 if (!recs || recs.length === 0) return '';
+                
+                const groupContent = renderMaridajeGroup(recs, type);
+                if(!groupContent) return ''; // Si no hay excepcionales ni recomendados, no mostrar nada para este tipo
+
                 const title = type.charAt(0).toUpperCase() + type.slice(1);
                 const colorClass = type === 'cafe' ? 'text-green-800' : (type === 'vino' ? 'text-red-800' : 'text-blue-800');
                 const bgClass = type === 'cafe' ? 'bg-green-50' : (type === 'vino' ? 'bg-red-50' : 'bg-blue-50');
                 const icon = type === 'cafe' ? '☕' : (type === 'vino' ? '🍷' : '🧀');
-
-                const groupContent = renderMaridajeGroup(recs, type);
-                if(!groupContent) return '';
 
                 return `<div class="mb-6 p-4 rounded-xl ${bgClass}">
                             <h4 class="text-xl font-display font-bold ${colorClass} mb-4 flex items-center gap-2">${icon} Con ${title}</h4>
                             ${groupContent}
                         </div>`;
             }).join('');
+
+            maridajesHtml = tempHtml;
         }
 
         let ruedaHtml = '';
@@ -684,18 +688,34 @@ document.addEventListener('DOMContentLoaded', () => {
             setTimeout(() => initializeRuedaChart(chartId, ruedaSaborData), 100);
         }
 
+        // Construir la sección de maridajes completa solo si hay contenido interno
+        let maridajesSection = '';
+        if (maridajesHtml) {
+            maridajesSection = `
+                <div class="bg-white rounded-2xl shadow-sm border border-stone-100 overflow-hidden w-full">
+                    <div class="bg-amber-50 p-4 border-b border-amber-100">
+                        <h3 class="font-bold font-display text-xl text-amber-900">Maridajes Sugeridos</h3>
+                    </div>
+                    <div class="p-6">
+                        ${maridajesHtml}
+                    </div>
+                </div>
+            `;
+        }
+
+        // Si no hay ninguno de los dos, no retornar nada
+        if (!ruedaHtml && !maridajesSection) return '';
+
+        // Determinar diseño: Grid de 2 si hay ambos, Flex centrado si solo hay uno
+        const layoutClass = (ruedaHtml && maridajesSection) 
+            ? "grid grid-cols-1 md:grid-cols-2 gap-8 items-start" 
+            : "flex justify-center";
+
         return `
             <section class="additional-info max-w-4xl mx-auto my-16 px-4">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
+                <div class="${layoutClass}">
                     ${ruedaHtml}
-                    <div class="bg-white rounded-2xl shadow-sm border border-stone-100 overflow-hidden">
-                        <div class="bg-amber-50 p-4 border-b border-amber-100">
-                            <h3 class="font-bold font-display text-xl text-amber-900">Maridajes Sugeridos</h3>
-                        </div>
-                        <div class="p-6">
-                            ${maridajesHtml}
-                        </div>
-                    </div>
+                    ${maridajesSection}
                 </div>
             </section>
         `;
@@ -1780,7 +1800,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const borderClass = isActive ? 'border-amber-800' : 'border-stone-200';
             
             return `
-                <div class="flex-1 text-center py-1.5 px-1 border-r last:border-r-0 ${borderClass} ${bgClass} first:rounded-l-lg last:rounded-r-lg text-[10px] sm:text-xs font-bold transition-all uppercase tracking-wider">
+                <div class="flex-1 text-center py-2 px-2 border-r last:border-r-0 ${borderClass} ${bgClass} first:rounded-l-lg last:rounded-r-lg text-[10px] sm:text-xs font-bold transition-all uppercase tracking-wider whitespace-nowrap min-w-[80px] flex items-center justify-center">
                     ${opt}
                 </div>
             `;
