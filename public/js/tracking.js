@@ -304,6 +304,8 @@ document.addEventListener('DOMContentLoaded', () => {
                             ${tabsNav}
                             <div class="mt-8">
                                 ${tabStory}
+                                ${hasSensory ? tabSensory : ''}
+                                ${hasWheel ? tabWheel : ''}
                                 ${tabNutrition}
                             </div>
                         </div>
