@@ -124,14 +124,21 @@ app.get('/:loteId([A-Z]{3}-[A-Z0-9]{8})', async (req, res) => {
             // 2. Obtener metadatos del lote (foto del producto, nombre)
             const metadata = await db.getBatchMetadata(loteId);
 
-            let title = "Pasaporte Digital del Producto | Ruru Lab";
+            let title = "Pasaporte Digital: Origen y Trazabilidad Verificada | Ruru Lab";
             let description = `He escaneado el lote ${loteId} y he descubierto su historia completa: desde la finca hasta mis manos.`;
             // Imagen por defecto absoluta
             let image = "https://rurulab.com/images/banner_1.png";
 
             if (metadata) {
-                if (metadata.title) title = `${metadata.title} (Lote: ${loteId})`;
-                if (metadata.description) description = metadata.description.substring(0, 150) + "...";
+                if (metadata.title) {
+                    // Título optimizado: Producto + Lote + Branding (~50-60 caracteres)
+                    title = `Trazabilidad de ${metadata.title} (Lote: ${loteId}) | Ruru Lab`;
+                }
+                if (metadata.description) {
+                    // Descripción truncada con Llamada a la Acción (CTA) al final
+                    const cleanDesc = metadata.description.substring(0, 110).trim();
+                    description = `${cleanDesc}... Descubre el origen y certificaciones. ¡Mira la historia completa aquí!`;
+                }
                 
                 // --- LÓGICA DE REEMPLAZO DE IMAGEN (ACTUALIZADA) ---
                 if (metadata.image) {
