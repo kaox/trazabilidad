@@ -1256,6 +1256,93 @@ const getTrazabilidad = async (req, res) => {
     }
 };
 
+const getBatchMetadata = async (batchId) => {
+    try {
+        const batch = await get('SELECT id, producto_id, parent_id, data FROM batches WHERE id = ?', [batchId]);
+        if (!batch) return null;
+
+        let productId = batch.producto_id;
+
+        if (!productId) {
+             const rootBatch = await get(`
+                WITH RECURSIVE ancestry AS (
+                    SELECT id, parent_id, producto_id FROM batches WHERE id = ?
+                    UNION ALL
+                    SELECT b.id, b.parent_id, b.producto_id 
+                    FROM batches b 
+                    JOIN ancestry a ON b.id = a.parent_id
+                )
+                SELECT producto_id FROM ancestry WHERE producto_id IS NOT NULL LIMIT 1
+             `, [batchId]);
+             if (rootBatch) productId = rootBatch.producto_id;
+        }
+        
+        if (productId) {
+            // CORRECCIÓN: Seleccionamos también el ID para poder generar la URL de la imagen
+            const product = await get('SELECT id, nombre, imagenes_json, descripcion FROM productos WHERE id = ?', [productId]);
+            if (product) {
+                const images = safeJSONParse(product.imagenes_json || '[]');
+                return {
+                    id: product.id, // <--- Importante para la ruta de imagen
+                    title: product.nombre,
+                    image: images.length > 0 ? images[0] : null,
+                    description: product.descripcion
+                };
+            }
+        }
+        return null;
+    } catch (err) {
+        console.error("Error getBatchMetadata:", err);
+        return null;
+    }
+};
+
+const serveProductImage = async (req, res) => {
+    const { id } = req.params;
+    try {
+        const product = await get('SELECT imagenes_json FROM productos WHERE id = ?', [id]);
+        
+        if (!product || !product.imagenes_json) {
+            return res.redirect('https://rurulab.com/images/banner_1.png');
+        }
+
+        const images = safeJSONParse(product.imagenes_json || '[]');
+        const imageData = images.length > 0 ? images[0] : null;
+
+        if (!imageData) {
+            return res.redirect('https://rurulab.com/images/banner_1.png');
+        }
+
+        // 1. Si es Base64, convertir a Buffer y servir
+        if (imageData.startsWith('data:image')) {
+            const matches = imageData.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
+            if (!matches || matches.length !== 3) {
+                return res.redirect('https://rurulab.com/images/banner_1.png');
+            }
+            
+            const type = matches[1]; 
+            const buffer = Buffer.from(matches[2], 'base64'); 
+
+            res.writeHead(200, {
+                'Content-Type': type,
+                'Content-Length': buffer.length,
+                'Cache-Control': 'public, max-age=86400' // Cache 24h
+            });
+            res.end(buffer);
+        
+        // 2. Si ya es URL, redirigir
+        } else if (imageData.startsWith('http')) {
+            res.redirect(imageData);
+        } else {
+            res.redirect('https://rurulab.com/images/banner_1.png');
+        }
+
+    } catch (err) {
+        console.error("Error serving product image:", err);
+        res.redirect('https://rurulab.com/images/banner_1.png');
+    }
+};
+
 const getImmutableBatches = async (req, res) => {
     const userId = req.user.id;
     try {
@@ -2925,7 +3012,7 @@ module.exports = {
     getStagesForTemplate, createStage, updateStage, deleteStage,
     getAcquisitions, createAcquisition, deleteAcquisition, updateAcquisition,
     getBatchesTree, createBatch, updateBatch, deleteBatch, finalizeBatch, syncBatchOutputs,
-    getTrazabilidad, getImmutableBatches,
+    getTrazabilidad, getImmutableBatches, getBatchMetadata, serveProductImage,
     getUserProfile, updateUserProfile, updateUserPassword,
     getRuedasSabores, createRuedaSabores, updateRuedaSabores, deleteRuedaSabores,
     getBlends, createBlend, deleteBlend,

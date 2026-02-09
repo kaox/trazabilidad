@@ -97,7 +97,8 @@ app.get('/api/blog/:slug', db.getBlogPostBySlug);
 app.post('/api/public/analytics', db.trackAnalyticsEvent);
 app.post('/api/public/suggest', db.createSuggestion);
 app.get('/api/public/suggestions/:id', db.getSuggestionById);
-app.get('/api/public/companies/:id/logo', db.serveCompanyLogo); 
+app.get('/api/public/companies/:id/logo', db.serveCompanyLogo);
+app.get('/api/public/products/:id/image', db.serveProductImage);
 
 // 6. RUTAS PÚBLICAS (PÁGINAS Y SEO)
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
@@ -108,7 +109,62 @@ app.get('/registro-productor', (req, res) => res.sendFile(path.join(__dirname, '
 app.get('/blog/:slug', (req, res) => res.sendFile(path.join(__dirname, 'public', 'article.html')));
 
 // Trazabilidad corta (Ej: ABC-12345678)
-app.get('/:loteId([A-Z]{3}-[A-Z0-9]{8})', (req, res) => res.sendFile(path.join(__dirname, 'public', 'tracking.html')));
+//app.get('/:loteId([A-Z]{3}-[A-Z0-9]{8})', (req, res) => res.sendFile(path.join(__dirname, 'public', 'tracking.html')));
+app.get('/:loteId([A-Z]{3}-[A-Z0-9]{8})', async (req, res) => {
+    const { loteId } = req.params;
+    const filePath = path.join(__dirname, 'public', 'tracking.html');
+
+    fs.readFile(filePath, 'utf8', async (err, htmlData) => {
+        if (err) {
+            console.error('Error leyendo tracking.html:', err);
+            return res.status(500).send('Error interno');
+        }
+
+        try {
+            // 2. Obtener metadatos del lote (foto del producto, nombre)
+            const metadata = await db.getBatchMetadata(loteId);
+
+            let title = "Pasaporte Digital del Producto | Ruru Lab";
+            let description = `He escaneado el lote ${loteId} y he descubierto su historia completa: desde la finca hasta mis manos.`;
+            // Imagen por defecto absoluta
+            let image = "https://rurulab.com/images/banner_1.png";
+
+            if (metadata) {
+                if (metadata.title) title = `${metadata.title} (Lote: ${loteId})`;
+                if (metadata.description) description = metadata.description.substring(0, 150) + "...";
+                
+                // --- LÓGICA DE REEMPLAZO DE IMAGEN (ACTUALIZADA) ---
+                if (metadata.image) {
+                    if (metadata.image.startsWith('http')) {
+                        // URL Externa (ej. Cloudinary)
+                        image = metadata.image;
+                    } else if (metadata.id) {
+                        // Base64: Generamos la URL virtual que WhatsApp sí puede leer
+                        // Usamos headers para detectar protocolo y host correctos (útil tras proxys/vercel)
+                        const protocol = req.headers['x-forwarded-proto'] || req.protocol; 
+                        const host = req.get('host');
+                        image = `${protocol}://${host}/api/public/products/${metadata.id}/image`;
+                    }
+                }
+            }
+
+            // 3. Reemplazar Meta Tags en el HTML
+            let injectedHtml = htmlData
+                .replace(/<title>.*<\/title>/, `<title>${title}</title>`)
+                .replace(/property="og:title" content="[^"]*"/, `property="og:title" content="${title}"`)
+                .replace(/property="og:description" content="[^"]*"/, `property="og:description" content="${description}"`)
+                .replace(/content="https:\/\/rurulab\.com\/images\/banner_1\.png"/g, `content="${image}"`) // Reemplazo global (og:image, twitter:image)
+                .replace(/name="twitter:title" content="[^"]*"/, `name="twitter:title" content="${title}"`)
+                .replace(/name="twitter:description" content="[^"]*"/, `name="twitter:description" content="${description}"`);
+
+            res.send(injectedHtml);
+
+        } catch (error) {
+            console.error("Error inyectando metadatos tracking:", error);
+            res.send(htmlData);
+        }
+    });
+});
 
 // GS1 Digital Link
 app.get('/01/:gtin/10/:loteId', gs1Resolver.resolve);
