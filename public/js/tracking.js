@@ -133,6 +133,112 @@ document.addEventListener('DOMContentLoaded', () => {
         const hasWheel = h.ruedaSaborData ? true : false;
         const hasNutrition = h.nutritionalData ? true : false;
 
+        // --- EXTRACCIÓN DE DATOS CLAVE ---
+        const getFieldValue = (field) => (typeof field === 'object' && field !== null) ? field.value : field;
+
+        // 1. Variedad
+        const variedad = findValueInStages(h.stages, 'variedad') || 'No registrada';
+
+        // 2. Datos Específicos de Café
+        const isCoffee = (p.tipo_producto || '').toLowerCase().includes('cafe') || (p.nombre || '').toLowerCase().includes('cafe');
+        let rawRoast, roastLevel, grindLevel, processMethod, scaScore;
+        let fechaTostado = null;
+
+        if (isCoffee) {
+            rawRoast = findValueInStages(h.stages, 'nivelTueste') || findValueInStages(h.stages, 'tipoTueste');
+            roastLevel = normalizeRoastLevel(rawRoast);
+            grindLevel = findValueInStages(h.stages, 'tipoMolienda');
+            processMethod = findValueInStages(h.stages, 'metodoLavado') || findValueInStages(h.stages, 'tipoBeneficio');
+            scaScore = findValueInStages(h.stages, 'puntuacionSCA');
+
+            // Buscar fecha de tostado
+            const roastingStage = h.stages.find(s => s.nombre_etapa.toLowerCase().includes('tostado'));
+            if (roastingStage) {
+                fechaTostado = getFieldValue(roastingStage.data.fecha) || getFieldValue(roastingStage.data.fechaTostado);
+            }
+        }
+
+        // 3. Fecha de Vencimiento
+        const packingStage = h.stages.find(s => s.nombre_etapa.toLowerCase().includes('envasado') || s.nombre_etapa.toLowerCase().includes('empaquetado'));
+        let fechaVencimiento = null;
+        if (packingStage) {
+            fechaVencimiento = getFieldValue(packingStage.data.vencimiento) || getFieldValue(packingStage.data.fechaVencimiento);
+        }
+
+        // Generar HTML para los datos clave (Grid responsivo)
+        const keyDataHtml = `
+            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 mb-6">
+                <!-- Variedad -->
+                <div class="bg-stone-50 p-3 rounded-lg border border-stone-200">
+                    <span class="block text-xs font-bold text-stone-400 uppercase tracking-wider mb-1">Variedad</span>
+                    <div class="flex items-center gap-2">
+                        <i class="fas fa-leaf text-green-600"></i>
+                        <span class="font-bold text-stone-800 text-sm">${variedad}</span>
+                    </div>
+                </div>
+
+                <!-- Puntaje SCA (Solo Café) -->
+                ${isCoffee && scaScore ? `
+                <div class="bg-stone-50 p-3 rounded-lg border border-stone-200">
+                    <span class="block text-xs font-bold text-stone-400 uppercase tracking-wider mb-1">Puntaje SCA</span>
+                    <div class="flex items-center gap-2">
+                        <i class="fas fa-medal text-amber-500"></i>
+                        <span class="font-bold text-stone-800 text-sm">${parseFloat(scaScore).toFixed(2)}</span>
+                    </div>
+                </div>` : ''}
+
+                <!-- Proceso (Solo Café) -->
+                ${isCoffee && processMethod ? `
+                <div class="bg-stone-50 p-3 rounded-lg border border-stone-200">
+                    <span class="block text-xs font-bold text-stone-400 uppercase tracking-wider mb-1">Proceso</span>
+                    <div class="flex items-center gap-2">
+                        <i class="fas fa-water text-blue-500"></i>
+                        <span class="font-bold text-stone-800 text-sm">${processMethod}</span>
+                    </div>
+                </div>` : ''}
+
+                <!-- Nivel Tueste (Solo Café) -->
+                ${isCoffee && roastLevel ? `
+                <div class="bg-stone-50 p-3 rounded-lg border border-stone-200">
+                    <span class="block text-xs font-bold text-stone-400 uppercase tracking-wider mb-1">Tueste</span>
+                    <div class="flex items-center gap-2">
+                        <i class="fas fa-fire-burner text-stone-600"></i>
+                        <span class="font-bold text-stone-800 text-sm">${roastLevel}</span>
+                    </div>
+                </div>` : ''}
+                
+                <!-- Fecha Tostado -->
+                ${fechaTostado ? `
+                <div class="bg-stone-50 p-3 rounded-lg border border-stone-200">
+                    <span class="block text-xs font-bold text-stone-400 uppercase tracking-wider mb-1">Fecha Tostado</span>
+                    <div class="flex items-center gap-2">
+                        <i class="fas fa-fire text-orange-600"></i>
+                        <span class="font-bold text-stone-800 text-sm">${formatDate(fechaTostado)}</span>
+                    </div>
+                </div>` : ''}
+
+                 <!-- Nivel Molienda (Solo Café) -->
+                ${isCoffee && grindLevel ? `
+                <div class="bg-stone-50 p-3 rounded-lg border border-stone-200">
+                    <span class="block text-xs font-bold text-stone-400 uppercase tracking-wider mb-1">Molienda</span>
+                    <div class="flex items-center gap-2">
+                        <i class="fas fa-filter text-stone-600"></i>
+                        <span class="font-bold text-stone-800 text-sm">${grindLevel}</span>
+                    </div>
+                </div>` : ''}
+
+                <!-- Vencimiento -->
+                ${fechaVencimiento ? `
+                <div class="bg-stone-50 p-3 rounded-lg border border-stone-200">
+                    <span class="block text-xs font-bold text-stone-400 uppercase tracking-wider mb-1">Vencimiento</span>
+                    <div class="flex items-center gap-2">
+                        <i class="fas fa-hourglass-end text-amber-600"></i>
+                        <span class="font-bold text-stone-800 text-sm">${formatDate(fechaVencimiento)}</span>
+                    </div>
+                </div>` : ''}
+            </div>
+        `;
+
         let tabsNav = `
             <div class="flex border-b border-stone-200 mb-6 overflow-x-auto">
                 <button class="product-tab-btn active px-4 py-2 text-sm font-bold text-amber-900 border-b-2 border-amber-900 transition whitespace-nowrap" data-target="tab-story">
@@ -148,65 +254,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 </button>` : ''}
             </div>
         `;
-
-        // --- LÓGICA TÉCNICA CAFÉ ---
-        let coffeeTechHtml = '';
-        const isCoffee = (p.tipo_producto || '').toLowerCase().includes('cafe') || (p.nombre || '').toLowerCase().includes('cafe');
-        
-        if (isCoffee) {
-            // 1. Extraer Datos
-            const rawRoast = findValueInStages(h.stages, 'nivelTueste') || findValueInStages(h.stages, 'tipoTueste'); // Intenta agtron o texto
-            const roastLevel = normalizeRoastLevel(rawRoast);
-            const grindLevel = findValueInStages(h.stages, 'tipoMolienda');
-            const processMethod = findValueInStages(h.stages, 'metodoLavado') || findValueInStages(h.stages, 'tipoBeneficio') || 'Lavado'; // Default fallback si no encuentra
-            const scaScore = findValueInStages(h.stages, 'puntuacionSCA');
-
-            // 2. Construir HTML
-            let techDetails = '';
-            
-            // Puntaje SCA (Badge destacado)
-            if (scaScore) {
-                techDetails += `
-                    <div class="flex flex-col sm:flex-row items-center justify-between gap-3 bg-stone-900 text-white p-4 rounded-xl mb-6 shadow-md text-center sm:text-left">
-                        <div class="flex items-center gap-3">
-                            <div class="bg-amber-500 p-2 rounded-lg text-stone-900"><i class="fas fa-medal text-xl"></i></div>
-                            <div>
-                                <p class="text-xs font-bold text-stone-400 uppercase tracking-widest">Puntaje SCA</p>
-                                <p class="text-sm text-stone-300">Calidad de Taza</p>
-                            </div>
-                        </div>
-                        <div class="text-3xl font-display font-bold text-amber-400">${parseFloat(scaScore).toFixed(2)}</div>
-                    </div>
-                `;
-            }
-
-            // Metodo Proceso
-            if (processMethod) {
-                 techDetails += `
-                    <div class="mb-5">
-                        <p class="text-xs font-bold text-stone-500 uppercase tracking-widest mb-2">Método de Proceso</p>
-                        <div class="flex items-center gap-2 text-stone-800 font-bold bg-stone-50 p-3 rounded-lg border border-stone-200">
-                            <i class="fas fa-water text-blue-500"></i> ${processMethod}
-                        </div>
-                    </div>
-                 `;
-            }
-
-            // Sliders
-            techDetails += createSegmentedSlider("Nivel de Tostado", ["Claro", "Medio", "Medio-Oscuro", "Oscuro"], roastLevel);
-            techDetails += createSegmentedSlider("Nivel de Molienda", ["Fina", "Media-Fina", "Media", "Media-Gruesa", "Gruesa"], grindLevel);
-
-            if (techDetails) {
-                coffeeTechHtml = `
-                    <div class="bg-white border border-stone-200 rounded-2xl p-4 mt-8 shadow-sm">
-                        <h3 class="text-lg font-display font-bold text-amber-900 mb-6 flex items-center gap-2">
-                            <i class="fas fa-sliders-h"></i> Ficha Técnica del Café
-                        </h3>
-                        ${techDetails}
-                    </div>
-                `;
-            }
-        }
 
         // Contenido Tab 1: Historia (Info General)
         let awardsHtml = '';
@@ -228,6 +275,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const tabStory = `
             <div id="tab-story" class="product-tab-content animate-fade-in">
+                
                 ${p.descripcion ? `<p class="text-stone-600 text-lg leading-relaxed mb-6 font-light border-l-4 border-amber-500 pl-4">${p.descripcion}</p>` : ''}
                 
                 ${p.ingredientes ? `
@@ -236,9 +284,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     <p class="text-stone-700 text-sm font-medium">${p.ingredientes}</p>
                 </div>` : ''}
 
-                <!-- INYECCIÓN FICHA TÉCNICA CAFÉ -->
-                ${coffeeTechHtml}
-
+                <!-- NUEVO: DATOS CLAVE INSERTADOS AQUÍ -->
+                ${keyDataHtml}
+                
                 <div class="flex flex-wrap items-center justify-between mt-auto pt-6 border-t border-stone-100 w-full">
                     ${awardsHtml}
                 </div>
