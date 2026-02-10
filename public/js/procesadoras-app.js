@@ -353,6 +353,9 @@ document.addEventListener('DOMContentLoaded', () => {
             if(document.getElementById('provincia')) document.getElementById('provincia').value = item.provincia || '';
             if(document.getElementById('distrito')) document.getElementById('distrito').value = item.distrito || '';
 
+            if(document.getElementById('historia')) document.getElementById('historia').value = item.historia || '';
+            if(document.getElementById('video_link')) document.getElementById('video_link').value = item.video_link || '';
+
             // Listas
             currentImages = item.imagenes_json || [];
             currentCertifications = item.certificaciones_json || [];
@@ -391,6 +394,10 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         document.getElementById('coordenadas').value = '';
+
+        if(document.getElementById('historia')) document.getElementById('historia').value = '';
+        if(document.getElementById('video_link')) document.getElementById('video_link').value = '';
+
         renderImages();
         renderAddedCertifications();
         renderAddedPremios();

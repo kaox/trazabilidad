@@ -69,6 +69,7 @@ CREATE TABLE IF NOT EXISTS fincas (
     telefono TEXT,
     historia TEXT,
     imagenes_json JSONB DEFAULT '[]', -- Array de URLs
+    video_link TEXT,
     certificaciones_json JSONB DEFAULT '[]',
     premios_json JSONB DEFAULT '[]',
     foto_productor TEXT,
@@ -99,6 +100,8 @@ CREATE TABLE IF NOT EXISTS procesadoras (
     premios_json JSONB DEFAULT '[]',
     certificaciones_json JSONB DEFAULT '[]',
     imagenes_json JSONB DEFAULT '[]',
+    video_link TEXT,
+    historia TEXT,
     numero_trabajadores INTEGER,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,

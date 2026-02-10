@@ -478,6 +478,10 @@ document.addEventListener('DOMContentLoaded', () => {
                         <p class="text-xs text-stone-500 font-medium uppercase tracking-wide mt-1">${finca.propietario}</p>
                     </div>
                     <div class="flex gap-1">
+                        ${finca.video_link ? `
+                        <a href="${finca.video_link}" target="_blank" class="text-stone-400 hover:text-red-600 p-1.5 rounded-lg hover:bg-red-50 transition" title="Ver Video">
+                            <i class="fab fa-youtube"></i>
+                        </a>` : ''}
                         <button onclick="shareFincaLink('${finca.id}', '${finca.nombre_finca}')" class="text-stone-400 hover:text-green-600 p-1.5 rounded-lg hover:bg-green-50 transition" title="Compartir con Productor">
                             <i class="fas fa-share-alt"></i>
                         </button>
@@ -503,6 +507,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('provincia').value = '';
         document.getElementById('distrito').value = '';
         document.getElementById('ciudad').value = '';
+        if(form.video_link) form.video_link.value = '';
         currentImages = [];
         currentFincaCertifications = [];
         currentFincaPremios = [];
@@ -540,6 +545,7 @@ document.addEventListener('DOMContentLoaded', () => {
             form.provincia.value = finca.provincia || '';
             form.distrito.value = finca.distrito || '';
             form.ciudad.value = finca.ciudad || ''; // Legacy/Referencia
+            if(form.video_link) form.video_link.value = finca.video_link || '';
 
             form.altura.value = finca.altura || '';
             form.superficie.value = finca.superficie || '';
