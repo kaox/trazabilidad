@@ -11,9 +11,6 @@ const app = {
     
     // Variables para el mapa de sugerencias
     map: null,
-    drawingManager: null,
-    currentOverlay: null,
-    geocoder: null,
 
     init: async function() {
         // Inicializar listeners de navegación y slug
@@ -23,6 +20,14 @@ const app = {
             } else {
                 this.loadCompanies(false);
             }
+        });
+
+        window.addEventListener('keydown', (e) => {
+            // Verificación segura de gallery
+            if (!this.state.gallery || !this.state.gallery.isOpen) return;
+            if (e.key === 'ArrowRight') this.nextGalleryImage();
+            if (e.key === 'ArrowLeft') this.prevGalleryImage();
+            if (e.key === 'Escape') this.closeGallery();
         });
 
         const pathSegments = window.location.pathname.split('/').filter(Boolean);
@@ -73,6 +78,111 @@ const app = {
         return str.toLowerCase().split(' ').map(word => {
             return word.charAt(0).toUpperCase() + word.slice(1);
         }).join(' ');
+    },
+
+    extractYoutubeId: function(url) {
+        if (!url) return null;
+        const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+        const match = url.match(regExp);
+        return (match && match[2].length === 11) ? match[2] : null;
+    },
+
+    // --- CAROUSEL LOGIC ---
+    openGallery: function(index, items) {
+        if (!this.state.gallery) {
+            this.state.gallery = { images: [], currentIndex: 0, isOpen: false };
+        }
+        
+        this.state.gallery.images = items.map(item => {
+            if (typeof item === 'string') return { type: 'image', src: item };
+            return item;
+        });
+        
+        this.state.gallery.currentIndex = index;
+        this.state.gallery.isOpen = true;
+        this.renderGalleryModal();
+    },
+
+    closeGallery: function() {
+        if (this.state.gallery) this.state.gallery.isOpen = false;
+        const modal = document.getElementById('gallery-overlay');
+        if (modal) modal.remove();
+        
+        // Detener videos al cerrar (limpiando el contenido)
+    },
+
+    nextGalleryImage: function() {
+        this.state.gallery.currentIndex = (this.state.gallery.currentIndex + 1) % this.state.gallery.images.length;
+        this.updateGalleryUI();
+    },
+
+    prevGalleryImage: function() {
+        this.state.gallery.currentIndex = (this.state.gallery.currentIndex - 1 + this.state.gallery.images.length) % this.state.gallery.images.length;
+        this.updateGalleryUI();
+    },
+
+    updateGalleryUI: function() {
+        const contentContainer = document.getElementById('gallery-content');
+        const counter = document.getElementById('gallery-counter');
+        const item = this.state.gallery.images[this.state.gallery.currentIndex];
+        
+        if (contentContainer) {
+            contentContainer.innerHTML = this.getMediaHtml(item);
+        }
+        if (counter) {
+            counter.textContent = `${this.state.gallery.currentIndex + 1} / ${this.state.gallery.images.length}`;
+        }
+    },
+
+    getMediaHtml: function(item) {
+        if (item.type === 'video') {
+            // Contenedor responsivo con padding-bottom para forzar 16:9
+            return `
+                <div style="position: relative; width: 100%; max-width: 960px; padding-bottom: 56.25%; background: #000; border-radius: 12px; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);">
+                    <iframe 
+                        src="https://www.youtube.com/embed/${item.videoId}?autoplay=1&rel=0" 
+                        style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"
+                        frameborder="0" 
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                        allowfullscreen>
+                    </iframe>
+                </div>`;
+        } else {
+            return `<img src="${item.src}" style="max-height: 85vh; max-width: 90vw; object-fit: contain; border-radius: 8px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);" class="animate-fade-in">`;
+        }
+    },
+
+    renderGalleryModal: function() {
+        const items = this.state.gallery.images;
+        const index = this.state.gallery.currentIndex;
+        const currentItem = items[index];
+        
+        // Estructura simplificada sin capas superpuestas que bloqueen el mouse
+        const modalHtml = `
+            <div id="gallery-overlay" style="position: fixed; inset: 0; z-index: 9999; background: rgba(0,0,0,0.95); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center;">
+                
+                <button onclick="app.closeGallery()" style="position: absolute; top: 20px; right: 20px; z-index: 10001; width: 50px; height: 50px; border-radius: 50%; border: none; background: rgba(255,255,255,0.1); color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.3s;" onmouseover="this.style.background='rgba(239, 68, 68, 0.8)'" onmouseout="this.style.background='rgba(255,255,255,0.1)'">
+                    <i class="fas fa-times" style="font-size: 24px;"></i>
+                </button>
+
+                <div style="position: absolute; top: 25px; left: 25px; z-index: 10001; color: white; font-family: monospace; font-size: 14px; background: rgba(0,0,0,0.5); padding: 5px 15px; border-radius: 20px;">
+                    <span id="gallery-counter">${index + 1} / ${items.length}</span>
+                </div>
+
+                <button onclick="app.prevGalleryImage()" style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); z-index: 10001; width: 50px; height: 50px; border-radius: 50%; border: none; background: rgba(0,0,0,0.5); color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.3s;">
+                    <i class="fas fa-chevron-left" style="font-size: 20px;"></i>
+                </button>
+
+                <div id="gallery-content" style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; padding: 20px;">
+                    ${this.getMediaHtml(currentItem)}
+                </div>
+
+                <button onclick="app.nextGalleryImage()" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); z-index: 10001; width: 50px; height: 50px; border-radius: 50%; border: none; background: rgba(0,0,0,0.5); color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.3s;">
+                    <i class="fas fa-chevron-right" style="font-size: 20px;"></i>
+                </button>
+            </div>
+        `;
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
     },
     
     resolveSlugAndLoad: async function(slug) {
@@ -238,19 +348,62 @@ const app = {
             const facebook = user.social_facebook || entity.social_facebook;
 
             let coverImage = 'https://images.unsplash.com/photo-1511537632536-b7a4896848a5?auto=format&fit=crop&q=80&w=1000';
-            let galleryHtml = '';
+            
+            const mediaItems = [];
+            
+            // 1. Agregar imágenes
             if (entity.imagenes && entity.imagenes.length > 0) {
                 coverImage = entity.imagenes[0];
-                const imagesJson = JSON.stringify(entity.imagenes).replace(/"/g, '&quot;');
-                if (entity.imagenes.length > 1) {
-                    galleryHtml = `<div class="grid grid-cols-3 gap-2 mt-4">` + 
-                        entity.imagenes.slice(1, 4).map((img, idx) => `
-                            <div class="relative group cursor-pointer overflow-hidden rounded-lg border border-stone-100 h-20" onclick="app.openGallery(${idx + 1}, ${imagesJson})">
-                                <img src="${img}" class="w-full h-full object-cover group-hover:scale-110 transition duration-500">
-                                <div class="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors"></div>
-                            </div>`).join('') +
-                        `</div>`;
+                entity.imagenes.forEach(img => mediaItems.push({ type: 'image', src: img }));
+            } else {
+                // Imagen por defecto si no hay ninguna
+                mediaItems.push({ type: 'image', src: coverImage });
+            }
+
+            // 2. Agregar video si existe
+            if (entity.video_link) {
+                const videoId = this.extractYoutubeId(entity.video_link);
+                if (videoId) {
+                    mediaItems.push({
+                        type: 'video',
+                        src: entity.video_link,
+                        videoId: videoId,
+                        thumb: `https://img.youtube.com/vi/${videoId}/hqdefault.jpg` // Miniatura de YT
+                    });
                 }
+            }
+
+            // Serializar para pasar al evento onclick
+            const mediaJson = JSON.stringify(mediaItems).replace(/"/g, '&quot;');
+
+            // 3. Renderizar Miniaturas (Debajo de la portada)
+            let galleryHtml = '';
+            // Excluimos el item 0 (que ya está de portada) y mostramos los siguientes 3
+            // Si hay video, queremos que salga.
+            const thumbnailsToShow = mediaItems.slice(1, 4);
+
+            if (thumbnailsToShow.length > 0) {
+                galleryHtml = `<div class="grid grid-cols-3 gap-2 mt-4">` + 
+                    thumbnailsToShow.map((item, idx) => {
+                        // El índice real en el array 'mediaItems' es idx + 1 porque hicimos slice(1)
+                        const realIndex = idx + 1;
+                        if (item.type === 'video') {
+                            return `
+                            <div class="relative group cursor-pointer overflow-hidden rounded-lg border border-stone-100 h-20" onclick="app.openGallery(${realIndex}, ${mediaJson})">
+                                <img src="${item.thumb}" class="w-full h-full object-cover group-hover:scale-110 transition duration-500 filter brightness-75">
+                                <div class="absolute inset-0 flex items-center justify-center">
+                                    <i class="fas fa-play-circle text-white text-3xl shadow-sm"></i>
+                                </div>
+                            </div>`;
+                        } else {
+                            return `
+                            <div class="relative group cursor-pointer overflow-hidden rounded-lg border border-stone-100 h-20" onclick="app.openGallery(${realIndex}, ${mediaJson})">
+                                <img src="${item.src}" class="w-full h-full object-cover group-hover:scale-110 transition duration-500">
+                                <div class="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors"></div>
+                            </div>`;
+                        }
+                    }).join('') +
+                    `</div>`;
             }
 
             const cleanPhone = user.celular ? user.celular.replace(/\D/g,'') : '';
@@ -524,40 +677,6 @@ const app = {
             };
             reader.readAsDataURL(file);
         });
-    },
-
-    toggleMapMode: function() {
-        const typeEl = document.querySelector('input[name="suggest_type"]:checked');
-        if(!typeEl) return;
-        
-        const type = typeEl.value;
-        const mapLabel = document.getElementById('map-mode-label');
-        const instruction = document.getElementById('map-instruction');
-        const areaContainer = document.getElementById('calc_area_container');
-
-        if (this.drawingManager) {
-            this.drawingManager.setDrawingMode(null);
-            
-            if (type === 'finca') {
-                if(mapLabel) mapLabel.textContent = "Modo: Dibujar Polígono";
-                if(instruction) instruction.textContent = "Dibuja el perímetro de la finca.";
-                this.drawingManager.setOptions({
-                    drawingMode: google.maps.drawing.OverlayType.POLYGON,
-                    drawingControl: true,
-                    drawingControlOptions: { drawingModes: ['polygon'] }
-                });
-                if(areaContainer) areaContainer.parentElement.classList.remove('hidden');
-            } else {
-                if(mapLabel) mapLabel.textContent = "Modo: Marcar Punto";
-                if(instruction) instruction.textContent = "Haz clic para ubicar la planta.";
-                this.drawingManager.setOptions({
-                    drawingMode: google.maps.drawing.OverlayType.MARKER,
-                    drawingControl: true,
-                    drawingControlOptions: { drawingModes: ['marker'] }
-                });
-                if(areaContainer) areaContainer.parentElement.classList.add('hidden');
-            }
-        }
     },
 
     setupSuggestForm: function() {
