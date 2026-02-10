@@ -2750,7 +2750,7 @@ const getCompanyLandingData = async (req, res) => {
             const mockUser = {
                 id: suggestion.id,
                 empresa: suggestion.name,
-                company_logo: null,
+                company_logo: suggestion.logo,
                 company_type: suggestion.type,
                 is_suggested: true
             };
