@@ -727,10 +727,11 @@ document.addEventListener('DOMContentLoaded', () => {
             maridajesHtml = tempHtml;
         }
 
-        // Construir la sección de maridajes completa solo si hay contenido interno
-        let maridajesSection = '';
-        if (maridajesHtml) {
-            maridajesSection = `
+        // Si no hay maridajes, retornar vacío (la rueda ya se movió al tab)
+        if (!maridajesHtml) return '';
+
+        return `
+            <section class="additional-info max-w-4xl mx-auto my-16 px-4">
                 <div class="bg-white rounded-2xl shadow-sm border border-stone-100 overflow-hidden w-full">
                     <div class="bg-amber-50 p-4 border-b border-amber-100">
                         <h3 class="font-bold font-display text-xl text-amber-900">Maridajes Sugeridos</h3>
@@ -738,23 +739,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div class="p-6">
                         ${maridajesHtml}
                     </div>
-                </div>
-            `;
-        }
-
-        // Si no hay ninguno de los dos, no retornar nada
-        if (!maridajesSection) return '';
-
-        // Determinar diseño: Grid de 2 si hay ambos, Flex centrado si solo hay uno
-        const layoutClass = (ruedaHtml && maridajesSection) 
-            ? "grid grid-cols-1 md:grid-cols-2 gap-8 items-start" 
-            : "flex justify-center";
-
-        return `
-            <section class="additional-info max-w-4xl mx-auto my-16 px-4">
-                <div class="${layoutClass}">
-                    ${ruedaHtml}
-                    ${maridajesSection}
                 </div>
             </section>
         `;
