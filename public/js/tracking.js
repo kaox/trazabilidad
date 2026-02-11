@@ -119,6 +119,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 const tipoProducto = h.productoFinal ? h.productoFinal.tipo_producto : '';
                 initializePerfilChart('sensory-profile-chart', h.perfilSensorialData, tipoProducto);
             }
+            // Rueda de Sabor (Movido aquí)
+            if (h.ruedaSaborData) {
+                const chartId = `rueda-sabor-chart-${h.ruedaSaborData.id}`;
+                initializeRuedaChart(chartId, h.ruedaSaborData);
+            }
         }, 200);
     }
 
@@ -248,6 +253,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <button class="product-tab-btn px-4 py-2 text-sm font-bold text-stone-500 hover:text-stone-800 border-b-2 border-transparent hover:border-stone-300 transition whitespace-nowrap" data-target="tab-sensory">
                     Perfil Sensorial
                 </button>` : ''}
+                ${hasWheel ? `<button class="product-tab-btn px-4 py-2 text-sm font-bold text-stone-500 hover:text-stone-800 border-b-2 border-transparent hover:border-stone-300 transition whitespace-nowrap" data-target="tab-wheel">Rueda de Sabor</button>` : ''}
                 ${hasNutrition ? `
                 <button class="product-tab-btn px-4 py-2 text-sm font-bold text-stone-500 hover:text-stone-800 border-b-2 border-transparent hover:border-stone-300 transition whitespace-nowrap" data-target="tab-nutrition">
                     Nutrición
@@ -305,17 +311,22 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>
         `;
 
-        // Contenido Tab 3: Rueda de Sabor (Gráfico)
-        const tabWheel = `
-            <div id="tab-wheel" class="product-tab-content hidden animate-fade-in">
-                <div class="flex flex-col items-center justify-center h-full min-h-[300px]">
-                    <div class="w-full max-w-sm h-80 relative">
-                        <canvas id="flavor-wheel-chart"></canvas>
+        // Contenido Tab 3: Rueda de Sabor (Ahora en su propia pestaña)
+        let tabWheel = '';
+        if (hasWheel) {
+             const chartId = `rueda-sabor-chart-${h.ruedaSaborData.id}`;
+             tabWheel = `
+                <div id="tab-wheel" class="product-tab-content hidden animate-fade-in">
+                    <div class="flex flex-col items-center justify-center h-full min-h-[300px]">
+                        <p class="text-sm text-stone-500 mb-6 text-center">Perfil detectado: <strong class="text-amber-800">${h.ruedaSaborData.nombre_rueda}</strong></p>
+                        <div class="w-full max-w-sm h-80 relative">
+                            <canvas id="${chartId}-l1" class="absolute inset-0"></canvas>
+                        </div>
+                        <div id="rueda-chart-legend" class="mt-8 pt-6 border-t border-stone-100 w-full"></div>
                     </div>
-                    <p class="text-xs text-stone-400 mt-4 text-center">Pasa el mouse para ver notas específicas.</p>
                 </div>
-            </div>
-        `;
+             `;
+        }
 
         // Contenido Tab 4: Nutrición (Etiqueta Generada)
         const tabNutrition = hasNutrition ? `
@@ -716,28 +727,6 @@ document.addEventListener('DOMContentLoaded', () => {
             maridajesHtml = tempHtml;
         }
 
-        let ruedaHtml = '';
-        if (ruedaSaborData) {
-            const chartId = `rueda-sabor-chart-${ruedaSaborData.id}`;
-            ruedaHtml = `
-                <div class="bg-white rounded-2xl shadow-sm border border-stone-100 mb-8 overflow-hidden">
-                    <div class="bg-stone-50 p-4 border-b border-stone-200">
-                        <h3 class="font-bold font-display text-xl text-amber-900">Perfil de Sabor</h3>
-                    </div>
-                    <div class="p-6">
-                        <p class="text-sm text-stone-500 mb-6 text-center">Perfil detectado: <strong class="text-amber-800">${ruedaSaborData.nombre_rueda}</strong></p>
-                        
-                        <div id="rueda-chart-container" class="relative w-full max-w-sm mx-auto aspect-square">
-                            <canvas id="${chartId}-l1" class="absolute inset-0"></canvas>
-                            <canvas id="${chartId}-l2" class="absolute inset-0" style="transform: scale(0.85)"></canvas>
-                        </div>
-                        <div id="rueda-chart-legend" class="mt-8 pt-6 border-t border-stone-100"></div>
-                    </div>
-                </div>
-            `;
-            setTimeout(() => initializeRuedaChart(chartId, ruedaSaborData), 100);
-        }
-
         // Construir la sección de maridajes completa solo si hay contenido interno
         let maridajesSection = '';
         if (maridajesHtml) {
@@ -754,7 +743,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         // Si no hay ninguno de los dos, no retornar nada
-        if (!ruedaHtml && !maridajesSection) return '';
+        if (!maridajesSection) return '';
 
         // Determinar diseño: Grid de 2 si hay ambos, Flex centrado si solo hay uno
         const layoutClass = (ruedaHtml && maridajesSection) 
