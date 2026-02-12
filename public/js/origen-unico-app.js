@@ -190,7 +190,21 @@ const app = {
         try {
             const res = await fetch('/api/public/companies');
             const companies = await res.json();
-            const company = companies.find(c => this.createSlug(c.name) === slug);
+            
+            // 1. Intentar buscar por ID al final del string
+            const lastHyphenIndex = slug.lastIndexOf('-');
+            let company = null;
+            
+            if (lastHyphenIndex !== -1) {
+                const potentialId = slug.substring(lastHyphenIndex + 1);
+                company = companies.find(c => String(c.id) === potentialId);
+            }
+
+            // 2. Fallback: Buscar por Slug tradicional
+            if (!company) {
+                company = companies.find(c => this.createSlug(c.name) === slug);
+            }
+
             if (company) {
                 this.loadLanding(company.id, false);
             } else {
@@ -332,7 +346,7 @@ const app = {
             this.updateBreadcrumbs();
 
             if (pushState) {
-                const slug = this.createSlug(user.empresa);
+                const slug = this.createSlug(user.empresa) + '-' + user.id;
                 history.pushState({ view: 'landing', userId: userId }, user.empresa, `/origen-unico/${slug}`);
             }
 

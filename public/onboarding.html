@@ -28,6 +28,12 @@
         @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
           .iti__flag { background-image: url("https://cdn.jsdelivr.net/npm/intl-tel-input@18.2.1/build/img/flags@2x.png"); }
         }
+
+        /* Input más amigable para dedos */
+        #celular {
+            height: 3.5rem; /* 56px de altura */
+            font-size: 1.1rem;
+        }
     </style>
 </head>
 <body class="text-stone-800 antialiased flex items-center justify-center min-h-screen py-12 px-4">
@@ -56,17 +62,19 @@
                         <i class="fas fa-building text-amber-600"></i> Tu Empresa / Finca
                     </h3>
 
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                         <div>
                             <label class="block text-sm font-medium text-stone-700 mb-1">Tipo de Entidad</label>
-                            <select id="company_type" name="company_type" class="w-full p-3 border border-stone-300 rounded-xl bg-white focus:ring-2 focus:ring-amber-500 outline-none">
+                            <select id="company_type" name="company_type" class="w-full p-3 border border-stone-300 rounded-xl bg-white focus:ring-2 focus:ring-amber-500 outline-none h-[3.5rem]">
                                 <option value="finca">Finca / Productor</option>
                                 <option value="procesadora">Procesadora / Empresa</option>
                             </select>
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-stone-700 mb-1">WhatsApp de Contacto</label>
-                            <input type="tel" id="celular" name="celular" class="w-full p-3 border border-stone-300 rounded-xl" placeholder="">
+                            <label class="block text-sm font-medium text-stone-700 mb-1">WhatsApp de Contacto *</label>
+                            <!-- inputmode="tel" activa el teclado numérico en móviles -->
+                            <input type="tel" id="celular" name="celular" class="w-full p-3 border border-stone-300 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none" inputmode="tel" required>
+                            <span id="msg-celular" class="text-xs mt-1 hidden font-bold"></span>
                         </div>
                     </div>
                     
@@ -172,6 +180,7 @@
             }
 
             // --- Configuración de Teléfono ---
+            const msgPhone = document.querySelector("#msg-celular");
             const inputPhone = document.querySelector("#celular");
             const iti = window.intlTelInput(inputPhone, {
                 utilsScript: "https://cdn.jsdelivr.net/npm/intl-tel-input@18.2.1/build/js/utils.js",
@@ -183,7 +192,46 @@
                     .catch(() => callback("pe"));
                 },
                 separateDialCode: true,
-                preferredCountries: ['pe', 'co', 'ec', 'mx']
+                preferredCountries: ['pe', 'co', 'ec', 'mx', 'us'],
+                autoPlaceholder: "aggressive", // Muestra máscara de ejemplo
+                formatOnDisplay: true
+            });
+
+            // Función de Validación de Teléfono
+            const validatePhone = () => {
+                const isValid = iti.isValidNumber();
+                const errorCode = iti.getValidationError();
+                
+                if (inputPhone.value.trim() === '') {
+                    inputPhone.classList.remove("border-red-500", "border-green-500");
+                    msgPhone.classList.add("hidden");
+                    return false;
+                }
+
+                if (isValid) {
+                    inputPhone.classList.remove("border-red-500");
+                    inputPhone.classList.add("border-green-500");
+                    msgPhone.classList.add("hidden");
+                    return true;
+                } else {
+                    inputPhone.classList.add("border-red-500");
+                    inputPhone.classList.remove("border-green-500");
+                    
+                    const errorMap = ["Número inválido", "Código de país inválido", "Demasiado corto", "Demasiado largo", "Número inválido"];
+                    const msg = errorMap[errorCode] || "Número inválido";
+                    msgPhone.textContent = msg;
+                    msgPhone.classList.remove("hidden");
+                    msgPhone.className = "text-xs mt-1 font-bold text-red-600 block";
+                    return false;
+                }
+            };
+
+            // Validar al salir del campo
+            inputPhone.addEventListener('blur', validatePhone);
+            // Limpiar error al escribir
+            inputPhone.addEventListener('input', () => {
+                inputPhone.classList.remove("border-red-500", "border-green-500");
+                msgPhone.classList.add("hidden");
             });
             
             // --- Lógica de Tipo de Entidad ---
@@ -342,8 +390,11 @@
                         company_logo: data.company_logo,
                         celular: iti.getNumber(),
                         social_instagram: data.social_instagram,
-                        social_facebook: data.social_facebook
+                        social_facebook: data.social_facebook,
+                        default_currency: 'PEN',
+                        default_unit: 'KG'
                     };
+                    console.log(payload)
 
                     if (data.company_type === 'finca' && finalNombre) {
                         payload.nombre = finalNombre;

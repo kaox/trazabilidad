@@ -20,6 +20,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const companyTypeSelect = document.getElementById('company_type');
     const companyIdSelect = document.getElementById('company_id');
 
+    // Helper Slug
+    function createSlug(text) { 
+        if (!text) return '';
+        return text.toString().toLowerCase().trim()
+            .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+            .replace(/\s+/g, '-')
+            .replace(/[^\w\-]+/g, '')
+            .replace(/\-\-+/g, '-'); 
+    }
+
     async function init() {
         await loadConfigOptions(); // Cargar combos primero
         await loadEntityOptions(); // Cargar fincas y procesadoras
@@ -105,6 +115,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 profileForm.celular.value = user.celular || '';
                 profileForm.social_instagram.value = user.social_instagram || '';
                 profileForm.social_facebook.value = user.social_facebook || '';
+
+                // ACTIVAR BOTÓN "VER MI PÁGINA" con URL ÚNICA
+                const btnLanding = document.getElementById('btn-view-landing');
+                if (user.empresa && btnLanding) {
+                    const slug = createSlug(user.empresa);
+                    // CAMBIO: Concatenamos el ID al final del slug para garantizar unicidad
+                    btnLanding.href = `/origen-unico/${slug}-${user.id}`;
+                    btnLanding.classList.remove('hidden');
+                }
 
                 // Poblar configuración
                 if (user.default_currency) currencySelect.value = user.default_currency;

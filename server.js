@@ -183,42 +183,56 @@ app.get('/01/:gtin/10/:loteId', gs1Resolver.resolve);
 app.get('/origen-unico', (req, res) => res.sendFile(path.join(__dirname, 'public', 'origen-unico.html')));
 
 app.get('/origen-unico/:slug', async (req, res) => {
-    const slug = req.params.slug;
+    const slugParam = req.params.slug;
     const filePath = path.join(__dirname, 'public', 'origen-unico.html');
 
     fs.readFile(filePath, 'utf8', async (err, htmlData) => {
         if (err) return res.status(500).send('Error interno');
         try {
             const companies = await db.getPublicCompaniesDataInternal();
-            const company = companies.find(c => createSlug(c.empresa) === slug);
             
+            // --- NUEVA LÓGICA DE BÚSQUEDA HÍBRIDA ---
+            let company = null;
+
+            // 1. Intentar buscar por ID al final del string (Formato nuevo: nombre-123)
+            const lastHyphenIndex = slugParam.lastIndexOf('-');
+            if (lastHyphenIndex !== -1) {
+                const potentialId = slugParam.substring(lastHyphenIndex + 1);
+                // Verificamos si lo que hay después del guion parece un ID (número o string corto)
+                company = companies.find(c => String(c.id) === potentialId);
+            }
+
+            // 2. Si no se encuentra por ID, buscar por Slug tradicional (Compatibilidad hacia atrás)
+            if (!company) {
+                company = companies.find(c => createSlug(c.empresa) === slugParam);
+            }
+
             if (company) {
                 const title = `${company.empresa} - Origen Único Verificado`;
                 const description = `Conoce la trazabilidad y origen de ${company.empresa} en Ruru Lab.`;
-
-                // CAMBIO IMPORTANTE: Generar URL absoluta para que WhatsApp la reconozca
+                
                 const protocol = req.headers['x-forwarded-proto'] || req.protocol; 
                 const host = req.get('host');
                 let image = `https://rurulab.com/images/banner_1.png`;
 
                 if (company.company_logo) {
                     if (company.company_logo.startsWith('http')) {
-                        // Si ya es URL externa (ej. Cloudinary), la usamos
                         image = company.company_logo;
                     } else {
-                        // Si es Base64, usamos nuestra nueva ruta de servidor de archivos
                         image = `${protocol}://${host}/api/public/companies/${company.id}/logo`;
                     }
                 }
 
                 let injectedHtml = htmlData
-                    .replace('<title>Empresas con Origen Único - Rurulab</title>', `<title>${title}</title>`)
-                    .replace(/content="RuruLab - Trazabilidad y Pasaporte Digital para Café y Cacao"/g, `content="${title}"`)
+                    .replace('<title>Empresas con Origen Único - Ruru Lab</title>', `<title>${title}</title>`)
+                    .replace(/content="RuruLab - Trazabilidad y Pasaporte Digital para Cacao y Café"/g, `content="${title}"`)
                     .replace(/content="Crea un pasaporte digital para tu producto..."/g, `content="${description}"`)
                     .replace(/content="https:\/\/rurulab\.com\/images\/banner_1\.png"/g, `content="${image}"`);
                 
                 res.send(injectedHtml);
             } else {
+                // Si no se encuentra, enviamos el HTML base. 
+                // El frontend se encargará de mostrar "Empresa no encontrada" al no poder cargar la API.
                 res.send(htmlData);
             }
         } catch (error) {
