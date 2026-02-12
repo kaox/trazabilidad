@@ -246,27 +246,38 @@
 
                 // --- Inicializar Botón Google ---
                 // Nota: Asegúrate de reemplazar con tu Client ID real
-                try {
+                const initGoogleBtn = () => {
                     if (typeof google !== 'undefined' && google.accounts) {
-                        google.accounts.id.initialize({
-                            client_id: GOOGLE_CLIENT_ID_CONFIG,
-                            callback: window.handleGoogleResponse,
-                            context: 'signup'
-                        });
-                        
-                        // Renderizar botón
-                        google.accounts.id.renderButton(
-                            document.getElementById("google-btn-container"),
-                            { theme: "outline", size: "large", text: "continue_with", shape: "rectangular" }
-                        );
-                        // Mostrar prompt one-tap opcionalmente
-                        // google.accounts.id.prompt(); 
+                        try {
+                            google.accounts.id.initialize({
+                                client_id: GOOGLE_CLIENT_ID_CONFIG,
+                                callback: window.handleGoogleResponse,
+                                context: 'signup'
+                            });
+                            
+                            // Renderizar botón con width 100% para móvil
+                            google.accounts.id.renderButton(
+                                document.getElementById("google-btn-container"),
+                                { 
+                                    theme: "outline", 
+                                    size: "large", 
+                                    text: "continue_with", 
+                                    shape: "rectangular", 
+                                    width: "100%" // Fuerza ancho completo
+                                }
+                            );
+                        } catch(e) {
+                            console.error("Error init Google:", e);
+                        }
                     } else {
-                        console.warn("Librería de Google no cargada. Verifica tu conexión o bloqueadores de anuncios.");
+                        // Si no cargó, reintentar en 500ms (común en redes lentas móviles)
+                        setTimeout(initGoogleBtn, 500);
                     }
-                } catch (e) {
-                    console.error("Error inicializando Google Sign-In:", e);
-                }
+                };
+                
+                // Iniciar proceso de carga
+                initGoogleBtn();
+
                 // Cargar datos precargados
                 try {
                     const res = await fetch(`/api/public/magic-data/${magicToken}`);
