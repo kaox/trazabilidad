@@ -269,7 +269,6 @@ const app = {
                 const isFinca = c.type === 'finca';
                 const typeColor = isFinca ? 'amber' : 'blue';
                 const locationStr = [c.distrito, c.provincia, c.departamento, c.pais].filter(Boolean).map(p => this.toTitleCase(p)).join(', ') || 'Ubicación por verificar';
-                
                 html += `
                     <div onclick="app.loadLanding('${c.id}', true)" 
                          class="group relative bg-white rounded-3xl border border-stone-200 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-500 cursor-pointer overflow-hidden flex flex-col h-full">
@@ -349,7 +348,7 @@ const app = {
             const isFinca = user.company_type === 'finca';
             const entityName = isFinca ? (entity.nombre_finca || user.empresa) : (entity.nombre_comercial || user.empresa);
             const typeLabel = isFinca ? 'Finca de Origen' : 'Planta de Procesamiento';
-            const locationStr = [entity.distrito, entity.departamento, entity.pais].filter(Boolean).map(p => this.toTitleCase(p)).join(', ') || 'Ubicación no registrada';
+            const locationStr = [entity.distrito, entity.provincia, entity.departamento, entity.pais].filter(Boolean).map(p => this.toTitleCase(p)).join(', ') || 'Ubicación no registrada';
             const historyText = entity.historia || user.historia_empresa || 'Comprometidos con la calidad y la transparencia en cada grano.';
             
             const instagram = user.social_instagram || entity.social_instagram;
