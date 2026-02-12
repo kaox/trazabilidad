@@ -11,7 +11,7 @@ const {
     sanitizeNumber, 
     createSlug, 
     toCamelCase 
-} = require('./utils/helpers.js');
+} = require('./src/utils/helpers.js');
 
 
 // Importar las clases necesarias del SDK v3 de Mercado Pago
@@ -32,81 +32,7 @@ const client = new OAuth2Client(GOOGLE_CLIENT_ID);
 const maridajesVinoData = JSON.parse(fs.readFileSync(path.join(__dirname, 'public', 'data', 'maridajes_vino.json'), 'utf8'));
 const maridajesQuesoData = JSON.parse(fs.readFileSync(path.join(__dirname, 'public', 'data', 'maridajes_quesos.json'), 'utf8'));
 
-let get, all, run;
-
-if (environment === 'production') {
-    // --- Configuración para Producción (DRIVER HTTP / FETCH) ---
-    const { neon } = require('@neondatabase/serverless');
-    
-    const sqlClient = neon(process.env.POSTGRES_URL);
-
-    const queryAdapter = async (sql, params = []) => {
-        let paramIndex = 1;
-        const pgSql = sql.replace(/\?/g, () => `$${paramIndex++}`);
-        
-        try {
-            const result = await sqlClient(pgSql, params);
-            
-            return { 
-                rows: result, 
-                rowCount: result.length
-            };
-        } catch (err) {
-            console.error("--> [HTTP DB ERROR]", err);
-            throw err;
-        }
-    };
-    
-    // Función GET: Devuelve la primera fila
-    get = async (sql, params = []) => {
-        const result = await queryAdapter(sql, params);
-        return result.rows[0];
-    };
-
-    // Función ALL: Devuelve todas las filas
-    all = async (sql, params = []) => {
-        const result = await queryAdapter(sql, params);
-        return result.rows;
-    };
-
-    // Función RUN: Para INSERT/UPDATE/DELETE
-    run = async (sql, params = []) => {
-        const upperSql = sql.trim().toUpperCase();
-        let sqlToRun = sql;
-
-        // Si es INSERT, UPDATE o DELETE y no tiene RETURNING, se lo agregamos
-        if ((upperSql.startsWith('INSERT') || upperSql.startsWith('UPDATE') || upperSql.startsWith('DELETE')) && !upperSql.includes('RETURNING')) {
-            sqlToRun = `${sql} RETURNING id`;
-        }
-
-        try {
-            const result = await queryAdapter(sqlToRun, params);
-            
-            const changes = result.rows.length;
-            const lastID = (result.rows[0] && result.rows[0].id) ? result.rows[0].id : null;
-
-            return { 
-                changes: changes, 
-                lastID: lastID 
-            };
-        } catch(e) {
-            throw e;
-        }
-    };
-
-} else {
-    // --- Configuración para Desarrollo (SQLite) ---
-    const sqlite3 = require('sqlite3').verbose();
-    const db = new sqlite3.Database("./database.db", err => {
-        if (err) console.error("SQLite connection error:", err.message);
-        else console.log("Conectado a la base de datos SQLite para desarrollo.");
-        db.run('PRAGMA foreign_keys = ON;');
-    });
-
-    all = (sql, params = []) => new Promise((resolve, reject) => db.all(sql, params, (err, rows) => err ? reject(err) : resolve(rows)));
-    get = (sql, params = []) => new Promise((resolve, reject) => db.get(sql, params, (err, row) => err ? reject(err) : resolve(row)));
-    run = (sql, params = []) => new Promise((resolve, reject) => db.run(sql, params, function(err) { err ? reject(err) : resolve({ changes: this.changes, lastID: this.lastID }); }));
-}
+const { get, all, run } = require('./src/config/db.js');
 
 // --- Helper para Generar ID de Lote/Batch Único ---
 const generateUniqueBatchId = async (prefix) => {
@@ -236,13 +162,55 @@ const getUserProfile = async (req, res) => {
 
 const updateUserProfile = async (req, res) => {
     const userId = req.user.id;
-    // AGREGADOS: social_instagram, social_facebook
-    const { nombre, apellido, dni, ruc, empresa, company_logo, celular, correo, default_currency, default_unit, company_type, company_id, social_instagram, social_facebook } = req.body;
+    // 1. Agregamos 'usuario' y 'password' a la extracción de datos
+    const { 
+        nombre, apellido, dni, ruc, empresa, company_logo, celular, correo, 
+        default_currency, default_unit, company_type, company_id, 
+        social_instagram, social_facebook,
+        usuario, password // <--- Campos nuevos del onboarding
+    } = req.body;
+
     try {
-        await run('UPDATE users SET nombre = ?, apellido = ?, dni = ?, ruc = ?, empresa = ?, company_logo = ?, celular = ?, correo = ?, default_currency = ?, default_unit = ?, company_type = ?, company_id = ?, social_instagram = ?, social_facebook = ? WHERE id = ?', 
-            [nombre, apellido, dni, ruc, empresa, company_logo, celular, correo, default_currency, default_unit, company_type, company_id, social_instagram, social_facebook, userId]);
-        res.status(200).json({ message: "Perfil actualizado." });
-    } catch (err) { res.status(500).json({ error: err.message }); }
+        // 2. Preparamos la consulta base
+        let sql = `UPDATE users SET 
+            nombre = ?, apellido = ?, dni = ?, ruc = ?, empresa = ?, 
+            company_logo = ?, celular = ?, correo = ?, default_currency = ?, 
+            default_unit = ?, company_type = ?, company_id = ?, 
+            social_instagram = ?, social_facebook = ?`;
+            
+        const params = [
+            nombre, apellido, dni, ruc, empresa, 
+            company_logo, celular, correo, default_currency, 
+            default_unit, company_type, company_id, 
+            social_instagram, social_facebook
+        ];
+
+        // 3. Inyectamos usuario si existe
+        if (usuario) {
+            sql += `, usuario = ?`;
+            params.push(usuario);
+        }
+
+        // 4. Inyectamos contraseña si existe (La hasheamos aquí mismo)
+        if (password) {
+            const hashedPassword = await bcrypt.hash(password, 10);
+            sql += `, password = ?`;
+            params.push(hashedPassword);
+        }
+
+        sql += ` WHERE id = ?`;
+        params.push(userId);
+
+        await run(sql, params);
+        res.status(200).json({ message: "Perfil actualizado correctamente." });
+
+    } catch (err) { 
+        // Manejo de error por usuario duplicado
+        if (err.message && err.message.includes('UNIQUE')) {
+            return res.status(409).json({ error: "El nombre de usuario ya está en uso." });
+        }
+        res.status(500).json({ error: err.message }); 
+    }
 };
 
 const updateUserPassword = async (req, res) => {
@@ -317,7 +285,7 @@ const createFinca = async (req, res) => {
             'INSERT INTO fincas (id, user_id, propietario, dni_ruc, nombre_finca, pais, departamento, provincia, distrito, ciudad, altura, superficie, coordenadas, telefono, historia, imagenes_json, video_link, certificaciones_json, premios_json, foto_productor, numero_trabajadores) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', 
             [id, userId, propietario, dni_ruc, nombre_finca, pais, departamento, provincia, distrito, ciudad, altura, superficie, JSON.stringify(coordenadas), telefono, historia, JSON.stringify(imagenes_json || []), video_link, JSON.stringify(certificaciones_json || []), JSON.stringify(premios_json || []), foto_productor, numero_trabajadores]
         );
-        res.status(201).json({ message: "Finca creada" });
+        res.status(201).json({ message: "Finca creada", id: id });
     } catch (err) { 
         res.status(500).json({ error: err.message }); 
     }
@@ -458,7 +426,7 @@ const createProcesadora = async (req, res) => {
     const sql = 'INSERT INTO procesadoras (id, user_id, ruc, razon_social, nombre_comercial, pais, ciudad, departamento, provincia, distrito, direccion, telefono, premios_json, certificaciones_json, coordenadas, imagenes_json, historia, video_link, numero_trabajadores) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
     try {
         await run(sql, [id, userId, ruc, razon_social, nombre_comercial, pais, ciudad, departamento, provincia, distrito, direccion, telefono, JSON.stringify(premios_json || []), JSON.stringify(certificaciones_json || []), coordenadas, JSON.stringify(imagenes_json || []), historia, video_link, numero_trabajadores]);
-        res.status(201).json({ message: "Procesadora creada" });
+        res.status(201).json({ message: "Procesadora creada", id: id });
     } catch (err) { res.status(500).json({ error: err.message }); }
 };
 

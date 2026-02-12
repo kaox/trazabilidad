@@ -13,6 +13,8 @@ const gs1Resolver = require('./gs1-resolver');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+const suggestionsController = require('./src/controllers/admin-suggestionsController');
+
 // 2. MIDDLEWARES GLOBALES
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
@@ -107,6 +109,7 @@ app.get('/pricing-public.html', (req, res) => res.sendFile(path.join(__dirname, 
 app.get('/qr', (req, res) => res.sendFile(path.join(__dirname, 'public', 'tracking.html')));
 app.get('/registro-productor', (req, res) => res.sendFile(path.join(__dirname, 'public', 'registro-productor.html')));
 app.get('/blog/:slug', (req, res) => res.sendFile(path.join(__dirname, 'public', 'article.html')));
+app.get('/magic-login/:token', suggestionsController.handleMagicLogin);
 
 // Trazabilidad corta (Ej: ABC-12345678)
 //app.get('/:loteId([A-Z]{3}-[A-Z0-9]{8})', (req, res) => res.sendFile(path.join(__dirname, 'public', 'tracking.html')));
@@ -253,6 +256,7 @@ app.get('/app/procesamiento', authenticatePage, (req, res) => res.sendFile(path.
 app.get('/app/estimacion-cosecha', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'estimacion-cosecha.html')));
 app.get('/app/admin-blog', authenticatePage, checkAdmin, (req, res) => res.sendFile(path.join(__dirname, 'views', 'admin-blog-list.html')));
 app.get('/app/admin-blog/editor', authenticatePage, checkAdmin, (req, res) => res.sendFile(path.join(__dirname, 'views', 'admin-blog-editor.html')));
+app.get('/app/admin-suggestions', authenticatePage, checkAdmin, (req, res) => res.sendFile(path.join(__dirname, 'views', 'admin-suggestions.html')));
 app.get('/app/payment-success', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'payment-success.html')));
 app.get('/app/payment-failure', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'payment-failure.html')));
 app.get('/app/nutricion', authenticatePage, checkSubscription('profesional'), (req, res) => res.sendFile(path.join(__dirname, 'views', 'nutricion.html')));
@@ -329,6 +333,10 @@ app.get('/api/config/units', authenticateApi, db.getUnits);
 // Dashboard & Analytics
 app.get('/api/dashboard/data', authenticateApi, checkSubscription('profesional'), db.getDashboardData);
 app.get('/api/admin/dashboard-data', authenticateApi, checkAdmin, db.getAdminDashboardData);
+app.get('/api/admin/suggestions', authenticateApi, checkAdmin, suggestionsController.getAdminSuggestions);
+app.delete('/api/admin/suggestions/:id', authenticateApi, checkAdmin, suggestionsController.deleteSuggestion);
+app.post('/api/admin/suggestions/:id/magic-link', authenticateApi, checkAdmin, suggestionsController.generateMagicLink);
+
 
 // Blends & Recetas (Profesional)
 app.get('/api/blends', authenticateApi, checkSubscription('profesional'), db.getBlends);

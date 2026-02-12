@@ -456,6 +456,8 @@ CREATE TABLE IF NOT EXISTS suggested_companies (
     departamento TEXT,
     provincia TEXT,
     distrito TEXT,
+
+    magic_token TEXT,
     
     status TEXT DEFAULT 'pending', -- 'pending', 'verified', 'claimed'
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
