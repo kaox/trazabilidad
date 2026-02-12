@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bienvenido a Ruru Lab</title>
     <!-- Verificar autenticación al cargar -->
-    <script src="/auth.js"></script>
     <link href="/css/styles.css" rel="stylesheet">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -45,7 +44,7 @@
                 ✨
             </div>
             <h1 class="text-3xl font-display font-bold mb-2">¡Hola! Tu perfil ya está casi listo</h1>
-            <p class="text-amber-100 max-w-lg mx-auto">Gracias por reclamar tu espacio en Ruru Lab. Hemos precargado la información de tu empresa. Solo confirma los datos y asegura tu cuenta.</p>
+            <p class="text-amber-100 max-w-lg mx-auto">Reclama tu espacio en Ruru Lab. Confirma tus datos y crea tu contraseña para comenzar.</p>
         </div>
 
         <!-- Encabezado Estándar (Si no es Magic Link) -->
@@ -127,19 +126,19 @@
                 <!-- 2. Seguridad (Solo si es Magic Link) -->
                 <section id="security-section" class="hidden bg-amber-50 p-6 rounded-2xl border border-amber-200">
                     <h3 class="text-lg font-bold text-amber-900 mb-2 flex items-center gap-2">
-                        <i class="fas fa-lock"></i> Asegura tu Cuenta
+                        <i class="fas fa-lock"></i> Crea tus Credenciales
                     </h3>
                     <p class="text-sm text-amber-800 mb-4">Como entraste con un enlace mágico, por favor define tus credenciales para ingresar la próxima vez.</p>
                     
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <label class="block text-sm font-medium text-stone-700 mb-1">Usuario</label>
-                            <input type="text" id="usuario" name="usuario" class="w-full p-3 border border-stone-300 rounded-xl bg-white" placeholder="usuario_ejemplo" autocomplete="username">
+                            <input type="text" id="usuario" name="usuario" class="w-full p-3 border border-stone-300 rounded-xl bg-white" placeholder="usuario_ejemplo">
                             <p class="text-[10px] text-stone-500 mt-1">Solo letras, números, puntos y guiones bajos.</p>
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-stone-700 mb-1">Nueva Contraseña</label>
-                            <input type="password" id="password" name="password" class="w-full p-3 border border-stone-300 rounded-xl bg-white" placeholder="********" autocomplete="new-password" minlength="6">
+                            <input type="password" id="password" name="password" class="w-full p-3 border border-stone-300 rounded-xl bg-white" placeholder="********" minlength="6">
                         </div>
                     </div>
                 </section>
@@ -254,173 +253,123 @@
             companyTypeSelect.addEventListener('change', toggleFields);
             toggleFields();
 
-            // --- Lógica Magic Link ---
+            // --- DETECCIÓN DE MAGIC LINK ---
             const params = new URLSearchParams(window.location.search);
-            const isWelcome = params.get('welcome') === 'true';
+            const magicToken = params.get('magic_token');
 
-            if (isWelcome) {
-                welcomeBanner.classList.remove('hidden');
-                standardHeader.classList.add('hidden');
-                securitySection.classList.remove('hidden');
+            // Si no hay magic_token, verificar si hay sesión normal
+            if (!magicToken) {
+                // Lógica de Auth Check simple
+                fetch('/api/user/profile').then(res => {
+                    if(!res.ok) window.location.href = '/login.html';
+                });
+            } else {
+                // --- MODO MAGIC LINK ---
+                document.getElementById('welcome-banner').classList.remove('hidden');
+                document.getElementById('standard-header').classList.add('hidden');
+                document.getElementById('security-section').classList.remove('hidden');
+                
                 document.getElementById('usuario').required = true;
                 document.getElementById('password').required = true;
-            }
 
-            // --- API Helper ---
-            const api = async (url, opts={}) => {
-                const res = await fetch(url, {...opts, credentials: 'include'});
-                if(!res.ok) throw new Error('Error API');
-                return res.json();
-            };
+                // Cargar datos precargados (SIN AUTH, usando el token)
+                try {
+                    const res = await fetch(`/api/public/magic-data/${magicToken}`);
+                    if (!res.ok) throw new Error("Link expirado");
+                    const data = await res.json();
 
-            // --- Carga de Datos ---
-            try {
-                const user = await api('/api/user/profile');
-                
-                if (user.company_type) {
-                    companyTypeSelect.value = user.company_type;
+                    // Llenar formulario
+                    companyTypeSelect.value = data.company_type || 'finca';
                     toggleFields();
-                }
+                    
+                    if (data.empresa) {
+                        document.getElementById('empresa').value = data.empresa;
+                        document.getElementById('nombre_finca').value = data.empresa; // Default
+                    }
+                    if (data.social_instagram) document.getElementById('social_instagram').value = data.social_instagram;
+                    if (data.social_facebook) document.getElementById('social_facebook').value = data.social_facebook;
+                    
+                    if (data.company_logo) {
+                        document.getElementById('logo-preview').src = data.company_logo;
+                        document.getElementById('company_logo_base64').value = data.company_logo;
+                    }
 
-                if (user.empresa) {
-                    inputEmpresa.value = user.empresa;
-                    inputNombreFinca.value = user.empresa; 
+                } catch (e) {
+                    alert("El enlace mágico no es válido o ha expirado.");
+                    window.location.href = '/';
                 }
-                
-                if (user.nombre || user.apellido) {
-                    inputPropietario.value = `${user.nombre || ''} ${user.apellido || ''}`.trim();
-                }
-
-                if (user.celular) iti.setNumber(user.celular);
-                if (user.usuario) document.getElementById('usuario').value = user.usuario;
-                
-                if (user.social_instagram) document.getElementById('social_instagram').value = user.social_instagram;
-                if (user.social_facebook) document.getElementById('social_facebook').value = user.social_facebook;
-
-                if (user.company_logo) {
-                    logoPreview.src = user.company_logo;
-                    logoHidden.value = user.company_logo;
-                } else {
-                    logoPreview.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.empresa || 'User')}&background=f5f5f4&color=78350f&size=128`;
-                }
-
-            } catch (e) {
-                console.error("Error cargando perfil:", e);
             }
 
+            // Manejo de Logo (Preview)
             document.getElementById('company_logo_input').addEventListener('change', (e) => {
                 const file = e.target.files[0];
                 if (file) {
                     const reader = new FileReader();
                     reader.onload = (ev) => {
-                        logoPreview.src = ev.target.result;
-                        logoHidden.value = ev.target.result;
+                        document.getElementById('logo-preview').src = ev.target.result;
+                        document.getElementById('company_logo_base64').value = ev.target.result;
                     };
                     reader.readAsDataURL(file);
                 }
             });
 
-            // --- Guardar ---
+            // Guardar
             form.addEventListener('submit', async (e) => {
                 e.preventDefault();
                 const btn = document.getElementById('submit-btn');
-                btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
+                btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Procesando...';
 
                 const formData = new FormData(form);
                 const data = Object.fromEntries(formData.entries());
 
+                // Preparar Payload
+                let finalName = data.company_type === 'finca' ? data.nombre_finca : data.empresa;
+                const payload = {
+                    company_type: data.company_type,
+                    empresa: finalName,
+                    celular: iti.getNumber(),
+                    company_logo: data.company_logo,
+                    social_instagram: data.social_instagram,
+                    social_facebook: data.social_facebook,
+                    // Datos personales
+                    nombre: data.company_type === 'finca' ? data.nombre_propietario : '',
+                    apellido: ''
+                };
+
                 try {
-                    // 1. Crear la Entidad (Finca o Procesadora)
-                    let companyId = null;
-                    let finalCompanyName = '';
-                    let finalNombre = '';
-                    let finalApellido = '';
+                    if (magicToken) {
+                        // --- FLUJO MAGIC LINK: REGISTRO NUEVO ---
+                        payload.magic_token = magicToken;
+                        payload.usuario = data.usuario;
+                        payload.password = data.password;
 
-                    // Datos base comunes para crear entidades
-                    const baseEntityData = {
-                        telefono: iti.getNumber(),
-                        pais: 'Perú' // Default, idealmente vendría de un select o geoloc
-                    };
-
-                    if (data.company_type === 'finca') {
-                        finalCompanyName = data.nombre_finca;
-                        const parts = (data.nombre_propietario || '').trim().split(' ');
-                        if (parts.length > 0) {
-                            finalNombre = parts[0];
-                            finalApellido = parts.slice(1).join(' ') || ''; 
-                        }
-
-                        // Crear Finca
-                        const fincaRes = await fetch('/api/fincas', {
+                        const res = await fetch('/api/public/magic-register', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                                ...baseEntityData,
-                                nombre_finca: finalCompanyName,
-                                propietario: data.nombre_propietario,
-                                dni_ruc: '' // Opcional en creación rápida
-                            })
+                            body: JSON.stringify(payload),
+                            credentials: 'include'
                         });
-                        const fincaJson = await fincaRes.json();
-                        companyId = fincaJson.id;
+                        
+                        const result = await res.json();
+                        if(!res.ok) throw new Error(result.error || 'Error en registro');
+                        
+                        window.location.href = result.redirect || '/app/dashboard';
 
                     } else {
-                        finalCompanyName = data.empresa;
-                        
-                        // Crear Procesadora
-                        const procRes = await fetch('/api/procesadoras', {
-                            method: 'POST',
+                        // --- FLUJO NORMAL: ACTUALIZACIÓN PERFIL ---
+                        // (Si el usuario ya estaba logueado y entró a onboarding)
+                        const res = await fetch('/api/user/profile', {
+                            method: 'PUT',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                                ...baseEntityData,
-                                nombre_comercial: finalCompanyName,
-                                razon_social: finalCompanyName, // Fallback
-                                ruc: '' // Opcional
-                            })
+                            body: JSON.stringify(payload),
+                            credentials: 'include'
                         });
-                        const procJson = await procRes.json();
-                        companyId = procJson.id;
+                        if(!res.ok) throw new Error('Error al actualizar');
+                        window.location.href = '/app/dashboard';
                     }
-
-                    // 2. Actualizar Perfil de Usuario con ID de Empresa
-                    const payload = {
-                        empresa: finalCompanyName,
-                        company_type: data.company_type,
-                        company_id: companyId, // VINCULACIÓN CLAVE
-                        company_logo: data.company_logo,
-                        celular: iti.getNumber(),
-                        social_instagram: data.social_instagram,
-                        social_facebook: data.social_facebook,
-                        default_currency: 'PEN',
-                        default_unit: 'KG'
-                    };
-                    console.log(payload)
-
-                    if (data.company_type === 'finca' && finalNombre) {
-                        payload.nombre = finalNombre;
-                        payload.apellido = finalApellido;
-                    }
-                    
-                    // Credenciales (Solo Magic Link)
-                    if (isWelcome) {
-                        if (data.usuario && data.usuario.trim() !== '') {
-                            payload.usuario = data.usuario.toLowerCase().trim();
-                        }
-                        if (data.password && data.password.trim() !== '') {
-                            payload.password = data.password;
-                        }
-                    }
-
-                    await fetch('/api/user/profile', {
-                        method: 'PUT',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(payload)
-                    });
-
-                    window.location.href = '/app/dashboard';
 
                 } catch (err) {
-                    alert("Error guardando datos: " + err.message);
+                    alert(err.message);
                     btn.disabled = false; btn.innerText = "Intentar de nuevo";
                 }
             });

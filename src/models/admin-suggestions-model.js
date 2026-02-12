@@ -35,7 +35,7 @@ const markAsClaimed = async (id) => {
 const createUserFromSuggestion = async (userObj) => {
     const { 
         username, password, nombre, apellido, empresa, type, 
-        companyId, logo, instagram, facebook 
+        companyId, logo, instagram, facebook, celular
     } = userObj;
 
     const sql = `
@@ -43,13 +43,13 @@ const createUserFromSuggestion = async (userObj) => {
             usuario, password, nombre, apellido, 
             empresa, company_type, company_id, 
             company_logo, role, subscription_tier, 
-            social_instagram, social_facebook
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            social_instagram, social_facebook, celular
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
 
     const result = await db.run(sql, [
         username, password, nombre, apellido, empresa, type, 
-        companyId, logo, 'user', 'artesano', instagram, facebook
+        companyId, logo, 'user', 'artesano', instagram, facebook, celular
     ]);
 
     // Devolvemos el usuario recién creado

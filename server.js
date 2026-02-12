@@ -111,6 +111,12 @@ app.get('/registro-productor', (req, res) => res.sendFile(path.join(__dirname, '
 app.get('/blog/:slug', (req, res) => res.sendFile(path.join(__dirname, 'public', 'article.html')));
 app.get('/magic-login/:token', suggestionsController.handleMagicLogin);
 
+// 2. Obtener datos para precargar formulario (API)
+app.get('/api/public/magic-data/:token', suggestionsController.getMagicLinkData);
+
+// 3. Completar registro (API)
+app.post('/api/public/magic-register', suggestionsController.completeMagicRegistration);
+
 // Trazabilidad corta (Ej: ABC-12345678)
 //app.get('/:loteId([A-Z]{3}-[A-Z0-9]{8})', (req, res) => res.sendFile(path.join(__dirname, 'public', 'tracking.html')));
 app.get('/:loteId([A-Z]{3}-[A-Z0-9]{8})', async (req, res) => {
@@ -248,7 +254,8 @@ app.get('/api/public/products/:productId/batches', db.getPublicBatchesForProduct
 app.get('/api/public/companies/:userId/landing', db.getCompanyLandingData);
 
 // 8. RUTAS PROTEGIDAS (VISTAS APP)
-app.get('/app/dashboard', authenticatePage, checkSubscription('profesional'), (req, res) => res.sendFile(path.join(__dirname, 'views', 'dashboard.html')));
+//app.get('/app/dashboard', authenticatePage, checkSubscription('profesional'), (req, res) => res.sendFile(path.join(__dirname, 'views', 'dashboard.html')));
+app.get('/app/dashboard', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'dashboard.html')));
 app.get('/app/trazabilidad', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'trazabilidad.html')));
 app.get('/app/fincas', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'fincas.html')));
 app.get('/app/perfiles', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'perfiles.html')));
