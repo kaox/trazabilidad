@@ -56,6 +56,26 @@ const createUserFromSuggestion = async (userObj) => {
     return await db.get('SELECT * FROM users WHERE id = ?', [result.lastID]);
 };
 
+const updateById = async (id, data) => {
+    const { 
+        name, type, pais, departamento, provincia, distrito, 
+        social_instagram, social_facebook 
+    } = data;
+
+    const sql = `
+        UPDATE suggested_companies 
+        SET name = ?, type = ?, pais = ?, departamento = ?, provincia = ?, distrito = ?, 
+            social_instagram = ?, social_facebook = ?
+        WHERE id = ?
+    `;
+
+    return await db.run(sql, [
+        name, type, pais, departamento, provincia, distrito, 
+        social_instagram, social_facebook, 
+        id
+    ]);
+};
+
 module.exports = {
     getAll,
     deleteById,
@@ -63,5 +83,6 @@ module.exports = {
     findByMagicToken,
     findUserBySuggestionId,
     createUserFromSuggestion,
-    markAsClaimed
+    markAsClaimed,
+    updateById
 };

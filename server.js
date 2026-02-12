@@ -350,7 +350,7 @@ app.get('/api/admin/dashboard-data', authenticateApi, checkAdmin, db.getAdminDas
 app.get('/api/admin/suggestions', authenticateApi, checkAdmin, suggestionsController.getAdminSuggestions);
 app.delete('/api/admin/suggestions/:id', authenticateApi, checkAdmin, suggestionsController.deleteSuggestion);
 app.post('/api/admin/suggestions/:id/magic-link', authenticateApi, checkAdmin, suggestionsController.generateMagicLink);
-
+app.put('/api/admin/suggestions/:id', authenticateApi, checkAdmin, suggestionsController.updateSuggestion);
 
 // Blends & Recetas (Profesional)
 app.get('/api/blends', authenticateApi, checkSubscription('profesional'), db.getBlends);

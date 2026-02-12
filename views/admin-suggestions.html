@@ -82,8 +82,81 @@
         </div>
     </div>
 
+    <!-- Modal Editar Sugerencia -->
+    <div id="editModal" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center z-50 overflow-y-auto">
+        <div class="bg-white p-6 rounded-xl shadow-2xl max-w-2xl w-full mx-4 my-8 relative">
+            <button onclick="document.getElementById('editModal').classList.add('hidden')" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+            
+            <h3 class="text-xl font-bold text-gray-900 mb-6">Editar Información</h3>
+            
+            <form id="edit-form" class="space-y-4">
+                <input type="hidden" id="edit-id">
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Nombre</label>
+                        <input type="text" id="edit-name" class="w-full p-2 border border-gray-300 rounded-lg">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Tipo</label>
+                        <select id="edit-type" class="w-full p-2 border border-gray-300 rounded-lg bg-white">
+                            <option value="finca">Finca</option>
+                            <option value="procesadora">Procesadora</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">País</label>
+                        <input type="text" id="edit-pais" class="w-full p-2 border border-gray-300 rounded-lg">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Departamento</label>
+                        <input type="text" id="edit-departamento" class="w-full p-2 border border-gray-300 rounded-lg">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Provincia</label>
+                        <input type="text" id="edit-provincia" class="w-full p-2 border border-gray-300 rounded-lg">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Distrito</label>
+                        <input type="text" id="edit-distrito" class="w-full p-2 border border-gray-300 rounded-lg">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Instagram</label>
+                        <input type="text" id="edit-instagram" class="w-full p-2 border border-gray-300 rounded-lg">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Facebook</label>
+                        <input type="text" id="edit-facebook" class="w-full p-2 border border-gray-300 rounded-lg">
+                    </div>
+                </div>
+
+                <div class="pt-4 flex justify-end gap-3">
+                    <button type="button" onclick="document.getElementById('editModal').classList.add('hidden')" class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg font-medium transition">Cancelar</button>
+                    <button type="submit" class="px-6 py-2 bg-amber-800 text-white hover:bg-amber-900 rounded-lg font-bold shadow-md transition">Guardar Cambios</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script>
         document.addEventListener('DOMContentLoaded', loadSuggestions);
+
+        function createSlug(text) { 
+            if (!text) return '';
+            return text.toString().toLowerCase().trim()
+                .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+                .replace(/\s+/g, '-')
+                .replace(/[^\w\-]+/g, '')
+                .replace(/\-\-+/g, '-'); 
+        }
 
         async function loadSuggestions() {
             const tbody = document.getElementById('suggestions-table-body');
@@ -92,14 +165,14 @@
             try {
                 const res = await fetch('/api/admin/suggestions');
                 if(!res.ok) throw new Error("Error al cargar");
-                const suggestions = await res.json();
+                suggestionsData = await res.json(); // Guardamos los datos globalmente
 
-                if(suggestions.length === 0) {
+                if(suggestionsData.length === 0) {
                     tbody.innerHTML = '<tr><td colspan="5" class="p-6 text-center text-gray-400">No hay sugerencias pendientes.</td></tr>';
                     return;
                 }
 
-                tbody.innerHTML = suggestions.map(s => {
+                tbody.innerHTML = suggestionsData.map(s => {
                     const statusColors = {
                         'pending': 'bg-yellow-100 text-yellow-800',
                         'claimed': 'bg-green-100 text-green-800',
@@ -107,8 +180,11 @@
                     };
                     const statusLabel = { 'pending': 'Pendiente', 'claimed': 'Reclamada', 'verified': 'Verificada' };
                     
+                    const slug = createSlug(s.name);
+                    const landingUrl = `/origen-unico/${slug}-${s.id}`;
+
                     return `
-                        <tr class="hover:bg-gray-50 transition">
+                        <tr class="hover:bg-gray-50 transition border-b border-gray-100">
                             <td class="p-4">
                                 <div class="flex items-center gap-3">
                                     <div class="w-10 h-10 rounded-lg bg-gray-200 flex-shrink-0 overflow-hidden border border-gray-200">
@@ -126,21 +202,27 @@
                             <td class="p-4">
                                 <span class="text-xs font-bold uppercase tracking-wide text-gray-500 bg-gray-100 px-2 py-1 rounded">${s.type}</span>
                             </td>
-                            <td class="p-4 text-gray-600">
-                                ${s.distrito || ''}, ${s.departamento || ''}
+                            <td class="p-4 text-gray-600 text-sm">
+                                ${[s.distrito, s.departamento].filter(Boolean).join(', ')}
                             </td>
                             <td class="p-4">
                                 <span class="text-xs font-bold px-2 py-1 rounded-full ${statusColors[s.status] || 'bg-gray-100 text-gray-800'}">
                                     ${statusLabel[s.status] || s.status}
                                 </span>
                             </td>
-                            <td class="p-4 text-right">
+                            <td class="p-4 text-right whitespace-nowrap">
+                                <a href="${landingUrl}" target="_blank" class="text-gray-400 hover:text-blue-600 p-2 transition mr-1" title="Ver Página">
+                                    <i class="fas fa-external-link-alt"></i>
+                                </a>
+                                <button onclick="openEditModal('${s.id}')" class="text-gray-400 hover:text-amber-600 p-2 transition mr-1" title="Editar Información">
+                                    <i class="fas fa-pen"></i>
+                                </button>
                                 ${s.status === 'pending' ? 
-                                    `<button onclick="generateLink('${s.id}')" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-3 py-2 rounded-lg shadow-sm transition mr-2">
-                                        <i class="fas fa-magic mr-1"></i> Magic Link
+                                    `<button onclick="generateLink('${s.id}')" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-3 py-2 rounded-lg shadow-sm transition mr-2 inline-flex items-center gap-1">
+                                        <i class="fas fa-magic"></i> Link
                                     </button>` : ''
                                 }
-                                <button onclick="deleteSuggestion('${s.id}')" class="text-red-400 hover:text-red-600 p-2 transition" title="Eliminar">
+                                <button onclick="deleteSuggestion('${s.id}')" class="text-gray-400 hover:text-red-600 p-2 transition" title="Eliminar">
                                     <i class="fas fa-trash"></i>
                                 </button>
                             </td>
@@ -154,10 +236,78 @@
             }
         }
 
+        function openEditModal(id) {
+            const s = suggestionsData.find(item => item.id === id);
+            if (!s) return;
+
+            document.getElementById('edit-id').value = s.id;
+            document.getElementById('edit-name').value = s.name || '';
+            document.getElementById('edit-type').value = s.type || 'finca';
+            document.getElementById('edit-pais').value = s.pais || '';
+            document.getElementById('edit-departamento').value = s.departamento || '';
+            document.getElementById('edit-provincia').value = s.provincia || '';
+            document.getElementById('edit-distrito').value = s.distrito || '';
+            document.getElementById('edit-instagram').value = s.social_instagram || '';
+            document.getElementById('edit-facebook').value = s.social_facebook || '';
+
+            document.getElementById('editModal').classList.remove('hidden');
+        }
+
+        document.getElementById('edit-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = e.target.querySelector('button[type="submit"]');
+            const originalText = btn.innerText;
+            btn.disabled = true; btn.innerText = "Guardando...";
+
+            const id = document.getElementById('edit-id').value;
+            const data = {
+                name: document.getElementById('edit-name').value,
+                type: document.getElementById('edit-type').value,
+                pais: document.getElementById('edit-pais').value,
+                departamento: document.getElementById('edit-departamento').value,
+                provincia: document.getElementById('edit-provincia').value,
+                distrito: document.getElementById('edit-distrito').value,
+                social_instagram: document.getElementById('edit-instagram').value,
+                social_facebook: document.getElementById('edit-facebook').value
+            };
+
+            try {
+                // Se asume que existe la ruta PUT /api/admin/suggestions/:id (Agregada anteriormente)
+                // Si no existe, este fetch fallará (404/405).
+                // Asegúrate de que updateSuggestion esté registrada en server.js.
+                // Como workaround temporal si no está en server.js, podrías necesitar implementar un endpoint especial.
+                // Pero asumiendo que seguiste el paso anterior del backend, esto funcionará.
+                
+                // NOTA: Para que funcione, el servidor debe tener habilitado app.put('/api/admin/suggestions/:id', ...)
+                // que llame a db.updateSuggestion (o similar).
+                // Voy a usar fetch a esa ruta estándar.
+                
+                // Corrección: Como no puedo editar server.js aquí, asumo que ya lo hiciste o lo harás.
+                // Usaré fetch a la ruta que definimos en el paso anterior del backend.
+                
+                const res = await fetch(`/api/admin/suggestions/${id}`, {
+                    method: 'PUT', // Usamos PUT para actualizar
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                if (res.ok) {
+                    document.getElementById('editModal').classList.add('hidden');
+                    loadSuggestions();
+                } else {
+                    const err = await res.json();
+                    alert('Error al guardar: ' + (err.error || 'Desconocido'));
+                }
+            } catch (error) {
+                alert('Error de conexión');
+            } finally {
+                btn.disabled = false; btn.innerText = originalText;
+            }
+        });
+
         async function generateLink(id) {
             try {
                 const btn = event.currentTarget;
-                const originalText = btn.innerHTML;
                 btn.disabled = true;
                 btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
 
@@ -193,6 +343,5 @@
             });
         }
     </script>
-    <script src="/js/nav-loader.js" defer></script>
 </body>
 </html>
