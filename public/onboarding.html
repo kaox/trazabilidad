@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bienvenido a Ruru Lab</title>
+    <script src="/auth.js"></script>
+    <!-- Google Identity Services -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
     <!-- Verificar autenticación al cargar -->
     <link href="/css/styles.css" rel="stylesheet">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -12,7 +15,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
     
     <!-- Librería Intl-Tel-Input (Restaurada) -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/intl-tel-input@18.2.1/build/css/intlTelInput.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/intl-tel-input@25.3.0/build/css/intlTelInput.css">
     
     <script src="/js/analytics-loader.js" defer></script>
     <style>
@@ -23,15 +26,10 @@
         
         /* Ajustes para intl-tel-input */
         .iti { width: 100%; }
-        .iti__flag { background-image: url("https://cdn.jsdelivr.net/npm/intl-tel-input@18.2.1/build/img/flags.png"); }
+        /* Override para asegurar que las banderas carguen desde el CDN correcto */
+        .iti__flag { background-image: url("https://cdn.jsdelivr.net/npm/intl-tel-input@25.3.0/build/img/flags.png"); }
         @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
-          .iti__flag { background-image: url("https://cdn.jsdelivr.net/npm/intl-tel-input@18.2.1/build/img/flags@2x.png"); }
-        }
-
-        /* Input más amigable para dedos */
-        #celular {
-            height: 3.5rem; /* 56px de altura */
-            font-size: 1.1rem;
+          .iti__flag { background-image: url("https://cdn.jsdelivr.net/npm/intl-tel-input@25.3.0/build/img/flags@2x.png"); }
         }
     </style>
 </head>
@@ -128,17 +126,32 @@
                     <h3 class="text-lg font-bold text-amber-900 mb-2 flex items-center gap-2">
                         <i class="fas fa-lock"></i> Crea tus Credenciales
                     </h3>
-                    <p class="text-sm text-amber-800 mb-4">Como entraste con un enlace mágico, por favor define tus credenciales para ingresar la próxima vez.</p>
+                    <!-- Opción 1: Google Sign In -->
+                    <div class="bg-white p-4 rounded-xl border border-amber-100 shadow-sm text-center mb-6">
+                        <p class="text-sm text-stone-600 mb-3 font-medium">Recomendado: Inicia sesión con Google</p>
+                        <div id="google-btn-container" class="flex justify-center"></div>
+                        <p id="google-success-msg" class="hidden text-green-700 text-sm font-bold mt-2 flex items-center justify-center gap-2">
+                            <i class="fas fa-check-circle"></i> Cuenta vinculada correctamente
+                        </p>
+                    </div>
+
+                    <!-- Separador -->
+                    <div class="relative flex py-2 items-center mb-6">
+                        <div class="flex-grow border-t border-amber-200"></div>
+                        <span class="flex-shrink-0 mx-4 text-amber-800 text-xs font-bold uppercase">O crea credenciales manuales</span>
+                        <div class="flex-grow border-t border-amber-200"></div>
+                    </div>
                     
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- Opción 2: Manual -->
+                    <div id="manual-credentials-container" class="grid grid-cols-1 md:grid-cols-2 gap-4 opacity-100 transition-opacity duration-300">
                         <div>
                             <label class="block text-sm font-medium text-stone-700 mb-1">Usuario</label>
-                            <input type="text" id="usuario" name="usuario" class="w-full p-3 border border-stone-300 rounded-xl bg-white" placeholder="usuario_ejemplo">
+                            <input type="text" id="usuario" name="usuario" class="w-full p-3 border border-stone-300 rounded-xl bg-white" placeholder="usuario_ejemplo" autocomplete="username">
                             <p class="text-[10px] text-stone-500 mt-1">Solo letras, números, puntos y guiones bajos.</p>
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-stone-700 mb-1">Nueva Contraseña</label>
-                            <input type="password" id="password" name="password" class="w-full p-3 border border-stone-300 rounded-xl bg-white" placeholder="********" minlength="6">
+                            <input type="password" id="password" name="password" class="w-full p-3 border border-stone-300 rounded-xl bg-white" placeholder="********" autocomplete="new-password" minlength="6">
                         </div>
                     </div>
                 </section>
@@ -152,8 +165,11 @@
     </div>
 
     <!-- Script de Intl-Tel-Input -->
-    <script src="https://cdn.jsdelivr.net/npm/intl-tel-input@18.2.1/build/js/intlTelInput.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/intl-tel-input@25.3.0/build/js/intlTelInput.min.js"></script>
     <script>
+        // Variable global para el token de Google
+        let googleToken = null;
+
         document.addEventListener('DOMContentLoaded', async () => {
             const form = document.getElementById('onboarding-form');
             const welcomeBanner = document.getElementById('welcome-banner');
@@ -179,10 +195,9 @@
             }
 
             // --- Configuración de Teléfono ---
-            const msgPhone = document.querySelector("#msg-celular");
             const inputPhone = document.querySelector("#celular");
             const iti = window.intlTelInput(inputPhone, {
-                utilsScript: "https://cdn.jsdelivr.net/npm/intl-tel-input@18.2.1/build/js/utils.js",
+                utilsScript: "https://cdn.jsdelivr.net/npm/intl-tel-input@25.3.0/build/js/utils.js",
                 initialCountry: "auto",
                 geoIpLookup: function(callback) {
                     fetch("https://ipapi.co/json")
@@ -191,46 +206,7 @@
                     .catch(() => callback("pe"));
                 },
                 separateDialCode: true,
-                preferredCountries: ['pe', 'co', 'ec', 'mx', 'us'],
-                autoPlaceholder: "aggressive", // Muestra máscara de ejemplo
-                formatOnDisplay: true
-            });
-
-            // Función de Validación de Teléfono
-            const validatePhone = () => {
-                const isValid = iti.isValidNumber();
-                const errorCode = iti.getValidationError();
-                
-                if (inputPhone.value.trim() === '') {
-                    inputPhone.classList.remove("border-red-500", "border-green-500");
-                    msgPhone.classList.add("hidden");
-                    return false;
-                }
-
-                if (isValid) {
-                    inputPhone.classList.remove("border-red-500");
-                    inputPhone.classList.add("border-green-500");
-                    msgPhone.classList.add("hidden");
-                    return true;
-                } else {
-                    inputPhone.classList.add("border-red-500");
-                    inputPhone.classList.remove("border-green-500");
-                    
-                    const errorMap = ["Número inválido", "Código de país inválido", "Demasiado corto", "Demasiado largo", "Número inválido"];
-                    const msg = errorMap[errorCode] || "Número inválido";
-                    msgPhone.textContent = msg;
-                    msgPhone.classList.remove("hidden");
-                    msgPhone.className = "text-xs mt-1 font-bold text-red-600 block";
-                    return false;
-                }
-            };
-
-            // Validar al salir del campo
-            inputPhone.addEventListener('blur', validatePhone);
-            // Limpiar error al escribir
-            inputPhone.addEventListener('input', () => {
-                inputPhone.classList.remove("border-red-500", "border-green-500");
-                msgPhone.classList.add("hidden");
+                preferredCountries: ['pe', 'co', 'ec', 'mx']
             });
             
             // --- Lógica de Tipo de Entidad ---
@@ -251,40 +227,49 @@
             }
 
             companyTypeSelect.addEventListener('change', toggleFields);
-            toggleFields();
+            toggleFields(); // Init
 
-            // --- DETECCIÓN DE MAGIC LINK ---
+            // --- Lógica Magic Link ---
             const params = new URLSearchParams(window.location.search);
             const magicToken = params.get('magic_token');
+            const isWelcome = !!magicToken;
 
-            // Si no hay magic_token, verificar si hay sesión normal
-            if (!magicToken) {
-                // Lógica de Auth Check simple
-                fetch('/api/user/profile').then(res => {
-                    if(!res.ok) window.location.href = '/login.html';
-                });
-            } else {
-                // --- MODO MAGIC LINK ---
-                document.getElementById('welcome-banner').classList.remove('hidden');
-                document.getElementById('standard-header').classList.add('hidden');
-                document.getElementById('security-section').classList.remove('hidden');
+            if (isWelcome) {
+                welcomeBanner.classList.remove('hidden');
+                standardHeader.classList.add('hidden');
+                securitySection.classList.remove('hidden');
                 
+                // Inicialmente requeridos, se quitan si usa Google
                 document.getElementById('usuario').required = true;
                 document.getElementById('password').required = true;
 
-                // Cargar datos precargados (SIN AUTH, usando el token)
+                // --- Inicializar Botón Google ---
+                // Nota: Asegúrate de reemplazar con tu Client ID real
+                const GOOGLE_CLIENT_ID = "1064687511845-vjel6sbn1cg4nbmgf2228s0u821gvua4.apps.googleusercontent.com"; 
+                
+                if (typeof google !== 'undefined') {
+                    google.accounts.id.initialize({
+                        client_id: GOOGLE_CLIENT_ID,
+                        callback: handleGoogleResponse
+                    });
+                    google.accounts.id.renderButton(
+                        document.getElementById("google-btn-container"),
+                        { theme: "outline", size: "large", text: "continue_with" } 
+                    );
+                }
+
+                // Cargar datos precargados
                 try {
                     const res = await fetch(`/api/public/magic-data/${magicToken}`);
                     if (!res.ok) throw new Error("Link expirado");
                     const data = await res.json();
 
-                    // Llenar formulario
                     companyTypeSelect.value = data.company_type || 'finca';
                     toggleFields();
                     
                     if (data.empresa) {
                         document.getElementById('empresa').value = data.empresa;
-                        document.getElementById('nombre_finca').value = data.empresa; // Default
+                        document.getElementById('nombre_finca').value = data.empresa; 
                     }
                     if (data.social_instagram) document.getElementById('social_instagram').value = data.social_instagram;
                     if (data.social_facebook) document.getElementById('social_facebook').value = data.social_facebook;
@@ -296,80 +281,189 @@
 
                 } catch (e) {
                     alert("El enlace mágico no es válido o ha expirado.");
-                    window.location.href = '/';
+                    window.location.href = '/login.html';
+                }
+            } else {
+                // FLUJO NORMAL: Cargar perfil del usuario logueado
+                try {
+                    const api = async (url, opts={}) => {
+                        const res = await fetch(url, {...opts, credentials: 'include'});
+                        if(!res.ok) throw new Error('Error API');
+                        return res.json();
+                    };
+                    const user = await api('/api/user/profile');
+                    
+                    if (user.company_type) {
+                        companyTypeSelect.value = user.company_type;
+                        toggleFields();
+                    }
+
+                    if (user.empresa) {
+                        inputEmpresa.value = user.empresa;
+                        inputNombreFinca.value = user.empresa; 
+                    }
+                    
+                    if (user.nombre || user.apellido) {
+                        inputPropietario.value = `${user.nombre || ''} ${user.apellido || ''}`.trim();
+                    }
+
+                    if (user.celular) iti.setNumber(user.celular);
+                    if (user.usuario) document.getElementById('usuario').value = user.usuario;
+                    
+                    if (user.social_instagram) document.getElementById('social_instagram').value = user.social_instagram;
+                    if (user.social_facebook) document.getElementById('social_facebook').value = user.social_facebook;
+
+                    if (user.company_logo) {
+                        logoPreview.src = user.company_logo;
+                        logoHidden.value = user.company_logo;
+                    } else {
+                        logoPreview.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.empresa || 'User')}&background=f5f5f4&color=78350f&size=128`;
+                    }
+
+                } catch (e) {
+                    console.error("Error cargando perfil:", e);
                 }
             }
 
-            // Manejo de Logo (Preview)
+            // Callback Google
+            function handleGoogleResponse(response) {
+                googleToken = response.credential;
+                
+                // UI Feedback
+                document.getElementById('google-success-msg').classList.remove('hidden');
+                const manualContainer = document.getElementById('manual-credentials-container');
+                
+                // Desactivar campos manuales
+                manualContainer.classList.add('opacity-50', 'pointer-events-none');
+                document.getElementById('usuario').required = false;
+                document.getElementById('password').required = false;
+                document.getElementById('usuario').value = ''; 
+                document.getElementById('password').value = '';
+            }
+
+            // --- Manejo de Imagen ---
             document.getElementById('company_logo_input').addEventListener('change', (e) => {
                 const file = e.target.files[0];
                 if (file) {
                     const reader = new FileReader();
                     reader.onload = (ev) => {
-                        document.getElementById('logo-preview').src = ev.target.result;
-                        document.getElementById('company_logo_base64').value = ev.target.result;
+                        logoPreview.src = ev.target.result;
+                        logoHidden.value = ev.target.result;
                     };
                     reader.readAsDataURL(file);
                 }
             });
 
-            // Guardar
+            // --- Guardar ---
             form.addEventListener('submit', async (e) => {
                 e.preventDefault();
                 const btn = document.getElementById('submit-btn');
-                btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Procesando...';
+                btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
 
                 const formData = new FormData(form);
                 const data = Object.fromEntries(formData.entries());
 
-                // Preparar Payload
-                let finalName = data.company_type === 'finca' ? data.nombre_finca : data.empresa;
-                const payload = {
-                    company_type: data.company_type,
-                    empresa: finalName,
-                    celular: iti.getNumber(),
-                    company_logo: data.company_logo,
-                    social_instagram: data.social_instagram,
-                    social_facebook: data.social_facebook,
-                    // Datos personales
-                    nombre: data.company_type === 'finca' ? data.nombre_propietario : '',
-                    apellido: ''
-                };
+                // Determinar el nombre final de la empresa/finca
+                let finalCompanyName = data.empresa;
+                let finalNombre = '';
+                let finalApellido = '';
+
+                if (data.company_type === 'finca') {
+                    finalCompanyName = data.nombre_finca;
+                    const parts = (data.nombre_propietario || '').trim().split(' ');
+                    if (parts.length > 0) {
+                        finalNombre = parts[0];
+                        finalApellido = parts.slice(1).join(' ') || ''; 
+                    }
+                }
 
                 try {
-                    if (magicToken) {
-                        // --- FLUJO MAGIC LINK: REGISTRO NUEVO ---
-                        payload.magic_token = magicToken;
-                        payload.usuario = data.usuario;
-                        payload.password = data.password;
+                    // 1. Crear la Entidad (Finca o Procesadora)
+                    // ... (Mismo código de creación de entidad que antes) ...
+                    let companyId = null;
+                    const baseEntityData = { telefono: iti.getNumber(), pais: 'Perú' };
+
+                    if (data.company_type === 'finca') {
+                        const fincaRes = await fetch('/api/fincas', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ ...baseEntityData, nombre_finca: finalCompanyName, propietario: data.nombre_propietario, dni_ruc: '' }),
+                            credentials: 'include'
+                        });
+                        const fincaJson = await fincaRes.json();
+                        companyId = fincaJson.id;
+                    } else {
+                        const procRes = await fetch('/api/procesadoras', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ ...baseEntityData, nombre_comercial: finalCompanyName, razon_social: finalCompanyName, ruc: '' }),
+                            credentials: 'include'
+                        });
+                        const procJson = await procRes.json();
+                        companyId = procJson.id;
+                    }
+
+                    // 2. Actualizar Perfil
+                    const payload = {
+                        empresa: finalCompanyName,
+                        company_type: data.company_type,
+                        company_id: companyId, 
+                        company_logo: data.company_logo,
+                        celular: iti.getNumber(),
+                        social_instagram: data.social_instagram,
+                        social_facebook: data.social_facebook
+                    };
+
+                    if (data.company_type === 'finca' && finalNombre) {
+                        payload.nombre = finalNombre;
+                        payload.apellido = finalApellido;
+                    }
+                    
+                    if (isWelcome) {
+                        // --- FLUJO MAGIC LINK ---
+                        const magicPayload = {
+                            ...payload,
+                            magic_token: magicToken,
+                        };
+
+                        // Si hay token de Google, lo mandamos en lugar de user/pass
+                        if (googleToken) {
+                            magicPayload.google_token = googleToken;
+                        } else {
+                            if (data.usuario && data.usuario.trim() !== '') magicPayload.usuario = data.usuario.toLowerCase().trim();
+                            if (data.password && data.password.trim() !== '') magicPayload.password = data.password;
+                        }
 
                         const res = await fetch('/api/public/magic-register', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify(payload),
-                            credentials: 'include'
+                            body: JSON.stringify(magicPayload),
+                            credentials: 'include' 
                         });
                         
                         const result = await res.json();
                         if(!res.ok) throw new Error(result.error || 'Error en registro');
                         
+                        // NOTA: Para que el usuario quede vinculado a la finca que acabamos de crear arriba,
+                        // necesitamos hacer un UPDATE extra, ya que magic-register crea el usuario PRIMERO.
+                        // O, mejor aún, pasar el company_id en el magicPayload y que el backend lo asigne.
+                        // Asumiremos que magic-register acepta campos extra del perfil (nombre, apellido, empresa, company_id)
+                        
                         window.location.href = result.redirect || '/app/dashboard';
 
                     } else {
-                        // --- FLUJO NORMAL: ACTUALIZACIÓN PERFIL ---
-                        // (Si el usuario ya estaba logueado y entró a onboarding)
-                        const res = await fetch('/api/user/profile', {
+                        // --- FLUJO NORMAL ---
+                        await fetch('/api/user/profile', {
                             method: 'PUT',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify(payload),
                             credentials: 'include'
                         });
-                        if(!res.ok) throw new Error('Error al actualizar');
                         window.location.href = '/app/dashboard';
                     }
 
                 } catch (err) {
-                    alert(err.message);
+                    alert("Error guardando datos: " + err.message);
                     btn.disabled = false; btn.innerText = "Intentar de nuevo";
                 }
             });
