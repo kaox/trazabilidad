@@ -3,7 +3,11 @@ const SuggestionModel = require('../models/admin-suggestions-model');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
-const { safeJSONParse } = require('../utils/helpers'); 
+const { safeJSONParse } = require('../utils/helpers');
+const { OAuth2Client } = require('google-auth-library');
+
+const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
+const client = new OAuth2Client(GOOGLE_CLIENT_ID);
 
 const getAdminSuggestions = async (req, res) => {
     try {
@@ -99,42 +103,71 @@ const getMagicLinkData = async (req, res) => {
 
 // PASO 3: Registro Final (Aquí se crea el usuario)
 const completeMagicRegistration = async (req, res) => {
-    const { magic_token, usuario, password, ...formData } = req.body;
+    const { magic_token, google_token, usuario, password, ...formData } = req.body;
 
-    if (!usuario || !password) return res.status(400).json({ error: "Usuario y contraseña son requeridos" });
+    // CORRECCIÓN: Validar credenciales solo si NO hay google_token
+    if (!google_token) {
+        if (!usuario || !password) {
+            return res.status(400).json({ error: "Usuario y contraseña son requeridos" });
+        }
+    }
 
     try {
-        // Validar token nuevamente por seguridad
+        // Validar token magic
         const suggestion = await SuggestionModel.findByMagicToken(magic_token);
         if (!suggestion) return res.status(400).json({ error: 'El enlace ha expirado o no es válido.' });
 
-        // Verificar si ya existe usuario (doble check)
         const existingUser = await SuggestionModel.findUserBySuggestionId(suggestion.id);
         if (existingUser) return res.status(409).json({ error: 'Esta empresa ya ha sido reclamada.' });
 
-        const hashedPassword = await bcrypt.hash(password, 10);
+        let finalUsername = usuario;
+        let finalPasswordHash = null;
 
-        // Crear usuario con los datos confirmados por el usuario en el formulario
+        if (google_token) {
+            // Verificar Google Token
+            const ticket = await client.verifyIdToken({
+                idToken: google_token,
+                audience: GOOGLE_CLIENT_ID,
+            });
+            const payload = ticket.getPayload();
+            const { email } = payload;
+            
+            // Si no envió usuario manual, generamos uno del email
+            if (!finalUsername) {
+                finalUsername = email.split('@')[0];
+            }
+            
+            // Generar password aleatorio fuerte (el usuario usará Google para entrar)
+            finalPasswordHash = await bcrypt.hash(crypto.randomUUID(), 10);
+            
+            // Aseguramos que el correo venga de Google si no venía en formData
+            if (!formData.correo) formData.correo = email;
+
+        } else {
+            // Flujo Manual
+            finalPasswordHash = await bcrypt.hash(password, 10);
+            finalUsername = usuario.toLowerCase().trim();
+        }
+
+        // Crear usuario
         const newUser = await SuggestionModel.createUserFromSuggestion({
-            username: usuario.toLowerCase().trim(),
-            password: hashedPassword,
+            username: finalUsername,
+            password: finalPasswordHash,
             nombre: formData.nombre || 'Admin',
             apellido: formData.apellido || '',
-            empresa: formData.empresa, // Usamos el nombre que el usuario confirmó/editó
-            celular: formData.celular || '',
+            empresa: formData.empresa, 
             type: formData.company_type,
             companyId: suggestion.id,
             logo: formData.company_logo || suggestion.logo,
             instagram: formData.social_instagram,
-            facebook: formData.social_facebook
+            facebook: formData.social_facebook,
+            correo: formData.correo // Importante guardar el correo
         });
 
-        // Marcar sugerencia como reclamada y BORRAR EL TOKEN para que no se reuse
         await SuggestionModel.markAsClaimed(suggestion.id);
 
-        // Login automático (JWT)
         const tokenPayload = { id: newUser.id, username: newUser.usuario, role: newUser.role };
-        const jwtToken = jwt.sign(tokenPayload, process.env.JWT_SECRET || 'supersecretkey', { expiresIn: '1h' });
+        const jwtToken = jwt.sign(tokenPayload, process.env.JWT_SECRET || 'supersecretkey', { expiresIn: '24h' });
         
         res.cookie('token', jwtToken, { 
             httpOnly: true, 
@@ -143,14 +176,10 @@ const completeMagicRegistration = async (req, res) => {
             path: '/' 
         });
 
-        //res.json({ success: true, redirect: '/app/dashboard' });
-
-        let nextStep = '/app/dashboard';
-
-        res.status(200).json({ message: "Inicio de sesión exitoso.", token: jwtToken, redirect: nextStep });
+        res.json({ success: true, redirect: '/app/dashboard', token: jwtToken });
 
     } catch (err) {
-        if (err.message.includes('UNIQUE')) {
+        if (err.message && err.message.includes('UNIQUE')) {
             return res.status(409).json({ error: "El nombre de usuario ya existe. Intenta con otro." });
         }
         console.error("Error en registro magic:", err);
