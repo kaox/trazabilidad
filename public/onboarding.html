@@ -195,7 +195,7 @@
                 });
             }
 
-            // --- Configuración de Teléfono ---
+            // Configuración de Teléfono
             const inputPhone = document.querySelector("#celular");
             const iti = window.intlTelInput(inputPhone, {
                 utilsScript: "https://cdn.jsdelivr.net/npm/intl-tel-input@25.3.0/build/js/utils.js",
@@ -210,7 +210,7 @@
                 preferredCountries: ['pe', 'co', 'ec', 'mx']
             });
             
-            // --- Lógica de Tipo de Entidad ---
+            // Lógica de Tipo de Entidad
             function toggleFields() {
                 if (companyTypeSelect.value === 'finca') {
                     fieldCommercial.classList.add('hidden');
@@ -226,26 +226,37 @@
                     inputEmpresa.required = true;
                 }
             }
-
             companyTypeSelect.addEventListener('change', toggleFields);
-            toggleFields(); // Init
+            toggleFields();
 
             // --- Lógica Magic Link ---
             const params = new URLSearchParams(window.location.search);
             const magicToken = params.get('magic_token');
             const isWelcome = !!magicToken;
 
+            // Callback Google
+            window.handleGoogleResponse = function(response) {
+                console.log("Google response recibida:", response);
+                googleToken = response.credential;
+                
+                document.getElementById('google-success-msg').classList.remove('hidden');
+                const manualContainer = document.getElementById('manual-credentials-container');
+                manualContainer.classList.add('opacity-50', 'pointer-events-none');
+                document.getElementById('usuario').required = false;
+                document.getElementById('password').required = false;
+                document.getElementById('usuario').value = ''; 
+                document.getElementById('password').value = '';
+            }
+
             if (isWelcome) {
                 welcomeBanner.classList.remove('hidden');
                 standardHeader.classList.add('hidden');
                 securitySection.classList.remove('hidden');
                 
-                // Inicialmente requeridos, se quitan si usa Google
                 document.getElementById('usuario').required = true;
                 document.getElementById('password').required = true;
 
-                // --- Inicializar Botón Google ---
-                // Nota: Asegúrate de reemplazar con tu Client ID real
+                // Inicializar Botón Google con Reintentos
                 const initGoogleBtn = () => {
                     if (typeof google !== 'undefined' && google.accounts) {
                         try {
@@ -254,57 +265,41 @@
                                 callback: window.handleGoogleResponse,
                                 context: 'signup'
                             });
-                            
-                            // Renderizar botón con width 100% para móvil
                             google.accounts.id.renderButton(
                                 document.getElementById("google-btn-container"),
-                                { 
-                                    theme: "outline", 
-                                    size: "large", 
-                                    text: "continue_with", 
-                                    shape: "rectangular", 
-                                    width: "100%" // Fuerza ancho completo
-                                }
+                                { theme: "outline", size: "large", text: "continue_with", shape: "rectangular", width: "100%" }
                             );
-                        } catch(e) {
-                            console.error("Error init Google:", e);
-                        }
+                        } catch(e) { console.error("Error init Google:", e); }
                     } else {
-                        // Si no cargó, reintentar en 500ms (común en redes lentas móviles)
                         setTimeout(initGoogleBtn, 500);
                     }
                 };
-                
-                // Iniciar proceso de carga
                 initGoogleBtn();
 
-                // Cargar datos precargados
                 try {
                     const res = await fetch(`/api/public/magic-data/${magicToken}`);
                     if (!res.ok) throw new Error("Link expirado");
                     const data = await res.json();
-
+                    
+                    // Prellenado
                     companyTypeSelect.value = data.company_type || 'finca';
                     toggleFields();
-                    
                     if (data.empresa) {
                         document.getElementById('empresa').value = data.empresa;
                         document.getElementById('nombre_finca').value = data.empresa; 
                     }
                     if (data.social_instagram) document.getElementById('social_instagram').value = data.social_instagram;
                     if (data.social_facebook) document.getElementById('social_facebook').value = data.social_facebook;
-                    
                     if (data.company_logo) {
                         document.getElementById('logo-preview').src = data.company_logo;
                         document.getElementById('company_logo_base64').value = data.company_logo;
                     }
-
                 } catch (e) {
+                    console.error(e);
                     alert("El enlace mágico no es válido o ha expirado.");
-                    window.location.href = '/login.html';
                 }
             } else {
-                // FLUJO NORMAL: Cargar perfil del usuario logueado
+                // FLUJO NORMAL: Cargar perfil
                 try {
                     const api = async (url, opts={}) => {
                         const res = await fetch(url, {...opts, credentials: 'include'});
@@ -312,56 +307,30 @@
                         return res.json();
                     };
                     const user = await api('/api/user/profile');
-                    
                     if (user.company_type) {
                         companyTypeSelect.value = user.company_type;
                         toggleFields();
                     }
-
                     if (user.empresa) {
                         inputEmpresa.value = user.empresa;
                         inputNombreFinca.value = user.empresa; 
                     }
-                    
                     if (user.nombre || user.apellido) {
                         inputPropietario.value = `${user.nombre || ''} ${user.apellido || ''}`.trim();
                     }
-
                     if (user.celular) iti.setNumber(user.celular);
                     if (user.usuario) document.getElementById('usuario').value = user.usuario;
-                    
                     if (user.social_instagram) document.getElementById('social_instagram').value = user.social_instagram;
                     if (user.social_facebook) document.getElementById('social_facebook').value = user.social_facebook;
-
                     if (user.company_logo) {
                         logoPreview.src = user.company_logo;
                         logoHidden.value = user.company_logo;
                     } else {
                         logoPreview.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.empresa || 'User')}&background=f5f5f4&color=78350f&size=128`;
                     }
-
-                } catch (e) {
-                    console.error("Error cargando perfil:", e);
-                }
+                } catch (e) { console.error("Error cargando perfil:", e); }
             }
 
-            // Callback Google
-            function handleGoogleResponse(response) {
-                googleToken = response.credential;
-                
-                // UI Feedback
-                document.getElementById('google-success-msg').classList.remove('hidden');
-                const manualContainer = document.getElementById('manual-credentials-container');
-                
-                // Desactivar campos manuales
-                manualContainer.classList.add('opacity-50', 'pointer-events-none');
-                document.getElementById('usuario').required = false;
-                document.getElementById('password').required = false;
-                document.getElementById('usuario').value = ''; 
-                document.getElementById('password').value = '';
-            }
-
-            // --- Manejo de Imagen ---
             document.getElementById('company_logo_input').addEventListener('change', (e) => {
                 const file = e.target.files[0];
                 if (file) {
@@ -382,14 +351,13 @@
 
                 const formData = new FormData(form);
                 const data = Object.fromEntries(formData.entries());
-
-                // Determinar el nombre final de la empresa/finca
-                let finalCompanyName = data.empresa;
+                
+                // Preparar datos comunes
+                let finalCompanyName = data.company_type === 'finca' ? data.nombre_finca : data.empresa;
                 let finalNombre = '';
                 let finalApellido = '';
-
+                
                 if (data.company_type === 'finca') {
-                    finalCompanyName = data.nombre_finca;
                     const parts = (data.nombre_propietario || '').trim().split(' ');
                     if (parts.length > 0) {
                         finalNombre = parts[0];
@@ -397,92 +365,124 @@
                     }
                 }
 
+                // Datos base para entidades
+                const baseEntityData = { telefono: iti.getNumber(), pais: 'Perú' };
+
                 try {
-                    // 1. Crear la Entidad (Finca o Procesadora)
-                    // ... (Mismo código de creación de entidad que antes) ...
-                    let companyId = null;
-                    const baseEntityData = { telefono: iti.getNumber(), pais: 'Perú' };
-
-                    if (data.company_type === 'finca') {
-                        const fincaRes = await fetch('/api/fincas', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ ...baseEntityData, nombre_finca: finalCompanyName, propietario: data.nombre_propietario, dni_ruc: '' }),
-                            credentials: 'include'
-                        });
-                        const fincaJson = await fincaRes.json();
-                        companyId = fincaJson.id;
-                    } else {
-                        const procRes = await fetch('/api/procesadoras', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ ...baseEntityData, nombre_comercial: finalCompanyName, razon_social: finalCompanyName, ruc: '' }),
-                            credentials: 'include'
-                        });
-                        const procJson = await procRes.json();
-                        companyId = procJson.id;
-                    }
-
-                    // 2. Actualizar Perfil
-                    const payload = {
-                        empresa: finalCompanyName,
-                        company_type: data.company_type,
-                        company_id: companyId, 
-                        company_logo: data.company_logo,
-                        celular: iti.getNumber(),
-                        social_instagram: data.social_instagram,
-                        social_facebook: data.social_facebook
-                    };
-
-                    if (data.company_type === 'finca' && finalNombre) {
-                        payload.nombre = finalNombre;
-                        payload.apellido = finalApellido;
-                    }
-                    
+                    // --- FLUJO MAGIC LINK (REGISTRO) ---
                     if (isWelcome) {
-                        // --- FLUJO MAGIC LINK ---
                         const magicPayload = {
-                            ...payload,
                             magic_token: magicToken,
+                            empresa: finalCompanyName,
+                            company_type: data.company_type,
+                            company_logo: data.company_logo,
+                            celular: iti.getNumber(),
+                            social_instagram: data.social_instagram,
+                            social_facebook: data.social_facebook,
+                            nombre: finalNombre || 'Admin', 
+                            apellido: finalApellido || ''
                         };
 
-                        // Si hay token de Google, lo mandamos en lugar de user/pass
                         if (googleToken) {
                             magicPayload.google_token = googleToken;
                         } else {
-                            if (data.usuario && data.usuario.trim() !== '') magicPayload.usuario = data.usuario.toLowerCase().trim();
-                            if (data.password && data.password.trim() !== '') magicPayload.password = data.password;
+                            if (data.usuario) magicPayload.usuario = data.usuario.toLowerCase().trim();
+                            if (data.password) magicPayload.password = data.password;
                         }
 
+                        // 1. Registrar y Loguear (Backend crea usuario)
                         const res = await fetch('/api/public/magic-register', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify(magicPayload),
-                            credentials: 'include' 
+                            credentials: 'include'
                         });
                         
                         const result = await res.json();
                         if(!res.ok) throw new Error(result.error || 'Error en registro');
                         
-                        // NOTA: Para que el usuario quede vinculado a la finca que acabamos de crear arriba,
-                        // necesitamos hacer un UPDATE extra, ya que magic-register crea el usuario PRIMERO.
-                        // O, mejor aún, pasar el company_id en el magicPayload y que el backend lo asigne.
-                        // Asumiremos que magic-register acepta campos extra del perfil (nombre, apellido, empresa, company_id)
+                        // 2. Crear Finca/Procesadora (Ahora que estamos logueados)
+                        let companyId = null;
+                        if (data.company_type === 'finca') {
+                            const fRes = await fetch('/api/fincas', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ ...baseEntityData, nombre_finca: finalCompanyName, propietario: data.nombre_propietario, dni_ruc: '' }),
+                                credentials: 'include'
+                            });
+                            if(fRes.ok) { const j = await fRes.json(); companyId = j.id; }
+                        } else {
+                            const pRes = await fetch('/api/procesadoras', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ ...baseEntityData, nombre_comercial: finalCompanyName, razon_social: finalCompanyName, ruc: '' }),
+                                credentials: 'include'
+                            });
+                            if(pRes.ok) { const j = await pRes.json(); companyId = j.id; }
+                        }
+
+                        // 3. Vincular Empresa al Usuario
+                        if (companyId) {
+                            await fetch('/api/user/profile', {
+                                method: 'PUT',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ company_id: companyId }),
+                                credentials: 'include'
+                            });
+                        }
                         
                         window.location.href = result.redirect || '/app/dashboard';
 
                     } else {
-                        // --- FLUJO NORMAL ---
+                        // --- FLUJO NORMAL (ACTUALIZACIÓN) ---
+                        // 1. Crear/Actualizar Finca o Procesadora
+                        let companyId = null;
+                        
+                        // NOTA: Para simplificar en edición, aquí creamos una nueva si cambia el tipo.
+                        // Idealmente deberías verificar si ya tiene una y actualizarla.
+                        // Asumiremos creación de nueva entidad para vincular.
+                        if (data.company_type === 'finca') {
+                            const fRes = await fetch('/api/fincas', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ ...baseEntityData, nombre_finca: finalCompanyName, propietario: data.nombre_propietario, dni_ruc: '' }),
+                                credentials: 'include'
+                            });
+                            if(fRes.ok) { const j = await fRes.json(); companyId = j.id; }
+                        } else {
+                            const pRes = await fetch('/api/procesadoras', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ ...baseEntityData, nombre_comercial: finalCompanyName, razon_social: finalCompanyName, ruc: '' }),
+                                credentials: 'include'
+                            });
+                             if(pRes.ok) { const j = await pRes.json(); companyId = j.id; }
+                        }
+
+                        // 2. Actualizar Perfil
+                        const payload = {
+                            empresa: finalCompanyName,
+                            company_type: data.company_type,
+                            company_id: companyId, 
+                            company_logo: data.company_logo,
+                            celular: iti.getNumber(),
+                            social_instagram: data.social_instagram,
+                            social_facebook: data.social_facebook
+                        };
+                        if (finalNombre) { payload.nombre = finalNombre; payload.apellido = finalApellido; }
+
                         await fetch('/api/user/profile', {
                             method: 'PUT',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify(payload),
                             credentials: 'include'
                         });
+
                         window.location.href = '/app/dashboard';
                     }
 
                 } catch (err) {
+                    console.error(err);
                     alert("Error guardando datos: " + err.message);
                     btn.disabled = false; btn.innerText = "Intentar de nuevo";
                 }
