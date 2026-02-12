@@ -191,16 +191,9 @@ const app = {
             const res = await fetch('/api/public/companies');
             const companies = await res.json();
             
-            // 1. Intentar buscar por ID al final del string
-            const lastHyphenIndex = slug.lastIndexOf('-');
-            let company = null;
-            
-            if (lastHyphenIndex !== -1) {
-                const potentialId = slug.substring(lastHyphenIndex + 1);
-                company = companies.find(c => String(c.id) === potentialId);
-            }
+            let company = companies.find(c => slug.endsWith(`-${c.id}`));
 
-            // 2. Fallback: Buscar por Slug tradicional
+            // 2. Fallback: Buscar por nombre convertido a slug (para URLs antiguas)
             if (!company) {
                 company = companies.find(c => this.createSlug(c.name) === slug);
             }
