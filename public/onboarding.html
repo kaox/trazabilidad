@@ -194,14 +194,48 @@
                 });
             }
 
+            // --- CONFIGURACIÓN DE TELÉFONO ROBUSTA ---
             const inputPhone = document.querySelector("#celular");
-            const iti = window.intlTelInput(inputPhone, {
-                utilsScript: "https://cdn.jsdelivr.net/npm/intl-tel-input@25.3.0/build/js/utils.js",
-                initialCountry: "auto",
-                geoIpLookup: cb => fetch("https://ipapi.co/json").then(res=>res.json()).then(data=>cb(data.country_code)).catch(()=>cb("pe")),
-                separateDialCode: true
-            });
+            let iti;
             
+            try {
+                iti = window.intlTelInput(inputPhone, {
+                    utilsScript: "https://cdn.jsdelivr.net/npm/intl-tel-input@25.3.0/build/js/utils.js",
+                    initialCountry: "auto",
+                    geoIpLookup: function(callback) {
+                        fetch("https://ipapi.co/json")
+                        .then(res => res.json())
+                        .then(data => callback(data.country_code))
+                        .catch(() => callback("pe"));
+                    },
+                    separateDialCode: true,
+                    preferredCountries: ['pe', 'co', 'ec', 'mx']
+                });
+            } catch (err) {
+                console.error("Error inicializando intlTelInput:", err);
+            }
+
+            // Función Helper para obtener número seguro
+            const getSafePhoneNumber = () => {
+                if (!iti) return inputPhone.value; // Fallback si falla librería
+                
+                const number = iti.getNumber();
+                if (number) return number;
+                
+                // Fallback manual si getNumber falla pero hay valor
+                const rawValue = inputPhone.value.trim();
+                if (rawValue) {
+                    const countryData = iti.getSelectedCountryData();
+                    const dialCode = countryData.dialCode ? `+${countryData.dialCode}` : '';
+                    // Si el usuario no puso el +, agregamos el código del país
+                    if (!rawValue.startsWith('+')) {
+                        return `${dialCode}${rawValue}`;
+                    }
+                    return rawValue;
+                }
+                return '';
+            };
+
             function toggleFields() {
                 if (companyTypeSelect.value === 'finca') {
                     fieldCommercial.classList.add('hidden');
@@ -291,7 +325,6 @@
                         }
                         if (data.social_instagram) document.getElementById('social_instagram').value = data.social_instagram;
                         if (data.social_facebook) document.getElementById('social_facebook').value = data.social_facebook;
-                        if (data.celular) iti.setNumber(data.celular);
                         
                         if (data.company_logo) {
                             document.getElementById('logo-preview').src = data.company_logo;
@@ -314,7 +347,6 @@
                     if (user.company_type) { companyTypeSelect.value = user.company_type; toggleFields(); }
                     if (user.empresa) { inputEmpresa.value = user.empresa; inputNombreFinca.value = user.empresa; }
                     if (user.nombre || user.apellido) { inputPropietario.value = `${user.nombre || ''} ${user.apellido || ''}`.trim(); }
-                    if (user.celular) iti.setNumber(user.celular);
                     if (user.usuario) document.getElementById('usuario').value = user.usuario;
                     if (user.social_instagram) document.getElementById('social_instagram').value = user.social_instagram;
                     if (user.social_facebook) document.getElementById('social_facebook').value = user.social_facebook;
@@ -343,6 +375,8 @@
                 const formData = new FormData(form);
                 const data = Object.fromEntries(formData.entries());
 
+                const finalPhone = getSafePhoneNumber();
+
                 let finalCompanyName = data.empresa;
                 let finalNombre = '';
                 let finalApellido = '';
@@ -361,13 +395,13 @@
                         empresa: finalCompanyName,
                         company_type: data.company_type,
                         company_logo: data.company_logo,
-                        celular: iti.getNumber(),
+                        celular: finalPhone,
                         social_instagram: data.social_instagram,
                         social_facebook: data.social_facebook,
                         nombre: finalNombre || '',
                         apellido: finalApellido || ''
                     };
-                    
+
                     if (isWelcome) {
                         // --- NUEVO ENDPOINT: REGISTER AND CLAIM ---
                         const magicPayload = { ...payload };

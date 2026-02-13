@@ -39,7 +39,7 @@ const createUserFromSuggestion = async (userObj) => {
     } = userObj;
 
     // Verificar si el usuario ya existe para evitar errores
-    const existing = await get('SELECT id FROM users WHERE usuario = ?', [username]);
+    const existing = await db.get('SELECT id FROM users WHERE usuario = ?', [username]);
     if (existing) {
         throw new Error(`El usuario ${username} ya existe.`);
     }
@@ -57,7 +57,7 @@ const createUserFromSuggestion = async (userObj) => {
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
 
-    const result = await run(sql, [
+    const result = await db.run(sql, [
         username, password, nombre, apellido, 
         empresa, type, companyId, 
         logo, 'user', 'artesano', trialEndDate.toISOString(),
@@ -65,7 +65,7 @@ const createUserFromSuggestion = async (userObj) => {
         celular, correo // <--- Valores Agregados
     ]);
 
-    return await get('SELECT * FROM users WHERE id = ?', [result.lastID]);
+    return await db.get('SELECT * FROM users WHERE id = ?', [result.lastID]);
 };
 
 const updateById = async (id, data) => {

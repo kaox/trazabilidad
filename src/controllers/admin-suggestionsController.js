@@ -153,7 +153,7 @@ const completeMagicRegistration = async (req, res) => {
         const newUser = await SuggestionModel.createUserFromSuggestion({
             username: finalUsername,
             password: finalPasswordHash,
-            nombre: formData.nombre || 'Admin',
+            nombre: formData.nombre || '',
             apellido: formData.apellido || '',
             empresa: formData.empresa, 
             type: formData.company_type,
@@ -218,6 +218,7 @@ const registerAndClaimPublic = async (req, res) => {
         if (!suggestion) return res.status(404).json({ error: 'Empresa sugerida no encontrada.' });
         if (suggestion.status === 'claimed') return res.status(409).json({ error: 'Esta empresa ya ha sido reclamada.' });
 
+        console.log(usuario, password, formData);
         await registerUserAndClaim(suggestion, google_token, usuario, password, formData, res);
 
     } catch (err) {
