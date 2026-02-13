@@ -35,25 +35,37 @@ const markAsClaimed = async (id) => {
 const createUserFromSuggestion = async (userObj) => {
     const { 
         username, password, nombre, apellido, empresa, type, 
-        companyId, logo, instagram, facebook, celular, correo
+        companyId, logo, instagram, facebook, celular, correo // <--- Agregados
     } = userObj;
+
+    // Verificar si el usuario ya existe para evitar errores
+    const existing = await get('SELECT id FROM users WHERE usuario = ?', [username]);
+    if (existing) {
+        throw new Error(`El usuario ${username} ya existe.`);
+    }
+
+    const trialEndDate = new Date();
+    trialEndDate.setDate(trialEndDate.getDate() + 30);
 
     const sql = `
         INSERT INTO users (
             usuario, password, nombre, apellido, 
             empresa, company_type, company_id, 
-            company_logo, role, subscription_tier, 
-            social_instagram, social_facebook, celular, correo
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            company_logo, role, subscription_tier, trial_ends_at,
+            social_instagram, social_facebook,
+            celular, correo  -- <--- Columnas Agregadas
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
 
-    const result = await db.run(sql, [
-        username, password, nombre, apellido, empresa, type, 
-        companyId, logo, 'user', 'artesano', instagram, facebook, celular, correo
+    const result = await run(sql, [
+        username, password, nombre, apellido, 
+        empresa, type, companyId, 
+        logo, 'user', 'artesano', trialEndDate.toISOString(),
+        instagram, facebook,
+        celular, correo // <--- Valores Agregados
     ]);
 
-    // Devolvemos el usuario recién creado
-    return await db.get('SELECT * FROM users WHERE id = ?', [result.lastID]);
+    return await get('SELECT * FROM users WHERE id = ?', [result.lastID]);
 };
 
 const updateById = async (id, data) => {

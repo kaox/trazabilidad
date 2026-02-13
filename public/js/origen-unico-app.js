@@ -343,7 +343,6 @@ const app = {
             }
 
             // Datos de la empresa
-            console.log(user);
             const isSuggested = user.is_suggested;
             const isFinca = user.company_type === 'finca';
             const entityName = isFinca ? (entity.nombre_finca || user.empresa) : (entity.nombre_comercial || user.empresa);
