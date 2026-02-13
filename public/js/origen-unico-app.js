@@ -517,13 +517,13 @@ const app = {
                             </div>
 
                              ${isFinca ? `
-                            <div class="mt-6 bg-green-100 border border-green-200 p-3 rounded-xl flex items-center gap-3">
+                            <!--div class="mt-6 bg-green-100 border border-green-200 p-3 rounded-xl flex items-center gap-3">
                                 <div class="bg-white p-1.5 rounded-full text-green-600 border border-green-100"><i class="fas fa-satellite"></i></div>
                                 <div>
                                     <p class="text-xs font-bold text-green-800 uppercase">Monitoreo Satelital</p>
                                     <p class="text-[10px] text-green-700 leading-tight">Predio verificado EUDR Ready</p>
                                 </div>
-                            </div>` : ''}
+                            </div-->` : ''}
                         </div>
                     </div>
 
