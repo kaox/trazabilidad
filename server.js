@@ -113,9 +113,8 @@ app.get('/magic-login/:token', suggestionsController.handleMagicLogin);
 
 // 2. Obtener datos para precargar formulario (API)
 app.get('/api/public/magic-data/:token', suggestionsController.getMagicLinkData);
-
-// 3. Completar registro (API)
 app.post('/api/public/magic-register', suggestionsController.completeMagicRegistration);
+app.post('/api/public/claim-register', suggestionsController.registerAndClaimPublic);
 
 // Trazabilidad corta (Ej: ABC-12345678)
 //app.get('/:loteId([A-Z]{3}-[A-Z0-9]{8})', (req, res) => res.sendFile(path.join(__dirname, 'public', 'tracking.html')));

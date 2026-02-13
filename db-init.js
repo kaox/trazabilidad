@@ -40,6 +40,8 @@ async function initializeDatabase() {
                     password TEXT NOT NULL,
                     nombre TEXT, apellido TEXT, dni TEXT, ruc TEXT, empresa TEXT, company_logo TEXT, celular TEXT, correo TEXT,
                     role TEXT DEFAULT 'user',
+                    social_instagram TEXT,
+                    social_facebook TEXT,
                     default_currency TEXT DEFAULT 'PEN',
                     default_unit TEXT DEFAULT 'KG',
                     subscription_tier TEXT DEFAULT 'artesano',
@@ -420,6 +422,8 @@ async function initializeDatabase() {
                     departamento TEXT,
                     provincia TEXT,
                     distrito TEXT,
+                    logo TEXT,
+                    magic_token TEXT UNIQUE,
                     
                     status TEXT DEFAULT 'pending', -- 'pending', 'verified', 'claimed'
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP

@@ -441,7 +441,7 @@ const app = {
                                 <p class="text-sm text-amber-800">Esta información ha sido generada por usuarios. ¿Eres el dueño de ${entityName}?</p>
                             </div>
                         </div>
-                        <a href="/register.html?claim_id=${user.id}" class="bg-amber-800 text-white px-6 py-2 rounded-lg font-bold hover:bg-amber-900 transition whitespace-nowrap shadow-md">Reclamar Perfil</a>
+                        <a href="/onboarding.html?claim_id=${user.id}" class="bg-amber-800 text-white px-6 py-2 rounded-lg font-bold hover:bg-amber-900 transition whitespace-nowrap shadow-md">Reclamar Perfil</a>
                     </div>`;
             }
 
