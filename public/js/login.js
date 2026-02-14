@@ -17,7 +17,7 @@ document.getElementById('login-form').addEventListener('submit', async (e) => {
             throw new Error(result.error || 'Error al iniciar sesión');
         }
 
-        window.location.href = result.redirect || '/app/dashboard';
+        window.location.href = result.redirect || '/app/cuenta';
     } catch (error) {
         alert('Error de conexión. Inténtalo de nuevo.');
     }
@@ -35,7 +35,7 @@ async function handleCredentialResponse(response) {
         });
 
         if (res.ok) {
-            window.location.href = '/app/dashboard';
+            window.location.href = '/app/cuenta';
         } else {
             const error = await res.json();
             alert(`Error en el inicio de sesión con Google: ${error.error}`);

@@ -347,6 +347,7 @@
                     if (user.company_type) { companyTypeSelect.value = user.company_type; toggleFields(); }
                     if (user.empresa) { inputEmpresa.value = user.empresa; inputNombreFinca.value = user.empresa; }
                     if (user.nombre || user.apellido) { inputPropietario.value = `${user.nombre || ''} ${user.apellido || ''}`.trim(); }
+                    if (user.celular && iti) iti.setNumber(user.celular);
                     if (user.usuario) document.getElementById('usuario').value = user.usuario;
                     if (user.social_instagram) document.getElementById('social_instagram').value = user.social_instagram;
                     if (user.social_facebook) document.getElementById('social_facebook').value = user.social_facebook;
@@ -429,7 +430,7 @@
                         const result = await res.json();
                         if(!res.ok) throw new Error(result.error || 'Error en registro');
                         
-                        window.location.href = result.redirect || '/app/dashboard';
+                        window.location.href = result.redirect || '/app/cuenta';
 
                     } else {
                         // --- FLUJO NORMAL ---
@@ -439,7 +440,7 @@
                             body: JSON.stringify(payload),
                             credentials: 'include'
                         });
-                        window.location.href = '/app/dashboard';
+                        window.location.href = '/app/cuenta';
                     }
 
                 } catch (err) {
