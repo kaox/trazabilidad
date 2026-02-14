@@ -1,97 +1,163 @@
 <nav class="bg-amber-900 text-white shadow-lg sticky top-0 z-50">
     <div class="container mx-auto px-4">
         <div class="flex justify-between items-center h-16">
-            <a href="/app/dashboard" class="text-xl font-bold"><i class="fa-solid fa-fingerprint mr-2"></i> Ruru Lab</a>
+            <a href="/app/dashboard" class="text-xl font-bold flex items-center gap-2">
+                <i class="fa-solid fa-fingerprint"></i> Ruru Lab
+            </a>
+            
+            <!-- Botón Móvil -->
             <div class="md:hidden">
-                <button id="mobile-menu-button" class="p-2 rounded-md hover:bg-amber-800 transition">
+                <button id="mobile-menu-button" class="p-2 rounded-md hover:bg-amber-800 transition focus:outline-none">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
                 </button>
             </div>
-            <div class="hidden md:flex items-center space-x-2">
-                <a href="/app/dashboard" class="nav-link px-4 py-2 rounded-md text-sm font-medium hover:bg-amber-800 transition">Dashboard 📊</a>
-                <!--a href="/app/costos" class="nav-link px-4 py-2 rounded-md text-sm font-medium hover:bg-amber-800 transition">Costos 📊</a-->
 
-                <!-- Menú Operaciones -->
-                <div class="relative">
-                    <button id="operaciones-dropdown-btn" class="nav-link px-4 py-2 rounded-md text-sm font-medium hover:bg-amber-800 transition flex items-center gap-1">
-                        <span>Operaciones 🚜 </span>
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+            <!-- Menú Escritorio -->
+            <div class="hidden md:flex items-center space-x-1">
+                <a href="/app/dashboard" class="nav-link px-3 py-2 rounded-md text-sm font-medium hover:bg-amber-800 transition">Dashboard</a>
+
+                <!-- 1. MI ORIGEN -->
+                <div class="relative group">
+                    <button id="origen-dropdown-btn" class="nav-link px-3 py-2 rounded-md text-sm font-medium hover:bg-amber-800 transition flex items-center gap-1 group-hover:bg-amber-800">
+                        <span>Mi Origen 🌱</span>
+                        <svg class="w-4 h-4 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                     </button>
-                    <div id="operaciones-dropdown-desktop" class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-50 hidden">
-                        <a href="/app/existencias" class="nav-link block px-4 py-2 text-sm text-stone-700 hover:bg-amber-100">📦 Existencias</a>
-                        <a href="/app/acopio" class="nav-link block px-4 py-2 text-sm text-stone-700 hover:bg-amber-100">⚖️ Acopio</a>
-                        <a href="/app/procesamiento" class="nav-link block px-4 py-2 text-sm text-stone-700 hover:bg-amber-100">🏭 Transformación</a>
-                        <a href="/app/trazabilidad-inmutable" class="nav-link block px-4 py-2 text-sm text-stone-700 hover:bg-amber-100">🌳 Trazabilidad</a>
+                    <div id="origen-dropdown-desktop" class="absolute left-0 mt-0 w-56 bg-white rounded-md shadow-xl z-50 hidden group-hover:block border border-stone-100">
+                        <a href="/app/fincas" class="block px-4 py-2 text-sm text-stone-700 hover:bg-amber-50 hover:text-amber-800"><i class="fas fa-tree w-5 text-center mr-1 text-green-600"></i> Mis Fincas</a>
+                        <a href="/app/procesadoras" class="block px-4 py-2 text-sm text-stone-700 hover:bg-amber-50 hover:text-amber-800"><i class="fas fa-industry w-5 text-center mr-1 text-stone-500"></i> Procesadoras</a>
+                        
+                        <!-- Admin Links (Solo visibles para admin) -->
+                        <div class="admin-only hidden border-t border-stone-100 mt-1">
+                            <div class="px-4 py-1 text-xs font-bold text-stone-400 uppercase">Admin</div>
+                            <a href="/app/admin-dashboard" class="block px-4 py-2 text-sm text-stone-700 hover:bg-stone-100"><i class="fas fa-lock w-5 text-center mr-1"></i> Dashboard</a>
+                            <a href="/app/admin-suggestions" class="block px-4 py-2 text-sm text-stone-700 hover:bg-stone-100"><i class="fas fa-inbox w-5 text-center mr-1"></i> Sugerencias</a>
+                            <a href="/app/admin-blog" class="block px-4 py-2 text-sm text-stone-700 hover:bg-stone-100"><i class="fas fa-feather-alt w-5 text-center mr-1"></i> CMS Blog</a>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Menú Laboratorio I+D -->
-                <div class="relative">
-                    <button id="lab-dropdown-btn" class="nav-link px-4 py-2 rounded-md text-sm font-medium hover:bg-amber-800 transition flex items-center gap-1">
-                        <span>Laboratorio I+D 🧪</span>
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                <!-- 2. PRODUCCIÓN -->
+                <div class="relative group">
+                    <button id="produccion-dropdown-btn" class="nav-link px-3 py-2 rounded-md text-sm font-medium hover:bg-amber-800 transition flex items-center gap-1 group-hover:bg-amber-800">
+                        <span>Producción 🚜</span>
+                        <svg class="w-4 h-4 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                     </button>
-                    <div id="lab-dropdown-desktop" class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-50 hidden">
-                        <a href="/app/maridaje" class="nav-link block px-4 py-2 text-sm text-stone-700 hover:bg-amber-100">Maridaje</a>
-                        <a href="/app/blends" class="nav-link block px-4 py-2 text-sm text-stone-700 hover:bg-amber-100">Blends</a>
-                        <a href="/app/recetas-chocolate" class="nav-link block px-4 py-2 text-sm text-stone-700 hover:bg-amber-100">Formulador</a>
-                        <a href="/app/estimacion-cosecha" class="nav-link block px-4 py-2 text-sm text-stone-700 hover:bg-amber-100">Estimacion Cosecha</a>
+                    <div id="produccion-dropdown-desktop" class="absolute left-0 mt-0 w-60 bg-white rounded-md shadow-xl z-50 hidden group-hover:block border border-stone-100">
+                        <a href="/app/productos" class="block px-4 py-2 text-sm text-stone-700 hover:bg-amber-50 hover:text-amber-800"><i class="fas fa-box-open w-5 text-center mr-1 text-amber-600"></i> Definir Productos</a>
+                        <div class="border-t border-stone-100 my-1"></div>
+                        <a href="/app/acopio" class="block px-4 py-2 text-sm text-stone-700 hover:bg-amber-50 hover:text-amber-800"><i class="fas fa-balance-scale w-5 text-center mr-1 text-stone-600"></i> Registro de Acopio</a>
+                        <a href="/app/procesamiento" class="block px-4 py-2 text-sm text-stone-700 hover:bg-amber-50 hover:text-amber-800"><i class="fas fa-cogs w-5 text-center mr-1 text-stone-600"></i> Transformación</a>
+                        <a href="/app/existencias" class="block px-4 py-2 text-sm text-stone-700 hover:bg-amber-50 hover:text-amber-800"><i class="fas fa-clipboard-list w-5 text-center mr-1 text-stone-600"></i> Inventario</a>
+                        <div class="border-t border-stone-100 my-1"></div>
+                        <a href="/app/trazabilidad-inmutable" class="block px-4 py-2 text-sm text-stone-700 hover:bg-amber-50 hover:text-amber-800"><i class="fas fa-qrcode w-5 text-center mr-1 text-stone-800"></i> Generar QR</a>
                     </div>
                 </div>
 
-                <!-- Menú Configuración -->
-                <div class="relative">
-                    <button id="config-dropdown-btn" class="nav-link px-4 py-2 rounded-md text-sm font-medium hover:bg-amber-800 transition flex items-center gap-1">
-                        <span>Configuración ⚙️</span>
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                <!-- 3. CALIDAD Y LAB -->
+                <div class="relative group">
+                    <button id="calidad-dropdown-btn" class="nav-link px-3 py-2 rounded-md text-sm font-medium hover:bg-amber-800 transition flex items-center gap-1 group-hover:bg-amber-800">
+                        <span>Calidad y Lab 🧪</span>
+                        <svg class="w-4 h-4 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                     </button>
-                    <div id="config-dropdown-desktop" class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-50 hidden">
-                        <a href="/app/fincas" class="nav-link block px-4 py-2 text-sm text-stone-700 hover:bg-amber-100">Fincas</a>
-                        <a href="/app/procesadoras" class="nav-link block px-4 py-2 text-sm text-stone-700 hover:bg-amber-100">Procesadoras</a>
-                        <a href="/app/productos" class="nav-link block px-4 py-2 text-sm text-stone-700 hover:bg-amber-100">Productos</a>
-                        <a href="/app/nutricion" class="nav-link block px-4 py-2 text-sm text-stone-700 hover:bg-amber-100">Información Nutricional</a>
-                        <a href="/app/perfiles" class="nav-link block px-4 py-2 text-sm text-stone-700 hover:bg-amber-100">Perfiles Sensoriales</a>
-                        <a href="/app/ruedas-sabores" class="nav-link block px-4 py-2 text-sm text-stone-700 hover:bg-amber-100">Ruedas de Sabores</a>
-                        <!--a href="/app/plantillas" class="nav-link block px-4 py-2 text-sm text-stone-700 hover:bg-amber-100">Plantillas</a-->
-                        <a href="/app/admin-dashboard" class="admin-only hidden block px-4 py-2 text-sm text-stone-700 hover:bg-amber-100" title="Admin Dashboard">Admin</a>
-                        <a href="/app/admin-blog" class="admin-only hidden block px-4 py-2 text-sm text-stone-700 hover:bg-amber-100" title="Blog CMS"><i class="fas fa-feather-alt"></i> CMS</a>
-                        <a href="/app/admin-suggestions" class="admin-only hidden block px-4 py-2 text-sm text-stone-700 hover:bg-amber-100" title="Admin Sugerencias">Admin Sugerencias</a>
+                    <div id="calidad-dropdown-desktop" class="absolute right-0 mt-0 w-60 bg-white rounded-md shadow-xl z-50 hidden group-hover:block border border-stone-100">
+                        <div class="px-4 py-1 text-xs font-bold text-stone-400 uppercase tracking-wider">Estándares</div>
+                        <a href="/app/perfiles" class="block px-4 py-2 text-sm text-stone-700 hover:bg-amber-50 hover:text-amber-800"><i class="fas fa-sliders-h w-5 text-center mr-1 text-blue-500"></i> Perfiles Sensoriales</a>
+                        <a href="/app/ruedas-sabores" class="block px-4 py-2 text-sm text-stone-700 hover:bg-amber-50 hover:text-amber-800"><i class="fas fa-chart-pie w-5 text-center mr-1 text-purple-500"></i> Ruedas de Sabor</a>
+                        
+                        <div class="border-t border-stone-100 my-1"></div>
+                        <div class="px-4 py-1 text-xs font-bold text-stone-400 uppercase tracking-wider">Herramientas I+D</div>
+                        
+                        <a href="/app/nutricion" class="block px-4 py-2 text-sm text-stone-700 hover:bg-amber-50 hover:text-amber-800"><i class="fas fa-utensils w-5 text-center mr-1 text-green-500"></i> Nutrición</a>
+                        <a href="/app/maridaje" class="block px-4 py-2 text-sm text-stone-700 hover:bg-amber-50 hover:text-amber-800"><i class="fas fa-wine-glass w-5 text-center mr-1 text-rose-500"></i> IA Maridaje</a>
+                        <a href="/app/blends" class="block px-4 py-2 text-sm text-stone-700 hover:bg-amber-50 hover:text-amber-800"><i class="fas fa-vial w-5 text-center mr-1 text-indigo-500"></i> Blends</a>
+                        <a href="/app/recetas-chocolate" class="block px-4 py-2 text-sm text-stone-700 hover:bg-amber-50 hover:text-amber-800"><i class="fas fa-cookie w-5 text-center mr-1 text-amber-600"></i> Formulador</a>
+                        <a href="/app/estimacion-cosecha" class="block px-4 py-2 text-sm text-stone-700 hover:bg-amber-50 hover:text-amber-800"><i class="fas fa-chart-line w-5 text-center mr-1 text-teal-500"></i> Estimación</a>
                     </div>
                 </div>
-                
-                <!-- Enlaces de Admin (Ocultos por defecto, clase admin-only) -->
-                
-                <a href="/app/cuenta" class="nav-link p-2 rounded-full hover:bg-amber-800 transition" title="Mi Cuenta">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+
+                <!-- Perfil -->
+                <a href="/app/cuenta" class="nav-link p-2 rounded-full hover:bg-amber-800 transition ml-2" title="Mi Cuenta">
+                    <div class="w-8 h-8 rounded-full bg-amber-700 flex items-center justify-center text-xs font-bold border border-amber-600">
+                        <i class="fas fa-user"></i>
+                    </div>
                 </a>
-                <button onclick="logout()" class="px-4 py-2 rounded-md text-sm font-medium hover:bg-red-700 bg-red-600 transition">Cerrar Sesión</button>
+                <button onclick="logout()" class="ml-2 text-amber-200 hover:text-white text-sm font-medium transition"><i class="fas fa-sign-out-alt"></i></button>
             </div>
         </div>
     </div>
-    <div id="mobile-menu" class="md:hidden hidden">
-        <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3">
-            <!-- Enlaces Admin Móvil -->
-            <a href="/app/admin-dashboard" class="admin-only hidden px-3 py-2 rounded-md text-sm font-medium hover:bg-amber-800 transition hidden bg-sky-600 block">Admin Dashboard</a>
-            <a href="/app/admin-blog" class="admin-only hidden px-3 py-2 rounded-md text-sm font-medium hover:bg-amber-800 transition hidden bg-sky-600 block">Admin Blog</a>
-            <a href="/app/admin-suggestions" class="admin-only hidden px-3 py-2 rounded-md text-sm font-medium hover:bg-amber-800 transition hidden bg-sky-600 block">Admin Sugerencias</a>
 
-            <a href="/app/dashboard" class="nav-link-mobile block px-3 py-2 rounded-md text-base font-medium hover:bg-amber-800">📊Dashboard</a>
-            <a href="/app/existencias" class="nav-link-mobile block px-3 py-2 rounded-md text-base font-medium hover:bg-amber-800">📦Existencias</a>
-            <a href="/app/acopio" class="nav-link-mobile block px-3 py-2 rounded-md text-base font-medium hover:bg-amber-800">⚖️Acopio</a>
-            <a href="/app/procesamiento" class="nav-link-mobile block px-3 py-2 rounded-md text-base font-medium hover:bg-amber-800">🏭 Transformación</a>
-            <a href="/app/trazabilidad-inmutable" class="nav-link-mobile block px-3 py-2 rounded-md text-base font-medium hover:bg-amber-800">🌳Trazabilidad</a>
-            <a href="/app/maridaje" class="nav-link-mobile block px-3 py-2 rounded-md text-base font-medium hover:bg-amber-800">🧪Lab. I+D: Maridaje</a>
-            <a href="/app/blends" class="nav-link-mobile block px-3 py-2 rounded-md text-base font-medium hover:bg-amber-800">🧪Lab. I+D: Blends</a>
-            <a href="/app/recetas-chocolate" class="nav-link-mobile block px-3 py-2 rounded-md text-base font-medium hover:bg-amber-800">🧪Lab. I+D: Formulador</a>
-            <a href="/app/fincas" class="nav-link-mobile block px-3 py-2 rounded-md text-base font-medium hover:bg-amber-800">⚙️Config: Fincas</a>
-            <a href="/app/procesadoras" class="nav-link-mobile block px-3 py-2 rounded-md text-base font-medium hover:bg-amber-800">⚙️Config: Procesadoras</a>
-            <a href="/app/productos" class="nav-link-mobile block px-3 py-2 rounded-md text-base font-medium hover:bg-amber-800">⚙️Config: Productos</a>
-            <a href="/app/nutricion" class="nav-link-mobile block px-3 py-2 rounded-md text-base font-medium hover:bg-amber-800">⚙️Config: Información Nutricional</a>
-            <a href="/app/perfiles" class="nav-link-mobile block px-3 py-2 rounded-md text-base font-medium hover:bg-amber-800">⚙️Config: Perfiles Sensoriales</a>
-            <a href="/app/ruedas-sabores" class="nav-link-mobile block px-3 py-2 rounded-md text-base font-medium hover:bg-amber-800">⚙️Config: Ruedas de Sabores</a>
-            <!--a href="/app/plantillas" class="nav-link-mobile block px-3 py-2 rounded-md text-base font-medium hover:bg-amber-800">⚙️Config: Plantillas</a-->
-            <a href="/app/cuenta" class="nav-link-mobile block px-3 py-2 rounded-md text-base font-medium hover:bg-amber-800">Mi Cuenta</a>
-            <button onclick="logout()" class="w-full text-left block px-3 py-2 rounded-md text-base font-medium bg-red-600 hover:bg-red-700">Cerrar Sesión</button>
+    <!-- MENÚ MÓVIL REORDENADO -->
+    <div id="mobile-menu" class="md:hidden hidden bg-amber-900 border-t border-amber-800">
+        <div class="px-4 pt-4 pb-6 space-y-1">
+            
+            <a href="/app/dashboard" class="block px-3 py-2 rounded-md text-base font-bold text-white bg-amber-800 mb-4 text-center">
+                📊 Dashboard Principal
+            </a>
+
+            <!-- 1. Mi Origen -->
+            <div class="mb-4">
+                <p class="px-3 text-xs font-bold text-amber-400 uppercase tracking-widest mb-2">1. Mi Origen 🌱</p>
+                <div class="grid grid-cols-2 gap-2 px-1">
+                    <a href="/app/fincas" class="block px-3 py-3 rounded-md text-sm font-medium text-amber-100 hover:bg-amber-800 hover:text-white bg-amber-900/50 border border-amber-800/50 text-center flex flex-col items-center gap-1">
+                        <i class="fas fa-tree text-lg"></i> Fincas
+                    </a>
+                    <a href="/app/procesadoras" class="block px-3 py-3 rounded-md text-sm font-medium text-amber-100 hover:bg-amber-800 hover:text-white bg-amber-900/50 border border-amber-800/50 text-center flex flex-col items-center gap-1">
+                        <i class="fas fa-industry text-lg"></i> Plantas
+                    </a>
+                </div>
+            </div>
+
+            <!-- 2. Producción -->
+            <div class="mb-4">
+                <p class="px-3 text-xs font-bold text-amber-400 uppercase tracking-widest mb-2">2. Producción 🚜</p>
+                <a href="/app/productos" class="block px-3 py-2 rounded-md text-base font-medium text-white hover:bg-amber-800 border-l-4 border-amber-500 bg-amber-800/30 mb-1">
+                    📦 Definir Productos
+                </a>
+                <a href="/app/acopio" class="block px-3 py-2 rounded-md text-base font-medium text-white hover:bg-amber-800">
+                    ⚖️ Registro de Acopio
+                </a>
+                <a href="/app/procesamiento" class="block px-3 py-2 rounded-md text-base font-medium text-white hover:bg-amber-800">
+                    🏭 Transformación
+                </a>
+                <a href="/app/existencias" class="block px-3 py-2 rounded-md text-base font-medium text-white hover:bg-amber-800">
+                    📋 Inventario / Existencias
+                </a>
+                <a href="/app/trazabilidad-inmutable" class="block px-3 py-2 rounded-md text-base font-medium text-white hover:bg-amber-800 font-bold text-amber-200">
+                    🌳 Generar QR (Trazabilidad)
+                </a>
+            </div>
+
+            <!-- 3. Calidad y Lab -->
+            <div class="mb-4 border-t border-amber-800 pt-4">
+                <p class="px-3 text-xs font-bold text-amber-400 uppercase tracking-widest mb-2">3. Calidad y Lab 🧪</p>
+                <div class="grid grid-cols-2 gap-2 px-1">
+                    <a href="/app/perfiles" class="block px-2 py-2 rounded text-sm text-center text-amber-100 bg-amber-900/40 border border-transparent hover:border-amber-700">👅 Perfiles</a>
+                    <a href="/app/ruedas-sabores" class="block px-2 py-2 rounded text-sm text-center text-amber-100 bg-amber-900/40 border border-transparent hover:border-amber-700">🎡 Ruedas</a>
+                    <a href="/app/nutricion" class="block px-2 py-2 rounded text-sm text-center text-amber-100 bg-amber-900/40 border border-transparent hover:border-amber-700">🥗 Nutrición</a>
+                    <a href="/app/maridaje" class="block px-2 py-2 rounded text-sm text-center text-amber-100 bg-amber-900/40 border border-transparent hover:border-amber-700">🍷 Maridaje</a>
+                    <a href="/app/blends" class="block px-2 py-2 rounded text-sm text-center text-amber-100 bg-amber-900/40 border border-transparent hover:border-amber-700">🧪 Blends</a>
+                    <a href="/app/recetas-chocolate" class="block px-2 py-2 rounded text-sm text-center text-amber-100 bg-amber-900/40 border border-transparent hover:border-amber-700">🍫 Recetas</a>
+                </div>
+            </div>
+
+            <!-- Admin Links (Hidden by default) -->
+            <div class="admin-only hidden border-t border-amber-800 pt-2 mb-2">
+                <p class="px-3 text-xs font-bold text-sky-400 uppercase tracking-widest mb-2">Administración</p>
+                <a href="/app/admin-suggestions" class="block px-3 py-2 text-sm text-sky-200 hover:text-white">Admin Sugerencias</a>
+                <a href="/app/admin-dashboard" class="block px-3 py-2 text-sm text-sky-200 hover:text-white">Admin Dashboard</a>
+                <a href="/app/admin-blog" class="block px-3 py-2 text-sm text-sky-200 hover:text-white">CMS Blog</a>
+            </div>
+
+            <div class="border-t border-amber-800 pt-4 pb-2">
+                <a href="/app/cuenta" class="flex items-center px-3 py-2 rounded-md text-base font-medium text-white hover:bg-amber-800">
+                    <i class="fas fa-user-circle mr-2"></i> Mi Perfil
+                </a>
+                <button onclick="logout()" class="w-full text-left block px-3 py-2 rounded-md text-base font-medium text-red-300 hover:text-red-100 hover:bg-red-900/30">
+                    <i class="fas fa-sign-out-alt mr-2"></i> Cerrar Sesión
+                </button>
+            </div>
         </div>
     </div>
 </nav>
+
+<!-- El script para la interactividad se carga desde nav-loader.js, no es necesario aquí -->

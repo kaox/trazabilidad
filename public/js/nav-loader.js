@@ -32,7 +32,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 } else {
                     // 2. Intento Robusto: Si localStorage es null, consultar a la API (usa la cookie)
-                    // Esto arregla el problema cuando el usuario tiene sesión pero no token en storage
                     fetch('/api/user/profile', { headers: { 'Content-Type': 'application/json' } })
                         .then(res => {
                             if (res.ok) return res.json();
@@ -44,7 +43,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             }
                         })
                         .catch(() => {
-                            // Usuario no logueado o error, no hacemos nada (links siguen ocultos)
+                            // Usuario no logueado o error, no hacemos nada
                         });
                 }
 
@@ -57,101 +56,139 @@ document.addEventListener('DOMContentLoaded', () => {
 function initializeNav() {
     const mobileMenuButton = document.getElementById('mobile-menu-button');
     const mobileMenu = document.getElementById('mobile-menu');
-    const labDropdownBtn = document.getElementById('lab-dropdown-btn');
-    const labDropdown = document.getElementById('lab-dropdown-desktop');
-    const operacionesDropdownBtn = document.getElementById('operaciones-dropdown-btn');
-    const operacionesDropdown = document.getElementById('operaciones-dropdown-desktop');
-    const configDropdownBtn = document.getElementById('config-dropdown-btn');
-    const configDropdown = document.getElementById('config-dropdown-desktop');
 
+    // 1. MI ORIGEN
+    const origenBtn = document.getElementById('origen-dropdown-btn');
+    const origenDropdown = document.getElementById('origen-dropdown-desktop');
+    
+    // 2. PRODUCCIÓN
+    const prodBtn = document.getElementById('produccion-dropdown-btn');
+    const prodDropdown = document.getElementById('produccion-dropdown-desktop');
+    
+    // 3. CALIDAD Y LAB
+    const calidadBtn = document.getElementById('calidad-dropdown-btn');
+    const calidadDropdown = document.getElementById('calidad-dropdown-desktop');
+
+    // Mobile Menu Toggle
     if (mobileMenuButton && mobileMenu) {
         mobileMenuButton.addEventListener('click', () => {
             mobileMenu.classList.toggle('hidden');
         });
     }
 
+    // Dropdown Logic
     function setupDropdown(btn, dropdown) {
         if (!btn || !dropdown) return;
 
         const container = btn.parentElement;
         let hideTimer;
 
+        // Click Event (Tablets/Mobile in Desktop View)
         btn.addEventListener('click', (e) => {
             e.stopPropagation();
             const isHidden = dropdown.classList.contains('hidden');
-            document.querySelectorAll('.absolute.z-50').forEach(d => d.classList.add('hidden'));
+            
+            // Close all others first
+            [origenDropdown, prodDropdown, calidadDropdown].forEach(d => {
+                if(d) d.classList.add('hidden');
+            });
+
             if (isHidden) {
                 dropdown.classList.remove('hidden');
             }
         });
 
+        // Hover Events
         container.addEventListener('mouseenter', () => {
             clearTimeout(hideTimer);
+            // Optional: Close others on hover entry to avoid overlap
+            [origenDropdown, prodDropdown, calidadDropdown].forEach(d => {
+                if(d && d !== dropdown) d.classList.add('hidden');
+            });
             dropdown.classList.remove('hidden');
         });
 
         container.addEventListener('mouseleave', () => {
             hideTimer = setTimeout(() => {
                 dropdown.classList.add('hidden');
-            }, 500);
+            }, 300);
         });
     }
 
-    setupDropdown(labDropdownBtn, labDropdown);
-    setupDropdown(configDropdownBtn, configDropdown);
-    setupDropdown(operacionesDropdownBtn, operacionesDropdown);
+    setupDropdown(origenBtn, origenDropdown);
+    setupDropdown(prodBtn, prodDropdown);
+    setupDropdown(calidadBtn, calidadDropdown);
     
+    // Click Outside to Close
     document.addEventListener('click', () => {
-        if(labDropdown) labDropdown.classList.add('hidden');
-        if(configDropdown) configDropdown.classList.add('hidden');
-        if(operacionesDropdown) operacionesDropdown.classList.add('hidden');
+        if(origenDropdown) origenDropdown.classList.add('hidden');
+        if(prodDropdown) prodDropdown.classList.add('hidden');
+        if(calidadDropdown) calidadDropdown.classList.add('hidden');
     });
 
-
-    // Lógica para resaltar el enlace activo
+    // --- Lógica de Resaltado (Active State) ---
     const currentPage = window.location.pathname;
     const navLinks = document.querySelectorAll('a.nav-link, a.nav-link-mobile');
     
+    // Resaltar enlaces directos
     navLinks.forEach(link => {
         if (link.href) {
             const linkPath = new URL(link.href).pathname;
-            
-            // Lógica extendida para mantener activo el botón en sub-rutas
-            if (
-                currentPage === linkPath || 
-                (currentPage.startsWith('/app/trazabilidad') && linkPath.startsWith('/app/trazabilidad')) ||
-                // NUEVO: Mantener activo si estamos en el CMS del blog
-                (currentPage.startsWith('/app/admin-blog') && linkPath.startsWith('/app/admin-blog'))
-            ) {
+            // Coincidencia exacta o subrutas (ej: /app/admin-blog/editor)
+            if (currentPage === linkPath || (currentPage.startsWith(linkPath) && linkPath !== '/')) {
                 link.classList.add('bg-amber-800');
             }
         }
     });
 
-    if (labDropdownBtn && (currentPage.startsWith('/app/maridaje') || currentPage.startsWith('/app/blends'))) {
-        labDropdownBtn.classList.add('bg-amber-800');
+    // Resaltar Menús Padres (Dropdowns) según la sección actual
+
+    // 1. MI ORIGEN (Fincas, Procesadoras, Admin)
+    if (origenBtn && (
+        currentPage.startsWith('/app/fincas') || 
+        currentPage.startsWith('/app/procesadoras') || 
+        currentPage.startsWith('/app/admin')
+    )) {
+        origenBtn.classList.add('bg-amber-800');
     }
-    if (configDropdownBtn && (currentPage.startsWith('/app/fincas') || currentPage.startsWith('/app/perfiles') || currentPage.startsWith('/app/procesadoras') || currentPage.startsWith('/app/plantillas') || currentPage.startsWith('/app/ruedas-sabores'))) {
-        configDropdownBtn.classList.add('bg-amber-800');
+
+    // 2. PRODUCCIÓN (Productos, Acopio, Proceso, Stock, Trazabilidad)
+    if (prodBtn && (
+        currentPage.startsWith('/app/productos') || 
+        currentPage.startsWith('/app/acopio') || 
+        currentPage.startsWith('/app/procesamiento') || 
+        currentPage.startsWith('/app/existencias') || 
+        currentPage.startsWith('/app/trazabilidad-inmutable')
+    )) {
+        prodBtn.classList.add('bg-amber-800');
+    }
+
+    // 3. CALIDAD Y LAB (Perfiles, Ruedas, Maridaje, Nutricion, Blends, Recetas, Estimacion)
+    if (calidadBtn && (
+        currentPage.startsWith('/app/perfiles') || 
+        currentPage.startsWith('/app/ruedas-sabores') || 
+        currentPage.startsWith('/app/maridaje') || 
+        currentPage.startsWith('/app/blends') || 
+        currentPage.startsWith('/app/recetas-chocolate') || 
+        currentPage.startsWith('/app/nutricion') ||
+        currentPage.startsWith('/app/estimacion-cosecha')
+    )) {
+        calidadBtn.classList.add('bg-amber-800');
     }
 }
 
+// Inicialización de permisos de administrador global (Fallback)
 (async function() {
     try {
-        // Obtenemos el perfil del usuario actual
         const response = await fetch('/api/user/profile');
         if (response.ok) {
             const user = await response.json();
-            
-            // Si es admin, quitamos la clase 'hidden' de los elementos .admin-only
             if (user && user.role === 'admin') {
                 const adminElements = document.querySelectorAll('.admin-only');
-                adminElements.forEach(el => {
-                    el.classList.remove('hidden');
-                });
+                adminElements.forEach(el => el.classList.remove('hidden'));
             }
         }
     } catch (error) {
-        console.error("Error al verificar permisos de admin:", error);
+        // Silencioso: si falla la llamada (ej. login page), no importa aquí
     }
 })();
