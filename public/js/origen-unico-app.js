@@ -446,6 +446,38 @@ const app = {
 
             const unverifiedStyle = isSuggested ? 'opacity-80 grayscale-[0.2]' : '';
 
+            // --- NUEVO BLOQUE: DIRECCIÓN Y BOTÓN CÓMO LLEGAR (Solo procesadoras) ---
+            let fullAddressHtml = '';
+            let mapButtonHtml = '';
+
+            if (!isFinca) {
+                if (entity.direccion) {
+                    fullAddressHtml = `<p class="text-center text-xs text-stone-500 mb-4 px-2 leading-tight">${entity.direccion}</p>`;
+                }
+                
+                let mapQuery = '';
+                if (entity.coordenadas) {
+                    let lat, lng;
+                    if (Array.isArray(entity.coordenadas) && entity.coordenadas.length > 0) {
+                         if (Array.isArray(entity.coordenadas[0])) { lat = entity.coordenadas[0][0]; lng = entity.coordenadas[0][1]; }
+                    } else if (entity.coordenadas.lat) {
+                         lat = entity.coordenadas.lat; lng = entity.coordenadas.lng;
+                    }
+                    if (lat && lng) mapQuery = `${lat},${lng}`;
+                }
+                
+                if (!mapQuery && entity.direccion) {
+                    mapQuery = encodeURIComponent(`${entity.direccion}, ${locationStr}`);
+                }
+                
+                if (mapQuery) {
+                    mapButtonHtml = `
+                        <a href="https://www.google.com/maps/dir/?api=1&destination=${mapQuery}" target="_blank" class="block w-full text-center bg-white border border-stone-300 text-stone-700 font-bold py-2 rounded-lg text-sm hover:bg-stone-50 transition mb-4 shadow-sm group/btn">
+                            <i class="fas fa-location-arrow mr-2 text-red-500 group-hover/btn:animate-pulse"></i> Cómo llegar
+                        </a>`;
+                }
+            }
+
             let html = `
                 ${claimBanner}
                 
@@ -487,7 +519,15 @@ const app = {
                                 <i class="fas fa-mountain text-amber-600"></i> ${isFinca ? 'Terroir & Origen' : 'Ubicación & Calidad'}
                             </h3>
                             <div id="mini-map" class="w-full h-48 bg-stone-200 rounded-xl mb-3 relative"></div>
-                            <p class="text-center font-bold text-stone-800 text-sm mb-4"><i class="fas fa-map-pin text-red-500 mr-1"></i> ${locationStr}</p>
+
+                            <p class="text-center font-bold text-stone-800 text-sm ${fullAddressHtml ? 'mb-1' : 'mb-4'}">
+                                <i class="fas fa-map-pin text-red-500 mr-1"></i> ${locationStr}
+                            </p>
+                            
+                            <!-- Dirección y Botón (NUEVO) -->
+                            ${fullAddressHtml}
+                            ${mapButtonHtml}
+
                             <ul class="space-y-3 text-sm">
                                 ${isFinca && entity.altura ? `<li class="flex justify-between border-b border-stone-200 pb-2"><span class="text-stone-500">Altitud</span><span class="font-bold text-stone-800">${entity.altura} msnm</span></li>` : ''}
                             </ul>
