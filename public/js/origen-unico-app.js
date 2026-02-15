@@ -577,7 +577,6 @@ const app = {
                                 const prodImage = (prod.imagenes && prod.imagenes.length > 0) ? prod.imagenes[0] : 'https://placehold.co/400x300/f5f5f4/a8a29e?text=Producto';
                                 const hasTraceability = prod.recent_batches && prod.recent_batches.length > 0;
                                 
-                                // Estilos condicionales: Si tiene trazabilidad, se destaca como Premium con borde Esmeralda
                                 const cardClasses = hasTraceability 
                                     ? 'border-2 border-emerald-500/30 shadow-xl hover:shadow-2xl ring-1 ring-emerald-50/50' 
                                     : 'border border-stone-200 shadow-sm hover:shadow-lg';
@@ -606,7 +605,6 @@ const app = {
                                                 ${prod.tipo_producto || 'Especialidad'}
                                             </div>
 
-                                            <!-- BADGE TRAZABILIDAD VERIFICADA -->
                                             ${hasTraceability ? 
                                                 `<div class="absolute top-0 right-0 z-20">
                                                     <div class="bg-gradient-to-r from-emerald-600 to-emerald-500 text-white text-[10px] font-black px-3 py-1.5 rounded-bl-2xl shadow-lg flex items-center gap-1.5">
@@ -627,14 +625,24 @@ const app = {
                                                 </div>` : ''}
                                         </div>
                                         <div class="p-6 md:w-2/3 flex flex-col justify-between">
-                                            <div>
-                                                <div class="flex justify-between items-start mb-2">
-                                                    <h4 class="text-xl font-bold text-stone-900 leading-tight">${prod.nombre}</h4>
-                                                    <div class="flex gap-1">${(prod.premios || []).map(pr => `<i class="fas fa-medal text-yellow-500 text-xl" title="${pr.nombre}"></i>`).join('')}</div>
-                                                </div>
-                                                <p class="text-stone-600 text-sm mb-4 line-clamp-3">${prod.descripcion || 'Sin descripción.'}</p>
+                            <div>
+                                <div class="flex justify-between items-start mb-2">
+                                    <h4 class="text-xl font-bold text-stone-900 leading-tight">${prod.nombre}</h4>
+                                    
+                                    <!-- SECCIÓN PREMIOS ACTUALIZADA -->
+                                    <div class="flex flex-wrap gap-1.5 justify-end ml-2">
+                                        ${(prod.premios || []).map(pr => `
+                                            <div class="flex flex-col items-center justify-center bg-white p-1.5 rounded-lg border border-stone-100 shadow-sm min-w-[3rem]" title="${pr.nombre || pr.name}">
+                                                ${pr.logo_url ? `<img src="${pr.logo_url}" class="h-6 w-6 object-contain mb-0.5">` : `<i class="fas fa-medal text-amber-400 text-lg mb-0.5"></i>`}
+                                                <span class="text-[9px] font-bold text-stone-600 leading-none">${pr.year || pr.ano || ''}</span>
                                             </div>
-                                            <div class="flex items-center justify-between mt-4 pt-4 border-t border-stone-100">
+                                        `).join('')}
+                                    </div>
+
+                                </div>
+                                <p class="text-stone-600 text-sm mb-4 line-clamp-3">${prod.descripcion || 'Sin descripción.'}</p>
+                            </div>
+                            <div class="flex items-center justify-between mt-4 pt-4 border-t border-stone-100">
                                                 ${hasTraceability ? 
                                                     `<span class="text-xs font-bold text-emerald-600 uppercase tracking-widest flex items-center gap-1"><i class="fas fa-cubes"></i> ${prod.recent_batches.length} Lotes Disponibles</span>` : 
                                                     `<span class="text-xs font-bold text-stone-400 uppercase tracking-widest italic">Sin historial público</span>`
