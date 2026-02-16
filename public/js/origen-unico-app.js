@@ -604,7 +604,7 @@ const app = {
                                     <div class="flex flex-wrap gap-1.5 justify-end ml-2">
                                         ${(prod.premios || []).map(pr => `
                                             <div class="flex flex-col items-center justify-center bg-white p-1.5 rounded-lg border border-stone-100 shadow-sm min-w-[3rem]" title="${pr.nombre || pr.name}">
-                                                ${pr.logo_url ? `<img src="${pr.logo_url}" class="h-6 w-6 object-contain mb-0.5">` : `<i class="fas fa-medal text-amber-400 text-lg mb-0.5"></i>`}
+                                                ${pr.logo_url ? `<img src="${pr.logo_url}" class="h-12 w-12 object-contain mb-0.5">` : `<i class="fas fa-medal text-amber-400 text-lg mb-0.5"></i>`}
                                                 <span class="text-[9px] font-bold text-stone-600 leading-none">${pr.year || pr.ano || ''}</span>
                                             </div>
                                         `).join('')}

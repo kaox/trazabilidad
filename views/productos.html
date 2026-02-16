@@ -142,13 +142,26 @@
                     <!-- Sección Dinámica de Premios -->
                     <div id="awards-section" class="hidden pt-4 border-t border-stone-100">
                         <label class="block text-sm font-bold text-amber-900 mb-2">Premios y Reconocimientos</label>
-                        <div class="flex gap-2 mb-3">
-                            <select id="award-select" class="flex-grow p-2 border border-stone-300 rounded-lg text-sm">
-                                <!-- Opciones dinámicas -->
-                            </select>
-                            <input type="number" id="award-year" placeholder="Año" class="w-20 p-2 border border-stone-300 rounded-lg text-sm">
-                            <button type="button" id="add-award-btn" class="bg-amber-100 text-amber-800 px-3 py-2 rounded-lg hover:bg-amber-200"><i class="fas fa-plus"></i></button>
+                        
+                        <div class="flex flex-col gap-2 mb-3">
+                             <div class="flex gap-2 items-center">
+                                <!-- Nuevo Input de Imagen Personalizada -->
+                                <div class="relative w-10 h-10 flex-shrink-0 group cursor-pointer" title="Subir icono del premio" onclick="document.getElementById('award-icon-input').click()">
+                                    <img id="award-icon-preview" src="https://placehold.co/100?text=+" class="w-full h-full object-cover rounded-lg border border-stone-300 hover:border-amber-500 transition">
+                                    <input type="file" id="award-icon-input" class="hidden" accept="image/*">
+                                </div>
+                                
+                                <select id="award-select" class="flex-grow p-2 border border-stone-300 rounded-lg text-sm h-10 bg-white">
+                                    <!-- Opciones dinámicas -->
+                                </select>
+                                
+                                <input type="number" id="award-year" placeholder="Año" class="w-20 p-2 border border-stone-300 rounded-lg text-sm h-10">
+                                
+                                <button type="button" id="add-award-btn" class="bg-amber-100 text-amber-800 px-3 h-10 rounded-lg hover:bg-amber-200"><i class="fas fa-plus"></i></button>
+                             </div>
+                             <p class="text-[10px] text-stone-400 pl-1">Opcional: Toca el cuadro "+" para subir el logo del premio si no aparece en la lista.</p>
                         </div>
+
                         <div id="awards-list" class="space-y-2"></div>
                     </div>
 
@@ -167,6 +180,7 @@
         // ESTADO LOCAL
         let currentImages = [];
         let currentAwards = [];
+        let currentAwardIcon = null; // Nuevo estado para icono temporal
         let productsCache = [];
         let nutritionalRecipes = [];
         let awardsConfig = {}; // Se cargará desde premios.json
@@ -249,7 +263,7 @@
             }
         }
 
-        // --- MANEJO DE IMÁGENES ACTUALIZADO ---
+        // --- MANEJO DE IMÁGENES DE PRODUCTO ---
         document.getElementById('file-upload').addEventListener('change', async function(e) {
             const files = Array.from(e.target.files);
             if (currentImages.length + files.length > 3) {
@@ -336,24 +350,57 @@
             }
         });
 
+        // NUEVO: Manejo de subida de icono personalizado de premio
+        document.getElementById('award-icon-input').addEventListener('change', async function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                 if (file.size > 2 * 1024 * 1024) { 
+                    alert("El icono debe pesar menos de 2MB");
+                    this.value = '';
+                    return;
+                }
+                try {
+                    const base64 = await compressImage(file);
+                    currentAwardIcon = base64;
+                    document.getElementById('award-icon-preview').src = base64;
+                } catch(err) {
+                    console.error(err);
+                    alert("Error procesando icono");
+                }
+            }
+        });
+
         document.getElementById('add-award-btn').addEventListener('click', () => {
             const name = document.getElementById('award-select').value;
             const year = document.getElementById('award-year').value;
             
             if (name && year) {
-                // CORRECCIÓN: Buscar logo en la configuración cargada
                 let logoUrl = null;
-                const type = document.getElementById('tipo_producto').value;
-                let jsonKey = type === 'cacao' ? 'chocolate' : type;
                 
-                if (awardsConfig[jsonKey]) {
-                    const awardData = awardsConfig[jsonKey].find(a => a.nombre === name);
-                    if (awardData) logoUrl = awardData.logo_url;
+                // Prioridad 1: Icono subido manualmente
+                if (currentAwardIcon) {
+                    logoUrl = currentAwardIcon;
+                } else {
+                    // Prioridad 2: Buscar en configuración
+                    const type = document.getElementById('tipo_producto').value;
+                    let jsonKey = type === 'cacao' ? 'chocolate' : type;
+                    
+                    if (awardsConfig[jsonKey]) {
+                        const awardData = awardsConfig[jsonKey].find(a => a.nombre === name);
+                        if (awardData) logoUrl = awardData.logo_url;
+                    }
                 }
 
                 currentAwards.push({ name, year, logo_url: logoUrl });
                 renderAwards();
+                
+                // Resetear campos de premio
                 document.getElementById('award-year').value = '';
+                document.getElementById('award-icon-input').value = '';
+                document.getElementById('award-icon-preview').src = 'https://placehold.co/100?text=+';
+                currentAwardIcon = null;
+            } else {
+                alert("Selecciona un premio y un año.");
             }
         });
 
@@ -459,6 +506,8 @@
             // Reset states
             currentImages = [];
             currentAwards = [];
+            currentAwardIcon = null;
+            document.getElementById('award-icon-preview').src = 'https://placehold.co/100?text=+';
             document.getElementById('awards-section').classList.add('hidden');
             
             // Default published state: true
