@@ -13,6 +13,12 @@ const app = {
     breadcrumbs: document.getElementById('breadcrumbs'),
 
     init: async function() {
+
+        try {
+            const res = await fetch('/data/flavor-wheels.json');
+            if(res.ok) this.state.flavorWheelsData = await res.json();
+        } catch(e) {}
+
         // Soporte de teclado para galería
         window.addEventListener('keydown', (e) => {
             if (!this.state.gallery || !this.state.gallery.isOpen) return;
@@ -86,6 +92,7 @@ const app = {
 
         try {
             const res = await fetch(`/api/public/companies/${userId}/landing`);
+            if(!res.ok) throw new Error('Error al cargar datos');
             const data = await res.json();
 
             if (data.error) {
@@ -326,93 +333,8 @@ const app = {
                     <!-- COLUMNA DERECHA: CATÁLOGO ACTUALIZADO -->
                     <div class="lg:col-span-2">
                         <h3 class="text-2xl font-display font-bold text-stone-800 mb-6 flex items-center gap-2"><i class="fas fa-store text-amber-600"></i> Catálogo Disponible</h3>
-                        <div class="space-y-8">
-                            ${products.length === 0 ? `<div class="text-center py-12 bg-stone-50 rounded-xl border border-dashed border-stone-200"><i class="fas fa-box-open text-3xl text-stone-300 mb-2"></i><p class="text-stone-500 italic">No hay productos disponibles por el momento.</p></div>` : ''}
-                            
-                            ${products.map(prod => {
-                                const prodImage = (prod.imagenes && prod.imagenes.length > 0) ? prod.imagenes[0] : 'https://placehold.co/400x300/f5f5f4/a8a29e?text=Producto';
-                                const hasTraceability = prod.recent_batches && prod.recent_batches.length > 0;
-                                
-                                const cardClasses = hasTraceability 
-                                    ? 'border-2 border-emerald-500/30 shadow-xl hover:shadow-2xl ring-1 ring-emerald-50/50' 
-                                    : 'border border-stone-200 shadow-sm hover:shadow-lg';
-
-                                const batchesHtml = hasTraceability ? prod.recent_batches.map(b => {
-                                    const batchDate = new Date(b.fecha_finalizacion || Date.now()).toLocaleDateString();
-                                    return `
-                                    <a href="/${b.id}" target="_blank" onclick="app.trackEvent('trace_view', '${userId}', '${prod.id}')" class="flex-shrink-0 w-64 bg-stone-50 border border-stone-200 rounded-xl p-3 hover:border-amber-400 hover:shadow-md transition group no-underline text-left">
-                                        <div class="flex justify-between items-start mb-2"><span class="font-mono text-[10px] font-bold text-stone-500 bg-white px-2 py-1 rounded border border-stone-100">${b.id}</span><i class="fas fa-external-link-alt text-stone-300 group-hover:text-amber-500 text-xs"></i></div>
-                                        <p class="text-xs text-stone-600 font-bold mb-0.5 truncate">${b.finca_origen || 'Origen Protegido'}</p>
-                                        <div class="text-[10px] text-stone-400 flex justify-between mt-2 pt-2 border-t border-stone-200"><span>${batchDate}</span><span class="text-green-600 font-bold"><i class="fas fa-shield-alt"></i> Inmutable</span></div>
-                                    </a>`;
-                                }).join('') : '';
-
-                                const buyLink = waBase !== '#' ? `${waBase}?text=Hola, estoy interesado en comprar el producto: *${encodeURIComponent(prod.nombre)}*` : '#';
-
-                                return `
-                                <div class="bg-white rounded-2xl ${cardClasses} overflow-hidden transition-all duration-300 transform hover:-translate-y-1 relative">
-                                    <div class="flex flex-col md:flex-row">
-                                        <div class="md:w-1/3 h-64 md:h-auto relative group overflow-hidden">
-                                            <img src="${prodImage}" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110">
-                                            
-                                            <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-60"></div>
-                                            
-                                            <div class="absolute top-3 left-3 bg-black/40 backdrop-blur-md text-white text-[10px] font-bold px-2 py-1 rounded border border-white/20 uppercase tracking-wider">
-                                                ${prod.tipo_producto || 'Especialidad'}
-                                            </div>
-
-                                            ${hasTraceability ? 
-                                                `<div class="absolute top-0 right-0 z-20">
-                                                    <div class="bg-gradient-to-r from-emerald-600 to-emerald-500 text-white text-[10px] font-black px-3 py-1.5 rounded-bl-2xl shadow-lg flex items-center gap-1.5">
-                                                        <i class="fas fa-check-circle text-emerald-100 animate-pulse"></i>
-                                                        <span class="tracking-wider">VERIFICADO</span>
-                                                    </div>
-                                                </div>
-                                                <div class="absolute bottom-3 left-3 right-3 z-20">
-                                                    <div class="bg-white/95 backdrop-blur-md p-2.5 rounded-xl shadow-xl border border-emerald-100 flex items-center gap-3">
-                                                        <div class="bg-emerald-50 p-2 rounded-lg text-emerald-600">
-                                                            <i class="fas fa-link text-lg"></i>
-                                                        </div>
-                                                        <div class="flex flex-col leading-none">
-                                                            <span class="text-[9px] text-stone-400 uppercase tracking-widest font-bold">Insignia Digital</span>
-                                                            <span class="font-bold text-stone-800 text-sm">Trazabilidad Blockchain</span>
-                                                        </div>
-                                                    </div>
-                                                </div>` : ''}
-                                        </div>
-                                        <div class="p-6 md:w-2/3 flex flex-col justify-between">
-                            <div>
-                                <div class="flex justify-between items-start mb-2">
-                                    <div>
-                                        <h4 class="text-xl font-bold text-stone-900 leading-tight">${prod.nombre}</h4>
-                                        ${prod.peso ? `<p class="text-xs text-stone-500 font-bold mt-1 bg-stone-100 inline-block px-2 py-0.5 rounded">${prod.peso}</p>` : ''}
-                                    </div>
-                                    
-                                    <!-- SECCIÓN PREMIOS ACTUALIZADA -->
-                                    <div class="flex flex-wrap gap-1.5 justify-end ml-2">
-                                        ${(prod.premios || []).map(pr => `
-                                            <div class="flex flex-col items-center justify-center bg-white p-1.5 rounded-lg border border-stone-100 shadow-sm min-w-[3rem]" title="${pr.nombre || pr.name}">
-                                                ${pr.logo_url ? `<img src="${pr.logo_url}" class="h-12 w-12 object-contain mb-0.5">` : `<i class="fas fa-medal text-amber-400 text-lg mb-0.5"></i>`}
-                                                <span class="text-[9px] font-bold text-stone-600 leading-none">${pr.year || pr.ano || ''}</span>
-                                            </div>
-                                        `).join('')}
-                                    </div>
-
-                                </div>
-                                <p class="text-stone-600 text-sm mb-4 line-clamp-3">${prod.descripcion || 'Sin descripción.'}</p>
-                            </div>
-                            <div class="flex items-center justify-between mt-4 pt-4 border-t border-stone-100">
-                                                ${hasTraceability ? 
-                                                    `<span class="text-xs font-bold text-emerald-600 uppercase tracking-widest flex items-center gap-1"><i class="fas fa-cubes"></i> ${prod.recent_batches.length} Lotes Trazable</span>` : 
-                                                    `<span class="text-xs font-bold text-stone-400 uppercase tracking-widest italic">Sin historial público</span>`
-                                                }
-                                                ${waBase !== '#' ? `<a href="${buyLink}" target="_blank" onclick="app.trackEvent('buy_click', '${userId}', '${prod.id}')" class="bg-stone-900 hover:bg-stone-800 text-white px-6 py-2.5 rounded-xl text-sm font-bold transition flex items-center gap-2 shadow-lg"><i class="fas fa-shopping-cart"></i> Comprar</a>` : ''}
-                                            </div>
-                                        </div>
-                                    </div>
-                                    ${batchesHtml ? `<div class="bg-emerald-50/50 p-4 border-t border-emerald-100/50 backdrop-blur-sm"><p class="text-[10px] font-bold text-stone-400 mb-3 uppercase tracking-widest"><i class="fas fa-history text-emerald-500 mr-1"></i> Lotes con Trazabilidad</p><div class="flex gap-3 overflow-x-auto pb-2 scrollbar-hide snap-x">${batchesHtml}</div></div>` : ''}
-                                </div>`;
-                            }).join('')}
+                        <div class="space-y-6">
+                            ${this.renderProductList(products, user.celular)}
                         </div>
                     </div>
                 </div>
@@ -421,9 +343,182 @@ const app = {
             this.container.innerHTML = html;
             window.scrollTo(0, 0);
 
+            
             if (entity.coordenadas) setTimeout(() => this.initMiniMap(entity.coordenadas), 500);
 
+            setTimeout(() => this.initProductCharts(products), 100);
+
         } catch (e) { console.error(e); }
+    },
+
+    renderProductList: function(products, phone) {
+        if (!products || products.length === 0) {
+            return `<div class="text-center py-12 bg-stone-50 rounded-xl border border-dashed border-stone-200"><p class="text-stone-500 italic">No hay productos disponibles.</p></div>`;
+        }
+
+        return products.map(prod => {
+            const prodImage = (prod.imagenes && prod.imagenes.length > 0) ? prod.imagenes[0] : 'https://placehold.co/400x300/f5f5f4/a8a29e?text=Producto';
+            const hasTraceability = prod.recent_batches && prod.recent_batches.length > 0;
+            const hasSensory = prod.perfil_data && Object.values(prod.perfil_data).some(v => v > 0);
+            const hasWheel = prod.notas_rueda && prod.notas_rueda.length > 0;
+            const buyLink = phone ? `https://wa.me/${phone.replace(/\D/g,'')}?text=Hola, me interesa: ${encodeURIComponent(prod.nombre)}` : '#';
+
+            return `
+            <div class="bg-white rounded-2xl shadow-sm border border-stone-200 overflow-hidden hover:shadow-md transition duration-300 flex flex-col md:flex-row">
+                <!-- Imagen -->
+                <div class="md:w-1/3 h-56 md:h-auto relative group overflow-hidden bg-stone-100 flex-shrink-0">
+                    <img src="${prodImage}" class="w-full h-full object-cover transition duration-500 group-hover:scale-105">
+                    ${hasTraceability ? 
+                        `<div class="absolute bottom-2 left-2 bg-emerald-600/90 text-white text-[10px] font-bold px-2 py-1 rounded backdrop-blur uppercase tracking-wider flex items-center gap-1 shadow-lg">
+                            <i class="fas fa-check-circle"></i> Trazable
+                        </div>` : ''}
+                </div>
+
+                <!-- Contenido -->
+                <div class="md:w-2/3 flex flex-col">
+                    <!-- Cabecera -->
+                    <div class="p-6 pb-2">
+                        <div class="flex justify-between items-start mb-1">
+                            <div>
+                                <h4 class="text-xl font-bold text-stone-900 leading-tight">${prod.nombre}</h4>
+                                <p class="text-xs text-stone-500 font-bold mt-1 bg-stone-50 inline-block px-2 py-0.5 rounded border border-stone-100">
+                                    ${prod.tipo_producto || 'Producto'} ${prod.peso ? ` • ${prod.peso}` : ''}
+                                </p>
+                            </div>
+                            <div class="flex flex-wrap gap-1.5 justify-end ml-2">
+                                ${(prod.premios || []).map(pr => `
+                                    <div class="flex flex-col items-center justify-center bg-white p-1.5 rounded-lg border border-stone-100 shadow-sm min-w-[3rem]" title="${pr.nombre || pr.name}">
+                                        ${pr.logo_url ? `<img src="${pr.logo_url}" class="h-12 w-12 object-contain mb-0.5">` : `<i class="fas fa-medal text-amber-400 text-lg mb-0.5"></i>`}
+                                        <span class="text-[9px] font-bold text-stone-600 leading-none">${pr.year || pr.ano || ''}</span>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Pestañas -->
+                    <div class="px-6 border-b border-stone-100 flex gap-4 text-sm font-medium">
+                        <button onclick="app.switchTab(this, 'info-${prod.id}')" class="tab-btn active pb-2 border-b-2 border-amber-800 text-amber-900 transition hover:text-amber-700">Detalles</button>
+                        ${hasSensory ? `<button onclick="app.switchTab(this, 'sensory-${prod.id}')" class="tab-btn pb-2 border-b-2 border-transparent text-stone-400 hover:text-stone-600 transition flex items-center gap-1"><i class="fas fa-chart-radar text-xs"></i> Perfil</button>` : ''}
+                        ${hasWheel ? `<button onclick="app.switchTab(this, 'wheel-${prod.id}')" class="tab-btn pb-2 border-b-2 border-transparent text-stone-400 hover:text-stone-600 transition flex items-center gap-1"><i class="fas fa-chart-pie text-xs"></i> Rueda</button>` : ''}
+                    </div>
+
+                    <!-- Contenedor de Pestañas (Clase tab-container para identificación) -->
+                    <div class="p-6 pt-4 flex-grow relative tab-container">
+                        
+                        <!-- TAB 1: INFORMACIÓN -->
+                        <div id="info-${prod.id}" class="tab-content active space-y-4 block opacity-100">
+                            <p class="text-stone-600 text-sm leading-relaxed line-clamp-4">${prod.descripcion || 'Sin descripción detallada.'}</p>
+                        </div>
+
+                        <!-- TAB 2: PERFIL SENSORIAL -->
+                        ${hasSensory ? `
+                        <div id="sensory-${prod.id}" class="tab-content hidden opacity-0 h-48 w-full flex items-center justify-center">
+                            <div class="w-full h-full max-w-[250px] relative">
+                                <canvas id="canvas-radar-${prod.id}"></canvas>
+                            </div>
+                        </div>` : ''}
+
+                        <!-- TAB 3: RUEDA SABOR -->
+                        ${hasWheel ? `
+                        <div id="wheel-${prod.id}" class="tab-content hidden opacity-0 h-auto w-full flex flex-col items-center justify-center">
+                            <div class="w-full h-48 max-w-[250px] relative">
+                                <canvas id="canvas-wheel-${prod.id}-l1"></canvas>
+                            </div>
+                            <div id="canvas-wheel-${prod.id}-legend" class="mt-4 w-full"></div>
+                        </div>` : ''}
+                    </div>
+                    
+                    <!-- AREA DE ACCIÓN (Siempre visible abajo) -->
+                    <div class="px-6 pb-4">
+                        <div class="flex items-center justify-between pt-3 border-t border-stone-100">
+                            <span class="text-xs font-bold text-stone-400 uppercase tracking-widest">
+                                ${hasTraceability ? `<i class="fas fa-cubes text-emerald-500"></i> ${prod.recent_batches.length} Lotes` : ''}
+                            </span>
+                            <a href="${buyLink}" target="_blank" class="bg-stone-900 hover:bg-stone-800 text-white px-5 py-2 rounded-xl text-sm font-bold transition flex items-center gap-2 shadow-lg">
+                                <i class="fas fa-shopping-cart"></i> Comprar
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Footer Lotes (Opcional, si quieres mantenerlo) -->
+                    ${hasTraceability ? `
+                    <div class="bg-stone-50 px-6 py-2 border-t border-stone-100 flex items-center justify-between text-xs">
+                            <span class="font-bold text-stone-400 uppercase tracking-wider">Trazabilidad:</span>
+                            <a href="/${prod.recent_batches[0].id}" target="_blank" class="text-emerald-700 font-mono hover:underline flex items-center gap-1">
+                            Ver último lote <i class="fas fa-external-link-alt"></i>
+                            </a>
+                    </div>` : ''}
+                </div>
+            </div>`;
+        }).join('');
+    },
+
+    // --- UTILIDAD TABS ---
+    switchTab: function(btn, targetId) {
+        const parent = btn.parentElement;
+        // Buscamos el contenedor de tabs explícitamente por clase
+        const productCard = parent.parentElement; 
+        const container = productCard.querySelector('.tab-container');
+        
+        if (!container) return;
+
+        // 1. Estilos Botones
+        parent.querySelectorAll('.tab-btn').forEach(b => {
+            b.classList.remove('active', 'border-amber-800', 'text-amber-900');
+            b.classList.add('border-transparent', 'text-stone-400');
+        });
+        btn.classList.add('active', 'border-amber-800', 'text-amber-900');
+        btn.classList.remove('border-transparent', 'text-stone-400');
+
+        // 2. Ocultar todos los contenidos dentro de este contenedor
+        container.querySelectorAll('.tab-content').forEach(c => {
+            c.classList.add('hidden', 'opacity-0');
+            c.classList.remove('block', 'opacity-100');
+        });
+        
+        // 3. Mostrar target seleccionado
+        const target = document.getElementById(targetId);
+        if(target) {
+            target.classList.remove('hidden');
+            target.classList.add('block');
+            
+            setTimeout(() => {
+                target.classList.remove('opacity-0');
+                target.classList.add('opacity-100');
+                
+                // Redibujar gráficos si existen en esta pestaña
+                const canvas = target.querySelector('canvas');
+                if (canvas && productChartInstances[canvas.id]) {
+                    productChartInstances[canvas.id].resize();
+                }
+            }, 10);
+        }
+    },
+
+    // --- GRÁFICOS CHART.JS ---
+    initProductCharts: function(products) {
+        if (typeof ChartUtils === 'undefined') {
+            console.error("ChartUtils no está cargado.");
+            return;
+        }
+
+        productChartInstances = ChartUtils.instances || {};
+
+        products.forEach(p => {
+            // Radar
+            if (p.perfil_data && document.getElementById(`canvas-radar-${p.id}`)) {
+                ChartUtils.initializePerfilChart(`canvas-radar-${p.id}`, p.perfil_data, p.tipo_producto);
+            }
+            // Wheel (Usando baseId compatible con estructura de ChartUtils)
+            if (p.notas_rueda && document.getElementById(`canvas-wheel-${p.id}-l1`)) {
+                // Preparamos objeto compatible con ChartUtils
+                const ruedaData = { notas_json: p.notas_rueda, tipo: p.tipo_producto };
+                // Pasamos "canvas-wheel-{id}" como baseId. 
+                // ChartUtils buscará "{baseId}-l1" para el canvas y "{baseId}-legend" para la leyenda.
+                ChartUtils.initializeRuedaChart(`canvas-wheel-${p.id}`, ruedaData, this.state.flavorWheelsData);
+            }
+        });
     },
 
     // --- CAROUSEL FUNCTIONS (from origen-unico-app.js) ---

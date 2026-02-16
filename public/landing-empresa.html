@@ -15,6 +15,10 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet" crossorigin>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
     
+    <!-- AGREGADO: Chart.js para los gráficos sensoriales -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
+
     <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAM37iJTRcIoSAxESlDzB2DxlNJWKasW5U&libraries=geometry,drawing,places&v=weekly" defer></script>
     <style>
         body { font-family: 'Inter', sans-serif; background-color: #fdfaf6; }
@@ -23,6 +27,9 @@
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .hide-scrollbar::-webkit-scrollbar { display: none; }
         .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .tab-content { display: none; opacity: 0; transition: opacity 0.3s ease-in; }
+        .tab-content.active { display: block; opacity: 1; }
+        .tab-btn.active { background-color: #78350f; color: white; border-color: #78350f; }
     </style>
 </head>
 <body class="text-stone-800 antialiased min-h-screen flex flex-col">
@@ -107,6 +114,7 @@
     </footer>
 
     <script src="/js/landing-empresa.js"></script>
+    <script src="/js/chart-utils.js"></script>
     <script>
 
         document.addEventListener('DOMContentLoaded', () => {

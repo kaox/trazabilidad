@@ -2670,12 +2670,17 @@ const getCompanyLandingData = async (req, res) => {
 
             // CORRECCIÓN: Traer TODOS los productos publicados, no solo los que tienen lotes
             const products = await all(`
-                SELECT id, nombre, descripcion, imagenes_json, tipo_producto, peso, premios_json
-                FROM productos 
-                WHERE CAST(user_id AS TEXT) = ? 
-                  AND deleted_at IS NULL 
-                  AND (is_published IS TRUE OR is_published IS NULL)
-                ORDER BY nombre ASC
+                SELECT 
+                    p.id, p.nombre, p.descripcion, p.imagenes_json, p.tipo_producto, p.premios_json, p.peso,
+                    perf.perfil_data, 
+                    rueda.notas_json, rueda.nombre_rueda
+                FROM productos p
+                LEFT JOIN perfiles perf ON p.perfil_id = perf.id
+                LEFT JOIN ruedas_sabores rueda ON p.rueda_id = rueda.id
+                WHERE CAST(p.user_id AS TEXT) = ? 
+                  AND p.deleted_at IS NULL
+                  AND (p.is_published IS TRUE OR p.is_published IS NULL)
+                ORDER BY p.nombre ASC
             `, [String(userId)]);
 
             const productsWithBatches = [];
@@ -2718,7 +2723,9 @@ const getCompanyLandingData = async (req, res) => {
                     ...p,
                     imagenes: safeJSONParse(p.imagenes_json || '[]'),
                     premios: safeJSONParse(p.premios_json || '[]'),
-                    recent_batches: batches // Será un array vacío si no tiene trazabilidad
+                    perfil_data: safeJSONParse(p.perfil_data),
+                    notas_rueda: safeJSONParse(p.notas_json),
+                    recent_batches: batches // Será un array vacío si no tiene trazabilidad, pero el producto se mostrará igual
                 });
             }
 
