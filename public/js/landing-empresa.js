@@ -361,7 +361,9 @@ const app = {
             const hasTraceability = prod.recent_batches && prod.recent_batches.length > 0;
             const hasSensory = prod.perfil_data && Object.values(prod.perfil_data).some(v => v > 0);
             const hasWheel = prod.notas_rueda && prod.notas_rueda.length > 0;
-            const buyLink = phone ? `https://wa.me/${phone.replace(/\D/g,'')}?text=Hola, me interesa: ${encodeURIComponent(prod.nombre)}` : '#';
+            const buyLink = phone ? `https://wa.me/${phone.replace(/\D/g,'')}?text=Hola vi esto en RuruLab, me interesa: ${encodeURIComponent(prod.nombre)}` : '#';
+
+            const showTabs = hasSensory || hasWheel;
 
             const cardClasses = hasTraceability 
                 ? 'border-2 border-emerald-500/30 shadow-xl hover:shadow-2xl ring-1 ring-emerald-50/50' 
@@ -431,11 +433,13 @@ const app = {
                     </div>
 
                     <!-- Pestañas -->
+                    ${showTabs ? `
                     <div class="px-6 border-b border-stone-100 flex gap-4 text-sm font-medium">
                         <button onclick="app.switchTab(this, 'info-${prod.id}')" class="tab-btn active pb-2 border-b-2 border-amber-800 text-amber-900 transition hover:text-amber-700">Detalles</button>
                         ${hasSensory ? `<button onclick="app.switchTab(this, 'sensory-${prod.id}')" class="tab-btn pb-2 border-b-2 border-transparent text-stone-400 hover:text-stone-600 transition flex items-center gap-1"><i class="fas fa-chart-radar text-xs"></i> Perfil</button>` : ''}
                         ${hasWheel ? `<button onclick="app.switchTab(this, 'wheel-${prod.id}')" class="tab-btn pb-2 border-b-2 border-transparent text-stone-400 hover:text-stone-600 transition flex items-center gap-1"><i class="fas fa-chart-pie text-xs"></i> Rueda</button>` : ''}
                     </div>
+                    ` : ''}
 
                     <!-- Contenedor de Pestañas (Clase tab-container para identificación) -->
                     <div class="p-6 pt-4 flex-grow relative tab-container">
@@ -448,7 +452,7 @@ const app = {
                         <!-- TAB 2: PERFIL SENSORIAL -->
                         ${hasSensory ? `
                         <div id="sensory-${prod.id}" class="tab-content hidden opacity-0 h-48 w-full flex items-center justify-center">
-                            <div class="w-full h-full max-w-[250px] relative">
+                            <div class="w-full h-full max-w-md relative">
                                 <canvas id="canvas-radar-${prod.id}"></canvas>
                             </div>
                         </div>` : ''}
@@ -456,7 +460,7 @@ const app = {
                         <!-- TAB 3: RUEDA SABOR -->
                         ${hasWheel ? `
                         <div id="wheel-${prod.id}" class="tab-content hidden opacity-0 h-auto w-full flex flex-col items-center justify-center">
-                            <div class="w-full h-48 max-w-[250px] relative">
+                            <div class="w-full h-full max-w-md relative">
                                 <canvas id="canvas-wheel-${prod.id}-l1"></canvas>
                             </div>
                             <div id="canvas-wheel-${prod.id}-legend" class="mt-4 w-full"></div>
