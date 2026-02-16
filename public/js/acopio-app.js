@@ -587,7 +587,6 @@ document.addEventListener('DOMContentLoaded', () => {
             const isDepleted = remaining <= 0.1;
             const progressPercent = Math.min(100, (used / acop.peso_kg) * 100);
 
-            console.log(acop);
             const card = document.createElement('div');
             card.className = "bg-white p-5 rounded-xl shadow-sm border border-stone-200 hover:shadow-lg hover:-translate-y-0.5 transition duration-300 group relative";
             card.innerHTML = `
@@ -803,6 +802,11 @@ document.addEventListener('DOMContentLoaded', () => {
             reader.onerror = (err) => reject(err);
         });
     };
+
+    function prepareProcessing(acopio) {
+        // Redirigir al módulo de procesamiento llevando el ID del acopio
+        window.location.href = `/app/procesamiento?acopio_id=${acopio.id}&product_name=${encodeURIComponent(acopio.nombre_producto)}`;
+    }
 
     async function api(url, options = {}) {
         options.credentials = 'include';
