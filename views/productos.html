@@ -11,15 +11,8 @@
     <style>
         body { font-family: 'Inter', sans-serif; background-color: #fdfaf6; }
         .font-display { font-family: 'Playfair Display', serif; }
-        
-        /* Toggle Switch Styles */
-        .toggle-checkbox:checked {
-            right: 0;
-            border-color: #10B981;
-        }
-        .toggle-checkbox:checked + .toggle-label {
-            background-color: #10B981;
-        }
+        .toggle-checkbox:checked { right: 0; border-color: #10B981; }
+        .toggle-checkbox:checked + .toggle-label { background-color: #10B981; }
     </style>
 </head>
 <body class="text-stone-800 antialiased">
@@ -36,7 +29,6 @@
             </button>
         </header>
 
-        <!-- Grid de Productos -->
         <div id="products-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <div class="col-span-full text-center py-12 text-stone-400">
                 <i class="fas fa-circle-notch fa-spin text-3xl"></i><br>Cargando catálogo...
@@ -45,24 +37,22 @@
     </div>
 
     <!-- Modal Formulario -->
-    <dialog id="product-modal" class="p-0 rounded-2xl shadow-2xl w-11/12 max-w-2xl backdrop:bg-black/60">
+    <dialog id="product-modal" class="p-0 rounded-2xl shadow-2xl w-11/12 max-w-3xl backdrop:bg-black/60">
         <div class="bg-white flex flex-col max-h-[90vh]">
             <div class="p-6 border-b border-stone-100 flex justify-between items-center sticky top-0 bg-white z-10">
                 <h2 id="modal-title" class="text-2xl font-display text-amber-900 font-bold">Nuevo Producto</h2>
                 <button onclick="document.getElementById('product-modal').close()" class="text-stone-400 hover:text-stone-600 text-2xl">&times;</button>
             </div>
             
-            <div class="p-6 overflow-y-auto">
+            <div class="p-6 overflow-y-auto custom-scrollbar">
                 <form id="product-form" class="space-y-6">
                     <input type="hidden" id="prod-id">
                     
-                    <!-- Información Básica -->
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div class="md:col-span-2">
                             <label class="block text-sm font-medium text-stone-700 mb-1">Nombre Comercial *</label>
                             <input type="text" id="nombre" name="nombre" class="w-full p-3 border border-stone-300 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none" placeholder="Ej: Café de Altura Tostado Medio" required>
                         </div>
-                        
                         <div>
                             <label class="block text-sm font-medium text-stone-700 mb-1">Tipo de Producto *</label>
                             <select id="tipo_producto" class="w-full p-3 border border-stone-300 rounded-xl bg-white focus:ring-2 focus:ring-amber-500 outline-none" required>
@@ -73,14 +63,12 @@
                                 <option value="otro">Otro</option>
                             </select>
                         </div>
-
                         <div>
                             <label class="block text-sm font-medium text-stone-700 mb-1">Peso / Presentación</label>
                             <input type="text" id="peso" class="w-full p-3 border border-stone-300 rounded-xl" placeholder="Ej: 250g, 1kg, 10 Barras">
                         </div>
                     </div>
 
-                    <!-- ESTADO PUBLICADO -->
                     <div class="bg-stone-50 p-4 rounded-xl border border-stone-200 flex items-center justify-between">
                         <div>
                             <span class="font-bold text-stone-800 text-sm block">Visible en Catálogo</span>
@@ -96,12 +84,30 @@
                         <label class="block text-sm font-bold text-amber-900 mb-2"><i class="fas fa-utensils mr-1"></i> Información Nutricional</label>
                         <select id="receta_nutricional" class="w-full p-3 border border-amber-200 rounded-xl bg-white focus:ring-2 focus:ring-amber-500 outline-none">
                             <option value="">-- Sin información nutricional --</option>
-                            <!-- Se llena dinámicamente -->
                         </select>
                         <p class="text-xs text-amber-800/60 mt-1">Vincula una receta creada en la Calculadora Nutricional para generar la etiqueta.</p>
                     </div>
 
-                    <!-- GTIN -->
+                    <!-- NUEVA SECCIÓN: SELECTORES SENSORIALES -->
+                    <div id="sensory-section" class="pt-2">
+                        <label class="block text-sm font-bold text-stone-800 mb-3 border-b border-stone-100 pb-1">Características Sensoriales</label>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                             <!-- Wrapper para Perfil Sensorial (Radar) -->
+                             <div id="perfil-wrapper">
+                                 <!-- Se llena dinámicamente con Select o Botón Crear -->
+                                 <label class="block text-sm font-medium text-stone-400 mb-1">Perfil Sensorial</label>
+                                 <div class="p-3 bg-stone-50 rounded-xl border border-stone-200 text-sm text-stone-400 italic">Selecciona un tipo de producto primero</div>
+                             </div>
+
+                             <!-- Wrapper para Rueda de Sabores -->
+                             <div id="rueda-wrapper">
+                                 <!-- Se llena dinámicamente con Select o Botón Crear -->
+                                 <label class="block text-sm font-medium text-stone-400 mb-1">Rueda de Sabor</label>
+                                 <div class="p-3 bg-stone-50 rounded-xl border border-stone-200 text-sm text-stone-400 italic">Selecciona un tipo de producto primero</div>
+                             </div>
+                        </div>
+                    </div>
+
                     <div class="bg-stone-50 p-4 rounded-xl border border-stone-200">
                         <div class="flex justify-between items-start mb-2">
                             <label class="block text-sm font-bold text-stone-700">Código de Barras (GTIN/EAN)</label>
@@ -113,11 +119,9 @@
                         <input type="text" id="gtin" class="w-full p-3 border border-stone-300 rounded-xl font-mono text-stone-600" placeholder="Dejar vacío para generar uno interno automáticamente">
                     </div>
 
-                    <!-- Imágenes con Límite de 5MB y Optimización -->
                     <div>
                         <label class="block text-sm font-medium text-stone-700 mb-2">Galería de Imágenes (Máx 3, < 5MB c/u)</label>
                         <div class="grid grid-cols-3 gap-4" id="image-upload-container">
-                            <!-- Los slots de imagen se generan aquí -->
                             <div class="border-2 border-dashed border-stone-300 rounded-xl h-24 flex items-center justify-center cursor-pointer hover:bg-stone-50 transition" onclick="document.getElementById('file-upload').click()">
                                 <div class="text-center text-stone-400">
                                     <i class="fas fa-plus mb-1"></i><br><span class="text-xs">Subir</span>
@@ -128,7 +132,6 @@
                         <p class="text-[10px] text-stone-400 mt-1">Las imágenes se optimizarán automáticamente al subir.</p>
                     </div>
 
-                    <!-- Descripción e Ingredientes -->
                     <div>
                         <label class="block text-sm font-medium text-stone-700 mb-1">Descripción de Marketing</label>
                         <textarea id="descripcion" rows="3" class="w-full p-3 border border-stone-300 rounded-xl" placeholder="La historia que quieres contar en el empaque..."></textarea>
@@ -139,32 +142,22 @@
                         <textarea id="ingredientes" rows="2" class="w-full p-3 border border-stone-300 rounded-xl" placeholder="Ej: Cacao, Azúcar de caña, Manteca de cacao..."></textarea>
                     </div>
 
-                    <!-- Sección Dinámica de Premios -->
                     <div id="awards-section" class="hidden pt-4 border-t border-stone-100">
                         <label class="block text-sm font-bold text-amber-900 mb-2">Premios y Reconocimientos</label>
-                        
                         <div class="flex flex-col gap-2 mb-3">
                              <div class="flex gap-2 items-center">
-                                <!-- Nuevo Input de Imagen Personalizada -->
                                 <div class="relative w-10 h-10 flex-shrink-0 group cursor-pointer" title="Subir icono del premio" onclick="document.getElementById('award-icon-input').click()">
                                     <img id="award-icon-preview" src="https://placehold.co/100?text=+" class="w-full h-full object-cover rounded-lg border border-stone-300 hover:border-amber-500 transition">
                                     <input type="file" id="award-icon-input" class="hidden" accept="image/*">
                                 </div>
-                                
-                                <select id="award-select" class="flex-grow p-2 border border-stone-300 rounded-lg text-sm h-10 bg-white">
-                                    <!-- Opciones dinámicas -->
-                                </select>
-                                
+                                <select id="award-select" class="flex-grow p-2 border border-stone-300 rounded-lg text-sm h-10 bg-white"></select>
                                 <input type="number" id="award-year" placeholder="Año" class="w-20 p-2 border border-stone-300 rounded-lg text-sm h-10">
-                                
                                 <button type="button" id="add-award-btn" class="bg-amber-100 text-amber-800 px-3 h-10 rounded-lg hover:bg-amber-200"><i class="fas fa-plus"></i></button>
                              </div>
                              <p class="text-[10px] text-stone-400 pl-1">Opcional: Toca el cuadro "+" para subir el logo del premio si no aparece en la lista.</p>
                         </div>
-
                         <div id="awards-list" class="space-y-2"></div>
                     </div>
-
                 </form>
             </div>
             
@@ -176,436 +169,7 @@
     </dialog>
 
     <script src="/js/nav-loader.js"></script>
-    <script>
-        // ESTADO LOCAL
-        let currentImages = [];
-        let currentAwards = [];
-        let currentAwardIcon = null; // Nuevo estado para icono temporal
-        let productsCache = [];
-        let nutritionalRecipes = [];
-        let awardsConfig = {}; // Se cargará desde premios.json
-
-        document.addEventListener('DOMContentLoaded', () => {
-            loadProducts();
-            loadAwardsConfig();
-            loadNutritionalRecipes();
-        });
-
-        // --- FUNCIÓN DE COMPRESIÓN DE IMÁGENES ---
-        // Reduce el tamaño antes de subirlo a la DB (Base64 optimizado)
-        const compressImage = (file) => {
-            return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.readAsDataURL(file);
-                reader.onload = (event) => {
-                    const img = new Image();
-                    img.src = event.target.result;
-                    img.onload = () => {
-                        const canvas = document.createElement('canvas');
-                        const MAX_WIDTH = 1024; // Límite razonable para web
-                        const MAX_HEIGHT = 1024;
-                        let width = img.width;
-                        let height = img.height;
-
-                        // Redimensionar manteniendo aspecto
-                        if (width > height) {
-                            if (width > MAX_WIDTH) {
-                                height *= MAX_WIDTH / width;
-                                width = MAX_WIDTH;
-                            }
-                        } else {
-                            if (height > MAX_HEIGHT) {
-                                width *= MAX_HEIGHT / height;
-                                height = MAX_HEIGHT;
-                            }
-                        }
-                        
-                        canvas.width = width;
-                        canvas.height = height;
-                        const ctx = canvas.getContext('2d');
-                        ctx.drawImage(img, 0, 0, width, height);
-                        
-                        // Exportar a JPEG con calidad 0.7 (70%) para reducir peso
-                        resolve(canvas.toDataURL('image/jpeg', 0.7));
-                    };
-                    img.onerror = (err) => reject(err);
-                };
-                reader.onerror = (err) => reject(err);
-            });
-        };
-
-        async function loadNutritionalRecipes() {
-            try {
-                const recipes = await api('/api/nutricion/recetas');
-                nutritionalRecipes = recipes;
-                const select = document.getElementById('receta_nutricional');
-                
-                // Mantener la opción default y agregar las nuevas
-                select.innerHTML = '<option value="">-- Sin información nutricional --</option>' + 
-                    recipes.map(r => `<option value="${r.id}">${r.nombre}</option>`).join('');
-            } catch (e) {
-                console.warn("No se pudieron cargar las recetas nutricionales (quizás no tienes suscripción profesional)", e);
-            }
-        }
-
-        // --- CARGAR CONFIGURACIÓN DE PREMIOS ---
-        async function loadAwardsConfig() {
-            try {
-                const response = await fetch('/data/premios.json');
-                if (response.ok) {
-                    const data = await response.json();
-                    awardsConfig = data.premios;
-                } else {
-                    console.error("No se pudo cargar el archivo de premios");
-                }
-            } catch (error) {
-                console.error("Error cargando premios:", error);
-            }
-        }
-
-        // --- MANEJO DE IMÁGENES DE PRODUCTO ---
-        document.getElementById('file-upload').addEventListener('change', async function(e) {
-            const files = Array.from(e.target.files);
-            if (currentImages.length + files.length > 3) {
-                alert("Máximo 3 imágenes por producto.");
-                return;
-            }
-
-            // Deshabilitar botón durante proceso
-            const submitBtn = document.getElementById('save-product-btn');
-            const originalText = submitBtn.innerText;
-            submitBtn.disabled = true;
-            submitBtn.innerText = "Procesando imágenes...";
-
-            try {
-                for (const file of files) {
-                    // Nuevo límite de 5MB antes de procesar
-                    if (file.size > 5 * 1024 * 1024) { 
-                        alert(`La imagen ${file.name} pesa más de 5MB y será omitida.`);
-                        continue;
-                    }
-                    
-                    // Comprimir imagen
-                    const compressedBase64 = await compressImage(file);
-                    currentImages.push(compressedBase64);
-                }
-                renderImages();
-            } catch (error) {
-                console.error("Error al procesar imágenes:", error);
-                alert("Hubo un error al procesar alguna imagen.");
-            } finally {
-                // Restaurar botón
-                submitBtn.disabled = false;
-                submitBtn.innerText = originalText;
-                e.target.value = ''; // Reset input
-            }
-        });
-
-        function renderImages() {
-            const container = document.getElementById('image-upload-container');
-            // Mantener el botón de "Subir" siempre al final si hay espacio
-            const uploadBtnHTML = currentImages.length < 3 ? `
-                <div class="border-2 border-dashed border-stone-300 rounded-xl h-24 flex items-center justify-center cursor-pointer hover:bg-stone-50 transition" onclick="document.getElementById('file-upload').click()">
-                    <div class="text-center text-stone-400"><i class="fas fa-plus mb-1"></i><br><span class="text-xs">Subir</span></div>
-                </div>` : '';
-
-            const imagesHTML = currentImages.map((img, i) => `
-                <div class="relative h-24 w-full group">
-                    <img src="${img}" class="w-full h-full object-cover rounded-xl border border-stone-200">
-                    <button type="button" onclick="removeImage(${i})" class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center shadow-sm opacity-0 group-hover:opacity-100 transition">&times;</button>
-                </div>
-            `).join('');
-
-            container.innerHTML = imagesHTML + uploadBtnHTML;
-        }
-
-        window.removeImage = (index) => {
-            currentImages.splice(index, 1);
-            renderImages();
-        };
-
-        // --- MANEJO DE PREMIOS DINÁMICOS ---
-        document.getElementById('tipo_producto').addEventListener('change', function(e) {
-            const type = e.target.value;
-            const section = document.getElementById('awards-section');
-            const select = document.getElementById('award-select');
-            
-            // Mapeo: Si el tipo es 'cacao', buscamos la clave 'chocolate' en el JSON.
-            // Para 'cafe' y 'miel' la clave coincide.
-            let jsonKey = type;
-            if (type === 'cacao') jsonKey = 'chocolate';
-            
-            if (jsonKey && awardsConfig[jsonKey]) {
-                section.classList.remove('hidden');
-                // Extraemos los nombres de los premios del JSON
-                const premiosDisponibles = awardsConfig[jsonKey].map(p => p.nombre);
-                // Añadir opciones específicas + "Otro"
-                const options = [...premiosDisponibles, "Otro"];
-                select.innerHTML = options.map(opt => `<option value="${opt}">${opt}</option>`).join('');
-            } else if (type === 'otro') {
-                section.classList.remove('hidden');
-                select.innerHTML = '<option value="Otro">Otro</option>';
-            } else {
-                section.classList.add('hidden');
-            }
-        });
-
-        // NUEVO: Manejo de subida de icono personalizado de premio
-        document.getElementById('award-icon-input').addEventListener('change', async function(e) {
-            const file = e.target.files[0];
-            if (file) {
-                 if (file.size > 2 * 1024 * 1024) { 
-                    alert("El icono debe pesar menos de 2MB");
-                    this.value = '';
-                    return;
-                }
-                try {
-                    const base64 = await compressImage(file);
-                    currentAwardIcon = base64;
-                    document.getElementById('award-icon-preview').src = base64;
-                } catch(err) {
-                    console.error(err);
-                    alert("Error procesando icono");
-                }
-            }
-        });
-
-        document.getElementById('add-award-btn').addEventListener('click', () => {
-            const name = document.getElementById('award-select').value;
-            const year = document.getElementById('award-year').value;
-            
-            if (name && year) {
-                let logoUrl = null;
-                
-                // Prioridad 1: Icono subido manualmente
-                if (currentAwardIcon) {
-                    logoUrl = currentAwardIcon;
-                } else {
-                    // Prioridad 2: Buscar en configuración
-                    const type = document.getElementById('tipo_producto').value;
-                    let jsonKey = type === 'cacao' ? 'chocolate' : type;
-                    
-                    if (awardsConfig[jsonKey]) {
-                        const awardData = awardsConfig[jsonKey].find(a => a.nombre === name);
-                        if (awardData) logoUrl = awardData.logo_url;
-                    }
-                }
-
-                currentAwards.push({ name, year, logo_url: logoUrl });
-                renderAwards();
-                
-                // Resetear campos de premio
-                document.getElementById('award-year').value = '';
-                document.getElementById('award-icon-input').value = '';
-                document.getElementById('award-icon-preview').src = 'https://placehold.co/100?text=+';
-                currentAwardIcon = null;
-            } else {
-                alert("Selecciona un premio y un año.");
-            }
-        });
-
-        function renderAwards() {
-            const list = document.getElementById('awards-list');
-            list.innerHTML = currentAwards.map((a, i) => `
-                <div class="flex justify-between items-center bg-stone-50 p-2 rounded-lg text-sm border border-stone-100">
-                    <span class="flex items-center gap-2">
-                        ${a.logo_url ? `<img src="${a.logo_url}" class="w-6 h-6 object-contain" alt="">` : '<i class="fas fa-trophy text-amber-500"></i>'} 
-                        ${a.name} (${a.year})
-                    </span>
-                    <button type="button" onclick="removeAward(${i})" class="text-red-400 hover:text-red-600">&times;</button>
-                </div>
-            `).join('');
-        }
-
-        window.removeAward = (i) => {
-            currentAwards.splice(i, 1);
-            renderAwards();
-        };
-
-        // --- CRUD PRODUCTOS ---
-        async function loadProducts() {
-            const grid = document.getElementById('products-grid');
-            try {
-                const products = await api('/api/productos');
-                productsCache = products;
-                
-                if (products.length === 0) {
-                    grid.innerHTML = `
-                        <div class="col-span-full text-center py-16 bg-white rounded-2xl shadow-sm border border-stone-100">
-                            <i class="fas fa-box-open text-4xl text-stone-200 mb-4"></i>
-                            <p class="text-stone-500 font-medium">Aún no has creado productos.</p>
-                            <p class="text-stone-400 text-sm">Define tus SKUs para generar códigos de barra.</p>
-                        </div>`;
-                    return;
-                }
-
-                grid.innerHTML = products.map(p => {
-                    const mainImage = (p.imagenes_json && p.imagenes_json.length > 0) ? p.imagenes_json[0] : 'https://placehold.co/100?text=Producto';
-                    const tipoIcon = p.tipo_producto === 'cafe' ? 'fa-mug-hot' : (p.tipo_producto === 'cacao' ? 'fa-cookie-bite' : 'fa-jar');
-                    
-                    // Manejo visual de productos no publicados
-                    const isPublished = (p.is_published !== 0 && p.is_published !== false);
-                    const opacityClass = isPublished ? '' : 'opacity-60 grayscale-[0.5] border-dashed';
-                    const statusBadge = isPublished ? '' : `<span class="absolute top-2 right-2 bg-stone-200 text-stone-600 text-[10px] font-bold px-2 py-1 rounded shadow-sm z-10">BORRADOR</span>`;
-
-                    return `
-                    <div class="bg-white p-5 rounded-2xl shadow-sm border border-stone-100 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 flex flex-col group ${opacityClass} relative">
-                        ${statusBadge}
-                        <div class="flex gap-4 mb-4">
-                            <div class="relative w-20 h-20 flex-shrink-0">
-                                <img src="${mainImage}" class="w-full h-full object-cover rounded-xl border border-stone-100">
-                                <span class="absolute -bottom-2 -right-2 bg-white text-amber-800 text-xs p-1.5 rounded-full shadow-sm border border-stone-100">
-                                    <i class="fas ${tipoIcon}"></i>
-                                </span>
-                            </div>
-                            <div class="flex-grow min-w-0">
-                                <h3 class="font-bold text-lg text-amber-900 leading-tight truncate" title="${p.nombre}">${p.nombre}</h3>
-                                <p class="text-xs text-stone-500 mt-1">${p.peso || 'Peso N/A'}</p>
-                                <span class="text-[10px] font-mono bg-stone-100 px-2 py-1 rounded text-stone-500 mt-2 inline-block border border-stone-200">
-                                    <i class="fas fa-barcode mr-1"></i> ${p.gtin || 'Pendiente'}
-                                </span>
-                            </div>
-                        </div>
-                        
-                        <div class="flex-grow">
-                             ${p.receta_nutricional_nombre ? 
-                                `<div class="mb-2 text-xs text-green-700 bg-green-50 px-2 py-1 rounded border border-green-100 inline-block"><i class="fas fa-utensils mr-1"></i> Info. Nutricional Vinculada</div>` : ''
-                             }
-
-                             ${p.premios_json && p.premios_json.length > 0 ? 
-                                `<div class="mb-3 flex flex-wrap gap-1">
-                                    ${p.premios_json.slice(0, 2).map(prem => `<span class="text-[10px] bg-yellow-50 text-yellow-700 px-2 py-0.5 rounded-full border border-yellow-100 flex items-center gap-1">
-                                        ${prem.logo_url ? `<img src="${prem.logo_url}" class="h-3 w-3 object-contain mr-1">` : '<i class="fas fa-trophy text-[8px] mr-1"></i>'}
-                                        ${prem.name}
-                                    </span>`).join('')}
-                                    ${p.premios_json.length > 2 ? `<span class="text-[10px] text-stone-400">+${p.premios_json.length - 2}</span>` : ''}
-                                 </div>` : ''
-                             }
-                             <p class="text-sm text-stone-600 line-clamp-2 mb-2">${p.descripcion || 'Sin descripción comercial.'}</p>
-                        </div>
-
-                        <div class="flex justify-between items-center pt-4 border-t border-stone-100 mt-2">
-                            <button onclick="editProduct('${p.id}')" class="text-sky-700 hover:text-sky-900 text-sm font-bold flex items-center gap-1"><i class="fas fa-pen"></i> Editar</button>
-                            <button onclick="deleteProduct('${p.id}')" class="text-stone-400 hover:text-red-500 transition-colors"><i class="fas fa-trash"></i></button>
-                        </div>
-                    </div>
-                `}).join('');
-
-            } catch (error) {
-                console.error(error);
-                grid.innerHTML = '<p class="text-red-500 text-center col-span-full">Error de conexión.</p>';
-            }
-        }
-
-        window.openProductModal = (id = null) => {
-            const form = document.getElementById('product-form');
-            form.reset();
-            document.getElementById('prod-id').value = '';
-            document.getElementById('modal-title').innerText = 'Nuevo Producto';
-            
-            // Reset states
-            currentImages = [];
-            currentAwards = [];
-            currentAwardIcon = null;
-            document.getElementById('award-icon-preview').src = 'https://placehold.co/100?text=+';
-            document.getElementById('awards-section').classList.add('hidden');
-            
-            // Default published state: true
-            document.getElementById('is_published').checked = true;
-            
-            if (id) {
-                const p = productsCache.find(x => x.id === id);
-                if (p) {
-                    document.getElementById('prod-id').value = p.id;
-                    document.getElementById('nombre').value = p.nombre;
-                    document.getElementById('gtin').value = p.gtin;
-                    document.getElementById('is_formal').checked = !!p.is_formal_gtin;
-                    document.getElementById('descripcion').value = p.descripcion || '';
-                    document.getElementById('ingredientes').value = p.ingredientes || '';
-                    document.getElementById('peso').value = p.peso || '';
-                    
-                    // Set published state
-                    document.getElementById('is_published').checked = (p.is_published !== 0 && p.is_published !== false);
-                    
-                    // Trigger manual del evento change para cargar las opciones de premios correctas
-                    const tipoSelect = document.getElementById('tipo_producto');
-                    tipoSelect.value = p.tipo_producto || '';
-                    tipoSelect.dispatchEvent(new Event('change'));
-
-                    document.getElementById('receta_nutricional').value = p.receta_nutricional_id || '';
-
-                    // Cargar arrays
-                    currentImages = p.imagenes_json || [];
-                    currentAwards = p.premios_json || [];
-                    
-                    document.getElementById('modal-title').innerText = 'Editar Producto';
-                }
-            }
-            
-            renderImages();
-            renderAwards();
-            document.getElementById('product-modal').showModal();
-        };
-
-        window.editProduct = (id) => openProductModal(id);
-
-        window.deleteProduct = async (id) => {
-            if(!confirm("¿Eliminar este producto? Esto podría afectar lotes históricos vinculados.")) return;
-            try {
-                await api(`/api/productos/${id}`, { method: 'DELETE' });
-                loadProducts();
-            } catch(e) { alert(e.message); }
-        };
-
-        // Helper API
-        async function api(url, options = {}) {
-            options.credentials = 'include';
-            options.headers = { ...options.headers, 'Content-Type': 'application/json' };
-            const res = await fetch(url, options);
-            if (!res.ok) {
-                const err = await res.json().catch(() => ({}));
-                throw new Error(err.error || `Error ${res.status}`);
-            }
-            return res.json();
-        }
-
-        document.getElementById('product-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const id = document.getElementById('prod-id').value;
-            // CORRECCIÓN: Selección del botón por ID para evitar error de nulo
-            const submitBtn = document.getElementById('save-product-btn');
-            
-            submitBtn.disabled = true;
-            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
-
-            const data = {
-                nombre: document.getElementById('nombre').value,
-                gtin: document.getElementById('gtin').value,
-                is_formal_gtin: document.getElementById('is_formal').checked,
-                descripcion: document.getElementById('descripcion').value,
-                ingredientes: document.getElementById('ingredientes').value,
-                peso: document.getElementById('peso').value,
-                tipo_producto: document.getElementById('tipo_producto').value,
-                receta_nutricional_id: document.getElementById('receta_nutricional').value,
-                imagenes_json: currentImages,
-                premios_json: currentAwards,
-                // Capturar valor del checkbox publicado
-                is_published: document.getElementById('is_published').checked
-            };
-
-            try {
-                if (id) await api(`/api/productos/${id}`, { method: 'PUT', body: JSON.stringify(data) });
-                else await api('/api/productos', { method: 'POST', body: JSON.stringify(data) });
-                
-                document.getElementById('product-modal').close();
-                loadProducts();
-            } catch (err) { alert("Error: " + err.message); }
-            finally {
-                submitBtn.disabled = false;
-                submitBtn.innerText = 'Guardar Producto';
-            }
-        });
-    </script>
+    <script src="/js/productos-app.js"></script>
     <script src="/js/help-menu.js"></script>
 </body>
 </html>

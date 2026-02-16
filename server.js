@@ -14,6 +14,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 const suggestionsController = require('./src/controllers/admin-suggestionsController');
+const productosController = require('./src/controllers/productosController');
 
 // 2. MIDDLEWARES GLOBALES
 app.use(cors());
@@ -301,10 +302,10 @@ app.delete('/api/fincas/:id', authenticateApi, db.deleteFinca);
 app.post('/api/validate-deforestation', authenticateApi, db.validateDeforestation);
 
 // Productos, Procesadoras, Perfiles, Ruedas
-app.get('/api/productos', authenticateApi, db.getProductos);
-app.post('/api/productos', authenticateApi, db.createProducto);
-app.put('/api/productos/:id', authenticateApi, db.updateProducto);
-app.delete('/api/productos/:id', authenticateApi, db.deleteProducto);
+app.get('/api/productos', authenticateApi, productosController.getProductos);
+app.post('/api/productos', authenticateApi, productosController.createProducto);
+app.put('/api/productos/:id', authenticateApi, productosController.updateProducto);
+app.delete('/api/productos/:id', authenticateApi, productosController.deleteProducto);
 app.get('/api/procesadoras', authenticateApi, db.getProcesadoras);
 app.post('/api/procesadoras', authenticateApi, db.createProcesadora);
 app.put('/api/procesadoras/:id', authenticateApi, db.updateProcesadora);

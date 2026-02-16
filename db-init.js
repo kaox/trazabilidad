@@ -349,6 +349,8 @@ async function initializeDatabase() {
                     ingredientes TEXT,
                     premios_json TEXT,
                     receta_nutricional_id TEXT REFERENCES recetas_nutricionales(id) ON DELETE SET NULL, -- NUEVO CAMPO
+                    perfil_id INTEGER REFERENCES perfiles(id) ON DELETE SET NULL,
+                    rueda_id INTEGER REFERENCES ruedas_sabores(id) ON DELETE SET NULL,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     deleted_at TIMESTAMP, -- NUEVO CAMPO AUDITORÍA,
                     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,

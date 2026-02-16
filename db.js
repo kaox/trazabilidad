@@ -1946,104 +1946,6 @@ const getBlogPostById = async (req, res) => {
     }
 };
 
-const getProductos = async (req, res) => {
-    const userId = req.user.id;
-    try {
-        // FILTRO: Solo productos activos (deleted_at IS NULL)
-        const sql = `
-            SELECT p.*, r.nombre as receta_nutricional_nombre 
-            FROM productos p
-            LEFT JOIN recetas_nutricionales r ON p.receta_nutricional_id = r.id
-            WHERE p.user_id = ? AND p.deleted_at IS NULL
-            ORDER BY p.created_at DESC
-        `;
-        const rows = await all(sql, [userId]);
-        
-        const productos = rows.map(p => ({
-            ...p,
-            imagenes_json: safeJSONParse(p.imagenes_json || '[]'),
-            premios_json: safeJSONParse(p.premios_json || '[]')
-        }));
-        res.status(200).json(productos);
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-};
-
-const createProducto = async (req, res) => {
-    const userId = req.user.id;
-    // Agregamos is_published
-    const { nombre, descripcion, gtin, is_formal_gtin, imagenes_json, ingredientes, tipo_producto, peso, premios_json, receta_nutricional_id, is_published } = req.body;
-    const id = require('crypto').randomUUID();
-
-    let finalGtin = gtin;
-    if (!finalGtin) {
-        finalGtin = '999' + Math.floor(10000000000 + Math.random() * 90000000000); 
-    }
-    
-    // Sanitizar receta_id (si viene vacío, es null)
-    const recetaId = (receta_nutricional_id && receta_nutricional_id.trim() !== "") ? receta_nutricional_id : null;
-    // Por defecto true si no viene definido
-    const published = is_published !== undefined ? is_published : true;
-
-    try {
-        // Asegúrate de correr: ALTER TABLE productos ADD COLUMN is_published BOOLEAN DEFAULT TRUE;
-        await run(
-            'INSERT INTO productos (id, user_id, nombre, descripcion, gtin, is_formal_gtin, imagenes_json, ingredientes, tipo_producto, peso, premios_json, receta_nutricional_id, is_published) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-            [id, userId, nombre, descripcion, finalGtin, is_formal_gtin || false, JSON.stringify(imagenes_json || []), ingredientes, tipo_producto, peso, JSON.stringify(premios_json || []), recetaId, published]
-        );
-        res.status(201).json({ message: "Producto creado", id });
-    } catch (err) {
-        if (err.message.includes('UNIQUE')) return res.status(409).json({ error: "Ya existe un producto con este GTIN." });
-        res.status(500).json({ error: err.message });
-    }
-};
-
-const updateProducto = async (req, res) => {
-    const userId = req.user.id;
-    const { id } = req.params;
-    // Agregamos is_published
-    const { nombre, descripcion, gtin, imagenes_json, ingredientes, tipo_producto, peso, premios_json, receta_nutricional_id, is_published } = req.body;
-
-    const recetaId = (receta_nutricional_id && receta_nutricional_id.trim() !== "") ? receta_nutricional_id : null;
-
-    try {
-        await run(
-            'UPDATE productos SET nombre = ?, descripcion = ?, gtin = ?, imagenes_json = ?, ingredientes = ?, tipo_producto = ?, peso = ?, premios_json = ?, receta_nutricional_id = ?, is_published = ? WHERE id = ? AND user_id = ?',
-            [nombre, descripcion, gtin, JSON.stringify(imagenes_json || []), ingredientes, tipo_producto, peso, JSON.stringify(premios_json || []), recetaId, is_published, id, userId]
-        );
-        res.status(200).json({ message: "Producto actualizado" });
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-};
-
-const deleteProducto = async (req, res) => {
-    const userId = req.user.id;
-    const { id } = req.params;
-    
-    try {
-        // 1. Verificar uso en lotes de producción (batches)
-        const usageCheck = await get('SELECT id FROM batches WHERE producto_id = ? LIMIT 1', [id]);
-
-        if (usageCheck) {
-            // CASO A: Usado en trazabilidad -> Soft Delete
-            await run('UPDATE productos SET deleted_at = CURRENT_TIMESTAMP WHERE id = ? AND user_id = ?', [id, userId]);
-            res.status(200).json({ 
-                message: "El producto tiene historial de trazabilidad. Se ha archivado (eliminación lógica) para no romper registros antiguos.", 
-                type: 'soft' 
-            });
-        } else {
-            // CASO B: Sin uso -> Hard Delete
-            const result = await run('DELETE FROM productos WHERE id = ? AND user_id = ?', [id, userId]);
-            if (result.changes === 0) return res.status(404).json({ error: "Producto no encontrado." });
-            res.status(204).send();
-        }
-    } catch (err) { 
-        res.status(500).json({ error: err.message }); 
-    }
-};
-
 const validateDeforestation = async (req, res) => {
     const { coordinates } = req.body; // Espera un GeoJSON Polygon coordinates
 
@@ -2993,7 +2895,6 @@ module.exports = {
     createPaymentPreference, handlePaymentWebhook,
     getReviews, submitReview,
     getBlogPosts, getBlogPostBySlug, createBlogPost, updateBlogPost, deleteBlogPost, getAdminBlogPosts, getBlogPostById,
-    getProductos, createProducto, updateProducto, deleteProducto,
     validateDeforestation, getBatchByGtinAndLot,
     addIngredienteReceta, updateIngredientePeso, deleteIngrediente,
     getRecetasNutricionales, createRecetaNutricional, deleteRecetaNutricional, updateRecetaNutricional,

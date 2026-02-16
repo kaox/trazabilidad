@@ -182,10 +182,14 @@ CREATE TABLE IF NOT EXISTS productos (
     ingredientes TEXT,
     premios_json JSONB DEFAULT '[]',
     receta_nutricional_id TEXT, -- Vinculación con Módulo Nutrición
+    perfil_id INTEGER, -- Vinculación con Perfiles de Cata
+    rueda_id INTEGER, -- Vinculación con Ruedas de Sabores
     deleted_at TIMESTAMPTZ, -- Soft Delete
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (receta_nutricional_id) REFERENCES recetas_nutricionales(id) ON DELETE SET NULL,
+    FOREIGN KEY (perfil_id) REFERENCES perfiles(id) ON DELETE SET NULL,
+    FOREIGN KEY (rueda_id) REFERENCES ruedas_sabores(id) ON DELETE SET NULL,
     UNIQUE(user_id, gtin)
 );
 
