@@ -53,7 +53,7 @@ async function loadAwardsConfig() {
     } catch (error) { console.error("Error cargando premios:", error); }
 }
 
-// --- ACTUALIZACIÓN DE SELECTORES SENSORIALES (NUEVA FUNCIÓN) ---
+// --- ACTUALIZACIÓN DE SELECTORES SENSORIALES ---
 function updateSensorySelects(type, selectedPerfil = null, selectedRueda = null) {
     const perfilWrapper = document.getElementById('perfil-wrapper');
     const ruedaWrapper = document.getElementById('rueda-wrapper');
@@ -69,7 +69,6 @@ function updateSensorySelects(type, selectedPerfil = null, selectedRueda = null)
             : perfilesCache;
             
         if (filteredPerfiles.length === 0 && filterType) {
-            // MOSTRAR INVITACIÓN SI ESTÁ VACÍO
             perfilWrapper.innerHTML = `
                 <label class="block text-sm font-medium text-stone-700 mb-1">Perfil Sensorial (${type})</label>
                 <div class="p-4 border-2 border-dashed border-blue-200 rounded-xl text-center bg-blue-50/50 hover:bg-blue-50 transition group">
@@ -79,11 +78,9 @@ function updateSensorySelects(type, selectedPerfil = null, selectedRueda = null)
                         Crear Perfil <i class="fas fa-external-link-alt ml-1"></i>
                     </a>
                 </div>
-                <!-- Input oculto para que no falle el form data -->
                 <input type="hidden" name="perfil_id" id="perfil_id" value="">
             `;
         } else {
-            // MOSTRAR SELECT
             const options = filteredPerfiles.map(p => `<option value="${p.id}">${p.nombre}</option>`).join('');
             perfilWrapper.innerHTML = `
                 <label for="perfil_id" class="block text-sm font-medium text-stone-700 mb-1">Perfil Sensorial</label>
@@ -106,7 +103,6 @@ function updateSensorySelects(type, selectedPerfil = null, selectedRueda = null)
             : ruedasCache;
             
         if (filteredRuedas.length === 0 && filterType) {
-             // MOSTRAR INVITACIÓN
              ruedaWrapper.innerHTML = `
                 <label class="block text-sm font-medium text-stone-700 mb-1">Rueda de Sabor (${type})</label>
                 <div class="p-4 border-2 border-dashed border-purple-200 rounded-xl text-center bg-purple-50/50 hover:bg-purple-50 transition group">
@@ -119,7 +115,6 @@ function updateSensorySelects(type, selectedPerfil = null, selectedRueda = null)
                 <input type="hidden" name="rueda_id" id="rueda_id" value="">
              `;
         } else {
-             // MOSTRAR SELECT
              const options = filteredRuedas.map(r => `<option value="${r.id}">${r.nombre_rueda}</option>`).join('');
              ruedaWrapper.innerHTML = `
                 <label for="rueda_id" class="block text-sm font-medium text-stone-700 mb-1">Rueda de Sabor</label>
@@ -168,15 +163,13 @@ const compressImage = (file) => {
     });
 };
 
-// --- EVENTOS DE INTERFAZ ---
-
-// Cambio de tipo de producto -> Actualizar todo lo dependiente
+// --- EVENTOS ---
 document.getElementById('tipo_producto').addEventListener('change', function(e) {
     const type = e.target.value;
     const section = document.getElementById('awards-section');
     const select = document.getElementById('award-select');
     
-    // 1. Actualizar Selectores Sensoriales (Limpia selección anterior al cambiar tipo)
+    // 1. Actualizar Selectores Sensoriales
     updateSensorySelects(type);
 
     // 2. Lógica de Premios
@@ -251,7 +244,6 @@ window.removeImage = (index) => {
     renderImages();
 };
 
-// Manejo de Icono Premio
 document.getElementById('award-icon-input').addEventListener('change', async function(e) {
     const file = e.target.files[0];
     if (file) {
@@ -317,7 +309,6 @@ window.removeAward = (i) => {
 };
 
 // --- CRUD ---
-
 async function loadProducts() {
     const grid = document.getElementById('products-grid');
     try {
@@ -402,15 +393,18 @@ window.openProductModal = (id = null) => {
             document.getElementById('peso').value = p.peso || '';
             document.getElementById('is_published').checked = (p.is_published !== 0 && p.is_published !== false);
             
-            // Trigger change para actualizar opciones
+            // CORRECCIÓN: Orden de ejecución
+            // 1. Setear el tipo
             const tipoSelect = document.getElementById('tipo_producto');
             tipoSelect.value = p.tipo_producto || '';
             
-            // Actualizar opciones sensoriales y setear valores
-            updateSensorySelects(p.tipo_producto || '', p.perfil_id, p.rueda_id);
-
-            // Disparar evento para UI de premios
+            // 2. Disparar el evento de cambio para que la UI se ajuste (premios, etc)
+            // Esto llamará a updateSensorySelects(type) internamente y limpiará los selects
             tipoSelect.dispatchEvent(new Event('change'));
+
+            // 3. Volver a llamar a updateSensorySelects explícitamente con los IDs guardados
+            // para que se seleccionen las opciones correctas
+            updateSensorySelects(p.tipo_producto || '', p.perfil_id, p.rueda_id);
 
             document.getElementById('receta_nutricional').value = p.receta_nutricional_id || '';
 
@@ -455,7 +449,6 @@ document.getElementById('product-form').addEventListener('submit', async (e) => 
     submitBtn.disabled = true;
     submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
 
-    // Obtener valores de los selects dinámicos (pueden ser nulos si no se renderizaron)
     const pfInput = document.getElementById('perfil_id');
     const rsInput = document.getElementById('rueda_id');
 
@@ -469,7 +462,6 @@ document.getElementById('product-form').addEventListener('submit', async (e) => 
         tipo_producto: document.getElementById('tipo_producto').value,
         receta_nutricional_id: document.getElementById('receta_nutricional').value,
         
-        // Nuevos campos
         perfil_id: pfInput ? pfInput.value : null,
         rueda_id: rsInput ? rsInput.value : null,
 
