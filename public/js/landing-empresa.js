@@ -334,7 +334,7 @@ const app = {
                     <div class="lg:col-span-2">
                         <h3 class="text-2xl font-display font-bold text-stone-800 mb-6 flex items-center gap-2"><i class="fas fa-store text-amber-600"></i> Catálogo Disponible</h3>
                         <div class="space-y-6">
-                            ${this.renderProductList(products, user.celular)}
+                            ${this.renderProductList(products, user.celular, userId)}
                         </div>
                     </div>
                 </div>
@@ -351,7 +351,7 @@ const app = {
         } catch (e) { console.error(e); }
     },
 
-    renderProductList: function(products, phone) {
+    renderProductList: function(products, phone, userId) {
         if (!products || products.length === 0) {
             return `<div class="text-center py-12 bg-stone-50 rounded-xl border border-dashed border-stone-200"><p class="text-stone-500 italic">No hay productos disponibles.</p></div>`;
         }
@@ -363,15 +363,49 @@ const app = {
             const hasWheel = prod.notas_rueda && prod.notas_rueda.length > 0;
             const buyLink = phone ? `https://wa.me/${phone.replace(/\D/g,'')}?text=Hola, me interesa: ${encodeURIComponent(prod.nombre)}` : '#';
 
+            const cardClasses = hasTraceability 
+                ? 'border-2 border-emerald-500/30 shadow-xl hover:shadow-2xl ring-1 ring-emerald-50/50' 
+                : 'border border-stone-200 shadow-sm hover:shadow-lg';
+
+            const batchesHtml = hasTraceability ? prod.recent_batches.map(b => {
+                const batchDate = new Date(b.fecha_finalizacion || Date.now()).toLocaleDateString();
+                return `
+                <a href="/${b.id}" target="_blank" onclick="app.trackEvent('trace_view', '${userId}', '${prod.id}')" class="flex-shrink-0 w-64 bg-stone-50 border border-stone-200 rounded-xl p-3 hover:border-amber-400 hover:shadow-md transition group no-underline text-left">
+                    <div class="flex justify-between items-start mb-2"><span class="font-mono text-[10px] font-bold text-stone-500 bg-white px-2 py-1 rounded border border-stone-100">${b.id}</span><i class="fas fa-external-link-alt text-stone-300 group-hover:text-amber-500 text-xs"></i></div>
+                    <p class="text-xs text-stone-600 font-bold mb-0.5 truncate">${b.finca_origen || 'Origen Protegido'}</p>
+                    <div class="text-[10px] text-stone-400 flex justify-between mt-2 pt-2 border-t border-stone-200"><span>${batchDate}</span><span class="text-green-600 font-bold"><i class="fas fa-shield-alt"></i> Inmutable</span></div>
+                </a>`;
+            }).join('') : '';
+
             return `
-            <div class="bg-white rounded-2xl shadow-sm border border-stone-200 overflow-hidden hover:shadow-md transition duration-300 flex flex-col md:flex-row">
+            <div class="bg-white rounded-2xl ${cardClasses} shadow-sm border border-stone-200 overflow-hidden hover:shadow-md transition duration-300 flex flex-col md:flex-row">
                 <!-- Imagen -->
                 <div class="md:w-1/3 h-56 md:h-auto relative group overflow-hidden bg-stone-100 flex-shrink-0">
                     <img src="${prodImage}" class="w-full h-full object-cover transition duration-500 group-hover:scale-105">
-                    ${hasTraceability ? 
-                        `<div class="absolute bottom-2 left-2 bg-emerald-600/90 text-white text-[10px] font-bold px-2 py-1 rounded backdrop-blur uppercase tracking-wider flex items-center gap-1 shadow-lg">
-                            <i class="fas fa-check-circle"></i> Trazable
-                        </div>` : ''}
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-60"></div>
+                                            
+                        <div class="absolute top-3 left-3 bg-black/40 backdrop-blur-md text-white text-[10px] font-bold px-2 py-1 rounded border border-white/20 uppercase tracking-wider">
+                            ${prod.tipo_producto || 'Especialidad'}
+                        </div>
+
+                        ${hasTraceability ? 
+                            `<div class="absolute top-0 right-0 z-20">
+                                <div class="bg-gradient-to-r from-emerald-600 to-emerald-500 text-white text-[10px] font-black px-3 py-1.5 rounded-bl-2xl shadow-lg flex items-center gap-1.5">
+                                    <i class="fas fa-check-circle text-emerald-100 animate-pulse"></i>
+                                    <span class="tracking-wider">VERIFICADO</span>
+                                </div>
+                            </div>
+                            <div class="absolute bottom-3 left-3 right-3 z-20">
+                                <div class="bg-white/95 backdrop-blur-md p-2.5 rounded-xl shadow-xl border border-emerald-100 flex items-center gap-3">
+                                    <div class="bg-emerald-50 p-2 rounded-lg text-emerald-600">
+                                        <i class="fas fa-link text-lg"></i>
+                                    </div>
+                                    <div class="flex flex-col leading-none">
+                                        <span class="text-[9px] text-stone-400 uppercase tracking-widest font-bold">Insignia Digital</span>
+                                        <span class="font-bold text-stone-800 text-sm">Trazabilidad Blockchain</span>
+                                    </div>
+                                </div>
+                            </div>` : ''}
                 </div>
 
                 <!-- Contenido -->
@@ -442,13 +476,7 @@ const app = {
                     </div>
 
                     <!-- Footer Lotes (Opcional, si quieres mantenerlo) -->
-                    ${hasTraceability ? `
-                    <div class="bg-stone-50 px-6 py-2 border-t border-stone-100 flex items-center justify-between text-xs">
-                            <span class="font-bold text-stone-400 uppercase tracking-wider">Trazabilidad:</span>
-                            <a href="/${prod.recent_batches[0].id}" target="_blank" class="text-emerald-700 font-mono hover:underline flex items-center gap-1">
-                            Ver último lote <i class="fas fa-external-link-alt"></i>
-                            </a>
-                    </div>` : ''}
+                    ${batchesHtml ? `<div class="bg-emerald-50/50 p-4 border-t border-emerald-100/50 backdrop-blur-sm"><p class="text-[10px] font-bold text-stone-400 mb-3 uppercase tracking-widest"><i class="fas fa-history text-emerald-500 mr-1"></i> Lotes con Trazabilidad</p><div class="flex gap-3 overflow-x-auto pb-2 scrollbar-hide snap-x">${batchesHtml}</div></div>` : ''}
                 </div>
             </div>`;
         }).join('');
