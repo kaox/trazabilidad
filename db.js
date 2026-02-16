@@ -2768,7 +2768,7 @@ const getCompanyLandingData = async (req, res) => {
 
             // CORRECCIÓN: Traer TODOS los productos publicados, no solo los que tienen lotes
             const products = await all(`
-                SELECT id, nombre, descripcion, imagenes_json, tipo_producto, premios_json
+                SELECT id, nombre, descripcion, imagenes_json, tipo_producto, peso, premios_json
                 FROM productos 
                 WHERE CAST(user_id AS TEXT) = ? 
                   AND deleted_at IS NULL 

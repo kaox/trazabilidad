@@ -595,7 +595,10 @@ const app = {
                                         <div class="p-6 md:w-2/3 flex flex-col justify-between">
                             <div>
                                 <div class="flex justify-between items-start mb-2">
-                                    <h4 class="text-xl font-bold text-stone-900 leading-tight">${prod.nombre}</h4>
+                                    <div>
+                                        <h4 class="text-xl font-bold text-stone-900 leading-tight">${prod.nombre}</h4>
+                                        ${prod.peso ? `<p class="text-xs text-stone-500 font-bold mt-1 bg-stone-100 inline-block px-2 py-0.5 rounded">${prod.peso}</p>` : ''}
+                                    </div>
                                     
                                     <!-- SECCIÓN PREMIOS ACTUALIZADA -->
                                     <div class="flex flex-wrap gap-1.5 justify-end ml-2">
@@ -612,14 +615,14 @@ const app = {
                             </div>
                             <div class="flex items-center justify-between mt-4 pt-4 border-t border-stone-100">
                                                 ${hasTraceability ? 
-                                                    `<span class="text-xs font-bold text-emerald-600 uppercase tracking-widest flex items-center gap-1"><i class="fas fa-cubes"></i> ${prod.recent_batches.length} Lotes Disponibles</span>` : 
+                                                    `<span class="text-xs font-bold text-emerald-600 uppercase tracking-widest flex items-center gap-1"><i class="fas fa-cubes"></i> ${prod.recent_batches.length} Lotes Trazable</span>` : 
                                                     `<span class="text-xs font-bold text-stone-400 uppercase tracking-widest italic">Sin historial público</span>`
                                                 }
                                                 ${waBase !== '#' ? `<a href="${buyLink}" target="_blank" onclick="app.trackEvent('buy_click', '${userId}', '${prod.id}')" class="bg-stone-900 hover:bg-stone-800 text-white px-6 py-2.5 rounded-xl text-sm font-bold transition flex items-center gap-2 shadow-lg"><i class="fas fa-shopping-cart"></i> Comprar</a>` : ''}
                                             </div>
                                         </div>
                                     </div>
-                                    ${batchesHtml ? `<div class="bg-emerald-50/50 p-4 border-t border-emerald-100/50 backdrop-blur-sm"><p class="text-[10px] font-bold text-stone-400 mb-3 uppercase tracking-widest"><i class="fas fa-history text-emerald-500 mr-1"></i> Historial de Lotes</p><div class="flex gap-3 overflow-x-auto pb-2 scrollbar-hide snap-x">${batchesHtml}</div></div>` : ''}
+                                    ${batchesHtml ? `<div class="bg-emerald-50/50 p-4 border-t border-emerald-100/50 backdrop-blur-sm"><p class="text-[10px] font-bold text-stone-400 mb-3 uppercase tracking-widest"><i class="fas fa-history text-emerald-500 mr-1"></i> Lotes con Trazabilidad</p><div class="flex gap-3 overflow-x-auto pb-2 scrollbar-hide snap-x">${batchesHtml}</div></div>` : ''}
                                 </div>`;
                             }).join('')}
                         </div>
