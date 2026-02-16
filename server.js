@@ -189,7 +189,7 @@ app.get('/origen-unico', (req, res) => res.sendFile(path.join(__dirname, 'public
 
 app.get('/origen-unico/:slug', async (req, res) => {
     const slugParam = req.params.slug;
-    const filePath = path.join(__dirname, 'public', 'origen-unico.html');
+    const filePath = path.join(__dirname, 'public', 'landing-empresa.html');
 
     fs.readFile(filePath, 'utf8', async (err, htmlData) => {
         if (err) return res.status(500).send('Error interno');

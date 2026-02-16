@@ -16,7 +16,7 @@ const app = {
         // Inicializar listeners de navegación y slug
         window.addEventListener('popstate', (event) => {
             if (event.state && event.state.view === 'landing') {
-                this.loadLanding(event.state.userId, false);
+                this.loadLanding(event.state.userId);
             } else {
                 this.loadCompanies(false);
             }
@@ -186,28 +186,24 @@ const app = {
     },
     
     resolveSlugAndLoad: async function(slug) {
-        this.container.innerHTML = '<div class="flex justify-center py-20"><div class="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-900"></div></div>';
-        try {
-            const res = await fetch('/api/public/companies');
-            const companies = await res.json();
-            
-            let company = companies.find(c => slug.endsWith(`-${c.id}`));
+        // En este punto ya estamos en landing-empresa.html
+        // La lógica de routing ya no es necesaria aquí, solo cargar datos.
+        
+        // 1. Extraer ID del slug (nombre-ID)
+        let companyId = null;
+        const lastHyphenIndex = slug.lastIndexOf('-');
+        
+        if (lastHyphenIndex !== -1) {
+            companyId = slug.substring(lastHyphenIndex + 1);
+        } else {
+            // Fallback: Si no tiene ID en la URL, intentamos buscar por slug (lento)
+            // Pero loadLanding ahora espera un ID. Hacemos un fetch rápido para resolver nombre->id si es necesario
+            // O simplemente llamamos a loadLanding con el slug y esperamos que el backend lo maneje (pero getCompanyLandingData espera ID)
+            // Para simplificar: Si no hay ID, asumimos que el slug ES el ID o fallamos.
+            companyId = slug;
+        }
 
-            // 2. Fallback: Buscar por nombre convertido a slug (para URLs antiguas)
-            if (!company) {
-                company = companies.find(c => this.createSlug(c.name) === slug);
-            }
-
-            if (company) {
-                this.loadLanding(company.id, false);
-            } else {
-                this.container.innerHTML = `
-                    <div class="text-center py-20">
-                        <h2 class="text-2xl font-bold text-stone-700">Empresa no encontrada</h2>
-                        <button onclick="app.loadCompanies(true)" class="bg-amber-800 text-white px-6 py-2 rounded-lg mt-4">Ir al Directorio</button>
-                    </div>`;
-            }
-        } catch(e) { this.loadCompanies(false); }
+        this.loadLanding(companyId);
     },
 
     setFilter: function(filterType) {
@@ -226,31 +222,14 @@ const app = {
     },
 
     // --- NIVEL 1: LISTADO DE EMPRESAS (DISEÑO MEJORADO) ---
-    loadCompanies: async function(pushState = true) {
-        this.state.view = 'companies';
-        this.updateBreadcrumbs();
-
-        // Mostrar barra de filtros si estamos en vista de empresas
-        document.getElementById('filters-section')?.classList.remove('hidden');
-        
-        if (pushState) history.pushState({ view: 'companies' }, "Directorio", "/origen-unico");
-
-        // Si ya tenemos los datos, solo renderizamos
-        if (this.state.companies.length > 0) {
-            this.renderCompanies();
-            return;
-        }
-
+    loadCompanies: async function() {
+        if (this.state.companies.length > 0) { this.renderCompanies(); return; }
         this.container.innerHTML = '<div class="flex justify-center py-20"><div class="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-900"></div></div>';
-
         try {
             const res = await fetch('/api/public/companies');
             this.state.companies = await res.json();
             this.renderCompanies();
-        } catch (e) { 
-            console.error(e);
-            this.container.innerHTML = '<p class="text-center py-20 text-stone-400 font-medium">No se pudo cargar el directorio. Reintenta en unos momentos.</p>';
-        }
+        } catch (e) { this.container.innerHTML = '<p class="text-center py-20 text-stone-400">No se pudo cargar el directorio.</p>'; }
     },
 
     renderCompanies: function() {
@@ -269,21 +248,20 @@ const app = {
                 const isFinca = c.type === 'finca';
                 const typeColor = isFinca ? 'amber' : 'blue';
                 const locationStr = [c.distrito, c.provincia, c.departamento, c.pais].filter(Boolean).map(p => this.toTitleCase(p)).join(', ') || 'Ubicación por verificar';
+
+                const slug = this.createSlug(c.name) + '-' + c.id;
+                const linkUrl = `/origen-unico/${slug}`;
+
                 html += `
-                    <div onclick="app.loadLanding('${c.id}', true)" 
-                         class="group relative bg-white rounded-3xl border border-stone-200 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-500 cursor-pointer overflow-hidden flex flex-col h-full">
+                    <a href="${linkUrl}" class="group relative bg-white rounded-3xl border border-stone-200 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-500 cursor-pointer overflow-hidden flex flex-col h-full text-left no-underline">
                         <div class="h-2 w-full bg-${typeColor}-600/20 group-hover:bg-${typeColor}-600 transition-colors duration-500"></div>
                         <div class="p-6 flex flex-col h-full">
                             <div class="flex justify-between items-start mb-6">
                                 <img src="${logo}" class="w-20 h-20 rounded-2xl object-cover border-2 border-white shadow-md bg-white">
-                                ${c.status === 'pending' ? 
-                                    '<span class="text-[10px] font-bold text-amber-600 bg-amber-50 px-2 py-1 rounded-full border border-amber-100">Sugerido</span>' : 
-                                    '<span class="text-[10px] font-bold text-green-700 bg-green-50 px-2 py-1 rounded-full border border-green-100"><i class="fas fa-check-circle"></i> Verificado</span>'}
+                                ${c.status === 'pending' ? '<span class="text-[10px] font-bold text-amber-600 bg-amber-50 px-2 py-1 rounded-full border border-amber-100">Sugerido</span>' : '<span class="text-[10px] font-bold text-green-700 bg-green-50 px-2 py-1 rounded-full border border-green-100"><i class="fas fa-check-circle"></i> Verificado</span>'}
                             </div>
                             <div class="flex-grow">
-                                <span class="text-[10px] font-black uppercase tracking-[0.15em] text-${typeColor}-600 mb-1 block">
-                                    ${isFinca ? '<i class="fas fa-leaf mr-1"></i> Productor' : '<i class="fas fa-industry mr-1"></i> Procesadora'}
-                                </span>
+                                <span class="text-[10px] font-black uppercase tracking-[0.15em] text-${typeColor}-600 mb-1 block">${isFinca ? '<i class="fas fa-leaf mr-1"></i> Productor' : '<i class="fas fa-industry mr-1"></i> Procesadora'}</span>
                                 <h3 class="text-2xl font-display font-black text-stone-900 leading-tight group-hover:text-amber-900 transition-colors line-clamp-2">${c.name}</h3>
                                 <p class="text-sm text-stone-500 mt-2 flex items-center gap-2 font-medium"><i class="fas fa-map-marker-alt text-stone-300 group-hover:text-amber-600 transition-colors"></i> ${locationStr}</p>
                             </div>
@@ -292,7 +270,7 @@ const app = {
                                 <div class="text-sm font-bold text-amber-800 opacity-0 group-hover:opacity-100 transition-all transform -translate-x-2 group-hover:translate-x-0">Ver Perfil <i class="fas fa-arrow-right ml-1"></i></div>
                             </div>
                         </div>
-                    </div>`;
+                    </a>`;
             });
         } else {
             html += `<div class="col-span-full py-20 text-center">
@@ -314,12 +292,7 @@ const app = {
     },
 
     // --- NIVEL 2: LANDING PAGE DE EMPRESA ---
-    loadLanding: async function(userId, pushState = true) {
-        // ... (Mantener lógica de carga, estado, breadcrumbs, tracking) ...
-        this.state.view = 'landing';
-        this.updateBreadcrumbs();
-        document.getElementById('filters-section')?.classList.add('hidden');
-        this.container.innerHTML = '<div class="flex justify-center py-20"><div class="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-900"></div></div>';
+    loadLanding: async function(userId) {
 
         this.trackEvent('landing_view', userId);
 
@@ -334,13 +307,8 @@ const app = {
 
             const { user, entity, products } = data;
             
-            this.state.selectedCompany = { name: user.empresa };
-            this.updateBreadcrumbs();
-
-            if (pushState) {
-                const slug = this.createSlug(user.empresa) + '-' + user.id;
-                history.pushState({ view: 'landing', userId: userId }, user.empresa, `/origen-unico/${slug}`);
-            }
+            const compSpan = document.getElementById('breadcrumb-company');
+            if(compSpan) compSpan.textContent = user.empresa || 'Empresa';
 
             // Datos de la empresa
             const isSuggested = user.is_suggested;
