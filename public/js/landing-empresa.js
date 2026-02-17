@@ -418,7 +418,7 @@ const app = {
                             <div>
                                 <h4 class="text-xl font-bold text-stone-900 leading-tight">${prod.nombre}</h4>
                                 <p class="text-xs text-stone-500 font-bold mt-1 bg-stone-50 inline-block px-2 py-0.5 rounded border border-stone-100">
-                                    ${prod.tipo_producto || 'Producto'} ${prod.peso ? ` • ${prod.peso}` : ''}
+                                    ${prod.peso}
                                 </p>
                             </div>
                             <div class="flex flex-wrap gap-1.5 justify-end ml-2">
