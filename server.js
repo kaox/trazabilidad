@@ -16,6 +16,80 @@ const PORT = process.env.PORT || 3000;
 const suggestionsController = require('./src/controllers/admin-suggestionsController');
 const productosController = require('./src/controllers/productosController');
 
+const RESERVED_SUBDOMAINS = ['www', 'app', 'api', 'admin', 'localhost', 'rurulab', 'mail', 'smtp'];
+
+app.use(async (req, res, next) => {
+    const host = req.headers.host; // ej: pepito.rurulab.com o pepito.localhost:3000
+    
+    let subdomain = null;
+    
+    // Lógica para extraer subdominio (Prod y Local)
+    if (host.includes('.rurulab.com')) {
+        const parts = host.split('.');
+        if (parts.length > 2) subdomain = parts[0];
+    } else if (host.endsWith('localhost:3000') && host !== 'localhost:3000') {
+        // Para probar en local: editar /etc/hosts y entrar a pepito.localhost:3000
+        subdomain = host.split('.')[0];
+    }
+
+    // Si no hay subdominio o es reservado, continuar flujo normal (ir al Home/App)
+    if (!subdomain || RESERVED_SUBDOMAINS.includes(subdomain)) {
+        return next();
+    }
+
+    // --- ES UN SUBDOMINIO DE CLIENTE ---
+    try {
+        console.log(`🔍 Detectado subdominio: ${subdomain}`);
+        
+        // Obtener todas las empresas (Idealmente crear una función db.findCompanyBySlug para optimizar)
+        const companies = await db.getPublicCompaniesDataInternal();
+        
+        // Buscar empresa cuyo slug coincida con el subdominio
+        const company = companies.find(c => createSlug(c.empresa) === subdomain);
+
+        if (!company) {
+            console.log(`❌ Empresa no encontrada para subdominio: ${subdomain}`);
+            return res.redirect('https://rurulab.com'); // O mostrar 404
+        }
+
+        console.log(`✅ Sirviendo landing para: ${company.empresa}`);
+
+        // Leer el archivo HTML de la landing
+        const filePath = path.join(__dirname, 'public', 'landing-empresa.html');
+        
+        fs.readFile(filePath, 'utf8', async (err, htmlData) => {
+            if (err) return next();
+
+            // Metadatos SEO personalizados
+            const title = `${company.empresa} | Sitio Oficial`;
+            const description = `Bienvenido al sitio oficial de ${company.empresa}. Conoce nuestra historia, productos y trazabilidad.`;
+            
+            // Inyección de Script de Configuración Global
+            // Esto le dice al JS del frontend qué ID cargar sin mirar la URL
+            const injectionScript = `
+                <script>
+                    window.IS_SUBDOMAIN = true;
+                    window.CURRENT_COMPANY_ID = "${company.id}";
+                </script>
+            `;
+
+            // Reemplazar en el HTML
+            let injectedHtml = htmlData
+                .replace('<head>', `<head>${injectionScript}`) // Inyectar script ID
+                .replace('<title>Detalle de Empresa - Ruru Lab</title>', `<title>${title}</title>`)
+                .replace(/content="Descubre el origen y trazabilidad."/g, `content="${description}"`)
+                .replace(/content="RuruLab - Trazabilidad y Pasaporte Digital para Café y Cacao"/g, `content="${title}"`);
+
+            // Servir el HTML modificado
+            res.send(injectedHtml);
+        });
+
+    } catch (error) {
+        console.error("Error procesando subdominio:", error);
+        next(); // En caso de error crítico, dejar pasar al flujo normal
+    }
+});
+
 // 2. MIDDLEWARES GLOBALES
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));

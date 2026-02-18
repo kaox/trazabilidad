@@ -27,14 +27,29 @@ const app = {
             if (e.key === 'Escape') this.closeGallery();
         });
 
-        // Extraer Slug de la URL
-        const pathSegments = window.location.pathname.split('/').filter(Boolean);
-        // URL esperada: /origen-unico/slug-id
-        if (pathSegments.length > 1) {
-            const slug = pathSegments[pathSegments.length - 1];
-            await this.resolveSlugAndLoad(slug);
+        // CASO A: Subdominio (ej: finca-esperanza.rurulab.com)
+        if (window.IS_SUBDOMAIN && window.CURRENT_COMPANY_ID) {
+            console.log("🚀 Modo Subdominio Activo. ID:", window.CURRENT_COMPANY_ID);
+            
+            // Ocultar la navegación de "Volver al directorio" para que parezca web propia
+            if(this.breadcrumbs) this.breadcrumbs.style.display = 'none';
+            const backBtn = document.querySelector('nav a[href="/origen-unico"]');
+            if(backBtn) backBtn.style.display = 'none'; // Ocultar botón volver del header
+
+            // Cargar datos directamente
+            await this.loadLanding(window.CURRENT_COMPANY_ID);
         } else {
-            this.container.innerHTML = '<p class="text-center py-10">URL inválida.</p>';
+            const pathSegments = window.location.pathname.split('/').filter(Boolean);
+            if (pathSegments.length > 1) {
+                const slug = pathSegments[pathSegments.length - 1];
+                await this.resolveSlugAndLoad(slug);
+            } else {
+                this.container.innerHTML = '<p class="text-center py-10">URL inválida.</p>';
+            }
+        }
+        
+        if (typeof ChartDataLabels !== 'undefined' && typeof Chart !== 'undefined') {
+            Chart.register(ChartDataLabels);
         }
     },
 
