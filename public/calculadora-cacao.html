@@ -91,57 +91,7 @@
     </style>
 </head>
 <body class="text-[#4E342E] antialiased bg-[#F5F5F5]">
-    <header class="bg-white/80 backdrop-blur-sm sticky top-0 z-50 border-b border-stone-200">
-        <div class="container mx-auto px-6 py-4 flex justify-between items-center">
-            <a href="/" class="text-2xl font-bold font-display text-amber-900">Rurulab</a>
-            <nav class="hidden md:flex space-x-8 items-center">
-                <a href="/blog.html" class="hover:text-amber-800 transition">Blog</a>
-                <div class="relative" data-menu>
-                    <button class="flex items-center gap-1 font-semibold text-amber-800 transition">
-                        <span>Herramientas</span>
-                        <i class="fas fa-chevron-down text-xs"></i>
-                    </button>
-                    <div class="absolute left-0 mt-2 w-56 bg-white rounded-md shadow-lg z-50 hidden" data-menu-content>
-                        <div class="py-1">
-                            <span class="block px-4 py-2 text-xs text-stone-400 uppercase">Café</span>
-                            <a href="/calculadora-cafe.html" class="block px-4 py-2 text-sm text-stone-700 hover:bg-stone-100">Calculadora de Catación SCA</a>
-                        </div>
-                        <div class="py-1 border-t border-stone-100">
-                            <span class="block px-4 py-2 text-xs text-stone-400 uppercase">Cacao</span>
-                            <a href="/calculadora-cacao.html" class="block px-4 py-2 text-sm text-stone-700 bg-stone-100 font-medium">Evaluador Sensorial CoEx</a>
-                        </div>
-                    </div>
-                </div>
-                <a href="/qr" class="hover:text-amber-800 transition">Descubrir Lote</a>
-                <a href="/origen-unico" class="hover:text-amber-800 transition">Empresas Origen Unico</a>
-                <a href="/pricing-public.html" class="hover:text-amber-800 transition">Planes</a>
-                <a href="/login.html" class="bg-amber-800 text-white font-bold py-2 px-5 rounded-lg hover:bg-amber-900 transition">Pruébalo gratis</a>
-            </nav>
-            <div class="md:hidden">
-                <div class="md:hidden">
-                    <button id="menu-button" class="focus:outline-none">
-                        <i class="fas fa-bars fa-lg"></i>
-                    </button>
-                    <button id="close-menu-button" class="hidden focus:outline-none">
-                        <i class="fas fa-times fa-2x"></i>
-                    </button>
-                </div>
-            </div>
-        </div>
-    </header>
-
-    <!-- Menú Móvil (para copiar) -->
-    <div id="mobile-menu" class="fixed top-0 left-0 w-full h-full bg-stone-900/95 backdrop-blur-sm z-40 transform -translate-x-full md:hidden">
-        <nav class="flex flex-col items-center justify-center h-full -mt-16 space-y-8 text-xl">
-            <a href="/blog.html" class="text-white hover:text-amber-300 transition">Blog</a>
-            <a href="/calculadora-cafe.html" class="text-white hover:text-amber-300 transition">Café - Calculadora de Catación SCA</a>
-            <a href="/calculadora-cacao.html" class="text-white hover:text-amber-300 transition">Cacao - Evaluador Sensorial CoEx</a>
-            <a href="/qr" class="text-white hover:text-amber-300 transition">Descubrir Lote</a>
-            <a href="/origen-unico" class="text-white hover:text-amber-300 transition">Empresas Origen Unico</a>
-            <a href="/pricing-public.html" class="text-white hover:text-amber-300 transition">Planes</a>
-            <a href="/login.html" class="bg-amber-400 text-amber-900 font-bold py-3 px-8 rounded-lg">Pruébalo gratis</a>
-        </nav>
-    </div>
+    <div id="public-nav-placeholder"></div>
 
     <main class="container mx-auto p-4 md:p-8">
         <header class="text-center mb-10 mt-4 max-w-3xl mx-auto">
@@ -265,49 +215,6 @@
     </footer>
 
     <script src="/js/calculadora-cacao.js"></script>
-    <script>
-
-        document.addEventListener('DOMContentLoaded', () => {
-            const menuButton = document.getElementById('menu-button');
-            const closeMenuButton = document.getElementById('close-menu-button');
-            const mobileMenu = document.getElementById('mobile-menu');
-            const menuLinks = mobileMenu.querySelectorAll('a');
-
-            function openMenu() {
-                mobileMenu.classList.remove('-translate-x-full');
-                closeMenuButton.classList.remove('hidden');
-                menuButton.classList.add('hidden');
-            }
-
-            function closeMenu() {
-                mobileMenu.classList.add('-translate-x-full');
-                closeMenuButton.classList.add('hidden');
-                menuButton.classList.remove('hidden');
-            }
-
-            menuButton.addEventListener('click', openMenu);
-            closeMenuButton.addEventListener('click', closeMenu);
-            menuLinks.forEach(link => {
-                link.addEventListener('click', closeMenu);
-            });
-        });
-
-        // Script para menú desplegable de escritorio
-        document.addEventListener('DOMContentLoaded', () => {
-            document.querySelectorAll('[data-menu]').forEach(item => {
-                const button = item.querySelector('button');
-                const content = item.querySelector('[data-menu-content]');
-                button.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    content.classList.toggle('hidden');
-                });
-            });
-            document.addEventListener('click', () => {
-                 document.querySelectorAll('[data-menu-content]').forEach(content => {
-                    content.classList.add('hidden');
-                 });
-            });
-        });
-    </script>
+    <script src="/js/public-nav-loader.js"></script>
 </body>
 </html>

@@ -175,4 +175,4 @@ function setupInteractions() {
             panel.classList.add('scale-0', 'opacity-0');
         }
     });
-}
+}d
