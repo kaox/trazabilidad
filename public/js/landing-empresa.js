@@ -72,17 +72,21 @@ const app = {
 
     // --- CARGA DE DATOS ---
     resolveSlugAndLoad: async function(slug) {
-        // 1. Extraer ID del slug (nombre-ID)
         let companyId = null;
-        const lastHyphenIndex = slug.lastIndexOf('-');
-        
-        if (lastHyphenIndex !== -1) {
-            companyId = slug.substring(lastHyphenIndex + 1);
-        } else {
-            // Fallback: Si no tiene ID en la URL, asumimos que el slug ES el ID o fallamos
-            companyId = slug;
-        }
 
+        const sugIndex = slug.lastIndexOf('-SUG-');
+        
+        if (sugIndex !== -1) {
+            companyId = slug.substring(sugIndex + 1);
+        } else {
+            const lastHyphenIndex = slug.lastIndexOf('-');
+            if (lastHyphenIndex !== -1) {
+                companyId = slug.substring(lastHyphenIndex + 1);
+            } else {
+                companyId = slug;
+            }
+        }
+        
         this.loadLanding(companyId);
     },
 
