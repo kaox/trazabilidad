@@ -100,7 +100,6 @@ const app = {
 
                 const slug = this.createSlug(c.name) + '-' + c.id;
                 const linkUrl = `/origen-unico/${slug}`;
-                console.log(linkUrl);
                 html += `
                     <a href="${linkUrl}" class="group relative bg-white rounded-3xl border border-stone-200 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-500 cursor-pointer overflow-hidden flex flex-col h-full text-left no-underline">
                         <div class="h-2 w-full bg-${typeColor}-600/20 group-hover:bg-${typeColor}-600 transition-colors duration-500"></div>
