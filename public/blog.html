@@ -23,20 +23,7 @@
 </head>
 <body class="text-stone-800 antialiased flex flex-col min-h-screen">
 
-    <!-- Header (Copia idéntica del index.html para consistencia) -->
-    <header class="bg-white/80 backdrop-blur-sm sticky top-0 z-50 border-b border-stone-200">
-        <div class="container mx-auto px-6 py-4 flex justify-between items-center">
-            <a href="/" class="text-2xl font-bold font-display text-amber-900"><i class="fa-solid fa-fingerprint mr-2"></i>Ruru Lab</a>
-            <nav class="hidden md:flex space-x-8 items-center">
-                <a href="/" class="hover:text-amber-800 transition">Inicio</a>
-                <a href="/qr" class="hover:text-amber-800 transition">Descubrir Lote</a>
-                <a href="/blog.html" class="text-amber-800 font-bold">Blog</a>
-                <a href="/login.html" class="bg-amber-800 text-white font-bold py-2 px-5 rounded-lg hover:bg-amber-900 transition">Acceso Clientes</a>
-            </nav>
-            <!-- Botón Móvil -->
-            <button class="md:hidden text-amber-900"><i class="fas fa-bars fa-lg"></i></button>
-        </div>
-    </header>
+    <script src="/js/public-nav-loader.js"></script>
 
     <!-- Hero Blog -->
     <section class="hero-pattern text-white py-16 md:py-24">
@@ -74,5 +61,6 @@
 
     <!-- Script Lógica Blog -->
     <script src="/js/blog.js"></script>
+    <script src="/js/public-nav-loader.js"></script>
 </body>
 </html>
