@@ -57,6 +57,26 @@
         "nombre": "Cup of Excellence (Taza de Excelencia)",
         "descripcion": "El premio más prestigioso para cafés de alta calidad. Identifica los mejores cafés producidos en un país cada año.",
         "logo_url": "/images/premios-coe.jpg"
+      },
+      {
+        "nombre": "Paris Gourmet AVPA - Bronce",
+        "descripcion": "Reconocimiento de bronce en la competencia del Salon du Chocolat de Paris",
+        "logo_url": "/images/avpa-bronce.avif"
+      },
+      {
+        "nombre": "Paris Gourmet AVPA - Plata",
+        "descripcion": "Reconocimiento de plata en la competencia del Salon du Chocolat de Paris",
+        "logo_url": "/images/avpa-plata.avif"
+      },
+      {
+        "nombre": "Paris Gourmet AVPA - Oro",
+        "descripcion": "Reconocimiento de oro en la competencia del Salon du Chocolat de Paris",
+        "logo_url": "/images/avpa-oro.avif"
+      },
+      {
+        "nombre": "SCA Coffee Awards",
+        "descripcion": "Premios otorgados por la Specialty Coffee Association para reconocer la excelencia en la producción de café.",
+        "logo_url": "/images/premios-sca.jpg"
       }
     ],
     "miel": [
