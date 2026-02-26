@@ -322,6 +322,49 @@ app.get('/origen-unico/:slug', async (req, res) => {
     });
 });
 
+// --- SITEMAP DINÁMICO PARA ORIGEN ÚNICO ---
+app.get('/sitemap-origen-unico.xml', async (req, res) => {
+    try {
+        // 1. Obtener todas las empresas (Verificadas y Sugeridas)
+        // Reutilizamos la función que ya creaste en db.js
+        const companies = await db.getPublicCompaniesDataInternal();
+
+        // 2. Configurar el inicio del XML
+        let sitemap = '<?xml version="1.0" encoding="UTF-8"?>\n';
+        sitemap += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n';
+
+        // 3. Añadir la página principal del directorio
+        sitemap += '  <url>\n';
+        sitemap += '    <loc>https://rurulab.com/origen-unico</loc>\n';
+        sitemap += '    <changefreq>daily</changefreq>\n';
+        sitemap += '    <priority>0.9</priority>\n';
+        sitemap += '  </url>\n';
+
+        // 4. Generar URL por cada empresa
+        companies.forEach(company => {
+            // Usamos la misma lógica de slug que usas en origen-unico-app.js
+            const slug = createSlug(company.empresa) + '-' + company.id;
+            const url = `https://rurulab.com/origen-unico/${slug}`;
+            
+            sitemap += '  <url>\n';
+            sitemap += `    <loc>${url}</loc>\n`;
+            sitemap += '    <changefreq>weekly</changefreq>\n';
+            sitemap += '    <priority>0.8</priority>\n';
+            sitemap += '  </url>\n';
+        });
+
+        sitemap += '</urlset>';
+
+        // 5. Enviar respuesta con el tipo de contenido correcto
+        res.header('Content-Type', 'application/xml');
+        res.send(sitemap);
+
+    } catch (error) {
+        console.error("Error generando sitemap dinámico:", error);
+        res.status(500).end();
+    }
+});
+
 app.get('/api/public/companies', db.getPublicCompaniesWithImmutable);
 app.get('/api/public/companies/:userId/products', db.getPublicProductsWithImmutable);
 app.get('/api/public/products/:productId/batches', db.getPublicBatchesForProduct);
