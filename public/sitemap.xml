@@ -8,14 +8,16 @@
     <priority>1.0</priority>
   </url>
 
+  <url>
+    <loc>https://rurulab.com/origen-unico/</loc>
+    <lastmod>2025-02-15</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+  </url>
+
   <!-- Páginas de Valor (Marketing) -->
   <url>
     <loc>https://rurulab.com/use-case.html</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://rurulab.com/pricing.html</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
