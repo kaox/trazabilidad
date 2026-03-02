@@ -120,7 +120,6 @@ const app = {
             }
 
             const { user, entity, products } = data;
-            console.log("Datos recibidos para landing:", { user, entity, products });
             const compSpan = document.getElementById('breadcrumb-company');
             if(compSpan) compSpan.textContent = user.empresa || 'Empresa';
 
@@ -145,7 +144,7 @@ const app = {
             }else{
                 coverImage = entity.imagenes[0];
             }
-            
+
             if (entity.imagenes && entity.imagenes.length > 0) {
                 entity.imagenes.forEach(img => mediaItems.push({ type: 'image', src: img }));
             } else {
