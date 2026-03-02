@@ -93,7 +93,7 @@ const app = {
         
         if (filtered.length > 0) {
             filtered.forEach(c => {
-                const logo = c.logo || `https://ui-avatars.com/api/?name=${encodeURIComponent(c.name)}&background=f5f5f4&color=78350f&size=128`;
+                const logoSrc = c.logo || c.logo_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(c.name)}&background=f5f5f4&color=78350f&size=128`;
                 const isFinca = c.type === 'finca';
                 const typeColor = isFinca ? 'amber' : 'blue';
                 const locationStr = [c.distrito, c.provincia, c.departamento, c.pais].filter(Boolean).map(p => this.toTitleCase(p)).join(', ') || 'Ubicación por verificar';
@@ -105,7 +105,7 @@ const app = {
                         <div class="h-2 w-full bg-${typeColor}-600/20 group-hover:bg-${typeColor}-600 transition-colors duration-500"></div>
                         <div class="p-6 flex flex-col h-full">
                             <div class="flex justify-between items-start mb-6">
-                                <img src="${logo}" class="w-20 h-20 rounded-2xl object-cover border-2 border-white shadow-md bg-white">
+                                <img src="${logoSrc}" class="w-20 h-20 rounded-2xl object-cover border-2 border-white shadow-md bg-white">
                                 ${c.status === 'pending' ? '<span class="text-[10px] font-bold text-amber-600 bg-amber-50 px-2 py-1 rounded-full border border-amber-100">Sugerido</span>' : '<span class="text-[10px] font-bold text-green-700 bg-green-50 px-2 py-1 rounded-full border border-green-100"><i class="fas fa-check-circle"></i> Verificado</span>'}
                             </div>
                             <div class="flex-grow">

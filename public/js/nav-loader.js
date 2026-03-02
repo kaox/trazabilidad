@@ -147,6 +147,7 @@ function initializeNav() {
     if (origenBtn && (
         currentPage.startsWith('/app/fincas') || 
         currentPage.startsWith('/app/procesadoras') || 
+        currentPage.startsWith('/app/perfil-comercial') ||
         currentPage.startsWith('/app/admin')
     )) {
         origenBtn.classList.add('bg-amber-800');

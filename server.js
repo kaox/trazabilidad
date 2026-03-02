@@ -15,6 +15,7 @@ const PORT = process.env.PORT || 3000;
 
 const suggestionsController = require('./src/controllers/admin-suggestionsController');
 const productosController = require('./src/controllers/productosController');
+const companyProfileController = require('./src/controllers/companyProfileController');
 
 const RESERVED_SUBDOMAINS = ['www', 'app', 'api', 'admin', 'localhost', 'rurulab', 'mail', 'smtp'];
 
@@ -380,6 +381,7 @@ app.get('/app/procesadoras', authenticatePage, (req, res) => res.sendFile(path.j
 app.get('/app/plantillas', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'plantillas.html')));
 app.get('/app/ruedas-sabores', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'ruedas-sabores.html')));
 app.get('/app/cuenta', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'cuenta.html')));
+app.get('/app/perfil-comercial', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'perfil-comercial.html')));
 app.get('/app/maridaje', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'maridaje.html')));
 app.get('/app/blends', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'blends.html')));
 app.get('/app/recetas-chocolate', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'formulador.html')));
@@ -466,6 +468,8 @@ app.put('/api/user/profile', authenticateApi, db.updateUserProfile);
 app.put('/api/user/password', authenticateApi, db.updateUserPassword);
 app.get('/api/config/currencies', authenticateApi, db.getCurrencies);
 app.get('/api/config/units', authenticateApi, db.getUnits);
+app.get('/api/user/company-profile', authenticateApi, companyProfileController.getCompanyProfile);
+app.put('/api/user/company-profile', authenticateApi, companyProfileController.upsertCompanyProfile);
 
 // 10. RUTAS PREMIUM / ADMIN / PROXY
 // Dashboard & Analytics

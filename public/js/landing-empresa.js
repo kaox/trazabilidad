@@ -120,27 +120,29 @@ const app = {
             }
 
             const { user, entity, products } = data;
-            
+            console.log("Datos recibidos para landing:", { user, entity, products });
             const compSpan = document.getElementById('breadcrumb-company');
             if(compSpan) compSpan.textContent = user.empresa || 'Empresa';
 
             // Datos de la empresa
             const isSuggested = user.is_suggested;
-            const isFinca = user.company_type === 'finca';
-            const entityName = isFinca ? (entity.nombre_finca || user.empresa) : (entity.nombre_comercial || user.empresa);
+            const isFinca = user.type === 'finca';
+            const entityName = isFinca ? (entity.nombre_finca || user.name) : (entity.nombre_comercial || user.name);
             const typeLabel = isFinca ? 'Finca de Origen' : 'Planta de Procesamiento';
             const locationStr = [entity.distrito, entity.provincia, entity.departamento, entity.pais].filter(Boolean).map(p => this.toTitleCase(p)).join(', ') || 'Ubicación no registrada';
-            const historyText = entity.historia || user.historia_empresa || 'Comprometidos con la calidad y la transparencia en cada grano.';
+            const historyText = user.history || entity.historia || 'Comprometidos con la calidad y la transparencia en cada grano.';
             
-            const instagram = user.social_instagram || entity.social_instagram;
-            const facebook = user.social_facebook || entity.social_facebook;
+            const instagram = user.instagram || entity.social_instagram;
+            const facebook = user.facebook || entity.social_facebook;
 
             let coverImage = 'https://images.unsplash.com/photo-1511537632536-b7a4896848a5?auto=format&fit=crop&q=80&w=1000';
             
             const mediaItems = [];
             
             // 1. Agregar imágenes
-            if (entity.imagenes && entity.imagenes.length > 0) {
+            if (user.cover && user.cover !== '') {
+                coverImage = user.cover;
+            } else if (entity.imagenes && entity.imagenes.length > 0) {
                 coverImage = entity.imagenes[0];
                 entity.imagenes.forEach(img => mediaItems.push({ type: 'image', src: img }));
             } else {
@@ -268,7 +270,7 @@ const app = {
                    <img src="${coverImage}" class="w-full h-full object-cover transform group-hover:scale-105 transition duration-700">
                    <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent"></div>
                    <div class="absolute bottom-0 left-0 w-full p-6 md:p-8 flex items-end gap-6">
-                       <img src="${user.company_logo || 'https://placehold.co/100x100?text=Logo'}" class="w-24 h-24 md:w-32 md:h-32 rounded-xl border-4 border-white shadow-lg bg-white object-contain">
+                       <img src="${user.logo || 'https://placehold.co/100x100?text=Logo'}" class="w-24 h-24 md:w-32 md:h-32 rounded-xl border-4 border-white shadow-lg bg-white object-contain">
                        <div class="text-white mb-2">
                            <span class="bg-amber-500 text-amber-900 text-xs font-bold px-2 py-1 rounded uppercase tracking-wider mb-2 inline-block shadow-sm">${typeLabel}</span>
                            <h1 class="text-3xl md:text-5xl font-display font-bold leading-tight">${entityName}</h1>

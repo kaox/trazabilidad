@@ -2309,23 +2309,23 @@ const getPublicCompaniesWithImmutable = async (req, res) => {
         const sqlVerified = `
             SELECT 
                 CAST(u.id AS TEXT) as id, 
-                u.empresa as name, 
-                u.company_logo as logo, 
-                u.company_type as type,
+                cp.name as name, 
+                cp.logo_url as logo, 
+                cp.company_type as type,
                 'verified' as status,
                 COUNT(DISTINCT tr.id) as lotes_count,
-                -- Recuperar ubicación según el tipo de empresa
                 COALESCE(f.pais, p.pais) as pais,
                 COALESCE(f.departamento, p.departamento) as departamento,
                 COALESCE(f.provincia, p.provincia) as provincia
             FROM users u
-            LEFT JOIN fincas f ON u.company_type = 'finca' AND u.company_id = f.id
-            LEFT JOIN procesadoras p ON u.company_type = 'procesadora' AND u.company_id = p.id
+            JOIN company_profiles cp ON u.id = cp.user_id
+            LEFT JOIN fincas f ON cp.company_type = 'finca' AND cp.company_id = f.id
+            LEFT JOIN procesadoras p ON cp.company_type = 'procesadora' AND cp.company_id = p.id
             LEFT JOIN traceability_registry tr ON CAST(u.id AS TEXT) = CAST(tr.user_id AS TEXT)
                 AND tr.blockchain_hash IS NOT NULL 
                 AND tr.blockchain_hash != ''
-            WHERE u.empresa IS NOT NULL AND u.empresa != ''
-            GROUP BY u.id, u.empresa, u.company_logo, u.company_type, f.pais, f.departamento, f.provincia, p.pais, p.departamento, p.provincia
+            WHERE cp.is_published = 1 
+            GROUP BY u.id, cp.name, cp.logo_url, cp.company_type, f.pais, f.departamento, f.provincia, p.pais, p.departamento, p.provincia
         `;
 
         // B. Empresas Sugeridas (Pendientes)
@@ -2619,9 +2619,9 @@ const getCompanyLandingData = async (req, res) => {
 
             const mockUser = {
                 id: suggestion.id,
-                empresa: suggestion.name,
-                company_logo: suggestion.logo,
-                company_type: suggestion.type,
+                name: suggestion.name,
+                logo: suggestion.logo,
+                type: suggestion.type,
                 is_suggested: true
             };
 
@@ -2648,16 +2648,39 @@ const getCompanyLandingData = async (req, res) => {
             });
 
         } else {
-            // --- Lógica para Empresa Verificada ---
-            const user = await get('SELECT id, empresa, company_logo, celular, correo, company_type, company_id, social_instagram, social_facebook FROM users WHERE id = ?', [userId]);
-            if(!user) return res.status(404).json({error: "Empresa no encontrada"});
+            // --- Lógica para Empresa Verificada (AHORA USANDO company_profiles) ---
+    
+            // 1. Buscamos el perfil comercial asociado a este usuario
+            const profile = await get('SELECT * FROM company_profiles WHERE user_id = ?', [userId]);
+
+            // Fallback: Si no tiene perfil comercial creado aún, usamos datos básicos del usuario
+            const user = await get('SELECT id, empresa, company_type, company_id FROM users WHERE id = ?', [userId]);
+            
+            if(!user && !profile) return res.status(404).json({error: "Empresa no encontrada"});
+
+            // Construimos un objeto 'companyData' combinando lo que haya
+            const companyData = {
+                id: userId, // Mantenemos el userId como identificador principal por ahora para no romper enlaces existentes
+                name: profile?.name || user?.empresa,
+                type: profile?.company_type || user?.company_type,
+                company_id: profile?.company_id || user?.company_id,
+                logo: profile?.logo_url || null,
+                cover: profile?.cover_image_url || null,
+                history: profile?.history_text || '',
+                phone: profile?.contact_phone || '',
+                email: profile?.contact_email || '',
+                instagram: profile?.social_instagram || '',
+                facebook: profile?.social_facebook || '',
+                website: profile?.website_url || '',
+                is_suggested: false
+            };
 
             let entityData = {};
-            if (user.company_type === 'finca' && user.company_id) {
-                entityData = await get('SELECT * FROM fincas WHERE id = ?', [user.company_id]);
+            if (profile.company_type === 'finca' && profile.company_id) {
+                entityData = await get('SELECT * FROM fincas WHERE id = ?', [profile.company_id]);
                 if(entityData) entityData.type_label = 'Finca Productora';
-            } else if (user.company_type === 'procesadora' && user.company_id) {
-                entityData = await get('SELECT * FROM procesadoras WHERE id = ?', [user.company_id]);
+            } else if (profile.company_type === 'procesadora' && profile.company_id) {
+                entityData = await get('SELECT * FROM procesadoras WHERE id = ?', [profile.company_id]);
                 if(entityData) entityData.type_label = 'Planta de Procesamiento';
             }
 
@@ -2730,7 +2753,7 @@ const getCompanyLandingData = async (req, res) => {
             }
 
             res.json({
-                user: { ...user, is_suggested: false },
+                user: companyData,
                 entity: entityData || {},
                 products: productsWithBatches
             });

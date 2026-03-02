@@ -53,6 +53,28 @@ async function initializeDatabase() {
             console.log("Tabla 'users' lista.");
 
             await runQuery(db, `
+                CREATE TABLE IF NOT EXISTS company_profiles (
+                    id TEXT PRIMARY KEY,           -- UUID
+                    user_id TEXT NOT NULL,         -- Relación con el dueño
+                    company_type TEXT,             -- 'finca', 'procesadora', 'marca'
+                    company_id TEXT,               -- ID de la finca o procesadora (si aplica)
+                    name TEXT NOT NULL,            -- Nombre de la empresa/marca
+                    logo_url TEXT,                 -- URL o Base64 del logo
+                    cover_image_url TEXT,          -- Imagen de portada para la landing
+                    history_text TEXT,             -- "Nuestra historia"
+                    contact_email TEXT,            -- Email público (puede ser diferente al del usuario)
+                    contact_phone TEXT,            -- Teléfono de ventas (ej. WhatsApp)
+                    social_instagram TEXT,         -- @usuario
+                    social_facebook TEXT,          -- /pagina
+                    website_url TEXT,              -- Sitio web externo
+                    is_published BOOLEAN DEFAULT 1,-- Si el perfil es visible en Origen Único
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+                )`);
+            console.log("Tabla 'company_profiles' lista.");
+
+            await runQuery(db, `
                 CREATE TABLE IF NOT EXISTS fincas (
                     id TEXT PRIMARY KEY,
                     user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,

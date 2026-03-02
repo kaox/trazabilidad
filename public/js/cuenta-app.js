@@ -3,36 +3,17 @@ document.addEventListener('DOMContentLoaded', () => {
     const profileForm = document.getElementById('profile-form');
     const passwordForm = document.getElementById('password-form');
     
-    // Selectores de Información de Suscripción
+    // Selectores de Información de Suscripción (Mantenidos por si los reactivas)
     const currentPlanEl = document.getElementById('current-plan');
     const trialInfoEl = document.getElementById('trial-info');
     const trialDaysLeftEl = document.getElementById('trial-days-left');
-
-    const companyLogoInput = document.getElementById('company-logo-input');
-    const companyLogoPreview = document.getElementById('company-logo-preview');
-    const companyLogoHiddenInput = document.getElementById('company_logo');
     
     // Selectores de Configuración
     const currencySelect = document.getElementById('default_currency');
     const unitSelect = document.getElementById('default_unit');
 
-    // Selectores de Entidad Productiva
-    const companyTypeSelect = document.getElementById('company_type');
-    const companyIdSelect = document.getElementById('company_id');
-
-    // Helper Slug
-    function createSlug(text) { 
-        if (!text) return '';
-        return text.toString().toLowerCase().trim()
-            .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-            .replace(/\s+/g, '-')
-            .replace(/[^\w\-]+/g, '')
-            .replace(/\-\-+/g, '-'); 
-    }
-
     async function init() {
         await loadConfigOptions(); // Cargar combos primero
-        await loadEntityOptions(); // Cargar fincas y procesadoras
         await loadProfile();       // Luego cargar datos del usuario y setear valores
         setupEventListeners();
     }
@@ -64,39 +45,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Cargar Fincas y Procesadoras para el combo
-    let fincasCache = [];
-    let procesadorasCache = [];
-
-    async function loadEntityOptions() {
-        try {
-            // Cargar ambos en paralelo
-            const [fincas, procesadoras] = await Promise.all([
-                api('/api/fincas').catch(() => []),
-                api('/api/procesadoras').catch(() => [])
-            ]);
-            fincasCache = fincas;
-            procesadorasCache = procesadoras;
-        } catch (e) { console.error("Error cargando entidades:", e); }
-    }
-
-    function updateCompanyIdSelect(type, selectedId = null) {
-        if (!companyIdSelect) return;
-        
-        companyIdSelect.innerHTML = '<option value="">-- Seleccionar --</option>';
-        
-        if (type === 'finca') {
-            companyIdSelect.disabled = false;
-            companyIdSelect.innerHTML += fincasCache.map(f => `<option value="${f.id}" ${f.id === selectedId ? 'selected' : ''}>${f.nombre_finca}</option>`).join('');
-        } else if (type === 'procesadora') {
-            companyIdSelect.disabled = false;
-            companyIdSelect.innerHTML += procesadorasCache.map(p => `<option value="${p.id}" ${p.id === selectedId ? 'selected' : ''}>${p.nombre_comercial || p.razon_social}</option>`).join('');
-        } else {
-            companyIdSelect.disabled = true;
-            companyIdSelect.innerHTML = '<option value="">Selecciona un tipo primero</option>';
-        }
-    }
-
     async function loadProfile() {
         try {
             const user = await api('/api/user/profile');
@@ -104,44 +52,18 @@ document.addEventListener('DOMContentLoaded', () => {
             // Poblar formulario de perfil
             if (profileForm) {
                 // Sección Personal
-                profileForm.nombre.value = user.nombre || '';
-                profileForm.apellido.value = user.apellido || '';
-                profileForm.dni.value = user.dni || '';
-                profileForm.ruc.value = user.ruc || '';
-                profileForm.correo.value = user.correo || '';
-
-                // Sección Pública / Landing
-                profileForm.empresa.value = user.empresa || '';
-                profileForm.celular.value = user.celular || '';
-                profileForm.social_instagram.value = user.social_instagram || '';
-                profileForm.social_facebook.value = user.social_facebook || '';
-
-                // ACTIVAR BOTÓN "VER MI PÁGINA" con URL ÚNICA
-                const btnLanding = document.getElementById('btn-view-landing');
-                if (user.empresa && btnLanding) {
-                    const slug = createSlug(user.empresa);
-                    // CAMBIO: Concatenamos el ID al final del slug para garantizar unicidad
-                    btnLanding.href = `/origen-unico/${slug}-${user.id}`;
-                    btnLanding.classList.remove('hidden');
-                }
+                if (profileForm.nombre) profileForm.nombre.value = user.nombre || '';
+                if (profileForm.apellido) profileForm.apellido.value = user.apellido || '';
+                if (profileForm.dni) profileForm.dni.value = user.dni || '';
+                if (profileForm.ruc) profileForm.ruc.value = user.ruc || '';
+                if (profileForm.correo) profileForm.correo.value = user.correo || '';
 
                 // Poblar configuración
-                if (user.default_currency) currencySelect.value = user.default_currency;
-                if (user.default_unit) unitSelect.value = user.default_unit;
-
-                // Poblar Entidad Productiva
-                if (user.company_type) {
-                    companyTypeSelect.value = user.company_type;
-                    updateCompanyIdSelect(user.company_type, user.company_id);
-                }
-
-                if (user.company_logo) {
-                    companyLogoPreview.src = user.company_logo;
-                    companyLogoHiddenInput.value = user.company_logo;
-                }
+                if (user.default_currency && currencySelect) currencySelect.value = user.default_currency;
+                if (user.default_unit && unitSelect) unitSelect.value = user.default_unit;
             }
             
-            // Lógica de Suscripción
+            // Lógica de Suscripción (Opcional, si reactivas la sección en HTML)
             if (currentPlanEl && user.subscription_tier) {
                 currentPlanEl.textContent = user.subscription_tier;
             }
@@ -153,7 +75,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
                 if (diffDays > 0) {
-                    trialDaysLeftEl.textContent = diffDays;
+                    if(trialDaysLeftEl) trialDaysLeftEl.textContent = diffDays;
                     trialInfoEl.classList.remove('hidden');
                 } else {
                     trialInfoEl.classList.add('hidden');
@@ -174,55 +96,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (passwordForm) {
             passwordForm.addEventListener('submit', handlePasswordChange);
         }
-        if (companyLogoInput) {
-            companyLogoInput.addEventListener('change', handleLogoUpload);
-        }
-        // Listener para cambio de tipo de entidad
-        if (companyTypeSelect) {
-            companyTypeSelect.addEventListener('change', (e) => {
-                updateCompanyIdSelect(e.target.value);
-            });
-        }
-    }
-
-    function handleLogoUpload(e) {
-        const file = e.target.files[0];
-        if (!file) return;
-        
-        // Validación de tamaño (Max 2MB para logos)
-        if (file.size > 2 * 1024 * 1024) {
-            alert("El logo es demasiado pesado (Máx 2MB)");
-            return;
-        }
-
-        const reader = new FileReader();
-        reader.onloadend = () => {
-            const img = new Image();
-            img.src = reader.result;
-            img.onload = () => {
-                // Redimensionar logo (max 300x300 es suficiente)
-                const canvas = document.createElement('canvas');
-                const MAX_SIZE = 300;
-                let width = img.width;
-                let height = img.height;
-                
-                if (width > height) {
-                    if (width > MAX_SIZE) { height *= MAX_SIZE / width; width = MAX_SIZE; }
-                } else {
-                    if (height > MAX_SIZE) { width *= MAX_SIZE / height; height = MAX_SIZE; }
-                }
-                
-                canvas.width = width;
-                canvas.height = height;
-                const ctx = canvas.getContext('2d');
-                ctx.drawImage(img, 0, 0, width, height);
-                
-                const resizedData = canvas.toDataURL('image/png');
-                companyLogoPreview.src = resizedData;
-                companyLogoHiddenInput.value = resizedData;
-            };
-        };
-        reader.readAsDataURL(file);
     }
 
     async function handleProfileUpdate(e) {
