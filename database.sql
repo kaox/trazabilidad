@@ -110,20 +110,20 @@ CREATE TABLE IF NOT EXISTS procesadoras (
 );
 
 CREATE TABLE IF NOT EXISTS company_profiles (
-    id UUID PRIMARY KEY,           -- UUID nativo de PostgreSQL
-    user_id INTEGER NOT NULL,         -- Asumo que en tu BD PostgreSQL users.id es UUID. Si es entero, cambia UUID por INTEGER o BIGINT.
+    id TEXT PRIMARY KEY,           -- Alineado con fincas.id y procesadoras.id
+    user_id INTEGER NOT NULL,      -- Correcto, users.id es SERIAL (INTEGER)
     company_type VARCHAR(50),      -- 'finca' o 'procesadora'
-    company_id UUID,               -- Si fincas.id y procesadoras.id son UUID. Si son string usa VARCHAR.
-    name VARCHAR(255) NOT NULL,    -- Nombre de la empresa/marca
-    logo_url TEXT,                 -- URL o Base64 del logo (TEXT es mejor para Base64 largo)
-    cover_image_url TEXT,          -- Imagen de portada para la landing
-    history_text TEXT,             -- "Nuestra historia"
-    contact_email VARCHAR(255),    -- Email público
-    contact_phone VARCHAR(50),     -- Teléfono de ventas
-    social_instagram VARCHAR(255), -- @usuario
-    social_facebook VARCHAR(255),  -- /pagina
-    website_url TEXT,              -- Sitio web externo
-    is_published BOOLEAN DEFAULT TRUE, -- En PostgreSQL el default para boolean es TRUE/FALSE
+    company_id TEXT,               -- Alineado con fincas.id (TEXT)
+    name VARCHAR(255) NOT NULL,    
+    logo_url TEXT,                 
+    cover_image_url TEXT,          
+    history_text TEXT,             
+    contact_email VARCHAR(255),    
+    contact_phone VARCHAR(50),     
+    social_instagram VARCHAR(255), 
+    social_facebook VARCHAR(255),  
+    website_url TEXT,              
+    is_published BOOLEAN DEFAULT TRUE, 
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     
