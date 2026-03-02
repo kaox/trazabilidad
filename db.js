@@ -2324,7 +2324,7 @@ const getPublicCompaniesWithImmutable = async (req, res) => {
             LEFT JOIN traceability_registry tr ON CAST(u.id AS TEXT) = CAST(tr.user_id AS TEXT)
                 AND tr.blockchain_hash IS NOT NULL 
                 AND tr.blockchain_hash != ''
-            WHERE cp.is_published = 1 
+            WHERE cp.is_published = TRUE 
             GROUP BY u.id, cp.name, cp.logo_url, cp.company_type, f.pais, f.departamento, f.provincia, p.pais, p.departamento, p.provincia
         `;
 
