@@ -142,8 +142,11 @@ const app = {
             // 1. Agregar imágenes
             if (user.cover && user.cover !== '') {
                 coverImage = user.cover;
-            } else if (entity.imagenes && entity.imagenes.length > 0) {
+            }else{
                 coverImage = entity.imagenes[0];
+            }
+            
+            if (entity.imagenes && entity.imagenes.length > 0) {
                 entity.imagenes.forEach(img => mediaItems.push({ type: 'image', src: img }));
             } else {
                 // Imagen por defecto si no hay ninguna
