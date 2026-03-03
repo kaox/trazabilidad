@@ -449,6 +449,7 @@ async function initializeDatabase() {
                     distrito TEXT,
                     logo TEXT,
                     magic_token TEXT UNIQUE,
+                    coordenadas JSONB,
                     
                     status TEXT DEFAULT 'pending', -- 'pending', 'verified', 'claimed'
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP

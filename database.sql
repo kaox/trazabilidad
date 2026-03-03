@@ -483,7 +483,7 @@ CREATE TABLE IF NOT EXISTS suggested_companies (
     departamento TEXT,
     provincia TEXT,
     distrito TEXT,
-
+    coordenadas JSONB,
     magic_token TEXT,
     
     status TEXT DEFAULT 'pending', -- 'pending', 'verified', 'claimed'

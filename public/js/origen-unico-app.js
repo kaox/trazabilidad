@@ -3,8 +3,7 @@ const app = {
         view: 'companies',
         selectedCompany: null,
         companies: [], // Almacén para evitar peticiones repetidas
-        currentFilter: 'all',
-        displayMode: 'grid'
+        currentFilter: 'all'
     },
 
     container: document.getElementById('app-container'),
@@ -74,47 +73,7 @@ const app = {
         });
 
         this.renderCompanies();
-        if (this.state.displayMode === 'map') {
-            this.renderMap();
-        }
-    },
-
-    setDisplayMode: function (mode) {
-        if (this.state.displayMode === mode) return;
-        this.state.displayMode = mode;
-
-        const btnGrid = document.getElementById('btn-view-grid');
-        const btnMap = document.getElementById('btn-view-map');
-        const gridContainer = document.getElementById('app-container');
-        const mapContainer = document.getElementById('map-world-container');
-
-        if (!btnGrid || !btnMap || !gridContainer || !mapContainer) return;
-
-        if (mode === 'grid') {
-            btnGrid.classList.replace('text-stone-500', 'text-amber-900');
-            btnGrid.classList.replace('hover:text-stone-800', 'bg-white');
-            btnGrid.classList.add('shadow-sm');
-
-            btnMap.classList.replace('text-amber-900', 'text-stone-500');
-            btnMap.classList.replace('bg-white', 'hover:text-stone-800');
-            btnMap.classList.remove('shadow-sm');
-
-            gridContainer.classList.remove('hidden');
-            mapContainer.classList.add('hidden');
-        } else {
-            btnMap.classList.replace('text-stone-500', 'text-amber-900');
-            btnMap.classList.replace('hover:text-stone-800', 'bg-white');
-            btnMap.classList.add('shadow-sm');
-
-            btnGrid.classList.replace('text-amber-900', 'text-stone-500');
-            btnGrid.classList.replace('bg-white', 'hover:text-stone-800');
-            btnGrid.classList.remove('shadow-sm');
-
-            gridContainer.classList.add('hidden');
-            mapContainer.classList.remove('hidden');
-
-            this.renderMap();
-        }
+        this.renderMap();
     },
 
     // --- NIVEL 1: LISTADO DE EMPRESAS (DISEÑO MEJORADO) ---
@@ -125,6 +84,7 @@ const app = {
             const res = await fetch('/api/public/companies');
             this.state.companies = await res.json();
             this.renderCompanies();
+            this.renderMap();
         } catch (e) { this.container.innerHTML = '<p class="text-center py-20 text-stone-400">No se pudo cargar el directorio.</p>'; }
     },
 

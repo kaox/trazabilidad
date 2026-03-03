@@ -12,12 +12,12 @@ const app = {
     container: document.getElementById('app-container'),
     breadcrumbs: document.getElementById('breadcrumbs'),
 
-    init: async function() {
+    init: async function () {
 
         try {
             const res = await fetch('/data/flavor-wheels.json');
-            if(res.ok) this.state.flavorWheelsData = await res.json();
-        } catch(e) {}
+            if (res.ok) this.state.flavorWheelsData = await res.json();
+        } catch (e) { }
 
         // Soporte de teclado para galería
         window.addEventListener('keydown', (e) => {
@@ -30,11 +30,11 @@ const app = {
         // CASO A: Subdominio (ej: finca-esperanza.rurulab.com)
         if (window.IS_SUBDOMAIN && window.CURRENT_COMPANY_ID) {
             console.log("🚀 Modo Subdominio Activo. ID:", window.CURRENT_COMPANY_ID);
-            
+
             // Ocultar la navegación de "Volver al directorio" para que parezca web propia
-            if(this.breadcrumbs) this.breadcrumbs.style.display = 'none';
+            if (this.breadcrumbs) this.breadcrumbs.style.display = 'none';
             const backBtn = document.querySelector('nav a[href="/origen-unico"]');
-            if(backBtn) backBtn.style.display = 'none'; // Ocultar botón volver del header
+            if (backBtn) backBtn.style.display = 'none'; // Ocultar botón volver del header
 
             // Cargar datos directamente
             await this.loadLanding(window.CURRENT_COMPANY_ID);
@@ -47,50 +47,50 @@ const app = {
                 this.container.innerHTML = '<p class="text-center py-10">URL inválida.</p>';
             }
         }
-        
+
         if (typeof ChartDataLabels !== 'undefined' && typeof Chart !== 'undefined') {
             Chart.register(ChartDataLabels);
         }
     },
 
     // --- UTILS ---
-    toTitleCase: function(str) {
+    toTitleCase: function (str) {
         if (!str) return '';
         return str.toLowerCase().split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
     },
 
-    extractYoutubeId: function(url) {
+    extractYoutubeId: function (url) {
         if (!url) return null;
         const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
         const match = url.match(regExp);
         return (match && match[2].length === 11) ? match[2] : null;
     },
 
-    trackEvent: async function(type, companyId, productId = null) { 
-        try { 
-            await fetch('/api/public/analytics', { 
-                method: 'POST', 
-                headers: { 'Content-Type': 'application/json' }, 
-                body: JSON.stringify({ 
-                    event_type: type, 
-                    target_user_id: companyId, 
-                    target_product_id: productId, 
-                    meta_data: { 
-                        referrer: document.referrer, 
-                        url: window.location.href, 
-                        timestamp: new Date().toISOString() 
-                    } 
-                }) 
-            }); 
-        } catch(e){} 
+    trackEvent: async function (type, companyId, productId = null) {
+        try {
+            await fetch('/api/public/analytics', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    event_type: type,
+                    target_user_id: companyId,
+                    target_product_id: productId,
+                    meta_data: {
+                        referrer: document.referrer,
+                        url: window.location.href,
+                        timestamp: new Date().toISOString()
+                    }
+                })
+            });
+        } catch (e) { }
     },
 
     // --- CARGA DE DATOS ---
-    resolveSlugAndLoad: async function(slug) {
+    resolveSlugAndLoad: async function (slug) {
         let companyId = null;
 
         const sugIndex = slug.lastIndexOf('-SUG-');
-        
+
         if (sugIndex !== -1) {
             companyId = slug.substring(sugIndex + 1);
         } else {
@@ -101,27 +101,27 @@ const app = {
                 companyId = slug;
             }
         }
-        
+
         this.loadLanding(companyId);
     },
 
-    loadLanding: async function(userId) {
+    loadLanding: async function (userId) {
 
         this.trackEvent('landing_view', userId);
 
         try {
             const res = await fetch(`/api/public/companies/${userId}/landing`);
-            if(!res.ok) throw new Error('Error al cargar datos');
+            if (!res.ok) throw new Error('Error al cargar datos');
             const data = await res.json();
 
             if (data.error) {
-                 this.container.innerHTML = `<div class="text-center py-20"><h2 class="text-xl text-stone-600">${data.error}</h2><button onclick="app.loadCompanies(true)" class="text-amber-800 underline mt-4">Volver</button></div>`;
-                 return;
+                this.container.innerHTML = `<div class="text-center py-20"><h2 class="text-xl text-stone-600">${data.error}</h2><button onclick="app.loadCompanies(true)" class="text-amber-800 underline mt-4">Volver</button></div>`;
+                return;
             }
 
             const { user, entity, products } = data;
             const compSpan = document.getElementById('breadcrumb-company');
-            if(compSpan) compSpan.textContent = user.empresa || 'Empresa';
+            if (compSpan) compSpan.textContent = user.name || 'Empresa';
 
             // Datos de la empresa
             const isSuggested = user.is_suggested;
@@ -130,19 +130,21 @@ const app = {
             const typeLabel = isFinca ? 'Finca de Origen' : 'Planta de Procesamiento';
             const locationStr = [entity.distrito, entity.provincia, entity.departamento, entity.pais].filter(Boolean).map(p => this.toTitleCase(p)).join(', ') || 'Ubicación no registrada';
             const historyText = user.history || entity.historia || 'Comprometidos con la calidad y la transparencia en cada grano.';
-            
+
             const instagram = user.instagram || entity.social_instagram;
             const facebook = user.facebook || entity.social_facebook;
 
             let coverImage = 'https://images.unsplash.com/photo-1511537632536-b7a4896848a5?auto=format&fit=crop&q=80&w=1000';
-            
+
             const mediaItems = [];
-            
+            console.log(user);
             // 1. Agregar imágenes
-            if (user.cover && user.cover !== '') {
-                coverImage = user.cover;
-            }else{
-                coverImage = entity.imagenes[0];
+            if (!isSuggested) {
+                if (user.cover && user.cover !== '') {
+                    coverImage = user.cover;
+                } else {
+                    coverImage = entity.imagenes[0];
+                }
             }
 
             if (entity.imagenes && entity.imagenes.length > 0) {
@@ -175,7 +177,7 @@ const app = {
             const thumbnailsToShow = mediaItems.slice(1, 4);
 
             if (thumbnailsToShow.length > 0) {
-                galleryHtml = `<div class="grid grid-cols-3 gap-2 mt-4">` + 
+                galleryHtml = `<div class="grid grid-cols-3 gap-2 mt-4">` +
                     thumbnailsToShow.map((item, idx) => {
                         // El índice real en el array 'mediaItems' es idx + 1 porque hicimos slice(1)
                         const realIndex = idx + 1;
@@ -198,7 +200,7 @@ const app = {
                     `</div>`;
             }
 
-            const cleanPhone = user.celular ? user.celular.replace(/\D/g,'') : '';
+            const cleanPhone = user.celular ? user.celular.replace(/\D/g, '') : '';
             const waBase = cleanPhone ? `https://wa.me/${cleanPhone}` : '#';
 
             let socialHtml = '';
@@ -240,22 +242,22 @@ const app = {
                 if (entity.direccion) {
                     fullAddressHtml = `<p class="text-center text-xs text-stone-500 mb-4 px-2 leading-tight">${entity.direccion}</p>`;
                 }
-                
+
                 let mapQuery = '';
                 if (entity.coordenadas) {
                     let lat, lng;
                     if (Array.isArray(entity.coordenadas) && entity.coordenadas.length > 0) {
-                         if (Array.isArray(entity.coordenadas[0])) { lat = entity.coordenadas[0][0]; lng = entity.coordenadas[0][1]; }
+                        if (Array.isArray(entity.coordenadas[0])) { lat = entity.coordenadas[0][0]; lng = entity.coordenadas[0][1]; }
                     } else if (entity.coordenadas.lat) {
-                         lat = entity.coordenadas.lat; lng = entity.coordenadas.lng;
+                        lat = entity.coordenadas.lat; lng = entity.coordenadas.lng;
                     }
                     if (lat && lng) mapQuery = `${lat},${lng}`;
                 }
-                
+
                 if (!mapQuery && entity.direccion) {
                     mapQuery = encodeURIComponent(`${entity.direccion}, ${locationStr}`);
                 }
-                
+
                 if (mapQuery) {
                     mapButtonHtml = `
                         <a href="https://www.google.com/maps/dir/?api=1&destination=${mapQuery}" target="_blank" class="block w-full text-center bg-white border border-stone-300 text-stone-700 font-bold py-2 rounded-lg text-sm hover:bg-stone-50 transition mb-4 shadow-sm group/btn">
@@ -362,11 +364,11 @@ const app = {
                     </div>
                 </div>
             `;
-            
+
             this.container.innerHTML = html;
             window.scrollTo(0, 0);
 
-            
+
             if (entity.coordenadas) setTimeout(() => this.initMiniMap(entity.coordenadas), 500);
 
             setTimeout(() => this.initProductCharts(products), 100);
@@ -374,7 +376,7 @@ const app = {
         } catch (e) { console.error(e); }
     },
 
-    renderProductList: function(products, phone, userId) {
+    renderProductList: function (products, phone, userId) {
         if (!products || products.length === 0) {
             return `<div class="text-center py-12 bg-stone-50 rounded-xl border border-dashed border-stone-200"><p class="text-stone-500 italic">No hay productos disponibles.</p></div>`;
         }
@@ -384,12 +386,12 @@ const app = {
             const hasTraceability = prod.recent_batches && prod.recent_batches.length > 0;
             const hasSensory = prod.perfil_data && Object.values(prod.perfil_data).some(v => v > 0);
             const hasWheel = prod.notas_rueda && prod.notas_rueda.length > 0;
-            const buyLink = phone ? `https://wa.me/${phone.replace(/\D/g,'')}?text=Hola vi esto en RuruLab, me interesa: ${encodeURIComponent(prod.nombre)}` : '#';
+            const buyLink = phone ? `https://wa.me/${phone.replace(/\D/g, '')}?text=Hola vi esto en RuruLab, me interesa: ${encodeURIComponent(prod.nombre)}` : '#';
 
             const showTabs = hasSensory || hasWheel;
 
-            const cardClasses = hasTraceability 
-                ? 'border-2 border-emerald-500/30 shadow-xl hover:shadow-2xl ring-1 ring-emerald-50/50' 
+            const cardClasses = hasTraceability
+                ? 'border-2 border-emerald-500/30 shadow-xl hover:shadow-2xl ring-1 ring-emerald-50/50'
                 : 'border border-stone-200 shadow-sm hover:shadow-lg';
 
             const batchesHtml = hasTraceability ? prod.recent_batches.map(b => {
@@ -413,8 +415,8 @@ const app = {
                             ${prod.tipo_producto || 'Especialidad'}
                         </div>
 
-                        ${hasTraceability ? 
-                            `<div class="absolute top-0 right-0 z-20">
+                        ${hasTraceability ?
+                    `<div class="absolute top-0 right-0 z-20">
                                 <div class="bg-gradient-to-r from-emerald-600 to-emerald-500 text-white text-[10px] font-black px-3 py-1.5 rounded-bl-2xl shadow-lg flex items-center gap-1.5">
                                     <i class="fas fa-check-circle text-emerald-100 animate-pulse"></i>
                                     <span class="tracking-wider">VERIFICADO</span>
@@ -510,12 +512,12 @@ const app = {
     },
 
     // --- UTILIDAD TABS ---
-    switchTab: function(btn, targetId) {
+    switchTab: function (btn, targetId) {
         const parent = btn.parentElement;
         // Buscamos el contenedor de tabs explícitamente por clase
-        const productCard = parent.parentElement; 
+        const productCard = parent.parentElement;
         const container = productCard.querySelector('.tab-container');
-        
+
         if (!container) return;
 
         // 1. Estilos Botones
@@ -531,17 +533,17 @@ const app = {
             c.classList.add('hidden', 'opacity-0');
             c.classList.remove('block', 'opacity-100');
         });
-        
+
         // 3. Mostrar target seleccionado
         const target = document.getElementById(targetId);
-        if(target) {
+        if (target) {
             target.classList.remove('hidden');
             target.classList.add('block');
-            
+
             setTimeout(() => {
                 target.classList.remove('opacity-0');
                 target.classList.add('opacity-100');
-                
+
                 // Redibujar gráficos si existen en esta pestaña
                 const canvas = target.querySelector('canvas');
                 if (canvas && productChartInstances[canvas.id]) {
@@ -552,7 +554,7 @@ const app = {
     },
 
     // --- GRÁFICOS CHART.JS ---
-    initProductCharts: function(products) {
+    initProductCharts: function (products) {
         if (typeof ChartUtils === 'undefined') {
             console.error("ChartUtils no está cargado.");
             return;
@@ -577,43 +579,43 @@ const app = {
     },
 
     // --- CAROUSEL FUNCTIONS (from origen-unico-app.js) ---
-    openGallery: function(index, items) {
+    openGallery: function (index, items) {
         if (!this.state.gallery) { this.state.gallery = { images: [], currentIndex: 0, isOpen: false }; }
         this.state.gallery.images = items.map(item => { if (typeof item === 'string') return { type: 'image', src: item }; return item; });
         this.state.gallery.currentIndex = index;
         this.state.gallery.isOpen = true;
         this.renderGalleryModal();
     },
-    closeGallery: function() {
+    closeGallery: function () {
         if (this.state.gallery) this.state.gallery.isOpen = false;
         const modal = document.getElementById('gallery-overlay');
         if (modal) modal.remove();
     },
-    nextGalleryImage: function() {
+    nextGalleryImage: function () {
         if (!this.state.gallery || !this.state.gallery.images.length) return;
         this.state.gallery.currentIndex = (this.state.gallery.currentIndex + 1) % this.state.gallery.images.length;
         this.updateGalleryUI();
     },
-    prevGalleryImage: function() {
+    prevGalleryImage: function () {
         if (!this.state.gallery || !this.state.gallery.images.length) return;
         this.state.gallery.currentIndex = (this.state.gallery.currentIndex - 1 + this.state.gallery.images.length) % this.state.gallery.images.length;
         this.updateGalleryUI();
     },
-    updateGalleryUI: function() {
+    updateGalleryUI: function () {
         const contentContainer = document.getElementById('gallery-content');
         const counter = document.getElementById('gallery-counter');
         const item = this.state.gallery.images[this.state.gallery.currentIndex];
         if (contentContainer) { contentContainer.innerHTML = this.getMediaHtml(item); }
         if (counter) { counter.textContent = `${this.state.gallery.currentIndex + 1} / ${this.state.gallery.images.length}`; }
     },
-    getMediaHtml: function(item) {
+    getMediaHtml: function (item) {
         if (item.type === 'video') {
             return `<div style="position: relative; width: 100%; max-width: 960px; padding-bottom: 56.25%; background: #000; border-radius: 12px; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);"><iframe src="https://www.youtube.com/embed/${item.videoId}?autoplay=1&rel=0" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>`;
         } else {
             return `<img src="${item.src}" style="max-height: 85vh; max-width: 90vw; object-fit: contain; border-radius: 8px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);" class="animate-fade-in">`;
         }
     },
-    renderGalleryModal: function() {
+    renderGalleryModal: function () {
         const items = this.state.gallery.images;
         const index = this.state.gallery.currentIndex;
         const currentItem = items[index];
@@ -627,12 +629,12 @@ const app = {
             </div>`;
         document.body.insertAdjacentHTML('beforeend', html);
     },
-    
-    initMiniMap: function(coords) {
+
+    initMiniMap: function (coords) {
         if (typeof google === 'undefined' || typeof google.maps === 'undefined') return;
         try {
             let paths = coords;
-            if (typeof coords === 'string') { try { paths = JSON.parse(coords); } catch(e) { return; } }
+            if (typeof coords === 'string') { try { paths = JSON.parse(coords); } catch (e) { return; } }
             if (!paths) return;
             const mapOptions = { zoom: 13, mapTypeId: 'satellite', disableDefaultUI: true, draggable: false, zoomControl: false, scrollwheel: false, disableDoubleClickZoom: true };
             const map = new google.maps.Map(document.getElementById('mini-map'), mapOptions);

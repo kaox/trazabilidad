@@ -102,7 +102,7 @@
                 <i class="fas fa-certificate text-amber-300 mr-2"></i>
                 <span class="text-xs font-bold uppercase tracking-widest text-amber-100">Directorio Verificado</span>
             </div>
-            <h1 class="text-4xl md:text-6xl font-display font-bold mb-4">Empresas con Origen Único y Trazable</h1>
+            <h1 class="text-3xl md:text-5xl font-display font-bold mb-4">Empresas con Origen Único y Trazable</h1>
             <p class="text-lg text-amber-200 max-w-2xl mx-auto">Conecta con productores y marcas comprometidos con la
                 transparencia. Descubre historias únicas, dándote la seguridad que buscas en cada compra.</p>
 
@@ -138,18 +138,7 @@
                 </div>
 
                 <div class="flex flex-col md:flex-row items-center justify-between gap-4">
-                    <!-- Toggle Grilla / Mapa (Corregido para ser visible en móvil) -->
-                    <div
-                        class="w-full md:w-auto bg-stone-100 p-1.5 rounded-2xl md:rounded-full flex items-center border border-stone-200 shadow-inner">
-                        <button onclick="app.setDisplayMode('grid')" id="btn-view-grid"
-                            class="view-toggle-btn flex-1 md:flex-none md:px-6 py-2 rounded-xl md:rounded-full text-sm font-bold active bg-white text-amber-900 shadow-sm transition-all focus:outline-none">
-                            <i class="fas fa-th-large mr-2"></i> Grilla
-                        </button>
-                        <button onclick="app.setDisplayMode('map')" id="btn-view-map"
-                            class="view-toggle-btn flex-1 md:flex-none md:px-6 py-2 rounded-xl md:rounded-full text-sm font-bold text-stone-500 hover:text-stone-800 transition-all focus:outline-none">
-                            <i class="fas fa-map-marked-alt mr-2"></i> Mapa
-                        </button>
-                    </div>
+
 
                     <!-- Sugerir Desktop (Oculto en móvil ya que tiene su botón en el Hero) -->
                     <button onclick="app.openSuggestModal()"
@@ -160,17 +149,16 @@
             </div>
         </div>
 
+        <!-- Contenedor Mapa -->
+        <div id="map-world-container" class="w-full rounded-2xl mb-10 overflow-hidden shadow-lg border border-stone-200"
+            style="min-height: 400px; height: 50vh;"></div>
+
         <!-- Contenedor Dinámico: Grilla -->
         <div id="app-container" class="min-h-[400px]">
             <div class="flex justify-center py-20">
                 <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-900"></div>
             </div>
         </div>
-
-        <!-- Contenedor Mapa (Oculto por defecto) -->
-        <div id="map-world-container"
-            class="hidden w-full rounded-2xl mb-10 overflow-hidden shadow-lg border border-stone-200"
-            style="min-height: 600px;"></div>
 
     </main>
 

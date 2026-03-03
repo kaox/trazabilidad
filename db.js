@@ -2342,7 +2342,8 @@ const getPublicCompaniesWithImmutable = async (req, res) => {
                 departamento,
                 provincia,
                 distrito,
-                0 as lotes_count
+                0 as lotes_count,
+                coordenadas
             FROM suggested_companies
             WHERE status = 'pending'
         `;
@@ -2370,7 +2371,6 @@ const getPublicCompaniesWithImmutable = async (req, res) => {
 
         combined = combined.map(c => {
             let parsedCoords = safeJSONParse(c.coordenadas || 'null');
-            console.log(parsedCoords);
             // Si es un array de coordenadas (polígono de finca)
             if (Array.isArray(parsedCoords) && parsedCoords.length > 0) {
                 let sumLat = 0;
@@ -2391,8 +2391,6 @@ const getPublicCompaniesWithImmutable = async (req, res) => {
                         validPoints++;
                     }
                 });
-                console.log(sumLat, sumLng, validPoints);
-
                 if (validPoints > 0) {
                     parsedCoords = {
                         lat: sumLat / validPoints,
@@ -2403,7 +2401,6 @@ const getPublicCompaniesWithImmutable = async (req, res) => {
                 }
             }
 
-            console.log(parsedCoords);
             return {
                 ...c,
                 coordenadas: parsedCoords
