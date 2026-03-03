@@ -2312,6 +2312,7 @@ const getPublicCompaniesWithImmutable = async (req, res) => {
                 cp.name as name, 
                 cp.logo_url as logo, 
                 cp.company_type as type,
+                cp.product_categories,
                 'verified' as status,
                 COUNT(DISTINCT tr.id) as lotes_count,
                 COALESCE(f.pais, p.pais) as pais,
@@ -2326,7 +2327,7 @@ const getPublicCompaniesWithImmutable = async (req, res) => {
                 AND tr.blockchain_hash IS NOT NULL 
                 AND tr.blockchain_hash != ''
             WHERE cp.is_published = TRUE 
-            GROUP BY u.id, cp.name, cp.logo_url, cp.company_type, f.pais, f.departamento, f.provincia, p.pais, p.departamento, p.provincia, f.coordenadas, p.coordenadas
+            GROUP BY u.id, cp.name, cp.logo_url, cp.company_type, cp.product_categories, f.pais, f.departamento, f.provincia, p.pais, p.departamento, p.provincia, f.coordenadas, p.coordenadas
         `;
 
         // B. Empresas Sugeridas (Pendientes)

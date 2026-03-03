@@ -78,6 +78,14 @@
             box-shadow: 0 4px 12px rgba(120, 53, 15, 0.2);
         }
 
+        /* Clases para estados de filtros de Producto */
+        .prod-filter-btn.active {
+            background-color: #f59e0b; /* amber-500 */
+            color: #78350f; /* amber-900 */
+            border-color: #f59e0b;
+            box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
+        }
+
         /* Scrollbar suave para filtros en móvil */
         .hide-scrollbar::-webkit-scrollbar {
             display: none;
@@ -146,6 +154,30 @@
                         <i class="fas fa-plus-circle"></i> Sugerir Empresa
                     </button>
                 </div>
+            </div>
+            <!-- FILTRO 2: TIPO DE PRODUCTO (NUEVO) -->
+            <div class="mt-4 flex items-center gap-2 overflow-x-auto hide-scrollbar pt-4 border-t border-stone-200">
+                <span class="text-xs font-bold text-stone-400 uppercase tracking-widest mr-2">Producto:</span>
+                <button onclick="app.setProductFilter('all')" data-prod-filter="all"
+                    class="prod-filter-btn active whitespace-nowrap px-4 py-1.5 rounded-full border border-stone-200 bg-white text-stone-600 font-bold text-xs transition-all">
+                    Todos
+                </button>
+                <button onclick="app.setProductFilter('cafe')" data-prod-filter="cafe"
+                    class="prod-filter-btn whitespace-nowrap px-4 py-1.5 rounded-full border border-stone-200 bg-white text-stone-600 font-bold text-xs transition-all">
+                    ☕ Café
+                </button>
+                <button onclick="app.setProductFilter('cacao')" data-prod-filter="cacao"
+                    class="prod-filter-btn whitespace-nowrap px-4 py-1.5 rounded-full border border-stone-200 bg-white text-stone-600 font-bold text-xs transition-all">
+                    🍫 Cacao
+                </button>
+                <button onclick="app.setProductFilter('miel')" data-prod-filter="miel"
+                    class="prod-filter-btn whitespace-nowrap px-4 py-1.5 rounded-full border border-stone-200 bg-white text-stone-600 font-bold text-xs transition-all">
+                    🍯 Miel
+                </button>
+                <button onclick="app.setProductFilter('otros')" data-prod-filter="otros"
+                    class="prod-filter-btn whitespace-nowrap px-4 py-1.5 rounded-full border border-stone-200 bg-white text-stone-600 font-bold text-xs transition-all">
+                    📦 Otros
+                </button>
             </div>
         </div>
 

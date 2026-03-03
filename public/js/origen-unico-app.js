@@ -3,7 +3,8 @@ const app = {
         view: 'companies',
         selectedCompany: null,
         companies: [], // Almacén para evitar peticiones repetidas
-        currentFilter: 'all'
+        currentFilter: 'all',        // Filtro de Entidad (Finca/Procesadora)
+        currentProductFilter: 'all'  // Filtro de Producto (Cafe/Cacao/Miel)
     },
 
     container: document.getElementById('app-container'),
@@ -60,10 +61,11 @@ const app = {
         }).join(' ');
     },
 
+    // --- MANEJO DE FILTROS ---
     setFilter: function (filterType) {
         this.state.currentFilter = filterType;
 
-        // Actualizar UI de botones
+        // Actualizar UI de botones de Entidad
         document.querySelectorAll('.filter-btn').forEach(btn => {
             if (btn.getAttribute('data-filter') === filterType) {
                 btn.classList.add('active');
@@ -76,9 +78,55 @@ const app = {
         this.renderMap();
     },
 
+    setProductFilter: function(prodFilterType) {
+        this.state.currentProductFilter = prodFilterType;
+        
+        // Actualizar UI de botones de Producto
+        document.querySelectorAll('.prod-filter-btn').forEach(btn => {
+            if (btn.getAttribute('data-prod-filter') === prodFilterType) {
+                btn.classList.add('active');
+            } else {
+                btn.classList.remove('active');
+            }
+        });
+
+        this.renderCompanies();
+        this.renderMap();
+    },
+
+    // Función Helper para obtener empresas filtradas por ambos criterios
+    getFilteredCompanies: function() {
+        const typeFilter = this.state.currentFilter;
+        const prodFilter = this.state.currentProductFilter;
+        
+        return this.state.companies.filter(c => {
+            // 1. Filtro por Tipo de Entidad
+            const matchType = typeFilter === 'all' || c.type === typeFilter;
+            
+            // 2. Filtro por Categoría de Producto
+            let matchProduct = true;
+            if (prodFilter !== 'all') {
+                let categories = [];
+                if (typeof c.product_categories === 'string') {
+                    try { categories = JSON.parse(c.product_categories); } catch(e) {}
+                } else if (Array.isArray(c.product_categories)) {
+                    categories = c.product_categories;
+                }
+                
+                matchProduct = categories && categories.includes(prodFilter);
+            }
+
+            return matchType && matchProduct;
+        });
+    },
+
     // --- NIVEL 1: LISTADO DE EMPRESAS (DISEÑO MEJORADO) ---
     loadCompanies: async function () {
-        if (this.state.companies.length > 0) { this.renderCompanies(); return; }
+        if (this.state.companies.length > 0) { 
+            this.renderCompanies(); 
+            this.renderMap();
+            return; 
+        }
         this.container.innerHTML = '<div class="flex justify-center py-20"><div class="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-900"></div></div>';
         try {
             const res = await fetch('/api/public/companies');
@@ -89,12 +137,7 @@ const app = {
     },
 
     renderCompanies: function () {
-        const filter = this.state.currentFilter;
-
-        // Filtrar datos
-        const filtered = filter === 'all'
-            ? this.state.companies
-            : this.state.companies.filter(c => c.type === filter);
+        const filtered = this.getFilteredCompanies();
 
         let html = `<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 fade-in">`;
 
@@ -104,6 +147,23 @@ const app = {
                 const isFinca = c.type === 'finca';
                 const typeColor = isFinca ? 'amber' : 'blue';
                 const locationStr = [c.distrito, c.provincia, c.departamento, c.pais].filter(Boolean).map(p => this.toTitleCase(p)).join(', ') || 'Ubicación por verificar';
+
+                // Mostrar mini tags de productos en la tarjeta si los tiene
+                let tagsHtml = '';
+                let categories = [];
+                try { categories = typeof c.product_categories === 'string' ? JSON.parse(c.product_categories) : (c.product_categories || []); } catch(e){}
+                
+                if (categories.length > 0) {
+                    const topTags = categories.slice(0, 2).map(cat => {
+                        let icon = '';
+                        if(cat==='cafe') icon = '☕ ';
+                        if(cat==='cacao') icon = '🍫 ';
+                        if(cat==='miel') icon = '🍯 ';
+                        return `<span class="text-[9px] font-bold bg-stone-100 text-stone-500 px-1.5 py-0.5 rounded border border-stone-200 capitalize">${icon}${cat}</span>`;
+                    }).join(' ');
+                    const moreTag = categories.length > 2 ? `<span class="text-[9px] font-bold text-stone-400">+${categories.length-2}</span>` : '';
+                    tagsHtml = `<div class="flex gap-1 mt-2">${topTags}${moreTag}</div>`;
+                }
 
                 const slug = this.createSlug(c.name) + '-' + c.id;
                 const linkUrl = `/origen-unico/${slug}`;
@@ -118,9 +178,10 @@ const app = {
                             <div class="flex-grow">
                                 <span class="text-[10px] font-black uppercase tracking-[0.15em] text-${typeColor}-600 mb-1 block">${isFinca ? '<i class="fas fa-leaf mr-1"></i> Productor' : '<i class="fas fa-industry mr-1"></i> Procesadora'}</span>
                                 <h3 class="text-2xl font-display font-black text-stone-900 leading-tight group-hover:text-amber-900 transition-colors line-clamp-2">${c.name}</h3>
-                                <p class="text-sm text-stone-500 mt-2 flex items-center gap-2 font-medium"><i class="fas fa-map-marker-alt text-stone-300 group-hover:text-amber-600 transition-colors"></i> ${locationStr}</p>
+                                <p class="text-sm text-stone-500 mt-1 flex items-center gap-2 font-medium"><i class="fas fa-map-marker-alt text-stone-300 group-hover:text-amber-600 transition-colors"></i> ${locationStr}</p>
+                                ${tagsHtml}
                             </div>
-                            <div class="mt-8 pt-5 border-t border-stone-100 flex items-center justify-between">
+                            <div class="mt-6 pt-5 border-t border-stone-100 flex items-center justify-between">
                                 <div class="flex flex-col"><span class="text-[10px] font-bold text-stone-400 uppercase"></span><span class="text-lg font-black text-stone-800"></span></div>
                                 <div class="text-sm font-bold text-amber-800 opacity-0 group-hover:opacity-100 transition-all transform -translate-x-2 group-hover:translate-x-0">Ver Perfil <i class="fas fa-arrow-right ml-1"></i></div>
                             </div>
@@ -130,11 +191,11 @@ const app = {
         } else {
             html += `<div class="col-span-full py-20 text-center">
                         <i class="fas fa-search text-stone-200 text-5xl mb-4"></i>
-                        <p class="text-stone-400 font-medium">No se encontraron empresas en esta categoría.</p>
+                        <p class="text-stone-400 font-medium">No se encontraron empresas con esos filtros.</p>
                      </div>`;
         }
 
-        // Tarjeta "Tu Marca Aquí" (Solo aparece si filtramos 'all' o categorías específicas según desees)
+        // Tarjeta "Tu Marca Aquí"
         html += `
             <div onclick="app.openSuggestModal()" class="flex flex-col items-center justify-center p-8 rounded-3xl border-2 border-dashed border-amber-200 bg-amber-50/30 hover:bg-amber-50 hover:border-amber-400 cursor-pointer transition-all duration-500 min-h-[280px]">
                 <div class="w-16 h-16 rounded-2xl bg-white border border-amber-100 flex items-center justify-center mb-4 shadow-sm"><i class="fas fa-plus text-3xl text-amber-500"></i></div>
@@ -185,12 +246,8 @@ const app = {
             this.markers = [];
         }
 
-        const filter = this.state.currentFilter;
-
-        // Filtrar datos
-        const filtered = filter === 'all'
-            ? this.state.companies
-            : this.state.companies.filter(c => c.type === filter);
+        // Obtener la misma lista filtrada que se usa para las tarjetas
+        const filtered = this.getFilteredCompanies();
 
         const bounds = new google.maps.LatLngBounds();
         let hasValidCoords = false;
@@ -265,6 +322,10 @@ const app = {
         } else if (hasValidCoords && filtered.length === 1) {
             this.map.setCenter(bounds.getCenter());
             this.map.setZoom(12);
+        } else {
+            // Si no hay coordenadas tras filtrar, volver a la vista general de Perú
+            this.map.setCenter({ lat: -9.19, lng: -75.0152 });
+            this.map.setZoom(5);
         }
     },
 
