@@ -18,6 +18,13 @@
         /* Toggle Switch CSS */
         .toggle-checkbox:checked { right: 0; border-color: #10b981; }
         .toggle-checkbox:checked + .toggle-label { background-color: #10b981; }
+
+        /* Categorías de Producto CSS (Fallback para estilos no compilados) */
+        input[name="product_categories"]:checked + div {
+            background-color: #fef3c7 !important; /* bg-amber-100 */
+            border-color: #f59e0b !important; /* border-amber-500 */
+            color: #78350f !important; /* text-amber-900 */
+        }
     </style>
 </head>
 <body class="text-stone-800 antialiased">
@@ -112,6 +119,36 @@
                                     Créala aquí primero
                                 </a>
                             </p>
+                        </div>
+                        <!-- Tipos de Productos Ofrecidos -->
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-medium text-stone-700 mb-2">Tipos de Productos que Ofreces (Selecciona uno o varios)</label>
+                            <div class="flex flex-wrap gap-3">
+                                <label class="cursor-pointer group">
+                                    <input type="checkbox" name="product_categories" value="cafe" class="peer sr-only">
+                                    <div class="px-5 py-2.5 rounded-xl border border-stone-200 text-sm font-bold text-stone-500 peer-checked:bg-amber-100 peer-checked:border-amber-500 peer-checked:text-amber-900 transition-all hover:bg-stone-50 flex items-center gap-2 shadow-sm">
+                                        ☕ Café
+                                    </div>
+                                </label>
+                                <label class="cursor-pointer group">
+                                    <input type="checkbox" name="product_categories" value="cacao" class="peer sr-only">
+                                    <div class="px-5 py-2.5 rounded-xl border border-stone-200 text-sm font-bold text-stone-500 peer-checked:bg-amber-100 peer-checked:border-amber-500 peer-checked:text-amber-900 transition-all hover:bg-stone-50 flex items-center gap-2 shadow-sm">
+                                        🍫 Cacao
+                                    </div>
+                                </label>
+                                <label class="cursor-pointer group">
+                                    <input type="checkbox" name="product_categories" value="miel" class="peer sr-only">
+                                    <div class="px-5 py-2.5 rounded-xl border border-stone-200 text-sm font-bold text-stone-500 peer-checked:bg-amber-100 peer-checked:border-amber-500 peer-checked:text-amber-900 transition-all hover:bg-stone-50 flex items-center gap-2 shadow-sm">
+                                        🍯 Miel
+                                    </div>
+                                </label>
+                                <label class="cursor-pointer group">
+                                    <input type="checkbox" name="product_categories" value="otros" class="peer sr-only">
+                                    <div class="px-5 py-2.5 rounded-xl border border-stone-200 text-sm font-bold text-stone-500 peer-checked:bg-amber-100 peer-checked:border-amber-500 peer-checked:text-amber-900 transition-all hover:bg-stone-50 flex items-center gap-2 shadow-sm">
+                                        📦 Otros
+                                    </div>
+                                </label>
+                            </div>
                         </div>
                     </div>
 

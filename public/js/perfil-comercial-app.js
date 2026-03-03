@@ -105,6 +105,24 @@ document.addEventListener('DOMContentLoaded', () => {
                     coverHidden.value = response.cover_image_url;
                 }
 
+                // --- NUEVO: Marcar los checkboxes de categorías guardadas ---
+                if (response.product_categories) {
+                    let categories = [];
+                    // Si el backend lo devuelve como String JSON, lo parseamos
+                    if (typeof response.product_categories === 'string') {
+                        try { categories = JSON.parse(response.product_categories); } catch(e){}
+                    } else if (Array.isArray(response.product_categories)) {
+                        categories = response.product_categories;
+                    }
+                    
+                    const checkboxes = document.querySelectorAll('input[name="product_categories"]');
+                    checkboxes.forEach(cb => {
+                        if (categories.includes(cb.value)) {
+                            cb.checked = true;
+                        }
+                    });
+                }
+
                 // Configurar botón "Ver mi Landing"
                 if (currentUserId) {
                     const slug = createSlug(response.name);
@@ -256,6 +274,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const formData = new FormData(form);
         const data = Object.fromEntries(formData.entries());
+
+        data.product_categories = formData.getAll('product_categories');
 
         // Forzar checkbox booleano
         data.is_published = document.getElementById('is_published').checked;

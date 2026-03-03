@@ -62,6 +62,7 @@ async function initializeDatabase() {
                     logo_url TEXT,                 -- URL o Base64 del logo
                     cover_image_url TEXT,          -- Imagen de portada para la landing
                     history_text TEXT,             -- "Nuestra historia"
+                    product_categories TEXT,
                     contact_email TEXT,            -- Email público (puede ser diferente al del usuario)
                     contact_phone TEXT,            -- Teléfono de ventas (ej. WhatsApp)
                     social_instagram TEXT,         -- @usuario
