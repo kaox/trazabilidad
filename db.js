@@ -3,14 +3,14 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const fs = require('fs');
 const path = require('path');
-const ee = require('@google/earthengine'); 
+const ee = require('@google/earthengine');
 
 // --- Importación de Helpers (Utilidades) ---
-const { 
-    safeJSONParse, 
-    sanitizeNumber, 
-    createSlug, 
-    toCamelCase 
+const {
+    safeJSONParse,
+    sanitizeNumber,
+    createSlug,
+    toCamelCase
 } = require('./src/utils/helpers.js');
 
 
@@ -57,9 +57,9 @@ const registerUser = async (req, res) => {
         const hashedPassword = await bcrypt.hash(password, 10);
         const trialEndDate = new Date();
         trialEndDate.setDate(trialEndDate.getDate() + 30);
-        
+
         await run(
-            'INSERT INTO users (usuario, password, nombre, apellido, dni, ruc, empresa, company_logo, celular, correo, subscription_tier, trial_ends_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)', 
+            'INSERT INTO users (usuario, password, nombre, apellido, dni, ruc, empresa, company_logo, celular, correo, subscription_tier, trial_ends_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)',
             [usuario, hashedPassword, nombre, apellido, dni, ruc, empresa, company_logo, celular, correo, 'artesano', trialEndDate.toISOString()]
         );
         res.status(201).json({ message: "Usuario registrado exitosamente." });
@@ -78,7 +78,7 @@ const loginUser = async (req, res) => {
     try {
         const user = await get('SELECT * FROM users WHERE LOWER(usuario) = LOWER(?)', [usuario]);
         if (!user) return res.status(401).json({ error: "Credenciales inválidas." });
-        
+
         const match = await bcrypt.compare(password, user.password);
         if (match) {
             const tokenPayload = { id: user.id, username: user.usuario, role: user.role };
@@ -86,7 +86,7 @@ const loginUser = async (req, res) => {
             res.cookie('token', token, { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', path: '/' });
 
             let nextStep = '/app/dashboard';
-            
+
             if (!user.company_type && user.role !== 'admin') {
                 nextStep = '/onboarding.html';
             }
@@ -127,7 +127,7 @@ const handleGoogleLogin = async (req, res) => {
 
         const appTokenPayload = { id: user.id, username: user.usuario, role: user.role };
         const appToken = jwt.sign(appTokenPayload, process.env.JWT_SECRET || 'supersecretkey', { expiresIn: '1h' });
-        
+
         res.cookie('token', appToken, { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', path: '/' });
         res.status(200).json({ message: "Inicio de sesión con Google exitoso." });
 
@@ -163,9 +163,9 @@ const getUserProfile = async (req, res) => {
 const updateUserProfile = async (req, res) => {
     const userId = req.user.id;
     // 1. Agregamos 'usuario' y 'password' a la extracción de datos
-    const { 
-        nombre, apellido, dni, ruc, empresa, company_logo, celular, correo, 
-        default_currency, default_unit, company_type, company_id, 
+    const {
+        nombre, apellido, dni, ruc, empresa, company_logo, celular, correo,
+        default_currency, default_unit, company_type, company_id,
         social_instagram, social_facebook,
         usuario, password // <--- Campos nuevos del onboarding
     } = req.body;
@@ -177,11 +177,11 @@ const updateUserProfile = async (req, res) => {
             company_logo = ?, celular = ?, correo = ?, default_currency = ?, 
             default_unit = ?, company_type = ?, company_id = ?, 
             social_instagram = ?, social_facebook = ?`;
-            
+
         const params = [
-            nombre, apellido, dni, ruc, empresa, 
-            company_logo, celular, correo, default_currency, 
-            default_unit, company_type, company_id, 
+            nombre, apellido, dni, ruc, empresa,
+            company_logo, celular, correo, default_currency,
+            default_unit, company_type, company_id,
             social_instagram, social_facebook
         ];
 
@@ -204,12 +204,12 @@ const updateUserProfile = async (req, res) => {
         await run(sql, params);
         res.status(200).json({ message: "Perfil actualizado correctamente." });
 
-    } catch (err) { 
+    } catch (err) {
         // Manejo de error por usuario duplicado
         if (err.message && err.message.includes('UNIQUE')) {
             return res.status(409).json({ error: "El nombre de usuario ya está en uso." });
         }
-        res.status(500).json({ error: err.message }); 
+        res.status(500).json({ error: err.message });
     }
 };
 
@@ -233,8 +233,8 @@ const getFincas = async (req, res) => {
     const userId = req.user.id;
     try {
         const rows = await all('SELECT * FROM fincas WHERE user_id = ? ORDER BY nombre_finca', [userId]);
-        const fincas = rows.map(f => ({ 
-            ...f, 
+        const fincas = rows.map(f => ({
+            ...f,
             coordenadas: safeJSONParse(f.coordenadas || 'null'),
             imagenes_json: safeJSONParse(f.imagenes_json || '[]'),
             certificaciones_json: safeJSONParse(f.certificaciones_json || '[]'),
@@ -282,12 +282,12 @@ const createFinca = async (req, res) => {
 
     try {
         await run(
-            'INSERT INTO fincas (id, user_id, propietario, dni_ruc, nombre_finca, pais, departamento, provincia, distrito, ciudad, altura, superficie, coordenadas, telefono, historia, imagenes_json, video_link, certificaciones_json, premios_json, foto_productor, numero_trabajadores) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', 
+            'INSERT INTO fincas (id, user_id, propietario, dni_ruc, nombre_finca, pais, departamento, provincia, distrito, ciudad, altura, superficie, coordenadas, telefono, historia, imagenes_json, video_link, certificaciones_json, premios_json, foto_productor, numero_trabajadores) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
             [id, userId, propietario, dni_ruc, nombre_finca, pais, departamento, provincia, distrito, ciudad, altura, superficie, JSON.stringify(coordenadas), telefono, historia, JSON.stringify(imagenes_json || []), video_link, JSON.stringify(certificaciones_json || []), JSON.stringify(premios_json || []), foto_productor, numero_trabajadores]
         );
         res.status(201).json({ message: "Finca creada", id: id });
-    } catch (err) { 
-        res.status(500).json({ error: err.message }); 
+    } catch (err) {
+        res.status(500).json({ error: err.message });
     }
 };
 
@@ -296,7 +296,7 @@ const updateFinca = async (req, res) => {
     const { id } = req.params;
     // Agregamos departamento, provincia, distrito
     let { propietario, dni_ruc, nombre_finca, pais, departamento, provincia, distrito, ciudad, altura, superficie, coordenadas, telefono, historia, imagenes_json, video_link, certificaciones_json, premios_json, foto_productor, numero_trabajadores } = req.body;
-    
+
     altura = sanitizeNumber(altura);
     superficie = sanitizeNumber(superficie);
     numero_trabajadores = sanitizeNumber(numero_trabajadores);
@@ -337,7 +337,7 @@ const generateFincaToken = async (req, res) => {
         // Si no, generamos uno nuevo (UUID seguro)
         const token = require('crypto').randomUUID();
         await run('UPDATE fincas SET access_token = ? WHERE id = ?', [token, id]);
-        
+
         res.json({ token });
     } catch (err) {
         console.error("Error generando token finca:", err);
@@ -385,7 +385,7 @@ const updateFincaByToken = async (req, res) => {
                 pais = ?, departamento = ?, provincia = ?, distrito = ?, ciudad = ?
              WHERE id = ?`,
             [
-                propietario, dni_ruc, nombre_finca, telefono, historia, 
+                propietario, dni_ruc, nombre_finca, telefono, historia,
                 JSON.stringify(imagenes_json || []), JSON.stringify(coordenadas), altura, superficie,
                 pais, departamento, provincia, distrito, ciudad,
                 finca.id
@@ -404,8 +404,8 @@ const getProcesadoras = async (req, res) => {
     const userId = req.user.id;
     try {
         const rows = await all('SELECT * FROM procesadoras WHERE user_id = ? ORDER BY nombre_comercial', [userId]);
-        const procesadoras = rows.map(p => ({ 
-            ...p, 
+        const procesadoras = rows.map(p => ({
+            ...p,
             premios_json: safeJSONParse(p.premios_json || '[]'),
             certificaciones_json: safeJSONParse(p.certificaciones_json || '[]'),
             coordenadas: safeJSONParse(p.coordenadas || 'null'),
@@ -420,7 +420,7 @@ const createProcesadora = async (req, res) => {
     // CAMBIO: Quitamos tipo_empresa, agregamos departamento, provincia, distrito
     let { ruc, razon_social, nombre_comercial, pais, ciudad, departamento, provincia, distrito, direccion, telefono, premios_json, certificaciones_json, coordenadas, imagenes_json, historia, video_link, numero_trabajadores } = req.body;
     const id = require('crypto').randomUUID();
-    
+
     numero_trabajadores = sanitizeNumber(numero_trabajadores);
 
     const sql = 'INSERT INTO procesadoras (id, user_id, ruc, razon_social, nombre_comercial, pais, ciudad, departamento, provincia, distrito, direccion, telefono, premios_json, certificaciones_json, coordenadas, imagenes_json, historia, video_link, numero_trabajadores) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
@@ -435,7 +435,7 @@ const updateProcesadora = async (req, res) => {
     const { id } = req.params;
     // CAMBIO: Quitamos tipo_empresa, agregamos departamento, provincia, distrito
     let { ruc, razon_social, nombre_comercial, pais, ciudad, departamento, provincia, distrito, direccion, telefono, premios_json, certificaciones_json, coordenadas, imagenes_json, historia, video_link, numero_trabajadores } = req.body;
-    
+
     numero_trabajadores = sanitizeNumber(numero_trabajadores);
 
     const sql = 'UPDATE procesadoras SET ruc = ?, razon_social = ?, nombre_comercial = ?, pais = ?, ciudad = ?, departamento = ?, provincia = ?, distrito = ?, direccion = ?, telefono = ?, premios_json = ?, certificaciones_json = ?, coordenadas = ?, imagenes_json = ?, historia = ?, video_link = ?, numero_trabajadores = ? WHERE id = ? AND user_id = ?';
@@ -458,16 +458,16 @@ const deleteProcesadora = async (req, res) => {
 const getPerfiles = async (req, res) => {
     const userId = req.user.id;
     const { tipo } = req.query;
-    
+
     try {
         let sql = 'SELECT * FROM perfiles WHERE user_id = ?';
         const params = [userId];
-        
+
         if (tipo) {
             sql += ' AND tipo = ?';
             params.push(tipo);
         }
-        
+
         sql += ' ORDER BY created_at DESC';
 
         const rows = await all(sql, params);
@@ -484,7 +484,7 @@ const getPerfiles = async (req, res) => {
 const createPerfil = async (req, res) => {
     const userId = req.user.id;
     const { nombre, tipo, perfil_data } = req.body;
-    
+
     if (!tipo) return res.status(400).json({ error: "El tipo de perfil es requerido." });
 
     try {
@@ -502,7 +502,7 @@ const updatePerfil = async (req, res) => {
     const { id } = req.params;
     const userId = req.user.id;
     const { nombre, perfil_data } = req.body;
-    
+
     try {
         const result = await run(
             'UPDATE perfiles SET nombre = ?, perfil_data = ? WHERE id = ? AND user_id = ?',
@@ -557,7 +557,7 @@ const getSystemTemplates = (req, res) => {
 // 3. Clonar una plantilla del Catálogo a la DB del Usuario
 const cloneTemplate = async (req, res) => {
     const userId = req.user.id;
-    const { nombre_producto_sistema } = req.body; 
+    const { nombre_producto_sistema } = req.body;
 
     if (!nombre_producto_sistema) return res.status(400).json({ error: "Falta el nombre de la plantilla del sistema." });
 
@@ -584,18 +584,18 @@ const cloneTemplate = async (req, res) => {
 
         // Helper para insertar/actualizar etapas
         const upsertStage = async (stage, fase) => {
-             const existingStage = await get('SELECT id FROM etapas_plantilla WHERE plantilla_id = ? AND nombre_etapa = ?', [templateId, stage.nombre_etapa]);
-             if (existingStage) {
-                 await run(
-                     'UPDATE etapas_plantilla SET descripcion = ?, orden = ?, campos_json = ?, fase = ? WHERE id = ?',
-                     [stage.descripcion, stage.orden, JSON.stringify(stage.campos_json), fase, existingStage.id]
-                 );
-             } else {
-                 await run(
-                     'INSERT INTO etapas_plantilla (plantilla_id, nombre_etapa, descripcion, orden, campos_json, fase) VALUES (?, ?, ?, ?, ?, ?)',
-                     [templateId, stage.nombre_etapa, stage.descripcion, stage.orden, JSON.stringify(stage.campos_json), fase]
-                 );
-             }
+            const existingStage = await get('SELECT id FROM etapas_plantilla WHERE plantilla_id = ? AND nombre_etapa = ?', [templateId, stage.nombre_etapa]);
+            if (existingStage) {
+                await run(
+                    'UPDATE etapas_plantilla SET descripcion = ?, orden = ?, campos_json = ?, fase = ? WHERE id = ?',
+                    [stage.descripcion, stage.orden, JSON.stringify(stage.campos_json), fase, existingStage.id]
+                );
+            } else {
+                await run(
+                    'INSERT INTO etapas_plantilla (plantilla_id, nombre_etapa, descripcion, orden, campos_json, fase) VALUES (?, ?, ?, ?, ?, ?)',
+                    [templateId, stage.nombre_etapa, stage.descripcion, stage.orden, JSON.stringify(stage.campos_json), fase]
+                );
+            }
         };
 
         // 1. Procesar etapas de ACOPIO (si existen en el JSON)
@@ -612,8 +612,8 @@ const cloneTemplate = async (req, res) => {
             }
         }
 
-        res.status(201).json({ 
-            message: "Plantilla importada/actualizada correctamente.", 
+        res.status(201).json({
+            message: "Plantilla importada/actualizada correctamente.",
             id: templateId,
             nombre_producto: templateToClone.nombre_producto
         });
@@ -642,7 +642,7 @@ const updateTemplate = async (req, res) => {
         if (result.changes === 0) return res.status(404).json({ error: 'Plantilla no encontrada.' });
         res.status(200).json({ message: 'Plantilla actualizada.' });
     } catch (err) {
-         if (err.message.includes('UNIQUE')) return res.status(409).json({ error: 'Ya existe una plantilla con ese nombre.' });
+        if (err.message.includes('UNIQUE')) return res.status(409).json({ error: 'Ya existe una plantilla con ese nombre.' });
         res.status(500).json({ error: err.message });
     }
 };
@@ -664,14 +664,14 @@ const getStagesForTemplate = async (req, res) => {
             return res.status(403).json({ error: "No tienes permiso para ver estas etapas." });
         }
         const stages = await all('SELECT * FROM etapas_plantilla WHERE plantilla_id = ? ORDER BY orden', [templateId]);
-        const parsedStages = stages.map(s => ({...s, campos_json: safeJSONParse(s.campos_json)}));
+        const parsedStages = stages.map(s => ({ ...s, campos_json: safeJSONParse(s.campos_json) }));
         res.status(200).json(parsedStages);
     } catch (err) { res.status(500).json({ error: err.message }); }
 };
 
 const createStage = async (req, res) => {
     const { templateId } = req.params;
-    const { nombre_etapa,  descripcion, campos_json } = req.body;
+    const { nombre_etapa, descripcion, campos_json } = req.body;
     try {
         const lastOrderResult = await get('SELECT MAX(orden) as max_orden FROM etapas_plantilla WHERE plantilla_id = ?', [templateId]);
         const newOrder = (lastOrderResult.max_orden || 0) + 1;
@@ -768,7 +768,7 @@ const getAcquisitions = async (req, res) => {
             ORDER BY a.created_at DESC
         `;
         const rows = await all(sql, [userId]);
-        
+
         const result = rows.map(r => ({
             ...r,
             imagenes_json: safeJSONParse(r.imagenes_json || '[]'),
@@ -783,13 +783,13 @@ const getAcquisitions = async (req, res) => {
 
 const createAcquisition = async (req, res) => {
     const userId = req.user.id;
-    const { 
-        nombre_producto, tipo_acopio, subtipo, fecha_acopio, 
+    const {
+        nombre_producto, tipo_acopio, subtipo, fecha_acopio,
         peso_kg, precio_unitario, // Valores normalizados
         original_quantity, original_price, unit_id, currency_id, // Nuevos campos vinculados
-        finca_origen, observaciones, imagenes_json, data_adicional 
+        finca_origen, observaciones, imagenes_json, data_adicional
     } = req.body;
-    
+
     const randomPart = Math.random().toString(36).substring(2, 6).toUpperCase();
     const id = `ACP-${randomPart}`;
 
@@ -802,8 +802,8 @@ const createAcquisition = async (req, res) => {
                 finca_origen, observaciones, imagenes_json, data_adicional
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [
-                id, userId, nombre_producto, tipo_acopio, subtipo, fecha_acopio, 
-                peso_kg, precio_unitario, 
+                id, userId, nombre_producto, tipo_acopio, subtipo, fecha_acopio,
+                peso_kg, precio_unitario,
                 original_quantity, original_price, unit_id, currency_id,
                 finca_origen, observaciones, JSON.stringify(imagenes_json), JSON.stringify(data_adicional)
             ]
@@ -815,7 +815,7 @@ const createAcquisition = async (req, res) => {
 const deleteAcquisition = async (req, res) => {
     const userId = req.user.id;
     const { id } = req.params;
-    
+
     try {
         // 1. Verificar si el acopio ya fue usado en algún lote de producción
         const usageCheck = await get('SELECT id FROM batches WHERE acquisition_id = ? LIMIT 1', [id]);
@@ -823,9 +823,9 @@ const deleteAcquisition = async (req, res) => {
         if (usageCheck) {
             // CASO A: Tiene historial -> Eliminación Lógica (Soft Delete)
             await run('UPDATE acquisitions SET deleted_at = CURRENT_TIMESTAMP WHERE id = ? AND user_id = ?', [id, userId]);
-            res.status(200).json({ 
-                message: "El acopio tiene procesos vinculados. Se ha archivado (eliminación lógica) para mantener la trazabilidad.", 
-                type: 'soft' 
+            res.status(200).json({
+                message: "El acopio tiene procesos vinculados. Se ha archivado (eliminación lógica) para mantener la trazabilidad.",
+                type: 'soft'
             });
         } else {
             // CASO B: No tiene historial -> Eliminación Física (Hard Delete)
@@ -833,9 +833,9 @@ const deleteAcquisition = async (req, res) => {
             if (result.changes === 0) return res.status(404).json({ error: "Acopio no encontrado." });
             res.status(204).send(); // No content
         }
-    } catch (err) { 
+    } catch (err) {
         console.error("Error deleteAcquisition:", err);
-        res.status(500).json({ error: err.message }); 
+        res.status(500).json({ error: err.message });
     }
 };
 
@@ -849,24 +849,24 @@ const updateAcquisition = async (req, res) => {
             'UPDATE acquisitions SET nombre_producto = ?, tipo_acopio = ?, subtipo = ?, fecha_acopio = ?, peso_kg = ?, precio_unitario = ?, finca_origen = ?, observaciones = ?, imagenes_json = ?, data_adicional = ? WHERE id = ? AND user_id = ?',
             [nombre_producto, tipo_acopio, subtipo, fecha_acopio, peso_kg, precio_unitario, finca_origen, observaciones, JSON.stringify(imagenes_json), JSON.stringify(data_adicional), id, userId]
         );
-        
+
         if (result.changes === 0) return res.status(404).json({ error: "Acopio no encontrado o sin permisos." });
-        
+
         res.status(200).json({ message: "Acopio actualizado correctamente" });
-    } catch (err) { 
-        res.status(500).json({ error: err.message }); 
+    } catch (err) {
+        res.status(500).json({ error: err.message });
     }
 };
 
 const createBatch = async (req, res) => {
     const userId = req.user.id;
     // Agregamos input_quantity al destructuring
-    let { 
-        plantilla_id, etapa_id, parent_id, data, producto_id, acquisition_id, 
+    let {
+        plantilla_id, etapa_id, parent_id, data, producto_id, acquisition_id,
         system_template_name, stage_name, stage_order,
         input_quantity // <-- NUEVO CAMPO
     } = req.body;
-    
+
     try {
         // ... (Lógica JIT Template igual) ...
         if ((!plantilla_id || !etapa_id) && system_template_name && stage_name) {
@@ -877,7 +877,7 @@ const createBatch = async (req, res) => {
 
         const stage = await get('SELECT nombre_etapa FROM etapas_plantilla WHERE id = ?', [etapa_id]);
         if (!stage) return res.status(404).json({ error: "Etapa no encontrada." });
-        
+
         const prefix = stage.nombre_etapa.substring(0, 3).toUpperCase();
         const newId = await generateUniqueBatchId(prefix);
         data.id = newId;
@@ -905,7 +905,7 @@ const createBatch = async (req, res) => {
             const ownerInfo = await checkBatchOwnership(parent_id, userId);
             if (!ownerInfo) return res.status(403).json({ error: "No tienes permiso." });
             const parentBatch = await get('SELECT plantilla_id FROM batches WHERE id = ?', [parent_id]);
-            
+
             // Se agrega input_quantity al INSERT
             sql = 'INSERT INTO batches (id, plantilla_id, etapa_id, parent_id, data, producto_id, input_quantity) VALUES (?, ?, ?, ?, ?, ?, ?)';
             params = [data.id, parentBatch.plantilla_id, etapa_id, parent_id, JSON.stringify(data), finalProductId, qtyUsed];
@@ -919,13 +919,13 @@ const createBatch = async (req, res) => {
 };
 
 const updateBatch = async (req, res) => {
-    const { id } = req.params; 
+    const { id } = req.params;
     // Agregamos input_quantity
     const { data, producto_id, input_quantity } = req.body;
-    
+
     const targetBatch = await get('SELECT id, user_id, parent_id, is_locked, etapa_id FROM batches WHERE id = ?', [id]);
-    
-    if (!targetBatch) return res.status(404).json({error: "Lote no encontrado"});
+
+    if (!targetBatch) return res.status(404).json({ error: "Lote no encontrado" });
     if (targetBatch.is_locked) return res.status(409).json({ error: "Lote bloqueado." });
 
     let finalProductId = undefined;
@@ -942,7 +942,7 @@ const updateBatch = async (req, res) => {
             sql += ', producto_id = ?';
             params.push(finalProductId);
         }
-        
+
         // Actualizamos input_quantity solo si viene en el request
         if (qtyUsed !== undefined) {
             sql += ', input_quantity = ?';
@@ -953,7 +953,7 @@ const updateBatch = async (req, res) => {
         params.push(id);
 
         await run(sql, params);
-        
+
         await syncBatchOutputs(id, targetBatch.etapa_id, data);
 
         res.status(200).json({ message: "Lote actualizado" });
@@ -980,7 +980,7 @@ const finalizeBatch = async (req, res) => {
 
         const rootBatch = rows.find(r => !r.parent_id);
 
-        const ownerId = rootBatch.user_id; 
+        const ownerId = rootBatch.user_id;
 
         const [templateInfo, allStages, ownerInfo, acopioData, productoInfo] = await Promise.all([
             get('SELECT nombre_producto FROM plantillas_proceso WHERE id = ?', [rootBatch.plantilla_id]),
@@ -1003,11 +1003,11 @@ const finalizeBatch = async (req, res) => {
         const historySnapshot = { productName: templateInfo.nombre_producto, ownerInfo, stages: [], fincaData: null, procesadorasData: procesadorasData, acopioData: acopioData ? { ...acopioData, data_adicional: safeJSONParse(acopioData.data_adicional) } : null, productoFinal: null, nutritionalData: null, perfilSensorialData: null, ruedaSaborData: null, maridajesRecomendados: {}, generatedAt: new Date().toISOString() };
 
         if (productoInfo) {
-             historySnapshot.productoFinal = { ...productoInfo, imagenes_json: safeJSONParse(productoInfo.imagenes_json), premios_json: safeJSONParse(productoInfo.premios_json) };
-             if (productoInfo.receta_nutricional_id) {
-                 const receta = await get('SELECT * FROM recetas_nutricionales WHERE id = ?', [productoInfo.receta_nutricional_id]);
-                 if(receta) { const ing = await all('SELECT * FROM ingredientes_receta WHERE receta_id = ?', [receta.id]); historySnapshot.nutritionalData = { ...receta, ingredientes: ing.map(i => ({...i, nutrientes_base_json: safeJSONParse(i.nutrientes_base_json)})) }; }
-             }
+            historySnapshot.productoFinal = { ...productoInfo, imagenes_json: safeJSONParse(productoInfo.imagenes_json), premios_json: safeJSONParse(productoInfo.premios_json) };
+            if (productoInfo.receta_nutricional_id) {
+                const receta = await get('SELECT * FROM recetas_nutricionales WHERE id = ?', [productoInfo.receta_nutricional_id]);
+                if (receta) { const ing = await all('SELECT * FROM ingredientes_receta WHERE receta_id = ?', [receta.id]); historySnapshot.nutritionalData = { ...receta, ingredientes: ing.map(i => ({ ...i, nutrientes_base_json: safeJSONParse(i.nutrientes_base_json) })) }; }
+            }
         }
 
         // --- DESGLOSE ACOPIO ---
@@ -1016,8 +1016,8 @@ const finalizeBatch = async (req, res) => {
             const imgs = safeJSONParse(acopioData.imagenes_json || '{}'); // Cargar mapa de imágenes
 
             if (acopioData.finca_origen) {
-                 const finca = await get('SELECT * FROM fincas WHERE nombre_finca = ? AND user_id = ?', [acopioData.finca_origen, userId]);
-                 if(finca) historySnapshot.fincaData = { ...finca, coordenadas: safeJSONParse(finca.coordenadas), imagenes_json: safeJSONParse(finca.imagenes_json), certificaciones_json: safeJSONParse(finca.certificaciones_json), premios_json: safeJSONParse(finca.premios_json) };
+                const finca = await get('SELECT * FROM fincas WHERE nombre_finca = ? AND user_id = ?', [acopioData.finca_origen, userId]);
+                if (finca) historySnapshot.fincaData = { ...finca, coordenadas: safeJSONParse(finca.coordenadas), imagenes_json: safeJSONParse(finca.imagenes_json), certificaciones_json: safeJSONParse(finca.certificaciones_json), premios_json: safeJSONParse(finca.premios_json) };
             }
             const acopioStagesDef = allStages.filter(s => s.fase === 'acopio' || (s.orden <= 3 && s.nombre_etapa.match(/(cosecha|ferment|secado)/i)));
             acopioStagesDef.forEach(stageDef => {
@@ -1027,13 +1027,13 @@ const finalizeBatch = async (req, res) => {
                 // Datos
                 Object.keys(ad).forEach(key => { if (key.endsWith(suffix)) { stageData[key.split('__')[0]] = ad[key]; dataFound = true; } });
                 const fields = safeJSONParse(stageDef.campos_json);
-                [...(fields.entradas||[]), ...(fields.variables||[]), ...(fields.salidas||[])].map(f => f.name).forEach(fname => { if (!stageData[fname] && ad[fname]) { stageData[fname] = ad[fname]; dataFound = true; } });
+                [...(fields.entradas || []), ...(fields.variables || []), ...(fields.salidas || [])].map(f => f.name).forEach(fname => { if (!stageData[fname] && ad[fname]) { stageData[fname] = ad[fname]; dataFound = true; } });
 
                 // Imágenes (Cruce con sufijo)
                 Object.keys(imgs).forEach(key => {
                     if (key.endsWith(suffix)) {
-                         stageData['imageUrl'] = { value: imgs[key], visible: true, nombre: 'Foto' };
-                         dataFound = true;
+                        stageData['imageUrl'] = { value: imgs[key], visible: true, nombre: 'Foto' };
+                        dataFound = true;
                     }
                 });
 
@@ -1051,15 +1051,15 @@ const finalizeBatch = async (req, res) => {
                 }
             });
         }
-        
+
         // ... (Recuperar Perfil Sensorial y Rueda - Lógica igual) ...
         let perfilId = null, ruedaId = null; const rootData = safeJSONParse(rootBatch.data); if (rootData.target_profile_id?.value) perfilId = rootData.target_profile_id.value; if (rootData.target_wheel_id?.value) ruedaId = rootData.target_wheel_id.value; if (!perfilId || !ruedaId) { for (const row of rows) { const rd = safeJSONParse(row.data); if (!perfilId && rd.tipoPerfil?.value) perfilId = rd.tipoPerfil.value; if (!ruedaId && rd.tipoRuedaSabor?.value) ruedaId = rd.tipoRuedaSabor.value; } }
         if (perfilId) { let perfil = await get('SELECT * FROM perfiles WHERE id = ?', [perfilId]); if (!perfil && isNaN(perfilId)) perfil = await get('SELECT * FROM perfiles WHERE nombre = ? AND user_id = ?', [perfilId, userId]); if (perfil) { historySnapshot.perfilSensorialData = safeJSONParse(perfil.perfil_data); if (perfil.tipo === 'cacao') { const allCafes = await all("SELECT * FROM perfiles WHERE tipo = 'cafe' AND user_id = ?", [userId]); const recCafe = allCafes.map(cafe => ({ producto: { ...cafe, perfil_data: safeJSONParse(cafe.perfil_data) }, puntuacion: calcularMaridajeCacaoCafe(historySnapshot.perfilSensorialData, safeJSONParse(cafe.perfil_data)) })).sort((a, b) => b.puntuacion - a.puntuacion).slice(0, 3); historySnapshot.maridajesRecomendados = { cafe: recCafe }; } } }
         if (ruedaId) { const rueda = await get('SELECT * FROM ruedas_sabores WHERE id = ?', [ruedaId]); if (rueda) historySnapshot.ruedaSaborData = { ...rueda, notas_json: safeJSONParse(rueda.notas_json) }; }
 
-        rows.sort((a,b) => { const sA = allStages.find(s=>s.id===a.etapa_id)?.orden||0; const sB = allStages.find(s=>s.id===b.etapa_id)?.orden||0; return sA - sB; }).forEach(row => {
+        rows.sort((a, b) => { const sA = allStages.find(s => s.id === a.etapa_id)?.orden || 0; const sB = allStages.find(s => s.id === b.etapa_id)?.orden || 0; return sA - sB; }).forEach(row => {
             const sInfo = allStages.find(s => s.id === row.etapa_id);
-            if(sInfo) historySnapshot.stages.push({ id: row.id, nombre_etapa: sInfo.nombre_etapa, descripcion: sInfo.descripcion, campos_json: safeJSONParse(sInfo.campos_json), data: safeJSONParse(row.data), blockchain_hash: row.blockchain_hash, is_locked: row.is_locked, timestamp: row.created_at });
+            if (sInfo) historySnapshot.stages.push({ id: row.id, nombre_etapa: sInfo.nombre_etapa, descripcion: sInfo.descripcion, campos_json: safeJSONParse(sInfo.campos_json), data: safeJSONParse(row.data), blockchain_hash: row.blockchain_hash, is_locked: row.is_locked, timestamp: row.created_at });
         });
 
         const dataToHash = { id, snapshot: historySnapshot, salt: crypto.randomBytes(16).toString('hex') };
@@ -1071,7 +1071,7 @@ const finalizeBatch = async (req, res) => {
 
         await run('UPDATE batches SET blockchain_hash = ?, is_locked = TRUE WHERE id = ?', [hash, id]);
         let curr = targetBatch.parent_id;
-        while(curr) { await run('UPDATE batches SET is_locked = TRUE WHERE id = ?', [curr]); const p = await get('SELECT parent_id FROM batches WHERE id = ?', [curr]); curr = p ? p.parent_id : null; }
+        while (curr) { await run('UPDATE batches SET is_locked = TRUE WHERE id = ?', [curr]); const p = await get('SELECT parent_id FROM batches WHERE id = ?', [curr]); curr = p ? p.parent_id : null; }
 
         res.status(200).json({ message: "Certificado exitosamente.", hash });
     } catch (err) { res.status(500).json({ error: err.message }); }
@@ -1082,11 +1082,11 @@ const getTrazabilidad = async (req, res) => {
     try {
         const record = await get('SELECT snapshot_data, views FROM traceability_registry WHERE id = ?', [id]);
         if (record) {
-            run('UPDATE traceability_registry SET views = views + 1 WHERE id = ?', [id]).catch(()=>{});
+            run('UPDATE traceability_registry SET views = views + 1 WHERE id = ?', [id]).catch(() => { });
             //return res.status(200).json(safeJSONParse(record.snapshot_data));
         }
 
-        run('UPDATE batches SET views = COALESCE(views, 0) + 1 WHERE id = ?', [id]).catch(()=>{});
+        run('UPDATE batches SET views = COALESCE(views, 0) + 1 WHERE id = ?', [id]).catch(() => { });
         const rows = await all(`WITH RECURSIVE trace AS (SELECT * FROM batches WHERE id = ? UNION ALL SELECT b.* FROM batches b INNER JOIN trace t ON b.id = t.parent_id) SELECT * FROM trace;`, [id]);
 
         if (rows.length === 0) return res.status(404).json({ error: 'Lote no encontrado' });
@@ -1115,21 +1115,21 @@ const getTrazabilidad = async (req, res) => {
         };
 
         if (productoInfo) {
-             history.productoFinal = { ...productoInfo, imagenes_json: safeJSONParse(productoInfo.imagenes_json), premios_json: safeJSONParse(productoInfo.premios_json) };
-             if (productoInfo.receta_nutricional_id) {
-                 const receta = await get('SELECT * FROM recetas_nutricionales WHERE id = ?', [productoInfo.receta_nutricional_id]);
-                 if(receta) { const ing = await all('SELECT * FROM ingredientes_receta WHERE receta_id = ?', [receta.id]); history.nutritionalData = { ...receta, ingredientes: ing.map(i => ({...i, nutrientes_base_json: safeJSONParse(i.nutrientes_base_json)})) }; }
-             }
+            history.productoFinal = { ...productoInfo, imagenes_json: safeJSONParse(productoInfo.imagenes_json), premios_json: safeJSONParse(productoInfo.premios_json) };
+            if (productoInfo.receta_nutricional_id) {
+                const receta = await get('SELECT * FROM recetas_nutricionales WHERE id = ?', [productoInfo.receta_nutricional_id]);
+                if (receta) { const ing = await all('SELECT * FROM ingredientes_receta WHERE receta_id = ?', [receta.id]); history.nutritionalData = { ...receta, ingredientes: ing.map(i => ({ ...i, nutrientes_base_json: safeJSONParse(i.nutrientes_base_json) })) }; }
+            }
         }
-        
+
         // --- DESGLOSE ACOPIO ---
         if (history.acopioData) {
             const ad = history.acopioData.data_adicional || {};
             const imgs = safeJSONParse(acopioData.imagenes_json || '{}');
-            
+
             if (acopioData.finca_origen) {
-                 const finca = await get('SELECT * FROM fincas WHERE nombre_finca = ? AND user_id = ?', [acopioData.finca_origen, ownerId]);
-                 if(finca) history.fincaData = { ...finca, coordenadas: safeJSONParse(finca.coordenadas), imagenes_json: safeJSONParse(finca.imagenes_json), certificaciones_json: safeJSONParse(finca.certificaciones_json), premios_json: safeJSONParse(finca.premios_json) };
+                const finca = await get('SELECT * FROM fincas WHERE nombre_finca = ? AND user_id = ?', [acopioData.finca_origen, ownerId]);
+                if (finca) history.fincaData = { ...finca, coordenadas: safeJSONParse(finca.coordenadas), imagenes_json: safeJSONParse(finca.imagenes_json), certificaciones_json: safeJSONParse(finca.certificaciones_json), premios_json: safeJSONParse(finca.premios_json) };
             }
             const acopioStagesDef = allStages;
             acopioStagesDef.forEach(stageDef => {
@@ -1137,13 +1137,13 @@ const getTrazabilidad = async (req, res) => {
                 let stageData = {}; let dataFound = false;
                 Object.keys(ad).forEach(key => { if (key.endsWith(suffix)) { stageData[key.split('__')[0]] = ad[key]; dataFound = true; } });
                 const fields = safeJSONParse(stageDef.campos_json);
-                [...(fields.entradas||[]), ...(fields.variables||[]), ...(fields.salidas||[])].map(f => f.name).forEach(fname => { if (!stageData[fname] && ad[fname]) { stageData[fname] = ad[fname]; dataFound = true; } });
-                
+                [...(fields.entradas || []), ...(fields.variables || []), ...(fields.salidas || [])].map(f => f.name).forEach(fname => { if (!stageData[fname] && ad[fname]) { stageData[fname] = ad[fname]; dataFound = true; } });
+
                 // INYECTAR IMAGEN
                 Object.keys(imgs).forEach(key => {
                     if (key.endsWith(suffix)) {
-                         stageData['imageUrl'] = { value: imgs[key], visible: true, nombre: 'Foto' };
-                         dataFound = true;
+                        stageData['imageUrl'] = { value: imgs[key], visible: true, nombre: 'Foto' };
+                        dataFound = true;
                     }
                 });
 
@@ -1167,13 +1167,13 @@ const getTrazabilidad = async (req, res) => {
         const rootData = safeJSONParse(rootBatch.data);
         if (rootData.target_profile_id?.value) perfilId = rootData.target_profile_id.value;
         if (rootData.target_wheel_id?.value) ruedaId = rootData.target_wheel_id.value;
-        
+
         if (!perfilId || !ruedaId) {
-             for (const row of rows) {
-                 const rd = safeJSONParse(row.data);
-                 if (!perfilId && rd.tipoPerfil?.value) perfilId = rd.tipoPerfil.value;
-                 if (!ruedaId && rd.tipoRuedaSabor?.value) ruedaId = rd.tipoRuedaSabor.value;
-             }
+            for (const row of rows) {
+                const rd = safeJSONParse(row.data);
+                if (!perfilId && rd.tipoPerfil?.value) perfilId = rd.tipoPerfil.value;
+                if (!ruedaId && rd.tipoRuedaSabor?.value) ruedaId = rd.tipoRuedaSabor.value;
+            }
         }
 
         if (perfilId) {
@@ -1193,7 +1193,7 @@ const getTrazabilidad = async (req, res) => {
                         producto: vino,
                         puntuacion: calcularMaridajeCacaoVino(perfil, vino)
                     })).sort((a, b) => b.puntuacion - a.puntuacion);
-                    
+
                     const recQueso = allQuesos.map(queso => ({
                         producto: queso,
                         puntuacion: calcularMaridajeCacaoQueso(perfil, queso)
@@ -1208,18 +1208,18 @@ const getTrazabilidad = async (req, res) => {
             if (rueda) history.ruedaSaborData = { ...rueda, notas_json: safeJSONParse(rueda.notas_json) };
         }
 
-        rows.sort((a,b) => { 
-             const sA = allStages.find(s=>s.id===a.etapa_id)?.orden||0; 
-             const sB = allStages.find(s=>s.id===b.etapa_id)?.orden||0; 
-             return sA - sB; 
+        rows.sort((a, b) => {
+            const sA = allStages.find(s => s.id === a.etapa_id)?.orden || 0;
+            const sB = allStages.find(s => s.id === b.etapa_id)?.orden || 0;
+            return sA - sB;
         }).forEach(row => {
             const sInfo = allStages.find(s => s.id === row.etapa_id);
-            if(sInfo) history.stages.push({ id: row.id, nombre_etapa: sInfo.nombre_etapa, descripcion: sInfo.descripcion, campos_json: safeJSONParse(sInfo.campos_json), data: safeJSONParse(row.data), blockchain_hash: row.blockchain_hash, is_locked: row.is_locked, timestamp: row.created_at });
+            if (sInfo) history.stages.push({ id: row.id, nombre_etapa: sInfo.nombre_etapa, descripcion: sInfo.descripcion, campos_json: safeJSONParse(sInfo.campos_json), data: safeJSONParse(row.data), blockchain_hash: row.blockchain_hash, is_locked: row.is_locked, timestamp: row.created_at });
         });
 
         res.status(200).json(history);
 
-    } catch (error) { 
+    } catch (error) {
         console.log(error);
         res.status(500).json({ error: "Error interno." });
     }
@@ -1233,7 +1233,7 @@ const getBatchMetadata = async (batchId) => {
         let productId = batch.producto_id;
 
         if (!productId) {
-             const rootBatch = await get(`
+            const rootBatch = await get(`
                 WITH RECURSIVE ancestry AS (
                     SELECT id, parent_id, producto_id FROM batches WHERE id = ?
                     UNION ALL
@@ -1243,9 +1243,9 @@ const getBatchMetadata = async (batchId) => {
                 )
                 SELECT producto_id FROM ancestry WHERE producto_id IS NOT NULL LIMIT 1
              `, [batchId]);
-             if (rootBatch) productId = rootBatch.producto_id;
+            if (rootBatch) productId = rootBatch.producto_id;
         }
-        
+
         if (productId) {
             // CORRECCIÓN: Seleccionamos también el ID para poder generar la URL de la imagen
             const product = await get('SELECT id, nombre, imagenes_json, descripcion FROM productos WHERE id = ?', [productId]);
@@ -1270,7 +1270,7 @@ const serveProductImage = async (req, res) => {
     const { id } = req.params;
     try {
         const product = await get('SELECT imagenes_json FROM productos WHERE id = ?', [id]);
-        
+
         if (!product || !product.imagenes_json) {
             return res.redirect('https://rurulab.com/images/banner_1.png');
         }
@@ -1288,9 +1288,9 @@ const serveProductImage = async (req, res) => {
             if (!matches || matches.length !== 3) {
                 return res.redirect('https://rurulab.com/images/banner_1.png');
             }
-            
-            const type = matches[1]; 
-            const buffer = Buffer.from(matches[2], 'base64'); 
+
+            const type = matches[1];
+            const buffer = Buffer.from(matches[2], 'base64');
 
             res.writeHead(200, {
                 'Content-Type': type,
@@ -1298,8 +1298,8 @@ const serveProductImage = async (req, res) => {
                 'Cache-Control': 'public, max-age=86400' // Cache 24h
             });
             res.end(buffer);
-        
-        // 2. Si ya es URL, redirigir
+
+            // 2. Si ya es URL, redirigir
         } else if (imageData.startsWith('http')) {
             res.redirect(imageData);
         } else {
@@ -1371,12 +1371,12 @@ const getImmutableBatches = async (req, res) => {
             GROUP BY l.id, p.nombre_producto, e.nombre_etapa, l.created_at, l.views, l.blockchain_hash, l.data, prod.gtin, prod.nombre, acq.finca_origen, f.ciudad, f.pais
             ORDER BY l.created_at DESC
         `;
-        
+
         const rows = await all(sql, [userId]);
-        
+
         const result = rows.map(row => {
             const dataObj = safeJSONParse(row.data);
-            
+
             if (!dataObj.finca && row.finca_nombre) {
                 dataObj.finca = { value: row.finca_nombre, visible: true, nombre: 'Finca Origen' };
             }
@@ -1384,7 +1384,7 @@ const getImmutableBatches = async (req, res) => {
                 dataObj.ciudad = { value: row.finca_ciudad, visible: true, nombre: 'Ciudad' };
             }
             if (!dataObj.ubicacion && row.finca_ciudad && row.finca_pais) {
-                 dataObj.ubicacion = { value: `${row.finca_ciudad}, ${row.finca_pais}`, visible: true, nombre: 'Ubicación' };
+                dataObj.ubicacion = { value: `${row.finca_ciudad}, ${row.finca_pais}`, visible: true, nombre: 'Ubicación' };
             }
 
             return {
@@ -1404,13 +1404,13 @@ function calcularMaridajeCacaoCafe(cacao, cafe) {
     const pInt = 1 - (Math.abs((cacao.perfil_data.cacao || 0) - (cafe.perfil_data.sabor || 0)) / 10);
     const pAcid = 1 - (Math.abs((cacao.perfil_data.acidez || 0) - (cafe.perfil_data.acidez || 0)) / 10);
     const pDulz = 1 - (Math.abs((cacao.perfil_data.caramelo || 0) - (cafe.perfil_data.dulzura || 0)) / 10);
-    const pComp = 1 - (Math.abs(((cacao.perfil_data.amargor || 0) + (cacao.perfil_data.madera || 0))/2 - ((cafe.perfil_data.cuerpo || 0) + (cafe.perfil_data.postgusto || 0))/2) / 10);
+    const pComp = 1 - (Math.abs(((cacao.perfil_data.amargor || 0) + (cacao.perfil_data.madera || 0)) / 2 - ((cafe.perfil_data.cuerpo || 0) + (cafe.perfil_data.postgusto || 0)) / 2) / 10);
     return ((pInt * 0.4) + (((pAcid + pDulz + pComp) / 3) * 0.6)) * 100;
 }
 
 function calcularMaridajeCacaoVino(cacao, vino) {
     const pInt = 1 - (Math.abs((cacao.perfil_data.cacao || 0) - (vino.perfil_data.intensidad || 0)) / 10);
-    const pEst = 1 - (Math.abs(((cacao.perfil_data.amargor || 0) + (cacao.perfil_data.astringencia || 0))/2 - (vino.perfil_data.taninos || 0)) / 10);
+    const pEst = 1 - (Math.abs(((cacao.perfil_data.amargor || 0) + (cacao.perfil_data.astringencia || 0)) / 2 - (vino.perfil_data.taninos || 0)) / 10);
     const pAcid = 1 - (Math.abs((cacao.perfil_data.acidez || 0) - (vino.perfil_data.acidez || 0)) / 10);
     const pDulz = 1 - (Math.abs((cacao.perfil_data.caramelo || 0) - (vino.perfil_data.dulzura || 0)) / 10);
     const bonusDulzura = (vino.perfil_data.dulzura || 0) >= (cacao.perfil_data.caramelo || 0) ? 1.1 : 1;
@@ -1423,8 +1423,8 @@ function calcularMaridajeCacaoQueso(cacao, queso) {
     const contraste = ((queso.perfil_data.cremosidad || 0) + (queso.perfil_data.salinidad || 0)) * ((cacao.perfil_data.amargor || 0) + (cacao.perfil_data.astringencia || 0));
     const pContraste = Math.min(1, contraste / 200);
     let pArmonia = 0;
-    if(queso.perfil_data.notas_sabor.includes('nuez') && (cacao.perfil_data.nuez || 0) > 5) pArmonia += 0.5;
-    if(queso.perfil_data.notas_sabor.includes('caramelo') && (cacao.perfil_data.caramelo || 0) > 5) pArmonia += 0.5;
+    if (queso.perfil_data.notas_sabor.includes('nuez') && (cacao.perfil_data.nuez || 0) > 5) pArmonia += 0.5;
+    if (queso.perfil_data.notas_sabor.includes('caramelo') && (cacao.perfil_data.caramelo || 0) > 5) pArmonia += 0.5;
     return ((pInt * 0.4) + (pContraste * 0.4) + (pArmonia * 0.2)) * 100;
 }
 
@@ -1492,7 +1492,7 @@ const getBlends = async (req, res) => {
 const createBlend = async (req, res) => {
     const userId = req.user.id;
     const { nombre_blend, tipo_producto, componentes_json, perfil_final_json } = req.body;
-    const id = require('crypto').randomUUID(); 
+    const id = require('crypto').randomUUID();
     try {
         await run(
             'INSERT INTO blends (id, user_id, nombre_blend, tipo_producto, componentes_json, perfil_final_json) VALUES (?, ?, ?, ?, ?, ?)',
@@ -1581,7 +1581,7 @@ const getUserSubscriptionStatus = async (userId) => {
 const getAdminDashboardData = async (req, res) => {
     try {
         const users = await all('SELECT id, usuario, correo, created_at, subscription_tier, trial_ends_at FROM users');
-        
+
         const dashboardData = await Promise.all(users.map(async (user) => {
             const [fincaCount, procesadoraCount, processes] = await Promise.all([
                 get('SELECT COUNT(*) as count FROM fincas WHERE user_id = ?', [user.id]),
@@ -1602,7 +1602,7 @@ const getAdminDashboardData = async (req, res) => {
                 process_types: processes.map(p => p.nombre_producto)
             };
         }));
-        
+
         res.status(200).json(dashboardData);
     } catch (error) {
         console.error("Error en getAdminDashboardData:", error);
@@ -1689,7 +1689,7 @@ const getDashboardData = async (req, res) => {
             stages,
             fincas,
             procesadoras,
-            costs: costs.map(c => ({...c, cost_data: safeJSONParse(c.cost_data)}))
+            costs: costs.map(c => ({ ...c, cost_data: safeJSONParse(c.cost_data) }))
         });
 
     } catch (err) {
@@ -1700,8 +1700,8 @@ const getDashboardData = async (req, res) => {
 
 const createPaymentPreference = async (req, res, client) => {
     const userId = req.user.id;
-    const host = req.get('host'); 
-    const protocol = req.protocol; 
+    const host = req.get('host');
+    const protocol = req.protocol;
 
     const preferenceData = {
         items: [
@@ -1726,10 +1726,10 @@ const createPaymentPreference = async (req, res, client) => {
     try {
         const preference = new Preference(mpClient);
         const response = await preference.create({ body: preferenceData });
-        
-        res.json({ 
-            id: response.id, 
-            init_point: response.init_point 
+
+        res.json({
+            id: response.id,
+            init_point: response.init_point
         });
     } catch (error) {
         console.error("Error al crear preferencia de Mercado Pago:", error);
@@ -1742,7 +1742,7 @@ const handlePaymentWebhook = async (req, res) => {
     const body = JSON.parse(req.body.toString());
 
     const topic = query.type || body.type;
-    
+
     if (topic === 'payment') {
         const paymentId = query['data.id'] || body.data?.id;
         if (!paymentId) return res.sendStatus(400);
@@ -1750,7 +1750,7 @@ const handlePaymentWebhook = async (req, res) => {
         try {
             const payment = new Payment(mpClient);
             const paymentInfo = await payment.get({ id: Number(paymentId) });
-            
+
             if (paymentInfo && paymentInfo.status === 'approved') {
                 const userId = paymentInfo.external_reference;
                 if (userId) {
@@ -1815,7 +1815,7 @@ const submitReview = async (req, res) => {
             [lote_id, user_email, rating, comment]
         );
         res.status(201).json({ message: 'Reseña guardada con éxito.' });
-    
+
     } catch (err) {
         if (err.message.includes('UNIQUE') || (err.code && err.code.includes('23505'))) {
             res.status(409).json({ error: 'Ya has enviado una reseña para este producto.' });
@@ -1840,7 +1840,7 @@ const getBlogPosts = async (req, res) => {
             'SELECT id, title, slug, summary, cover_image, created_at FROM blog_posts WHERE is_published = TRUE ORDER BY created_at DESC LIMIT ? OFFSET ?',
             [limit, offset]
         );
-        
+
         // Contamos total para la paginación
         const countResult = await get('SELECT COUNT(*) as count FROM blog_posts WHERE is_published = TRUE');
         const totalPosts = parseInt(countResult.count);
@@ -1899,7 +1899,7 @@ const updateBlogPost = async (req, res) => {
     // Si cambia el título, podríamos querer actualizar el slug, pero para mantener SEO, a veces es mejor no hacerlo.
     // Aquí actualizaremos el slug solo si se envía explícitamente o generaremos uno nuevo si cambia el título significativamente (opcional).
     // Por simplicidad, regeneramos el slug si cambia el título.
-    const slug = createSlug(title); 
+    const slug = createSlug(title);
 
     try {
         const result = await run(
@@ -1950,16 +1950,16 @@ const validateDeforestation = async (req, res) => {
     const { coordinates } = req.body; // Espera un GeoJSON Polygon coordinates
 
     if (!coordinates) {
-        return res.status(400).json({ 
-            error: "Coordenadas inválidas." 
+        return res.status(400).json({
+            error: "Coordenadas inválidas."
         });
     }
-    
+
     // Diagnóstico seguro para logs de producción
     if (!process.env.GEE_PRIVATE_KEY) {
-         console.error("GEE_PRIVATE_KEY está vacía o indefinida en el entorno.");
-         return res.status(500).json({ 
-            error: "Configuración de GEE faltante en el servidor." 
+        console.error("GEE_PRIVATE_KEY está vacía o indefinida en el entorno.");
+        return res.status(500).json({
+            error: "Configuración de GEE faltante en el servidor."
         });
     }
 
@@ -1976,16 +1976,16 @@ const validateDeforestation = async (req, res) => {
             try {
                 // Reemplaza saltos de línea literales que podrían haber roto el JSON string
                 // Primero intentamos eliminar saltos de línea reales y luego parsear
-                 const sanitizedKey = process.env.GEE_PRIVATE_KEY.replace(/(\r\n|\n|\r)/gm, "");
-                 privateKey = JSON.parse(sanitizedKey);
+                const sanitizedKey = process.env.GEE_PRIVATE_KEY.replace(/(\r\n|\n|\r)/gm, "");
+                privateKey = JSON.parse(sanitizedKey);
             } catch (e2) {
                 console.error("Error de formato en GEE_PRIVATE_KEY:", jsonError.message);
-                 return res.status(500).json({ 
-                    error: "El formato de GEE_PRIVATE_KEY no es un JSON válido. Asegúrate de que esté en una sola línea sin espacios extra." 
+                return res.status(500).json({
+                    error: "El formato de GEE_PRIVATE_KEY no es un JSON válido. Asegúrate de que esté en una sola línea sin espacios extra."
                 });
             }
         }
-        
+
         await new Promise((resolve, reject) => {
             ee.data.authenticateViaPrivateKey(
                 privateKey,
@@ -2001,7 +2001,7 @@ const validateDeforestation = async (req, res) => {
         // 3. Cargar Dataset Global Forest Change (Hansen/UMD)
         // Versión v1_11 incluye datos hasta 2023
         const gfc = ee.Image('UMD/hansen/global_forest_change_2023_v1_11');
-        
+
         // 4. Definir Criterios EUDR (Reglamento UE)
         // Fecha de corte: 31 Dic 2020.
         // La banda 'lossyear' tiene valores 1 (2001) a 23 (2023).
@@ -2012,7 +2012,7 @@ const validateDeforestation = async (req, res) => {
 
         // 5. Calcular el Área Afectada (en metros cuadrados)
         const areaImage = maskedLoss.multiply(ee.Image.pixelArea());
-        
+
         // Reducir la región para sumar el área de pérdida dentro del polígono
         // Usamos scale: 30 (resolución nativa de Landsat ~30m)
         const stats = areaImage.reduceRegion({
@@ -2050,7 +2050,7 @@ const validateDeforestation = async (req, res) => {
             compliant: isCompliant,
             loss_percentage: lossPercentage,
             loss_area_hectares: (lossAreaM2 / 10000).toFixed(4),
-            details: isCompliant 
+            details: isCompliant
                 ? "Certificado Automático: Sin pérdida de cobertura arbórea detectada post-2020."
                 : `Alerta: Se detectó deforestación en ${lossPercentage.toFixed(2)}% del área.`
         });
@@ -2247,7 +2247,7 @@ const ensureTemplateAndStageExists = async (userId, systemTemplateName, stageNam
     try {
         // 1. Buscar si la plantilla ya existe para el usuario
         let template = await get('SELECT id FROM plantillas_proceso WHERE user_id = ? AND nombre_producto = ?', [userId, systemTemplateName]);
-        
+
         let templateId;
 
         if (template) {
@@ -2268,11 +2268,11 @@ const ensureTemplateAndStageExists = async (userId, systemTemplateName, stageNam
 
             // Insertar etapas (Acopio + Proceso)
             const allStages = [...(templateToClone.acopio || []), ...(templateToClone.etapas || [])];
-            
+
             for (const stage of allStages) {
                 // Determinar fase
                 const fase = (templateToClone.acopio && templateToClone.acopio.includes(stage)) ? 'acopio' : 'procesamiento';
-                
+
                 await run(
                     'INSERT INTO etapas_plantilla (plantilla_id, nombre_etapa, descripcion, orden, campos_json, fase) VALUES (?, ?, ?, ?, ?, ?)',
                     [templateId, stage.nombre_etapa, stage.descripcion, stage.orden, JSON.stringify(stage.campos_json), fase]
@@ -2284,14 +2284,14 @@ const ensureTemplateAndStageExists = async (userId, systemTemplateName, stageNam
         // Buscamos por nombre Y orden para ser precisos (ya que Cosecha podría repetirse en otro contexto, aunque no debería)
         let stageSql = 'SELECT id FROM etapas_plantilla WHERE plantilla_id = ? AND nombre_etapa = ?';
         let stageParams = [templateId, stageName];
-        
+
         if (stageOrder) {
             stageSql += ' AND orden = ?';
             stageParams.push(stageOrder);
         }
 
         const stage = await get(stageSql, stageParams);
-        
+
         if (!stage) throw new Error(`Etapa '${stageName}' no encontrada en la plantilla '${systemTemplateName}'.`);
 
         return { plantilla_id: templateId, etapa_id: stage.id };
@@ -2316,7 +2316,8 @@ const getPublicCompaniesWithImmutable = async (req, res) => {
                 COUNT(DISTINCT tr.id) as lotes_count,
                 COALESCE(f.pais, p.pais) as pais,
                 COALESCE(f.departamento, p.departamento) as departamento,
-                COALESCE(f.provincia, p.provincia) as provincia
+                COALESCE(f.provincia, p.provincia) as provincia,
+                COALESCE(f.coordenadas, p.coordenadas) as coordenadas
             FROM users u
             JOIN company_profiles cp ON u.id = cp.user_id
             LEFT JOIN fincas f ON cp.company_type = 'finca' AND cp.company_id = f.id
@@ -2325,7 +2326,7 @@ const getPublicCompaniesWithImmutable = async (req, res) => {
                 AND tr.blockchain_hash IS NOT NULL 
                 AND tr.blockchain_hash != ''
             WHERE cp.is_published = TRUE 
-            GROUP BY u.id, cp.name, cp.logo_url, cp.company_type, f.pais, f.departamento, f.provincia, p.pais, p.departamento, p.provincia
+            GROUP BY u.id, cp.name, cp.logo_url, cp.company_type, f.pais, f.departamento, f.provincia, p.pais, p.departamento, p.provincia, f.coordenadas, p.coordenadas
         `;
 
         // B. Empresas Sugeridas (Pendientes)
@@ -2353,18 +2354,60 @@ const getPublicCompaniesWithImmutable = async (req, res) => {
         ]);
 
         // Combinar y ordenar (Verificados primero por cantidad de lotes, luego alfabético)
-        const combined = [...verified, ...suggested].sort((a, b) => {
+        let combined = [...verified, ...suggested].sort((a, b) => {
             // Prioridad a verificados
             if (a.status === 'verified' && b.status !== 'verified') return -1;
             if (a.status !== 'verified' && b.status === 'verified') return 1;
-            
+
             // Dentro de verificados, prioridad a los que tienen más lotes
             if (a.status === 'verified' && b.status === 'verified') {
                 if (b.lotes_count !== a.lotes_count) return b.lotes_count - a.lotes_count;
             }
-            
+
             // Finalmente alfabético
             return a.name.localeCompare(b.name);
+        });
+
+        combined = combined.map(c => {
+            let parsedCoords = safeJSONParse(c.coordenadas || 'null');
+            console.log(parsedCoords);
+            // Si es un array de coordenadas (polígono de finca)
+            if (Array.isArray(parsedCoords) && parsedCoords.length > 0) {
+                let sumLat = 0;
+                let sumLng = 0;
+                let validPoints = 0;
+
+                parsedCoords.forEach(point => {
+                    // Soporte para formato de array: [[lat, lng], [lat, lng]]
+                    if (Array.isArray(point) && point.length >= 2) {
+                        sumLat += parseFloat(point[0]);
+                        sumLng += parseFloat(point[1]);
+                        validPoints++;
+                    }
+                    // Soporte para formato de objeto: [{lat, lng}, {lat, lng}]
+                    else if (point && point.lat && point.lng) {
+                        sumLat += parseFloat(point.lat);
+                        sumLng += parseFloat(point.lng);
+                        validPoints++;
+                    }
+                });
+                console.log(sumLat, sumLng, validPoints);
+
+                if (validPoints > 0) {
+                    parsedCoords = {
+                        lat: sumLat / validPoints,
+                        lng: sumLng / validPoints
+                    };
+                } else {
+                    parsedCoords = null;
+                }
+            }
+
+            console.log(parsedCoords);
+            return {
+                ...c,
+                coordenadas: parsedCoords
+            };
         });
 
         res.status(200).json(combined);
@@ -2497,21 +2540,21 @@ const getPublicBatchesForProduct = async (req, res) => {
             WHERE CAST(bs.resolved_product_id AS TEXT) = ?
             ORDER BY b.created_at DESC
         `;
-        
+
         const rows = await all(sql, [productId]);
-        
+
         const batches = rows.map(row => {
             const dataObj = safeJSONParse(row.data);
-            
+
             // Normalizar ubicación
             let origen = row.finca_origen || dataObj.finca?.value || 'Origen registrado';
-            
+
             // Construir detalle de ubicación: Distrito, Departamento, País
             const locationParts = [];
             if (row.distrito) locationParts.push(row.distrito);
             if (row.departamento) locationParts.push(row.departamento);
             if (row.pais) locationParts.push(row.pais);
-            
+
             // Si no hay datos detallados, intentar usar ciudad
             if (locationParts.length === 0 && row.ciudad) {
                 locationParts.push(row.ciudad);
@@ -2520,14 +2563,14 @@ const getPublicBatchesForProduct = async (req, res) => {
             if (locationParts.length > 0) {
                 origen += `, ${locationParts.join(', ')}`;
             }
-            
+
             return {
                 id: row.id,
                 fecha: row.created_at,
                 hash: row.blockchain_hash,
                 origen: origen,
                 tipo: row.tipo_proceso,
-                rating: 5 
+                rating: 5
             };
         });
 
@@ -2557,7 +2600,7 @@ const syncBatchOutputs = async (batchId, etapaId, dataObj) => {
     try {
         const stage = await get('SELECT campos_json FROM etapas_plantilla WHERE id = ?', [etapaId]);
         if (!stage) return;
-        
+
         const config = safeJSONParse(stage.campos_json);
         if (!config || !config.salidas || !Array.isArray(config.salidas)) return;
 
@@ -2566,7 +2609,7 @@ const syncBatchOutputs = async (batchId, etapaId, dataObj) => {
         for (const salida of config.salidas) {
             const key = salida.name || toCamelCase(salida.label);
             const entry = dataObj[key];
-            
+
             // Verificamos si es un objeto complejo (nuevo formato) o simple (viejo)
             let quantity = 0;
             let unitId = null;
@@ -2579,23 +2622,23 @@ const syncBatchOutputs = async (batchId, etapaId, dataObj) => {
                 unitCost = entry.unit_cost ? parseFloat(entry.unit_cost) : 0;
                 currencyId = entry.currency_id ? parseInt(entry.currency_id) : null;
             } else if (entry && typeof entry === 'object' && entry.value) {
-                 // Fallback formato simple {value: "100"}
-                 quantity = parseFloat(entry.value) || 0;
+                // Fallback formato simple {value: "100"}
+                quantity = parseFloat(entry.value) || 0;
             }
 
             if (quantity > 0) {
                 const outId = require('crypto').randomUUID();
-                
+
                 await run(`
                     INSERT INTO batch_outputs (
                         id, batch_id, product_type, quantity, output_category, unit_id, unit_cost, currency_id
                     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                 `, [
-                    outId, 
-                    batchId, 
-                    salida.label, 
-                    quantity, 
-                    salida.product_type || 'principal', 
+                    outId,
+                    batchId,
+                    salida.label,
+                    quantity,
+                    salida.product_type || 'principal',
                     unitId,
                     unitCost,
                     currencyId
@@ -2611,7 +2654,7 @@ const getCompanyLandingData = async (req, res) => {
     const { userId } = req.params;
     try {
         let isSuggested = userId.startsWith('SUG-');
-        
+
         if (isSuggested) {
             // ... (Lógica para sugeridos se mantiene igual) ...
             const suggestion = await get('SELECT * FROM suggested_companies WHERE id = ?', [userId]);
@@ -2665,7 +2708,7 @@ const getCompanyLandingData = async (req, res) => {
                 WHERE u.id = ?
             `, [userId]);
 
-            if (!userRow) return res.status(404).json({error: "Empresa no encontrada"});
+            if (!userRow) return res.status(404).json({ error: "Empresa no encontrada" });
 
             // Consolidar datos (Prioriza company_profiles, fallback a users)
             const companyData = {
@@ -2689,11 +2732,11 @@ const getCompanyLandingData = async (req, res) => {
             let entityPromise = Promise.resolve({});
             if (companyData.type === 'finca' && actualCompanyId) {
                 entityPromise = get('SELECT * FROM fincas WHERE id = ?', [actualCompanyId]).then(e => {
-                    if(e) e.type_label = 'Finca Productora'; return e || {};
+                    if (e) e.type_label = 'Finca Productora'; return e || {};
                 });
             } else if (companyData.type === 'procesadora' && actualCompanyId) {
                 entityPromise = get('SELECT * FROM procesadoras WHERE id = ?', [actualCompanyId]).then(e => {
-                    if(e) e.type_label = 'Planta de Procesamiento'; return e || {};
+                    if (e) e.type_label = 'Planta de Procesamiento'; return e || {};
                 });
             }
 
@@ -2734,19 +2777,19 @@ const getCompanyLandingData = async (req, res) => {
 
             // 4. Mapear los lotes a sus productos correspondientes usando JavaScript (Super Rápido)
             const batchesByProduct = {};
-            
+
             for (const row of registryRows) {
                 const snapshot = safeJSONParse(row.snapshot_data || '{}');
-                
+
                 // Extraer el ID del producto desde el snapshot pre-calculado
                 let prodId = snapshot.productoFinal?.id;
 
                 if (prodId) {
                     if (!batchesByProduct[prodId]) batchesByProduct[prodId] = [];
-                    
+
                     // Solo guardamos los últimos 5 lotes por producto para no sobrecargar el frontend
                     if (batchesByProduct[prodId].length < 5) {
-                        
+
                         // Extraer el nombre de la finca del snapshot
                         let fincaOrigen = 'Origen Verificado';
                         if (snapshot.fincaData && snapshot.fincaData.nombre_finca) {
@@ -2792,7 +2835,7 @@ const getCompanyLandingData = async (req, res) => {
 
 const createSuggestion = async (req, res) => {
     const { type, name, logo, instagram, facebook } = req.body;
-    const id = `SUG-${require('crypto').randomUUID().substring(0,8).toUpperCase()}`;
+    const id = `SUG-${require('crypto').randomUUID().substring(0, 8).toUpperCase()}`;
 
     try {
         await run(`
@@ -2802,7 +2845,7 @@ const createSuggestion = async (req, res) => {
         `, [
             id, type, name, logo, instagram, facebook
         ]);
-        
+
         res.status(201).json({ message: "Sugerencia enviada", id });
     } catch (err) {
         console.error("Error createSuggestion:", err);
@@ -2812,14 +2855,14 @@ const createSuggestion = async (req, res) => {
 
 const trackAnalyticsEvent = async (req, res) => {
     const { event_type, target_user_id, target_product_id, meta_data } = req.body;
-    
+
     try {
         await run(
             'INSERT INTO analytics_events (event_type, target_user_id, target_product_id, meta_data) VALUES (?, ?, ?, ?)',
             [
-                event_type, 
-                target_user_id, 
-                target_product_id || null, 
+                event_type,
+                target_user_id,
+                target_product_id || null,
                 JSON.stringify(meta_data || {})
             ]
         );
@@ -2828,7 +2871,7 @@ const trackAnalyticsEvent = async (req, res) => {
     } catch (err) {
         // Logueamos el error pero no rompemos la app del cliente
         console.error("Error Analytics:", err);
-        res.status(200).json({ status: 'error_logged' }); 
+        res.status(200).json({ status: 'error_logged' });
     }
 };
 
@@ -2862,7 +2905,7 @@ const getSuggestionById = async (req, res) => {
     try {
         const suggestion = await get('SELECT * FROM suggested_companies WHERE id = ?', [id]);
         if (!suggestion) return res.status(404).json({ error: "Sugerencia no encontrada" });
-        
+
         res.json(suggestion);
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -2885,10 +2928,10 @@ const serveCompanyLogo = async (req, res) => {
     try {
         // 1. Buscar en usuarios verificados
         let user = await get('SELECT company_logo FROM users WHERE id = ?', [id]);
-        
+
         // 2. Si no, buscar en empresas sugeridas
         if (!user) {
-             user = await get('SELECT logo as company_logo FROM suggested_companies WHERE id = ?', [id]);
+            user = await get('SELECT logo as company_logo FROM suggested_companies WHERE id = ?', [id]);
         }
 
         if (!user || !user.company_logo) {
@@ -2904,7 +2947,7 @@ const serveCompanyLogo = async (req, res) => {
             if (!matches || matches.length !== 3) {
                 return res.redirect('https://rurulab.com/images/banner_1.png');
             }
-            
+
             const type = matches[1]; // ej: image/png
             const buffer = Buffer.from(matches[2], 'base64'); // Convertir a binario
 
@@ -2918,7 +2961,7 @@ const serveCompanyLogo = async (req, res) => {
             // Si ya es URL externa, redirigir
             res.redirect(logoData);
         } else {
-             res.redirect('https://rurulab.com/images/banner_1.png');
+            res.redirect('https://rurulab.com/images/banner_1.png');
         }
 
     } catch (err) {
@@ -2933,7 +2976,7 @@ module.exports = {
     getFincas, createFinca, updateFinca, deleteFinca, generateFincaToken, getFincaByToken, updateFincaByToken,
     getProcesadoras, createProcesadora, updateProcesadora, deleteProcesadora,
     getPerfiles, createPerfil, updatePerfil, deletePerfil,
-    getTemplates, createTemplate, updateTemplate, deleteTemplate, 
+    getTemplates, createTemplate, updateTemplate, deleteTemplate,
     getSystemTemplates, cloneTemplate, // <-- NUEVAS FUNCIONES EXPORTADAS
     getStagesForTemplate, createStage, updateStage, deleteStage,
     getAcquisitions, createAcquisition, deleteAcquisition, updateAcquisition,

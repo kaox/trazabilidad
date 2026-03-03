@@ -3,61 +3,67 @@ const app = {
         view: 'companies',
         selectedCompany: null,
         companies: [], // Almacén para evitar peticiones repetidas
-        currentFilter: 'all'
+        currentFilter: 'all',
+        displayMode: 'grid'
     },
 
     container: document.getElementById('app-container'),
     breadcrumbs: document.getElementById('breadcrumbs'),
-    
-    // Variables para el mapa de sugerencias
-    map: null,
 
-    init: async function() {
+    // Variables para el mapa de sugerencias y visualización
+    map: null,
+    markers: [],
+    infoWindow: null,
+
+    init: async function () {
+        if (typeof google !== 'undefined' && google.maps) {
+            this.infoWindow = new google.maps.InfoWindow();
+        }
         // En esta vista solo cargamos las empresas y configuramos el formulario
         await this.loadCompanies();
         this.setupSuggestForm();
     },
 
     // --- ANALYTICS ---
-    trackEvent: async function(type, companyId, productId = null) { 
-        try { 
-            await fetch('/api/public/analytics', { 
-                method: 'POST', 
-                headers: { 'Content-Type': 'application/json' }, 
-                body: JSON.stringify({ 
-                    event_type: type, 
-                    target_user_id: companyId, 
-                    target_product_id: productId, 
-                    meta_data: { 
-                        referrer: document.referrer, 
-                        url: window.location.href, 
-                        timestamp: new Date().toISOString() 
-                    } 
-                }) 
-            }); 
-        } catch(e){} 
+    trackEvent: async function (type, companyId, productId = null) {
+        try {
+            await fetch('/api/public/analytics', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    event_type: type,
+                    target_user_id: companyId,
+                    target_product_id: productId,
+                    meta_data: {
+                        referrer: document.referrer,
+                        url: window.location.href,
+                        timestamp: new Date().toISOString()
+                    }
+                })
+            });
+        } catch (e) { }
     },
 
     // --- UTILS ---
-    createSlug: function(text) { 
+    createSlug: function (text) {
         if (!text) return '';
         return text.toString().toLowerCase().trim()
             .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
             .replace(/\s+/g, '-')
             .replace(/[^\w\-]+/g, '')
-            .replace(/\-\-+/g, '-'); 
+            .replace(/\-\-+/g, '-');
     },
 
-    toTitleCase: function(str) {
+    toTitleCase: function (str) {
         if (!str) return '';
         return str.toLowerCase().split(' ').map(word => {
             return word.charAt(0).toUpperCase() + word.slice(1);
         }).join(' ');
     },
 
-    setFilter: function(filterType) {
+    setFilter: function (filterType) {
         this.state.currentFilter = filterType;
-        
+
         // Actualizar UI de botones
         document.querySelectorAll('.filter-btn').forEach(btn => {
             if (btn.getAttribute('data-filter') === filterType) {
@@ -68,10 +74,51 @@ const app = {
         });
 
         this.renderCompanies();
+        if (this.state.displayMode === 'map') {
+            this.renderMap();
+        }
+    },
+
+    setDisplayMode: function (mode) {
+        if (this.state.displayMode === mode) return;
+        this.state.displayMode = mode;
+
+        const btnGrid = document.getElementById('btn-view-grid');
+        const btnMap = document.getElementById('btn-view-map');
+        const gridContainer = document.getElementById('app-container');
+        const mapContainer = document.getElementById('map-world-container');
+
+        if (!btnGrid || !btnMap || !gridContainer || !mapContainer) return;
+
+        if (mode === 'grid') {
+            btnGrid.classList.replace('text-stone-500', 'text-amber-900');
+            btnGrid.classList.replace('hover:text-stone-800', 'bg-white');
+            btnGrid.classList.add('shadow-sm');
+
+            btnMap.classList.replace('text-amber-900', 'text-stone-500');
+            btnMap.classList.replace('bg-white', 'hover:text-stone-800');
+            btnMap.classList.remove('shadow-sm');
+
+            gridContainer.classList.remove('hidden');
+            mapContainer.classList.add('hidden');
+        } else {
+            btnMap.classList.replace('text-stone-500', 'text-amber-900');
+            btnMap.classList.replace('hover:text-stone-800', 'bg-white');
+            btnMap.classList.add('shadow-sm');
+
+            btnGrid.classList.replace('text-amber-900', 'text-stone-500');
+            btnGrid.classList.replace('bg-white', 'hover:text-stone-800');
+            btnGrid.classList.remove('shadow-sm');
+
+            gridContainer.classList.add('hidden');
+            mapContainer.classList.remove('hidden');
+
+            this.renderMap();
+        }
     },
 
     // --- NIVEL 1: LISTADO DE EMPRESAS (DISEÑO MEJORADO) ---
-    loadCompanies: async function() {
+    loadCompanies: async function () {
         if (this.state.companies.length > 0) { this.renderCompanies(); return; }
         this.container.innerHTML = '<div class="flex justify-center py-20"><div class="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-900"></div></div>';
         try {
@@ -81,16 +128,16 @@ const app = {
         } catch (e) { this.container.innerHTML = '<p class="text-center py-20 text-stone-400">No se pudo cargar el directorio.</p>'; }
     },
 
-    renderCompanies: function() {
+    renderCompanies: function () {
         const filter = this.state.currentFilter;
-        
+
         // Filtrar datos
-        const filtered = filter === 'all' 
-            ? this.state.companies 
+        const filtered = filter === 'all'
+            ? this.state.companies
             : this.state.companies.filter(c => c.type === filter);
 
         let html = `<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 fade-in">`;
-        
+
         if (filtered.length > 0) {
             filtered.forEach(c => {
                 const logoSrc = c.logo || c.logo_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(c.name)}&background=f5f5f4&color=78350f&size=128`;
@@ -139,8 +186,130 @@ const app = {
         this.container.innerHTML = html;
     },
 
+    renderMap: function () {
+        if (typeof google === 'undefined' || !google.maps) {
+            console.error("Google Maps API no está cargada.");
+            return;
+        }
+
+        const mapContainer = document.getElementById('map-world-container');
+        if (!mapContainer) return;
+
+        if (!this.infoWindow) {
+            this.infoWindow = new google.maps.InfoWindow();
+        }
+
+        // Inicializar mapa si no existe
+        if (!this.map) {
+            this.map = new google.maps.Map(mapContainer, {
+                center: { lat: -9.19, lng: -75.0152 }, // Perú por defecto
+                zoom: 5,
+                styles: [
+                    { "featureType": "administrative", "elementType": "labels.text.fill", "stylers": [{ "color": "#444444" }] },
+                    { "featureType": "landscape", "elementType": "all", "stylers": [{ "color": "#f2f2f2" }] },
+                    { "featureType": "poi", "elementType": "all", "stylers": [{ "visibility": "off" }] },
+                    { "featureType": "road", "elementType": "all", "stylers": [{ "saturation": -100 }, { "lightness": 45 }] },
+                    { "featureType": "road.highway", "elementType": "all", "stylers": [{ "visibility": "simplified" }] },
+                    { "featureType": "road.arterial", "elementType": "labels.icon", "stylers": [{ "visibility": "off" }] },
+                    { "featureType": "transit", "elementType": "all", "stylers": [{ "visibility": "off" }] },
+                    { "featureType": "water", "elementType": "all", "stylers": [{ "color": "#c1c1c1" }, { "visibility": "on" }] }
+                ]
+            });
+        }
+
+        // Limpiar marcadores existentes
+        if (this.markers && this.markers.length > 0) {
+            for (let i = 0; i < this.markers.length; i++) {
+                this.markers[i].setMap(null);
+            }
+            this.markers = [];
+        }
+
+        const filter = this.state.currentFilter;
+
+        // Filtrar datos
+        const filtered = filter === 'all'
+            ? this.state.companies
+            : this.state.companies.filter(c => c.type === filter);
+
+        const bounds = new google.maps.LatLngBounds();
+        let hasValidCoords = false;
+
+        filtered.forEach(c => {
+            if (c.coordenadas && c.coordenadas.lat && c.coordenadas.lng) {
+                const lat = parseFloat(c.coordenadas.lat);
+                const lng = parseFloat(c.coordenadas.lng);
+
+                if (isNaN(lat) || isNaN(lng)) return;
+
+                const position = { lat, lng };
+                bounds.extend(position);
+                hasValidCoords = true;
+
+                const isFinca = c.type === 'finca';
+                const typeColor = isFinca ? '#d97706' : '#2563eb'; // amber-600 o blue-600
+                const iconPath = 'M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z';
+
+                const marker = new google.maps.Marker({
+                    position: position,
+                    map: this.map,
+                    title: c.name,
+                    icon: {
+                        path: iconPath,
+                        fillColor: typeColor,
+                        fillOpacity: 1,
+                        strokeWeight: 2,
+                        strokeColor: '#FFFFFF',
+                        scale: 1.5,
+                        anchor: new google.maps.Point(12, 24)
+                    }
+                });
+
+                // InfoWindow Content
+                const logoSrc = c.logo || c.logo_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(c.name)}&background=f5f5f4&color=78350f&size=128`;
+                const locationStr = [c.distrito, c.provincia, c.departamento, c.pais].filter(Boolean).map(p => this.toTitleCase(p)).join(', ') || 'Ubicación por verificar';
+                const slug = this.createSlug(c.name) + '-' + c.id;
+                const linkUrl = `/origen-unico/${slug}`;
+                const statusBadge = c.status === 'pending'
+                    ? '<span class="text-[10px] font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-100">Sugerido</span>'
+                    : '<span class="text-[10px] font-bold text-green-700 bg-green-50 px-2 py-0.5 rounded-full border border-green-100"><i class="fas fa-check-circle"></i> Verificado</span>';
+
+                const typeSpan = isFinca ? '<span class="text-[10px] font-black uppercase tracking-[0.1em] text-amber-600"><i class="fas fa-leaf mr-1"></i> Productor</span>' : '<span class="text-[10px] font-black uppercase tracking-[0.1em] text-blue-600"><i class="fas fa-industry mr-1"></i> Procesadora</span>';
+
+                const contentString = `
+                    <div class="p-2 max-w-[240px] font-sans">
+                        <div class="flex justify-between items-start mb-3 gap-2">
+                            <img src="${logoSrc}" class="w-12 h-12 rounded-lg object-cover border border-stone-200 shadow-sm" alt="Logo">
+                            ${statusBadge}
+                        </div>
+                        ${typeSpan}
+                        <h3 class="text-base font-bold text-stone-900 leading-tight mt-1 mb-1">${c.name}</h3>
+                        <p class="text-xs text-stone-500 mb-3"><i class="fas fa-map-marker-alt text-stone-300"></i> ${locationStr}</p>
+                        <a href="${linkUrl}" class="block text-center w-full bg-amber-800 text-white text-xs font-bold py-2 rounded-lg hover:bg-amber-900 transition-colors" style="text-decoration:none;">
+                            Ver Perfil &rarr;
+                        </a>
+                    </div>
+                `;
+
+                marker.addListener("click", () => {
+                    this.infoWindow.setContent(contentString);
+                    this.infoWindow.open(this.map, marker);
+                });
+
+                this.markers.push(marker);
+            }
+        });
+
+        if (hasValidCoords && filtered.length > 1) {
+            this.map.fitBounds(bounds);
+        } else if (hasValidCoords && filtered.length === 1) {
+            this.map.setCenter(bounds.getCenter());
+            this.map.setZoom(12);
+        }
+    },
+
     // --- RESTO DE FUNCIONES (MAPAS, MODALES, ETC.) ---
-    openSuggestModal: function() {
+    openSuggestModal: function () {
         const modal = document.getElementById('suggest-modal');
         if (!modal) return;
 
@@ -170,14 +339,14 @@ const app = {
             // Insertar antes de los campos de redes sociales
             const nameLabel = document.getElementById('name-label')?.parentElement;
             if (nameLabel) nameLabel.insertAdjacentHTML('afterend', logoHtml);
-            
+
             this.bindLogoEvents();
         }
 
         modal.showModal();
     },
 
-    bindLogoEvents: function() {
+    bindLogoEvents: function () {
         const input = document.getElementById('input-logo');
         const preview = document.getElementById('logo-preview');
         const errorMsg = document.getElementById('logo-error');
@@ -205,26 +374,26 @@ const app = {
         });
     },
 
-    setupSuggestForm: function() {
+    setupSuggestForm: function () {
         const form = document.getElementById('suggest-form');
-        if(!form) return;
+        if (!form) return;
 
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
             const btn = document.getElementById('btn-submit-suggest');
-            btn.disabled = true; 
+            btn.disabled = true;
             btn.innerHTML = '<i class="fas fa-spinner animate-spin mr-2"></i> Enviando...';
 
             const formData = new FormData(e.target);
             const data = Object.fromEntries(formData.entries());
-            
+
             // Mapear campos y agregar el logo
             data.type = data.suggest_type;
             data.logo = this.pendingLogoBase64; // Agregar el Base64
             delete data.suggest_type;
 
-            if(data.coordenadas) {
-                try { data.coordenadas = JSON.parse(data.coordenadas); } catch(e) { data.coordenadas = null; }
+            if (data.coordenadas) {
+                try { data.coordenadas = JSON.parse(data.coordenadas); } catch (e) { data.coordenadas = null; }
             }
 
             try {
@@ -233,9 +402,9 @@ const app = {
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(data)
                 });
-                
-                if(!res.ok) throw new Error("Error al enviar la sugerencia");
-                
+
+                if (!res.ok) throw new Error("Error al enviar la sugerencia");
+
                 // Limpiar estado
                 this.pendingLogoBase64 = null;
                 e.target.reset();
@@ -244,18 +413,18 @@ const app = {
 
                 alert("¡Gracias! Tu sugerencia ha sido enviada con éxito.");
                 document.getElementById('suggest-modal').close();
-                this.loadCompanies(); 
+                this.loadCompanies();
 
-            } catch(err) {
+            } catch (err) {
                 alert("Hubo un problema: " + err.message);
             } finally {
-                btn.disabled = false; 
+                btn.disabled = false;
                 btn.innerHTML = '<i class="fas fa-paper-plane mr-2"></i> Enviar Sugerencia';
             }
         });
     },
 
-    resetToCompanies: function() {
+    resetToCompanies: function () {
         this.loadCompanies();
     }
 };

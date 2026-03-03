@@ -1,18 +1,19 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Empresas con Origen Único - Rurulab</title>
 
     <meta name="description" content="Descubre productores y marcas comprometidos con la transparencia radical.">
-    
+
     <!-- Open Graph / Facebook / WhatsApp -->
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://rurulab.com/origen-unico">
     <!-- El servidor buscará este string exacto para reemplazarlo -->
     <meta property="og:title" content="RuruLab - Trazabilidad y Pasaporte Digital para Café y Cacao">
-    <meta property="og:description" content="Crea un pasaporte digital para tu producto..."> 
+    <meta property="og:description" content="Crea un pasaporte digital para tu producto...">
     <meta property="og:image" content="https://rurulab.com/images/banner_1.png">
 
     <!-- Twitter -->
@@ -22,27 +23,73 @@
     <meta property="twitter:image" content="https://rurulab.com/images/banner_1.png">
 
     <link href="/css/styles.css" rel="stylesheet">
-    
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet" crossorigin>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" crossorigin />
-    
-    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAM37iJTRcIoSAxESlDzB2DxlNJWKasW5U&libraries=geometry,drawing,places&v=weekly" defer></script>
+
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Playfair+Display:wght@700;900&display=swap"
+        rel="stylesheet" crossorigin>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+        crossorigin />
+
+    <script
+        src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAM37iJTRcIoSAxESlDzB2DxlNJWKasW5U&libraries=geometry,drawing,places&v=weekly"
+        defer></script>
     <style>
-        body { font-family: 'Inter', sans-serif; background-color: #fdfaf6; }
-        .font-display { font-family: 'Playfair Display', serif; }
-        .card-hover:hover { transform: translateY(-4px); box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1); }
-        .fade-in { animation: fadeIn 0.5s ease-in-out; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        #suggest-map { height: 300px; width: 100%; border-radius: 0.5rem; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #fdfaf6;
+        }
+
+        .font-display {
+            font-family: 'Playfair Display', serif;
+        }
+
+        .card-hover:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        #suggest-map {
+            height: 300px;
+            width: 100%;
+            border-radius: 0.5rem;
+        }
 
         /* Clases para estados de filtros */
-        .filter-btn.active { background-color: #78350f; color: white; border-color: #78350f; box-shadow: 0 4px 12px rgba(120, 53, 15, 0.2); }
-        
+        .filter-btn.active {
+            background-color: #78350f;
+            color: white;
+            border-color: #78350f;
+            box-shadow: 0 4px 12px rgba(120, 53, 15, 0.2);
+        }
+
         /* Scrollbar suave para filtros en móvil */
-        .hide-scrollbar::-webkit-scrollbar { display: none; }
-        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
     </style>
 </head>
+
 <body class="text-stone-800 antialiased min-h-screen flex flex-col">
 
     <div id="public-nav-placeholder"></div>
@@ -50,16 +97,19 @@
     <!-- Header Hero -->
     <header class="bg-amber-900 text-white py-16">
         <div class="container mx-auto px-6 text-center">
-            <div class="inline-flex items-center justify-center p-3 bg-amber-800/50 rounded-full mb-4 backdrop-blur-sm border border-amber-700">
+            <div
+                class="inline-flex items-center justify-center p-3 bg-amber-800/50 rounded-full mb-4 backdrop-blur-sm border border-amber-700">
                 <i class="fas fa-certificate text-amber-300 mr-2"></i>
                 <span class="text-xs font-bold uppercase tracking-widest text-amber-100">Directorio Verificado</span>
             </div>
             <h1 class="text-4xl md:text-6xl font-display font-bold mb-4">Empresas con Origen Único y Trazable</h1>
-            <p class="text-lg text-amber-200 max-w-2xl mx-auto">Conecta con productores y marcas comprometidos con la transparencia. Descubre historias únicas, dándote la seguridad que buscas en cada compra.</p>
-            
+            <p class="text-lg text-amber-200 max-w-2xl mx-auto">Conecta con productores y marcas comprometidos con la
+                transparencia. Descubre historias únicas, dándote la seguridad que buscas en cada compra.</p>
+
             <!-- Botón Móvil Sugerir -->
             <div class="mt-6 md:hidden">
-                <button onclick="app.openSuggestModal()" class="bg-white/10 hover:bg-white/20 text-white px-6 py-3 rounded-xl font-bold backdrop-blur transition w-full max-w-xs">
+                <button onclick="app.openSuggestModal()"
+                    class="bg-white/10 hover:bg-white/20 text-white px-6 py-3 rounded-xl font-bold backdrop-blur transition w-full max-w-xs">
                     <i class="fas fa-plus-circle mr-2"></i> Sugerir Empresa
                 </button>
             </div>
@@ -73,31 +123,52 @@
         <div id="filters-section" class="mb-10">
             <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div class="flex items-center gap-2 overflow-x-auto hide-scrollbar pb-2 md:pb-0">
-                    <button onclick="app.setFilter('all')" data-filter="all" class="filter-btn active whitespace-nowrap px-5 py-2 rounded-full border border-stone-200 bg-white text-stone-600 font-bold text-sm transition-all flex items-center gap-2">
+                    <button onclick="app.setFilter('all')" data-filter="all"
+                        class="filter-btn active whitespace-nowrap px-5 py-2 rounded-full border border-stone-200 bg-white text-stone-600 font-bold text-sm transition-all flex items-center gap-2">
                         Todas
                     </button>
-                    <button onclick="app.setFilter('finca')" data-filter="finca" class="filter-btn whitespace-nowrap px-5 py-2 rounded-full border border-stone-200 bg-white text-stone-600 font-bold text-sm transition-all flex items-center gap-2">
+                    <button onclick="app.setFilter('finca')" data-filter="finca"
+                        class="filter-btn whitespace-nowrap px-5 py-2 rounded-full border border-stone-200 bg-white text-stone-600 font-bold text-sm transition-all flex items-center gap-2">
                         <i class="fas fa-leaf text-green-600"></i> Fincas / Productores
                     </button>
-                    <button onclick="app.setFilter('procesadora')" data-filter="procesadora" class="filter-btn whitespace-nowrap px-5 py-2 rounded-full border border-stone-200 bg-white text-stone-600 font-bold text-sm transition-all flex items-center gap-2">
+                    <button onclick="app.setFilter('procesadora')" data-filter="procesadora"
+                        class="filter-btn whitespace-nowrap px-5 py-2 rounded-full border border-stone-200 bg-white text-stone-600 font-bold text-sm transition-all flex items-center gap-2">
                         <i class="fas fa-industry text-blue-600"></i> Empresa / Plantas de Proceso
                     </button>
                 </div>
-                
-                <div class="hidden md:block">
-                    <button onclick="app.openSuggestModal()" class="text-amber-800 font-bold text-sm hover:underline flex items-center gap-2">
+
+                <div class="hidden md:flex items-center gap-4">
+                    <!-- Toggle Grilla / Mapa -->
+                    <div class="bg-stone-100 p-1 rounded-full flex items-center border border-stone-200">
+                        <button onclick="app.setDisplayMode('grid')" id="btn-view-grid"
+                            class="flex-1 px-4 py-1.5 rounded-full text-sm font-bold bg-white text-amber-900 shadow-sm transition-all focus:outline-none">
+                            <i class="fas fa-th-large mr-1"></i> Grilla
+                        </button>
+                        <button onclick="app.setDisplayMode('map')" id="btn-view-map"
+                            class="flex-1 px-4 py-1.5 rounded-full text-sm font-bold text-stone-500 hover:text-stone-800 transition-all focus:outline-none">
+                            <i class="fas fa-map-marked-alt mr-1"></i> Mapa
+                        </button>
+                    </div>
+
+                    <button onclick="app.openSuggestModal()"
+                        class="text-amber-800 font-bold text-sm hover:underline flex items-center gap-2">
                         <i class="fas fa-plus-circle"></i> Sugerir Empresa
                     </button>
                 </div>
             </div>
         </div>
 
-        <!-- Contenedor Dinámico -->
+        <!-- Contenedor Dinámico: Grilla -->
         <div id="app-container" class="min-h-[400px]">
             <div class="flex justify-center py-20">
                 <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-900"></div>
             </div>
         </div>
+
+        <!-- Contenedor Mapa (Oculto por defecto) -->
+        <div id="map-world-container"
+            class="hidden w-full rounded-2xl mb-10 overflow-hidden shadow-lg border border-stone-200"
+            style="min-height: 600px;"></div>
 
     </main>
 
@@ -106,64 +177,85 @@
         <div class="bg-white p-6 md:p-8">
             <div class="flex justify-between items-center mb-6">
                 <h2 class="text-2xl font-display text-amber-900 font-bold">Sugerir Empresa</h2>
-                <button onclick="document.getElementById('suggest-modal').close()" class="text-stone-400 hover:text-red-500 transition"><i class="fas fa-times text-xl"></i></button>
+                <button onclick="document.getElementById('suggest-modal').close()"
+                    class="text-stone-400 hover:text-red-500 transition"><i class="fas fa-times text-xl"></i></button>
             </div>
-            
+
             <form id="suggest-form" class="space-y-6">
                 <!-- Tipo (RADIO CARDS MEJORADOS) -->
                 <div class="grid grid-cols-2 gap-4">
                     <!-- Opción Productor -->
                     <label class="cursor-pointer relative group">
-                        <input type="radio" name="suggest_type" value="finca" class="peer sr-only" >
-                        <div class="p-4 rounded-xl border-2 border-stone-200 peer-checked:border-amber-600 peer-checked:bg-amber-50 peer-checked:shadow-md transition-all h-full flex flex-col items-center justify-center relative overflow-hidden">
+                        <input type="radio" name="suggest_type" value="finca" class="peer sr-only">
+                        <div
+                            class="p-4 rounded-xl border-2 border-stone-200 peer-checked:border-amber-600 peer-checked:bg-amber-50 peer-checked:shadow-md transition-all h-full flex flex-col items-center justify-center relative overflow-hidden">
                             <!-- Icono de Check (Solo visible al seleccionar) -->
-                            <div class="absolute top-2 right-2 text-amber-600 opacity-0 peer-checked:opacity-100 transition-opacity transform peer-checked:scale-100 scale-50">
+                            <div
+                                class="absolute top-2 right-2 text-amber-600 opacity-0 peer-checked:opacity-100 transition-opacity transform peer-checked:scale-100 scale-50">
                                 <i class="fas fa-check-circle text-lg"></i>
                             </div>
-                            
-                            <div class="w-12 h-12 rounded-full bg-stone-100 peer-checked:bg-amber-200 flex items-center justify-center mb-2 transition-colors">
-                                 <i class="fas fa-tractor text-2xl text-stone-400 peer-checked:text-amber-800 transition-colors"></i>
+
+                            <div
+                                class="w-12 h-12 rounded-full bg-stone-100 peer-checked:bg-amber-200 flex items-center justify-center mb-2 transition-colors">
+                                <i
+                                    class="fas fa-tractor text-2xl text-stone-400 peer-checked:text-amber-800 transition-colors"></i>
                             </div>
-                            <p class="font-bold text-sm text-stone-500 peer-checked:text-amber-900 transition-colors">Productor</p>
+                            <p class="font-bold text-sm text-stone-500 peer-checked:text-amber-900 transition-colors">
+                                Productor</p>
                         </div>
                     </label>
 
                     <!-- Opción Procesadora -->
                     <label class="cursor-pointer relative group">
-                        <input type="radio" name="suggest_type" value="procesadora" class="peer sr-only" >
-                        <div class="p-4 rounded-xl border-2 border-stone-200 peer-checked:border-blue-600 peer-checked:bg-blue-50 peer-checked:shadow-md transition-all h-full flex flex-col items-center justify-center relative overflow-hidden">
+                        <input type="radio" name="suggest_type" value="procesadora" class="peer sr-only">
+                        <div
+                            class="p-4 rounded-xl border-2 border-stone-200 peer-checked:border-blue-600 peer-checked:bg-blue-50 peer-checked:shadow-md transition-all h-full flex flex-col items-center justify-center relative overflow-hidden">
                             <!-- Icono de Check -->
-                            <div class="absolute top-2 right-2 text-blue-600 opacity-0 peer-checked:opacity-100 transition-opacity transform peer-checked:scale-100 scale-50">
+                            <div
+                                class="absolute top-2 right-2 text-blue-600 opacity-0 peer-checked:opacity-100 transition-opacity transform peer-checked:scale-100 scale-50">
                                 <i class="fas fa-check-circle text-lg"></i>
                             </div>
 
-                            <div class="w-12 h-12 rounded-full bg-stone-100 peer-checked:bg-blue-200 flex items-center justify-center mb-2 transition-colors">
-                                <i class="fas fa-industry text-2xl text-stone-400 peer-checked:text-blue-800 transition-colors"></i>
+                            <div
+                                class="w-12 h-12 rounded-full bg-stone-100 peer-checked:bg-blue-200 flex items-center justify-center mb-2 transition-colors">
+                                <i
+                                    class="fas fa-industry text-2xl text-stone-400 peer-checked:text-blue-800 transition-colors"></i>
                             </div>
-                            <p class="font-bold text-sm text-stone-500 peer-checked:text-blue-900 transition-colors">Procesador</p>
+                            <p class="font-bold text-sm text-stone-500 peer-checked:text-blue-900 transition-colors">
+                                Procesador</p>
                         </div>
                     </label>
                 </div>
 
                 <!-- Datos Básicos -->
                 <div>
-                    <label class="block text-xs font-bold text-stone-500 mb-1 uppercase" id="name-label">Nombre de la Empresa</label>
-                    <input type="text" name="name" class="w-full p-3 border border-stone-300 rounded-lg outline-none focus:ring-2 focus:ring-amber-500" required>
+                    <label class="block text-xs font-bold text-stone-500 mb-1 uppercase" id="name-label">Nombre de la
+                        Empresa</label>
+                    <input type="text" name="name"
+                        class="w-full p-3 border border-stone-300 rounded-lg outline-none focus:ring-2 focus:ring-amber-500"
+                        required>
                 </div>
-                
+
                 <div class="grid grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-xs font-bold text-stone-500 mb-1 uppercase"><i class="fab fa-instagram"></i> Instagram (Opcional)</label>
-                        <input type="text" name="instagram" class="w-full p-3 border border-stone-300 rounded-lg outline-none focus:ring-2 focus:ring-pink-500" placeholder="@usuario">
+                        <label class="block text-xs font-bold text-stone-500 mb-1 uppercase"><i
+                                class="fab fa-instagram"></i> Instagram (Opcional)</label>
+                        <input type="text" name="instagram"
+                            class="w-full p-3 border border-stone-300 rounded-lg outline-none focus:ring-2 focus:ring-pink-500"
+                            placeholder="@usuario">
                     </div>
                     <div>
-                        <label class="block text-xs font-bold text-stone-500 mb-1 uppercase"><i class="fab fa-facebook"></i> Facebook (Opcional)</label>
-                        <input type="text" name="facebook" class="w-full p-3 border border-stone-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500" placeholder="/pagina">
+                        <label class="block text-xs font-bold text-stone-500 mb-1 uppercase"><i
+                                class="fab fa-facebook"></i> Facebook (Opcional)</label>
+                        <input type="text" name="facebook"
+                            class="w-full p-3 border border-stone-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500"
+                            placeholder="/pagina">
                     </div>
                 </div>
 
                 <div class="pt-4 border-t border-stone-100">
-                    <button type="submit" id="btn-submit-suggest" class="w-full bg-amber-800 hover:bg-amber-900 text-white font-bold py-3 rounded-xl shadow-lg transition transform hover:-translate-y-1 disabled:opacity-50 flex items-center justify-center gap-2">
+                    <button type="submit" id="btn-submit-suggest"
+                        class="w-full bg-amber-800 hover:bg-amber-900 text-white font-bold py-3 rounded-xl shadow-lg transition transform hover:-translate-y-1 disabled:opacity-50 flex items-center justify-center gap-2">
                         <i class="fas fa-paper-plane"></i> Enviar Sugerencia
                     </button>
                 </div>
@@ -180,4 +272,5 @@
     <script src="/js/origen-unico-app.js"></script>
     <script src="/js/public-nav-loader.js"></script>
 </body>
+
 </html>

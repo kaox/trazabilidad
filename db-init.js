@@ -27,10 +27,10 @@ async function initializeDatabase() {
             throw err;
         }
         console.log('Conectado a la base de datos SQLite.');
-        
+
         try {
             console.log('Creando/actualizando tablas...');
-            
+
             await runQuery(db, 'PRAGMA foreign_keys = ON;');
 
             await runQuery(db, `
@@ -145,7 +145,7 @@ async function initializeDatabase() {
                     UNIQUE(user_id, nombre_producto)
                 )`);
             console.log("Tabla 'plantillas_proceso' lista.");
-            
+
             await runQuery(db, `
                 CREATE TABLE IF NOT EXISTS etapas_plantilla (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -265,7 +265,7 @@ async function initializeDatabase() {
                     FOREIGN KEY (acquisition_id) REFERENCES acquisitions(id) ON DELETE SET NULL
                 )`);
             console.log("Tabla 'lotes' lista.");
-            
+
             await runQuery(db, `
                 CREATE TABLE IF NOT EXISTS perfiles (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -373,6 +373,7 @@ async function initializeDatabase() {
                     receta_nutricional_id TEXT REFERENCES recetas_nutricionales(id) ON DELETE SET NULL, -- NUEVO CAMPO
                     perfil_id INTEGER REFERENCES perfiles(id) ON DELETE SET NULL,
                     rueda_id INTEGER REFERENCES ruedas_sabores(id) ON DELETE SET NULL,
+                    is_published BOOLEAN DEFAULT 0,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     deleted_at TIMESTAMP, -- NUEVO CAMPO AUDITORÍA,
                     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
@@ -404,7 +405,7 @@ async function initializeDatabase() {
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     FOREIGN KEY (receta_id) REFERENCES recetas_nutricionales(id) ON DELETE CASCADE
                 )`);
-            
+
             // 10. CATÁLOGO DE INGREDIENTES (CACHE LOCAL) <-- NUEVO
             // Esta tabla almacena los ingredientes obtenidos de APIs externas para no depender siempre de ellas.
             await runQuery(db, `
@@ -519,7 +520,7 @@ async function initializeDatabase() {
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )`);
             console.log("Tabla 'analytics_events' creada.");
-            
+
             console.log('Esquema de base de datos listo.');
 
         } catch (error) {
