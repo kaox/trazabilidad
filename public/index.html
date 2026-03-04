@@ -1,13 +1,16 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <!-- SEO Meta Tags -->
     <title>Rurulab - Software de Trazabilidad Blockchain, EUDR y Pasaporte Digital</title>
-    <meta name="description" content="Plataforma de trazabilidad blockchain para cacao, café y agro. Cumple normativa EUDR, crea pasaportes digitales del producto y conecta el origen con el consumidor.">
-    <meta name="keywords" content="trazabilidad blockchain, cumplimiento eudr, pasaporte digital productos, software cacao, software cafe, trazabilidad satelital, cadena de suministro transparente">
+    <meta name="description"
+        content="Plataforma de trazabilidad blockchain para cacao, café y agro. Cumple normativa EUDR, crea pasaportes digitales del producto y conecta el origen con el consumidor.">
+    <meta name="keywords"
+        content="trazabilidad blockchain, cumplimiento eudr, pasaporte digital productos, software cacao, software cafe, trazabilidad satelital, cadena de suministro transparente">
     <link rel="canonical" href="https://rurulab.com/">
 
     <meta name="robots" content="index, follow">
@@ -48,50 +51,75 @@
       }
     ]
     </script>
-    
+
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://rurulab.com/">
     <meta property="og:title" content="Rurulab - Trazabilidad y Cumplimiento EUDR para Agro">
-    <meta property="og:description" content="Gestiona la trazabilidad desde el campo hasta la mesa. Cumple la norma EUDR y crea pasaportes digitales para diferenciar tu marca.">
-    <meta property="og:image" content="https://images.unsplash.com/photo-1579532824334-a8c095a59d35?q=80&w=1200&auto=format&fit=crop">
+    <meta property="og:description"
+        content="Gestiona la trazabilidad desde el campo hasta la mesa. Cumple la norma EUDR y crea pasaportes digitales para diferenciar tu marca.">
+    <meta property="og:image"
+        content="https://images.unsplash.com/photo-1579532824334-a8c095a59d35?q=80&w=1200&auto=format&fit=crop">
 
     <!-- Twitter -->
     <meta property="twitter:card" content="summary_large_image">
     <meta property="twitter:url" content="https://rurulab.com/">
     <meta property="twitter:title" content="Rurulab - Trazabilidad y Pasaporte Digital para Cacao y Café">
-    <meta property="twitter:description" content="Crea un pasaporte digital para tu producto. Conecta con tus clientes y cuenta la historia desde el origen.">
-    <meta property="twitter:image" content="https://images.unsplash.com/photo-1579532824334-a8c095a59d35?q=80&w=1200&auto=format&fit=crop">
+    <meta property="twitter:description"
+        content="Crea un pasaporte digital para tu producto. Conecta con tus clientes y cuenta la historia desde el origen.">
+    <meta property="twitter:image"
+        content="https://images.unsplash.com/photo-1579532824334-a8c095a59d35?q=80&w=1200&auto=format&fit=crop">
 
     <link href="/css/styles.css" rel="stylesheet">
     <!-- CORRECCIÓN: Se cambió la ruta local del script del QR por un CDN para que funcione correctamente. -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" defer></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" xintegrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Playfair+Display:wght@700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+        xintegrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A=="
+        crossorigin="anonymous" referrerpolicy="no-referrer" />
     <script src="/js/analytics-loader.js" defer></script>
     <style>
-        body { font-family: 'Inter', sans-serif; background-color: #fdfdfb; }
-        .font-display { font-family: 'Playfair Display', serif; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #fdfdfb;
+        }
+
+        .font-display {
+            font-family: 'Playfair Display', serif;
+        }
+
         .hero-section {
             background-image: url('https://images.unsplash.com/photo-1579532824334-a8c095a59d35?q=80&w=2670&auto=format&fit=crop');
             background-size: cover;
             background-position: center;
         }
+
         /* Estilo para el trazo de la animación */
         #trace-path {
             stroke-dasharray: 1;
             stroke-dashoffset: 1;
         }
+
         #mobile-menu {
             transition: transform 0.3s ease-in-out;
         }
+
         /* Scrollbar oculto para carruseles */
-        .hide-scrollbar::-webkit-scrollbar { display: none; }
-        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
     </style>
 </head>
+
 <body class="text-stone-800 antialiased">
 
     <!-- Contenido Principal -->
@@ -103,23 +131,32 @@
             <div class="absolute inset-0 bg-gradient-to-r from-black/80 via-black/50 to-transparent"></div>
             <div class="container mx-auto px-6 relative z-10 grid md:grid-cols-2 gap-12 items-center">
                 <div class="text-center md:text-left">
-                    <span class="inline-block bg-amber-500/20 border border-amber-400/30 text-amber-300 px-4 py-1 rounded-full text-sm font-bold mb-4 backdrop-blur-sm">Nueva Feature: Validación Satelital EUDR 🛰️</span>
-                    <h1 class="text-5xl md:text-7xl font-bold font-display leading-tight mb-6">La Historia detrás de cada <span class="text-amber-400">Origen</span>.</h1>
-                    <p class="text-lg md:text-xl text-stone-200 mb-8 max-w-lg leading-relaxed">Plataforma integral de trazabilidad, cumplimiento EUDR y marketing para productores de cacao y café de especialidad.</p>
+                    <span
+                        class="inline-block bg-amber-500/20 border border-amber-400/30 text-amber-300 px-4 py-1 rounded-full text-sm font-bold mb-4 backdrop-blur-sm">Nueva
+                        Feature: Validación Satelital EUDR 🛰️</span>
+                    <h1 class="text-5xl md:text-7xl font-bold font-display leading-tight mb-6">La Historia detrás de
+                        cada <span class="text-amber-400">Origen</span>.</h1>
+                    <p class="text-lg md:text-xl text-stone-200 mb-8 max-w-lg leading-relaxed">Plataforma integral de
+                        trazabilidad, cumplimiento EUDR y marketing para productores de cacao y café de especialidad.
+                    </p>
                     <div class="flex flex-col sm:flex-row gap-4 justify-center md:justify-start">
-                        <a href="/login.html" class="bg-amber-600 hover:bg-amber-700 text-white font-bold py-4 px-8 rounded-xl shadow-lg transition transform hover:-translate-y-1 text-center">
+                        <a href="/login.html"
+                            class="bg-amber-600 hover:bg-amber-700 text-white font-bold py-4 px-8 rounded-xl shadow-lg transition transform hover:-translate-y-1 text-center">
                             Comenzar Gratis
                         </a>
-                        <a href="#features" class="bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/30 text-white font-bold py-4 px-8 rounded-xl transition text-center">
-                            Ver Funcionalidades
+                        <a href="/origen-unico"
+                            class="bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/30 text-white font-bold py-4 px-8 rounded-xl transition text-center">
+                            Explorar Origen Único
                         </a>
                     </div>
                 </div>
                 <div class="hidden md:flex justify-center relative">
                     <!-- Elemento decorativo o SVG -->
-                    <div class="relative bg-white/5 backdrop-blur-sm p-8 rounded-2xl border border-white/10 shadow-2xl max-w-sm transform rotate-3 hover:rotate-0 transition duration-500">
+                    <div
+                        class="relative bg-white/5 backdrop-blur-sm p-8 rounded-2xl border border-white/10 shadow-2xl max-w-sm transform rotate-3 hover:rotate-0 transition duration-500">
                         <div class="flex items-center gap-4 mb-4 border-b border-white/10 pb-4">
-                            <div class="h-12 w-12 bg-green-500 rounded-full flex items-center justify-center text-2xl">🌿</div>
+                            <div class="h-12 w-12 bg-green-500 rounded-full flex items-center justify-center text-2xl">
+                                🌿</div>
                             <div>
                                 <h3 class="font-bold text-lg">Certificado EUDR</h3>
                                 <p class="text-xs text-stone-300">Validado vía Satélite</p>
@@ -143,10 +180,12 @@
         <!-- NUEVA SECCIÓN: Carrusel de Empresas Confianza -->
         <section class="py-10 bg-stone-50 border-b border-stone-200">
             <div class="container mx-auto px-6">
-                <p class="text-center text-stone-400 text-xs font-bold uppercase tracking-widest mb-8">Empresas que confían en Ruru Lab</p>
-                
+                <p class="text-center text-stone-400 text-xs font-bold uppercase tracking-widest mb-8">Empresas que
+                    confían en Ruru Lab</p>
+
                 <!-- Carrusel scrollable -->
-                <div id="companies-carousel" class="flex items-center justify-start md:justify-center gap-10 md:gap-16 overflow-x-auto hide-scrollbar pb-4 md:pb-0 px-4 min-h-[60px]">
+                <div id="companies-carousel"
+                    class="flex items-center justify-start md:justify-center gap-10 md:gap-16 overflow-x-auto hide-scrollbar pb-4 md:pb-0 px-4 min-h-[60px]">
                     <!-- Cargando... (Placeholder) -->
                     <div class="flex justify-center w-full">
                         <div class="animate-pulse flex space-x-12">
@@ -158,14 +197,18 @@
                 </div>
             </div>
         </section>
-        
+
         <section class="py-12 md:py-16 bg-white">
             <div class="container mx-auto px-6 text-center max-w-4xl">
-                <h2 class="text-3xl md:text-4xl font-display text-amber-900 mb-4">El Mercado Cambió. ¿Tu Historia También?</h2>
-                <p class="text-lg text-stone-600 leading-relaxed">Los consumidores de hoy no solo compran un producto, compran una historia. Exigen transparencia, valoran el origen y buscan una conexión auténtica. Ruru Lab es el puente digital entre tu dedicación en el campo y la curiosidad de tus clientes, convirtiendo la trazabilidad en tu herramienta de marketing más poderosa.</p>
+                <h2 class="text-3xl md:text-4xl font-display text-amber-900 mb-4">El Mercado Cambió. ¿Tu Historia
+                    También?</h2>
+                <p class="text-lg text-stone-600 leading-relaxed">Los consumidores de hoy no solo compran un producto,
+                    compran una historia. Exigen transparencia, valoran el origen y buscan una conexión auténtica. Ruru
+                    Lab es el puente digital entre tu dedicación en el campo y la curiosidad de tus clientes,
+                    convirtiendo la trazabilidad en tu herramienta de marketing más poderosa.</p>
             </div>
             <div class="container mx-auto px-6 text-center max-w-4xl">
-                <br/>
+                <br />
                 <div class="hidden md:flex space-x-8 items-center">
                     <img src="images/banner_1.png" alt="banner">
                 </div>
@@ -179,24 +222,28 @@
         <section id="use-cases" class="py-12 md:py-16 bg-stone-50">
             <div class="container mx-auto px-6 max-w-5xl text-center">
                 <h2 class="text-3xl md:text-4xl font-display text-amber-900 mb-12">Casos de Uso por Industria</h2>
-                <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-8">
+                <div class="grid grid-cols-1 sm:grid-cols-3 max-w-4xl mx-auto gap-8">
                     <a href="/use-case.html?product=cacao" class="group block">
-                        <div class="bg-white p-6 rounded-xl shadow-lg transition-transform group-hover:-translate-y-2 h-full">
-                             <div class="flex items-center justify-center h-20 w-20 rounded-full bg-amber-800 text-white mx-auto mb-4 text-3xl">
+                        <div
+                            class="bg-white p-6 rounded-xl shadow-lg transition-transform group-hover:-translate-y-2 h-full">
+                            <div
+                                class="flex items-center justify-center h-20 w-20 rounded-full bg-amber-800 text-white mx-auto mb-4 text-3xl">
                                 <i class="fa-solid fa-cookie-bite"></i>
                             </div>
                             <h3 class="font-bold text-lg">Cacao y Chocolate</h3>
                         </div>
                     </a>
                     <a href="/use-case.html?product=cafe" class="group block">
-                         <div class="bg-white p-6 rounded-xl shadow-lg transition-transform group-hover:-translate-y-2 h-full">
-                             <div class="flex items-center justify-center h-20 w-20 rounded-full bg-green-800 text-white mx-auto mb-4 text-3xl">
+                        <div
+                            class="bg-white p-6 rounded-xl shadow-lg transition-transform group-hover:-translate-y-2 h-full">
+                            <div
+                                class="flex items-center justify-center h-20 w-20 rounded-full bg-green-800 text-white mx-auto mb-4 text-3xl">
                                 <i class="fa-solid fa-mug-hot"></i>
                             </div>
                             <h3 class="font-bold text-lg">Café de Especialidad</h3>
                         </div>
                     </a>
-                     <!--a href="/use-case.html?product=pina" class="group block">
+                    <!--a href="/use-case.html?product=pina" class="group block">
                          <div class="bg-white p-6 rounded-xl shadow-lg transition-transform group-hover:-translate-y-2 h-full">
                            <div class="flex items-center justify-center h-20 w-20 rounded-full bg-yellow-500 text-white mx-auto mb-4 text-3xl">
                                 <i class="fa-solid fa-fan"></i>
@@ -213,8 +260,10 @@
                         </div>
                     </a-->
                     <a href="/use-case.html?product=miel" class="group block">
-                         <div class="bg-white p-6 rounded-xl shadow-lg transition-transform group-hover:-translate-y-2 h-full">
-                           <div class="flex items-center justify-center h-20 w-20 rounded-full bg-amber-500 text-white mx-auto mb-4 text-3xl">
+                        <div
+                            class="bg-white p-6 rounded-xl shadow-lg transition-transform group-hover:-translate-y-2 h-full">
+                            <div
+                                class="flex items-center justify-center h-20 w-20 rounded-full bg-amber-500 text-white mx-auto mb-4 text-3xl">
                                 <i class="fa-solid fa-jar"></i>
                             </div>
                             <h3 class="font-bold text-lg">Miel de Abeja</h3>
@@ -237,157 +286,216 @@
             <div class="container mx-auto px-6">
                 <div class="text-center max-w-3xl mx-auto mb-16">
                     <h2 class="text-3xl md:text-5xl font-display text-amber-900 mb-4">Todo lo que tu Marca necesita</h2>
-                    <p class="text-stone-600 text-lg">Desde el campo hasta el consumidor final, gestiona cada aspecto de tu producto.</p>
+                    <p class="text-stone-600 text-lg">Desde el campo hasta el consumidor final, gestiona cada aspecto de
+                        tu producto.</p>
                 </div>
-                
+
                 <!-- Grid de 3 columnas para acomodar 6 funcionalidades -->
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                    
+
                     <!-- Feature 1: Blockchain -->
-                    <div class="p-8 rounded-2xl bg-stone-50 border border-stone-100 hover:shadow-xl transition duration-300 group">
+                    <div
+                        class="p-8 rounded-2xl bg-stone-50 border border-stone-100 hover:shadow-xl transition duration-300 group">
                         <div class="w-full aspect-square bg-stone-200 rounded-xl mb-6 overflow-hidden">
-                            <img src="https://images.unsplash.com/photo-1639762681485-074b7f938ba0?q=80&w=800&auto=format&fit=crop" alt="Blockchain" class="w-full h-full object-cover group-hover:scale-105 transition duration-500">
+                            <img src="https://images.unsplash.com/photo-1639762681485-074b7f938ba0?q=80&w=800&auto=format&fit=crop"
+                                alt="Blockchain"
+                                class="w-full h-full object-cover group-hover:scale-105 transition duration-500">
                         </div>
-                        <div class="h-14 w-14 bg-amber-100 text-amber-800 rounded-xl flex items-center justify-center text-2xl mb-6 group-hover:scale-110 transition">
+                        <div
+                            class="h-14 w-14 bg-amber-100 text-amber-800 rounded-xl flex items-center justify-center text-2xl mb-6 group-hover:scale-110 transition">
                             <i class="fa-solid fa-link"></i>
                         </div>
                         <h3 class="text-xl font-bold text-stone-800 mb-3">Blockchain Inmutable</h3>
-                        <p class="text-stone-600 text-sm leading-relaxed">Genera un "Pasaporte Digital" único. Un hash criptográfico asegura que la historia de tu producto no ha sido alterada, brindando confianza total.</p>
+                        <p class="text-stone-600 text-sm leading-relaxed">Genera un "Pasaporte Digital" único. Un hash
+                            criptográfico asegura que la historia de tu producto no ha sido alterada, brindando
+                            confianza total.</p>
                     </div>
 
                     <!-- Feature 2: Satelital -->
-                    <div class="p-8 rounded-2xl bg-stone-50 border border-stone-100 hover:shadow-xl transition duration-300 group">
+                    <div
+                        class="p-8 rounded-2xl bg-stone-50 border border-stone-100 hover:shadow-xl transition duration-300 group">
                         <div class="w-full aspect-square bg-stone-200 rounded-xl mb-6 overflow-hidden">
-                            <img src="images/validacion_eudr.png" alt="Validación EUDR" class="w-full h-full object-cover group-hover:scale-105 transition duration-500">
+                            <img src="images/validacion_eudr.png" alt="Validación EUDR"
+                                class="w-full h-full object-cover group-hover:scale-105 transition duration-500">
                         </div>
-                        <div class="h-14 w-14 bg-green-100 text-green-800 rounded-xl flex items-center justify-center text-2xl mb-6 group-hover:scale-110 transition">
+                        <div
+                            class="h-14 w-14 bg-green-100 text-green-800 rounded-xl flex items-center justify-center text-2xl mb-6 group-hover:scale-110 transition">
                             <i class="fa-solid fa-satellite"></i>
                         </div>
                         <h3 class="text-xl font-bold text-stone-800 mb-3">Validación EUDR</h3>
-                        <p class="text-stone-600 text-sm leading-relaxed">Cumple con la normativa europea. Analizamos tus polígonos con imágenes satelitales (Google Earth Engine) para certificar zonas libres de deforestación.</p>
+                        <p class="text-stone-600 text-sm leading-relaxed">Cumple con la normativa europea. Analizamos
+                            tus polígonos con imágenes satelitales (Google Earth Engine) para certificar zonas libres de
+                            deforestación.</p>
                     </div>
 
                     <!-- Feature 3: Nutrición (NUEVO) -->
-                    <div class="p-8 rounded-2xl bg-stone-50 border border-stone-100 hover:shadow-xl transition duration-300 group">
-                         <div class="w-full aspect-square bg-stone-200 rounded-xl mb-6 overflow-hidden">
-                            <img src="images/etiqueta_nutricional.png" alt="Nutrition Facts FDA" class="w-full h-full object-cover group-hover:scale-105 transition duration-500">
+                    <div
+                        class="p-8 rounded-2xl bg-stone-50 border border-stone-100 hover:shadow-xl transition duration-300 group">
+                        <div class="w-full aspect-square bg-stone-200 rounded-xl mb-6 overflow-hidden">
+                            <img src="images/etiqueta_nutricional.png" alt="Nutrition Facts FDA"
+                                class="w-full h-full object-cover group-hover:scale-105 transition duration-500">
                         </div>
-                        <div class="h-14 w-14 bg-rose-100 text-rose-800 rounded-xl flex items-center justify-center text-2xl mb-6 group-hover:scale-110 transition">
+                        <div
+                            class="h-14 w-14 bg-rose-100 text-rose-800 rounded-xl flex items-center justify-center text-2xl mb-6 group-hover:scale-110 transition">
                             <i class="fa-solid fa-utensils"></i>
                         </div>
                         <h3 class="text-xl font-bold text-stone-800 mb-3">Calculadora Nutricional</h3>
-                        <p class="text-stone-600 text-sm leading-relaxed">Diseña etiquetas FDA, Unión Europea y Sellos de Advertencia (Octógonos) automáticamente conectando con bases de datos globales de ingredientes (USDA).</p>
+                        <p class="text-stone-600 text-sm leading-relaxed">Diseña etiquetas FDA, Unión Europea y Sellos
+                            de Advertencia (Octógonos) automáticamente conectando con bases de datos globales de
+                            ingredientes (USDA).</p>
                     </div>
 
                     <!-- Feature 4: Códigos de Barra (NUEVO) -->
-                    <div class="p-8 rounded-2xl bg-stone-50 border border-stone-100 hover:shadow-xl transition duration-300 group">
+                    <div
+                        class="p-8 rounded-2xl bg-stone-50 border border-stone-100 hover:shadow-xl transition duration-300 group">
                         <div class="w-full aspect-square bg-stone-200 rounded-xl mb-6 overflow-hidden">
-                            <img src="images/cod1d_2d.jpg" alt="Codigo Barra" class="w-full h-full object-cover group-hover:scale-105 transition duration-500">
+                            <img src="images/cod1d_2d.jpg" alt="Codigo Barra"
+                                class="w-full h-full object-cover group-hover:scale-105 transition duration-500">
                         </div>
-                        <div class="h-14 w-14 bg-indigo-100 text-indigo-800 rounded-xl flex items-center justify-center text-2xl mb-6 group-hover:scale-110 transition">
+                        <div
+                            class="h-14 w-14 bg-indigo-100 text-indigo-800 rounded-xl flex items-center justify-center text-2xl mb-6 group-hover:scale-110 transition">
                             <i class="fa-solid fa-barcode"></i>
                         </div>
-                        <h3 class="text-xl font-bold text-stone-800 mb-3">Compatibilidad con Estándares GS1 Digital Link</h3>
-                        <p class="text-stone-600 text-sm leading-relaxed">Listos para Sunrise 2027. Permite la transición del código de barras tradicional al QR inteligente, integrando trazabilidad completa, fechas de caducidad y datos de lote en un solo escaneo estándar y global.</p>
+                        <h3 class="text-xl font-bold text-stone-800 mb-3">Compatibilidad con Estándares GS1 Digital Link
+                        </h3>
+                        <p class="text-stone-600 text-sm leading-relaxed">Listos para Sunrise 2027. Permite la
+                            transición del código de barras tradicional al QR inteligente, integrando trazabilidad
+                            completa, fechas de caducidad y datos de lote en un solo escaneo estándar y global.</p>
                     </div>
 
                     <!-- Feature 5: Storytelling -->
-                    <div class="p-8 rounded-2xl bg-stone-50 border border-stone-100 hover:shadow-xl transition duration-300 group">
-                         <div class="w-full aspect-square bg-stone-200 rounded-xl mb-6 overflow-hidden">
-                            <img src="images/qr_perfil.jpg" alt="Storytelling" class="w-full h-full object-cover group-hover:scale-105 transition duration-500">
+                    <div
+                        class="p-8 rounded-2xl bg-stone-50 border border-stone-100 hover:shadow-xl transition duration-300 group">
+                        <div class="w-full aspect-square bg-stone-200 rounded-xl mb-6 overflow-hidden">
+                            <img src="images/qr_perfil.jpg" alt="Storytelling"
+                                class="w-full h-full object-cover group-hover:scale-105 transition duration-500">
                         </div>
-                        <div class="h-14 w-14 bg-sky-100 text-sky-800 rounded-xl flex items-center justify-center text-2xl mb-6 group-hover:scale-110 transition">
+                        <div
+                            class="h-14 w-14 bg-sky-100 text-sky-800 rounded-xl flex items-center justify-center text-2xl mb-6 group-hover:scale-110 transition">
                             <i class="fa-solid fa-qrcode"></i>
                         </div>
                         <h3 class="text-xl font-bold text-stone-800 mb-3">Marketing Transparente</h3>
-                        <p class="text-stone-600 text-sm leading-relaxed">Convierte tu empaque en un canal de comunicación. El consumidor escanea el QR y viaja virtualmente a la finca, viendo fotos, videos, mapas y la historia real detrás de cada cosecha.</p>
+                        <p class="text-stone-600 text-sm leading-relaxed">Convierte tu empaque en un canal de
+                            comunicación. El consumidor escanea el QR y viaja virtualmente a la finca, viendo fotos,
+                            videos, mapas y la historia real detrás de cada cosecha.</p>
                     </div>
 
                     <!-- Feature 6: Calidad -->
-                    <div class="p-8 rounded-2xl bg-stone-50 border border-stone-100 hover:shadow-xl transition duration-300 group">
-                         <div class="w-full aspect-square bg-stone-200 rounded-xl mb-6 overflow-hidden">
-                            <img src="images/perfil-cafe.jpg" alt="Calidad" class="w-full h-full object-cover group-hover:scale-105 transition duration-500">
+                    <div
+                        class="p-8 rounded-2xl bg-stone-50 border border-stone-100 hover:shadow-xl transition duration-300 group">
+                        <div class="w-full aspect-square bg-stone-200 rounded-xl mb-6 overflow-hidden">
+                            <img src="images/perfil-cafe.jpg" alt="Calidad"
+                                class="w-full h-full object-cover group-hover:scale-105 transition duration-500">
                         </div>
-                        <div class="h-14 w-14 bg-purple-100 text-purple-800 rounded-xl flex items-center justify-center text-2xl mb-6 group-hover:scale-110 transition">
+                        <div
+                            class="h-14 w-14 bg-purple-100 text-purple-800 rounded-xl flex items-center justify-center text-2xl mb-6 group-hover:scale-110 transition">
                             <i class="fa-solid fa-chart-radar"></i>
                         </div>
                         <h3 class="text-xl font-bold text-stone-800 mb-3">Control de Calidad</h3>
-                        <p class="text-stone-600 text-sm leading-relaxed">Digitaliza tus fichas de cata. Visualiza perfiles sensoriales (SCA/CoEx) y recibe sugerencias automáticas de maridaje mediante IA.</p>
+                        <p class="text-stone-600 text-sm leading-relaxed">Digitaliza tus fichas de cata. Visualiza
+                            perfiles sensoriales (SCA/CoEx) y recibe sugerencias automáticas de maridaje mediante IA.
+                        </p>
                     </div>
                 </div>
             </div>
         </section>
 
-        
+        <!-- Nueva Sección: Catálogo de Landing Pages (Origen Único) -->
+        <section id="origen-unico-promo" class="py-20 bg-amber-50">
+            <div class="container mx-auto px-6 max-w-6xl">
+                <div class="flex flex-col lg:flex-row items-center gap-12">
+                    <div class="w-full lg:w-1/2">
+                        <span
+                            class="inline-block bg-amber-100 text-amber-800 px-4 py-1 rounded-full text-sm font-bold mb-4">GRATIS
+                            PARA USUARIOS REGISTRADOS</span>
+                        <h2 class="text-3xl md:text-5xl font-display text-amber-900 mb-6 leading-tight">Tu Propia
+                            Landing Page en Nuestro Directorio</h2>
+                        <p class="text-lg text-stone-600 mb-6 leading-relaxed">No inviertas miles en desarrollo web.
+                            Ruru Lab te regala una Landing Page optimizada para SEO y ventas, donde podrás mostrar tu
+                            historia, certificaciones, lotes y perfiles de calidad.</p>
 
-        <!-- Sección de Funcionalidades 
-        <section id="features" class="py-12 md:py-16">
-             <div class="container mx-auto px-6">
-                <h2 class="text-3xl md:text-4xl font-display text-amber-900 mb-16 text-center">Un Ecosistema de Valor para tu Marca</h2>
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-                    <div class="text-center p-6">
-                        <div class="flex items-center justify-center h-16 w-16 rounded-full bg-green-100 text-green-800 mx-auto mb-4">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" /></svg>
-                        </div>
-                        <h3 class="text-xl font-display font-bold mb-2">Construye Confianza Inquebrantable</h3>
-                        <p class="text-stone-600">Mapea cada paso, desde la finca hasta el producto final. Ofrece a tus clientes una transparencia total y certifica la calidad de tu proceso con datos reales.</p>
+                        <ul class="space-y-4 mb-8 text-stone-600">
+                            <li class="flex items-center gap-3">
+                                <i class="fas fa-check-circle text-green-500 text-xl"></i> Puntos de venta y redes
+                                sociales.
+                            </li>
+                            <li class="flex items-center gap-3">
+                                <i class="fas fa-check-circle text-green-500 text-xl"></i> Geolocalización en el mapa
+                                global interactivo.
+                            </li>
+                            <li class="flex items-center gap-3">
+                                <i class="fas fa-check-circle text-green-500 text-xl"></i> Enlace directo a WhatsApp
+                                para ventas directas.
+                            </li>
+                        </ul>
+
+                        <a href="/origen-unico"
+                            class="inline-flex bg-amber-800 hover:bg-amber-900 text-white font-bold py-4 px-8 rounded-xl transition transform hover:-translate-y-1 items-center gap-2">
+                            Ver el Directorio de Productores <i class="fas fa-arrow-right"></i>
+                        </a>
                     </div>
-                    <div class="text-center p-6">
-                        <div class="flex items-center justify-center h-16 w-16 rounded-full bg-sky-100 text-sky-800 mx-auto mb-4">
-                           <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" viewBox="0 0 20 20" fill="currentColor"><path d="M5 3a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2H5zM5 11a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2H5zM11 5a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V5zM11 13a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>
+
+                    <div class="w-full lg:w-1/2 relative group">
+                        <!-- Mockup Decorativo -->
+                        <div
+                            class="relative bg-white p-2 rounded-2xl shadow-2xl border border-stone-200 transform md:-rotate-2 group-hover:rotate-0 transition duration-500">
+                            <div class="w-full h-8 bg-stone-100 rounded-t-xl flex items-center px-4 gap-2 mb-2">
+                                <div class="w-3 h-3 rounded-full bg-red-400"></div>
+                                <div class="w-3 h-3 rounded-full bg-amber-400"></div>
+                                <div class="w-3 h-3 rounded-full bg-green-400"></div>
+                                <div class="ml-4 text-xs text-stone-400 font-mono">rurulab.com/origen-unico/tu-finca
+                                </div>
+                            </div>
+                            <!-- Screenshot o representación de la landing page -->
+                            <div class="w-full aspect-video bg-stone-200 rounded-lg overflow-hidden relative">
+                                <img src="images/banner_1.png" alt="Directorio Origen Unico"
+                                    class="w-full h-full object-cover">
+                                <div
+                                    class="absolute inset-0 bg-gradient-to-t from-stone-900/60 to-transparent flex items-end p-6">
+                                    <div class="flex items-center gap-4">
+                                        <div
+                                            class="w-12 h-12 bg-white rounded-lg flex items-center justify-center font-bold text-amber-800 shadow-lg text-xl">
+                                            <i class="fas fa-leaf"></i>
+                                        </div>
+                                        <div>
+                                            <h4 class="text-white font-bold text-lg leading-tight">Finca La Esperanza
+                                            </h4>
+                                            <p class="text-stone-300 text-xs"><i class="fas fa-map-marker-alt"></i>
+                                                Cusco, Perú</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                        <h3 class="text-xl font-display font-bold mb-2">Innova y Crea Sabores Únicos</h3>
-                        <p class="text-stone-600">Utiliza nuestro laboratorio virtual para diseñar y predecir el perfil de tus blends. Combina orígenes, ajusta porcentajes y crea productos consistentes antes de la producción.</p>
-                    </div>
-                    <div class="text-center p-6">
-                        <div class="flex items-center justify-center h-16 w-16 rounded-full bg-red-100 text-red-800 mx-auto mb-4">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clip-rule="evenodd" /></svg>
+
+                        <!-- Mini mapa flotante decorativo -->
+                        <div
+                            class="absolute -bottom-8 -right-8 bg-white p-3 rounded-2xl shadow-xl border border-stone-100 hidden md:block transform rotate-3 group-hover:scale-110 transition duration-500">
+                            <div
+                                class="w-32 h-32 bg-stone-100 rounded-xl flex items-center justify-center relative overflow-hidden">
+                                <img src="https://images.unsplash.com/photo-1524661135-423995f22d0b?w=400&auto=format&fit=crop&q=60"
+                                    alt="Mapa" class="absolute inset-0 w-full h-full object-cover opacity-50">
+                                <i
+                                    class="fas fa-map-pin text-amber-600 text-3xl drop-shadow-md relative z-10 animate-bounce"></i>
+                            </div>
                         </div>
-                        <h3 class="text-xl font-display font-bold mb-2">Eleva la Experiencia del Cliente</h3>
-                        <p class="text-stone-600">Nuestro sommelier de IA sugiere maridajes perfectos para tus perfiles de cacao y café, añadiendo un valor incalculable a la experiencia de tus consumidores.</p>
-                    </div>
-                    <div class="text-center p-6">
-                        <div class="flex items-center justify-center h-16 w-16 rounded-full bg-amber-100 text-amber-800 mx-auto mb-4">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10" viewBox="0 0 640 640"><path d="M160 224L224 224L224 160L160 160L160 224zM96 144C96 117.5 117.5 96 144 96L240 96C266.5 96 288 117.5 288 144L288 240C288 266.5 266.5 288 240 288L144 288C117.5 288 96 266.5 96 240L96 144zM160 480L224 480L224 416L160 416L160 480zM96 400C96 373.5 117.5 352 144 352L240 352C266.5 352 288 373.5 288 400L288 496C288 522.5 266.5 544 240 544L144 544C117.5 544 96 522.5 96 496L96 400zM416 160L416 224L480 224L480 160L416 160zM400 96L496 96C522.5 96 544 117.5 544 144L544 240C544 266.5 522.5 288 496 288L400 288C373.5 288 352 266.5 352 240L352 144C352 117.5 373.5 96 400 96zM384 416C366.3 416 352 401.7 352 384C352 366.3 366.3 352 384 352C401.7 352 416 366.3 416 384C416 401.7 401.7 416 384 416zM384 480C401.7 480 416 494.3 416 512C416 529.7 401.7 544 384 544C366.3 544 352 529.7 352 512C352 494.3 366.3 480 384 480zM480 512C480 494.3 494.3 480 512 480C529.7 480 544 494.3 544 512C544 529.7 529.7 544 512 544C494.3 544 480 529.7 480 512zM512 416C494.3 416 480 401.7 480 384C480 366.3 494.3 352 512 352C529.7 352 544 366.3 544 384C544 401.7 529.7 416 512 416zM480 448C480 465.7 465.7 480 448 480C430.3 480 416 465.7 416 448C416 430.3 430.3 416 448 416C465.7 416 480 430.3 480 448z"/></svg>
-                        </div>
-                        <h3 class="text-xl font-display font-bold mb-2">Convierte tu Empaque en Marketing</h3>
-                        <p class="text-stone-600">Cada producto cuenta su propia historia a través de un QR. Conecta directamente con tus clientes, comparte el viaje desde el origen y fideliza tu marca.</p>
                     </div>
                 </div>
             </div>
-        </section-->
-        
-        <!-- Sección Testimonios -->
-        <!--section id="testimonials" class="py-12 md:py-16">
-             <div class="container mx-auto px-6 max-w-4xl text-center">
-                 <h2 class="text-3xl md:text-4xl font-display text-amber-900 mb-12">Lo que Dicen Nuestros Clientes</h2>
-                 <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-                    <div class="bg-white p-6 rounded-xl shadow-lg text-left">
-                        <p class="text-stone-600 mb-4">"Ruru Lab nos permitió estandarizar nuestros perfiles de cacao. Ahora, cada barra de chocolate tiene la consistencia que nuestros clientes aman. El laboratorio de blends es nuestra arma secreta."</p>
-                        <p class="font-bold">- Ana Lucía, Maestra Chocolatera</p>
-                    </div>
-                    <div class="bg-white p-6 rounded-xl shadow-lg text-left">
-                        <p class="text-stone-600 mb-4">"La trazabilidad ya no es un simple requisito, es nuestra mejor historia de marketing. Nuestros clientes escanean el QR en la bolsa de café y viajan a la finca. La conexión es increíble."</p>
-                        <p class="font-bold">- Carlos Vélez, Tostador de Café de Especialidad</p>
-                    </div>
-                     <div class="bg-white p-6 rounded-xl shadow-lg text-left">
-                        <p class="text-stone-600 mb-4">"Gestionar los lotes de nuestros 50 productores asociados era un caos. Con Ruru Lab, tenemos control total sobre el rendimiento y la calidad desde la cosecha. Ha optimizado nuestra operación."</p>
-                        <p class="font-bold">- Sofía Rojas, Gerente de Cooperativa</p>
-                    </div>
-                 </div>
-             </div>
-        </section-->
+        </section>
 
         <!-- Sección CTA Final con QR -->
         <section id="cta-final" class="py-12 md:py-16 bg-amber-900 text-white">
             <div class="container mx-auto px-6 max-w-3xl text-center">
                 <h2 class="text-3xl md:text-4xl font-display mb-4">El Viaje Termina Aquí. La Conexión Comienza.</h2>
-                <p class="text-lg text-amber-100 mb-8">Cada QR es una puerta al origen de tu producto. Descubre cómo Ruru Lab puede transformar tu empaque en una experiencia inolvidable.</p>
+                <p class="text-lg text-amber-100 mb-8">Cada QR es una puerta al origen de tu producto. Descubre cómo
+                    Ruru Lab puede transformar tu empaque en una experiencia inolvidable.</p>
                 <!-- Este es el contenedor de destino para la animación -->
                 <a href="https://www.rurulab.com/ENV-5W8BL4HE" target="_blank">
                     <div id="qr-container" class="relative w-48 h-48 mx-auto group bg-white p-4 rounded-lg"></div>
                 </a>
-                 <a href="http://wa.me/51961222040" target="_blank" class="inline-block mt-8 bg-white hover:bg-stone-200 text-amber-900 font-bold py-4 px-10 rounded-xl shadow-lg transition transform hover:-translate-y-1 text-lg">
+                <a href="http://wa.me/51961222040" target="_blank"
+                    class="inline-block mt-8 bg-white hover:bg-stone-200 text-amber-900 font-bold py-4 px-10 rounded-xl shadow-lg transition transform hover:-translate-y-1 text-lg">
                     Contáctanos <i class="fa-brands fa-whatsapp"></i>
                 </a>
             </div>
@@ -396,8 +504,10 @@
         <footer class="py-8 bg-stone-800 text-stone-300">
             <div class="container mx-auto px-6 text-center">
                 <div class="flex justify-center space-x-6 mb-4">
-                    <a href="https://www.instagram.com/rurulab/" target="_blank" aria-label="Instagram" class="text-2xl hover:text-white transition"><i class="fa-brands fa-instagram"></i></a>
-                    <a href="http://wa.me/51961222040" target="_blank" aria-label="WhatsApp" class="text-2xl hover:text-white transition"><i class="fa-brands fa-whatsapp"></i></a>
+                    <a href="https://www.instagram.com/rurulab/" target="_blank" aria-label="Instagram"
+                        class="text-2xl hover:text-white transition"><i class="fa-brands fa-instagram"></i></a>
+                    <a href="http://wa.me/51961222040" target="_blank" aria-label="WhatsApp"
+                        class="text-2xl hover:text-white transition"><i class="fa-brands fa-whatsapp"></i></a>
                 </div>
                 <p>&copy; 2025 Ruru Lab. Todos los derechos reservados.</p>
             </div>
@@ -411,14 +521,14 @@
     <script src="/js/public-nav-loader.js"></script>
     <script>
         // Genera el código QR cuando la ventana se carga.
-        window.onload = function() {
+        window.onload = function () {
             var qrcode = new QRCode(document.getElementById("qr-container"), {
                 text: "https://www.rurulab.com/ENV-5W8BL4HE",
                 width: 160,
                 height: 160,
-                colorDark : "#4c2b12", // amber-900
-                colorLight : "#ffffff",
-                correctLevel : QRCode.CorrectLevel.H
+                colorDark: "#4c2b12", // amber-900
+                colorLight: "#ffffff",
+                correctLevel: QRCode.CorrectLevel.H
             });
         };
 
@@ -432,13 +542,13 @@
                 const res = await fetch('/api/public/companies');
                 if (!res.ok) throw new Error('Error API');
                 let companies = await res.json();
-                
+
                 // Filtrar solo empresas verificadas
                 let verifiedCompanies = companies.filter(c => c.status === 'verified');
-                
+
                 // Aleatorizar el orden para mostrar variedad en cada visita
                 verifiedCompanies.sort(() => Math.random() - 0.5);
-                
+
                 // Tomar las 10 primeras después de aleatorizar
                 companies = verifiedCompanies.slice(0, 10);
 
@@ -459,7 +569,7 @@
 
                     // Usar logo real si existe, o generar avatar
                     const logoSrc = c.logo || `https://ui-avatars.com/api/?name=${encodeURIComponent(c.name)}&background=f5f5f4&color=78350f&size=128`;
-                    
+
                     const item = document.createElement('a');
                     item.href = `/origen-unico/${slug}-${c.id}`;
                     item.className = "flex-shrink-0 group opacity-70 hover:opacity-100 transition duration-300";
@@ -485,4 +595,5 @@
         });
     </script>
 </body>
+
 </html>
