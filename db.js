@@ -2675,7 +2675,7 @@ const getCompanyLandingData = async (req, res) => {
                 distrito: suggestion.distrito,
                 altura: suggestion.altura,
                 superficie: suggestion.superficie,
-                coordenadas: safeJSONParse(suggestion.coordenadas_json),
+                coordenadas: safeJSONParse(suggestion.coordenadas),
                 type_label: suggestion.type === 'finca' ? 'Finca Sugerida' : 'Planta Sugerida',
                 historia: "Esta empresa fue sugerida por la comunidad. La información mostrada es referencial basada en datos satelitales.",
                 social_instagram: suggestion.social_instagram,

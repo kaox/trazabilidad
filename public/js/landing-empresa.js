@@ -368,7 +368,7 @@ const app = {
             this.container.innerHTML = html;
             window.scrollTo(0, 0);
 
-
+            console.log(entity);
             if (entity.coordenadas) setTimeout(() => this.initMiniMap(entity.coordenadas), 500);
 
             setTimeout(() => this.initProductCharts(products), 100);
