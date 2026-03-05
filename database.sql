@@ -479,6 +479,7 @@ CREATE TABLE IF NOT EXISTS suggested_companies (
     name TEXT NOT NULL,
     social_instagram TEXT,
     social_facebook TEXT,
+    logo TEXT
 
     pais TEXT,
     departamento TEXT,

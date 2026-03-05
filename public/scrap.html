@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Extractor de Empresas - SQL Generator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Maps JS API - Se añade callback para evitar el error de "google is not defined" -->
+    <script
+        src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAM37iJTRcIoSAxESlDzB2DxlNJWKasW5U&libraries=places&callback=initApp"
+        async defer></script>
+    <style>
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 10px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+    </style>
+</head>
+
+<body class="bg-slate-50 min-h-screen font-sans">
+
+    <div class="max-w-7xl mx-auto px-4 py-8">
+        <header class="mb-10 text-center">
+            <h1 class="text-4xl font-extrabold text-slate-800 mb-2">Generador de Empresas Sugeridas</h1>
+            <p class="text-slate-600">Busca establecimientos mediante Google Maps API y genera scripts SQL
+                automáticamente.</p>
+        </header>
+
+        <!-- Alerta de Error de API -->
+        <div id="apiErrorAlert" class="hidden mb-8 p-4 bg-red-100 border-l-4 border-red-500 text-red-700">
+            <p class="font-bold">Error de Google Maps API (RefererNotAllowedMapError)</p>
+            <p class="text-sm">La clave de API actual tiene restricciones de dominio. Para que funcione en este entorno,
+                debes ir a <a href="https://console.cloud.google.com/google/maps-apis/credentials" target="_blank"
+                    class="underline font-semibold">Google Cloud Console</a> y autorizar la URL: <code
+                    class="bg-red-200 px-1 rounded">__file_url__</code> o desactivar las restricciones de HTTP Referrer.
+            </p>
+        </div>
+
+        <!-- Panel de Control -->
+        <div class="bg-white rounded-xl shadow-lg p-6 mb-8 border border-slate-200">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1">Tipo de Búsqueda</label>
+                    <select id="searchType"
+                        class="w-full border-slate-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                        <option value="cafeteria de especialidad">Cafetería de Especialidad</option>
+                        <option value="chocolateria artesanal">Chocolatería</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1">País</label>
+                    <input type="text" id="pais" value="Perú"
+                        class="w-full border-slate-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1">Departamento</label>
+                    <input type="text" id="departamento" value="Lima"
+                        class="w-full border-slate-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1">Provincia / Distrito</label>
+                    <input type="text" id="provincia" placeholder="Ej: Jesús María"
+                        class="w-full border-slate-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                </div>
+            </div>
+
+            <div class="flex flex-wrap gap-4 items-center justify-between border-t pt-6 border-slate-100">
+                <div class="flex gap-2">
+                    <button onclick="buscarLugares()" id="btnBuscar"
+                        class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg transition-all flex items-center shadow-md">
+                        <span id="loader" class="hidden animate-spin mr-2">&#9696;</span>
+                        Buscar en Google Maps
+                    </button>
+                    <button onclick="limpiarTabla()"
+                        class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold py-2 px-6 rounded-lg transition-all">
+                        Limpiar
+                    </button>
+                </div>
+
+                <button onclick="generarSQL()" id="btnSQL"
+                    class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-lg transition-all shadow-md hidden">
+                    Generar Script SQL
+                </button>
+            </div>
+        </div>
+
+        <!-- Tabla de Resultados -->
+        <div class="bg-white rounded-xl shadow-lg overflow-hidden border border-slate-200">
+            <div class="overflow-x-auto custom-scrollbar" style="max-height: 500px;">
+                <table class="w-full text-left border-collapse">
+                    <thead class="bg-slate-800 text-white sticky top-0">
+                        <tr>
+                            <th class="p-4 text-sm font-medium">Nombre</th>
+                            <th class="p-4 text-sm font-medium">Distrito (Detectado)</th>
+                            <th class="p-4 text-sm font-medium">Coordenadas</th>
+                            <th class="p-4 text-sm font-medium">Calificación</th>
+                            <th class="p-4 text-sm font-medium">Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody id="resultadosBody" class="divide-y divide-slate-100">
+                        <!-- Los resultados aparecerán aquí -->
+                        <tr>
+                            <td colspan="5" class="p-10 text-center text-slate-400 italic">No hay resultados cargados.
+                                Realiza una búsqueda para comenzar.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Modal de SQL -->
+        <div id="modalSQL" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center p-4 z-50">
+            <div class="bg-white rounded-2xl w-full max-w-4xl max-h-[90vh] flex flex-col shadow-2xl">
+                <div class="p-6 border-b flex justify-between items-center">
+                    <h2 class="text-xl font-bold text-slate-800">Script SQL Generado</h2>
+                    <button onclick="cerrarModal()"
+                        class="text-slate-400 hover:text-slate-600 font-bold text-2xl">&times;</button>
+                </div>
+                <div class="p-6 overflow-hidden flex flex-col flex-1">
+                    <textarea id="sqlOutput" readonly
+                        class="flex-1 w-full p-4 bg-slate-900 text-green-400 font-mono text-xs rounded-lg border-none focus:ring-0 custom-scrollbar resize-none mb-4"></textarea>
+                    <div class="flex justify-end gap-3">
+                        <button onclick="copySQL()"
+                            class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-bold">Copiar al
+                            Portapapeles</button>
+                        <button onclick="cerrarModal()"
+                            class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2 rounded-lg font-bold">Cerrar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="map" class="hidden"></div> <!-- Div oculto para el servicio de Places -->
+
+    <script>
+        let map;
+        let service;
+        let placesResults = [];
+        let isGoogleLoaded = false;
+
+        // Callback de error global de Google Maps
+        window.gm_authFailure = function () {
+            document.getElementById('apiErrorAlert').classList.remove('hidden');
+            console.error("Error de autenticación de Google Maps. Revisa las restricciones de Referer.");
+        };
+
+        // Esta función se ejecuta automáticamente cuando el script de Google Maps carga
+        function initApp() {
+            isGoogleLoaded = true;
+            try {
+                // Inicializar un mapa invisible para usar el servicio de Places
+                map = new google.maps.Map(document.getElementById('map'), {
+                    center: { lat: -12.046374, lng: -77.042793 },
+                    zoom: 15
+                });
+                console.log("Google Maps SDK cargado correctamente.");
+            } catch (e) {
+                console.error("Error inicializando Google Maps:", e);
+                document.getElementById('apiErrorAlert').classList.remove('hidden');
+            }
+        }
+
+        async function buscarLugares() {
+            if (!isGoogleLoaded) {
+                alert("El SDK de Google Maps aún se está cargando o falló debido a restricciones de seguridad.");
+                return;
+            }
+
+            const btn = document.getElementById('btnBuscar');
+            const loader = document.getElementById('loader');
+            const queryType = document.getElementById('searchType').value;
+            const pais = document.getElementById('pais').value;
+            const depto = document.getElementById('departamento').value;
+            const prov = document.getElementById('provincia').value;
+
+            const searchQuery = `${queryType} en ${prov}, ${depto}, ${pais}`;
+
+            btn.disabled = true;
+            loader.classList.remove('hidden');
+
+            const request = {
+                query: searchQuery,
+                fields: ['name', 'geometry', 'formatted_address', 'photos', 'rating', 'place_id']
+            };
+
+            service = new google.maps.places.PlacesService(map);
+
+            service.textSearch(request, (results, status) => {
+                btn.disabled = false;
+                loader.classList.add('hidden');
+
+                if (status === google.maps.places.PlacesServiceStatus.OK) {
+                    placesResults = results;
+                    renderTabla();
+                    document.getElementById('btnSQL').classList.remove('hidden');
+                } else {
+                    alert('Error en la búsqueda de Google Maps: ' + status);
+                }
+            });
+        }
+
+        function renderTabla() {
+            const body = document.getElementById('resultadosBody');
+            if (placesResults.length === 0) {
+                body.innerHTML = `<tr><td colspan="5" class="p-10 text-center text-slate-400 italic">No se encontraron resultados.</td></tr>`;
+                return;
+            }
+
+            body.innerHTML = '';
+            placesResults.forEach((place, index) => {
+                const lat = place.geometry.location.lat().toFixed(6);
+                const lng = place.geometry.location.lng().toFixed(6);
+                const address = place.formatted_address || '';
+
+                const row = document.createElement('tr');
+                row.className = 'hover:bg-slate-50 transition-colors';
+                row.innerHTML = `
+                    <td class="p-4 text-sm font-semibold text-slate-800">${place.name}</td>
+                    <td class="p-4 text-sm text-slate-600">${address.split(',')[1] || 'N/A'}</td>
+                    <td class="p-4 text-sm text-slate-500 font-mono">${lat}, ${lng}</td>
+                    <td class="p-4 text-sm text-yellow-500 font-bold">★ ${place.rating || 'N/A'}</td>
+                    <td class="p-4 text-sm">
+                        <button onclick="removerFila(${index})" class="text-red-500 hover:text-red-700 font-bold">Eliminar</button>
+                    </td>
+                `;
+                body.appendChild(row);
+            });
+        }
+
+        function removerFila(index) {
+            placesResults.splice(index, 1);
+            renderTabla();
+        }
+
+        function limpiarTabla() {
+            placesResults = [];
+            renderTabla();
+            document.getElementById('btnSQL').classList.add('hidden');
+        }
+
+        function generarSQL() {
+            const pais = document.getElementById('pais').value;
+            const departamento = document.getElementById('departamento').value;
+            const provincia = document.getElementById('provincia').value;
+            const type = 'procesadora';
+            const status = 'pending';
+
+            let sql = `INSERT INTO suggested_companies (id, type, name, social_instagram, social_facebook, logo, pais, departamento, provincia, distrito, coordenadas, status) VALUES\n`;
+
+            const rows = placesResults.map((place, idx) => {
+                const id = `SUG-${place.place_id.substring(0, 8).toUpperCase()}-${idx}`;
+                const name = place.name.replace(/'/g, "''");
+                const lat = place.geometry.location.lat().toFixed(6);
+                const lng = place.geometry.location.lng().toFixed(6);
+                const coords = JSON.stringify({ lat: parseFloat(lat), lng: parseFloat(lng) });
+
+                // Intentar extraer distrito de la dirección formateada
+                const addressParts = place.formatted_address.split(',');
+                const distrito = addressParts.length >= 2 ? addressParts[addressParts.length - 3].trim() : provincia;
+
+                // URL de Logo ficticia basada en el nombre para Instagram (Placeholders)
+                const igUser = name.toLowerCase().replace(/\s/g, '').normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+                const logo = `https://www.instagram.com/${igUser}/logo.jpg`;
+
+                return `('${id}', '${type}', '${name}', 'https://www.instagram.com/${igUser}', NULL, '${logo}', '${pais}', '${departamento}', '${provincia}', '${distrito}', '${coords}', '${status}')`;
+            });
+
+            sql += rows.join(',\n') + ';';
+
+            document.getElementById('sqlOutput').value = sql;
+            document.getElementById('modalSQL').classList.remove('hidden');
+            document.getElementById('modalSQL').classList.add('flex');
+        }
+
+        function cerrarModal() {
+            document.getElementById('modalSQL').classList.add('hidden');
+            document.getElementById('modalSQL').classList.remove('flex');
+        }
+
+        function copySQL() {
+            const textarea = document.getElementById('sqlOutput');
+            textarea.select();
+            document.execCommand('copy');
+            alert('¡Script SQL copiado al portapapeles!');
+        }
+    </script>
+</body>
+
+</html>

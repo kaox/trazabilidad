@@ -451,6 +451,7 @@ async function initializeDatabase() {
                     logo TEXT,
                     magic_token TEXT UNIQUE,
                     coordenadas JSONB,
+                    product_categories TEXT,
                     
                     status TEXT DEFAULT 'pending', -- 'pending', 'verified', 'claimed'
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP

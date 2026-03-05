@@ -21,9 +21,9 @@ const RESERVED_SUBDOMAINS = ['www', 'app', 'api', 'admin', 'localhost', 'rurulab
 
 app.use(async (req, res, next) => {
     const host = req.headers.host; // ej: pepito.rurulab.com o pepito.localhost:3000
-    
+
     let subdomain = null;
-    
+
     // Lógica para extraer subdominio (Prod y Local)
     if (host.includes('.rurulab.com')) {
         const parts = host.split('.');
@@ -41,10 +41,10 @@ app.use(async (req, res, next) => {
     // --- ES UN SUBDOMINIO DE CLIENTE ---
     try {
         console.log(`🔍 Detectado subdominio: ${subdomain}`);
-        
+
         // Obtener todas las empresas (Idealmente crear una función db.findCompanyBySlug para optimizar)
         const companies = await db.getPublicCompaniesDataInternal();
-        
+
         // Buscar empresa cuyo slug coincida con el subdominio
         const company = companies.find(c => createSlug(c.empresa) === subdomain);
 
@@ -57,14 +57,14 @@ app.use(async (req, res, next) => {
 
         // Leer el archivo HTML de la landing
         const filePath = path.join(__dirname, 'public', 'landing-empresa.html');
-        
+
         fs.readFile(filePath, 'utf8', async (err, htmlData) => {
             if (err) return next();
 
             // Metadatos SEO personalizados
             const title = `${company.empresa} | Sitio Oficial`;
             const description = `Bienvenido al sitio oficial de ${company.empresa}. Conoce nuestra historia, productos y trazabilidad.`;
-            
+
             // Inyección de Script de Configuración Global
             // Esto le dice al JS del frontend qué ID cargar sin mirar la URL
             const injectionScript = `
@@ -186,6 +186,7 @@ app.get('/qr', (req, res) => res.sendFile(path.join(__dirname, 'public', 'tracki
 app.get('/registro-productor', (req, res) => res.sendFile(path.join(__dirname, 'public', 'registro-productor.html')));
 app.get('/blog/:slug', (req, res) => res.sendFile(path.join(__dirname, 'public', 'article.html')));
 app.get('/magic-login/:token', suggestionsController.handleMagicLogin);
+app.get('/scrap', (req, res) => res.sendFile(path.join(__dirname, 'public', 'scrap.html')));
 
 // 2. Obtener datos para precargar formulario (API)
 app.get('/api/public/magic-data/:token', suggestionsController.getMagicLinkData);
@@ -223,7 +224,7 @@ app.get('/:loteId([A-Z]{3}-[A-Z0-9]{8})', async (req, res) => {
                     const cleanDesc = metadata.description.substring(0, 110).trim();
                     description = `${cleanDesc}... Descubre el origen y certificaciones. ¡Mira la historia completa aquí!`;
                 }
-                
+
                 // --- LÓGICA DE REEMPLAZO DE IMAGEN (ACTUALIZADA) ---
                 if (metadata.image) {
                     if (metadata.image.startsWith('http')) {
@@ -232,7 +233,7 @@ app.get('/:loteId([A-Z]{3}-[A-Z0-9]{8})', async (req, res) => {
                     } else if (metadata.id) {
                         // Base64: Generamos la URL virtual que WhatsApp sí puede leer
                         // Usamos headers para detectar protocolo y host correctos (útil tras proxys/vercel)
-                        const protocol = req.headers['x-forwarded-proto'] || req.protocol; 
+                        const protocol = req.headers['x-forwarded-proto'] || req.protocol;
                         const host = req.get('host');
                         image = `${protocol}://${host}/api/public/products/${metadata.id}/image`;
                     }
@@ -271,7 +272,7 @@ app.get('/origen-unico/:slug', async (req, res) => {
         if (err) return res.status(500).send('Error interno');
         try {
             const companies = await db.getPublicCompaniesDataInternal();
-            
+
             // --- NUEVA LÓGICA DE BÚSQUEDA HÍBRIDA ---
             let company = null;
 
@@ -291,8 +292,8 @@ app.get('/origen-unico/:slug', async (req, res) => {
             if (company) {
                 const title = `${company.empresa} - Origen Único Verificado`;
                 const description = `Conoce la trazabilidad y origen de ${company.empresa} en Ruru Lab.`;
-                
-                const protocol = req.headers['x-forwarded-proto'] || req.protocol; 
+
+                const protocol = req.headers['x-forwarded-proto'] || req.protocol;
                 const host = req.get('host');
                 let image = `https://rurulab.com/images/banner_1.png`;
 
@@ -309,7 +310,7 @@ app.get('/origen-unico/:slug', async (req, res) => {
                     .replace(/content="RuruLab - Trazabilidad y Pasaporte Digital para Cacao y Café"/g, `content="${title}"`)
                     .replace(/content="Crea un pasaporte digital para tu producto..."/g, `content="${description}"`)
                     .replace(/content="https:\/\/rurulab\.com\/images\/banner_1\.png"/g, `content="${image}"`);
-                
+
                 res.send(injectedHtml);
             } else {
                 // Si no se encuentra, enviamos el HTML base. 
@@ -346,7 +347,7 @@ app.get('/sitemap-origen-unico.xml', async (req, res) => {
             // Usamos la misma lógica de slug que usas en origen-unico-app.js
             const slug = createSlug(company.empresa) + '-' + company.id;
             const url = `https://rurulab.com/origen-unico/${slug}`;
-            
+
             sitemap += '  <url>\n';
             sitemap += `    <loc>${url}</loc>\n`;
             sitemap += '    <changefreq>weekly</changefreq>\n';
@@ -493,7 +494,7 @@ app.put('/api/recetas-chocolate/:id', authenticateApi, checkSubscription('profes
 app.get('/api/costs/:lote_id', authenticateApi, checkSubscription('profesional'), db.getLoteCosts);
 app.post('/api/costs/:lote_id', authenticateApi, checkSubscription('profesional'), db.saveLoteCosts);
 app.post('/api/payments/create-preference', authenticateApi, db.createPaymentPreference);
-app.post('/api/payments/webhook', express.raw({type: 'application/json'}), db.handlePaymentWebhook);
+app.post('/api/payments/webhook', express.raw({ type: 'application/json' }), db.handlePaymentWebhook);
 
 // Admin Blog CRUD
 app.get('/api/admin/blog', authenticateApi, checkAdmin, db.getAdminBlogPosts);
