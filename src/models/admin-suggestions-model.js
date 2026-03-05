@@ -33,8 +33,8 @@ const markAsClaimed = async (id) => {
 
 // Crear usuario desde sugerencia (Lógica compleja de SQL)
 const createUserFromSuggestion = async (userObj) => {
-    const { 
-        username, password, nombre, apellido, empresa, type, 
+    const {
+        username, password, nombre, apellido, empresa, type,
         companyId, logo, instagram, facebook, celular, correo // <--- Agregados
     } = userObj;
 
@@ -58,8 +58,8 @@ const createUserFromSuggestion = async (userObj) => {
     `;
 
     const result = await db.run(sql, [
-        username, password, nombre, apellido, 
-        empresa, type, companyId, 
+        username, password, nombre, apellido,
+        empresa, type, companyId,
         logo, 'user', 'artesano', trialEndDate.toISOString(),
         instagram, facebook,
         celular, correo // <--- Valores Agregados
@@ -69,21 +69,21 @@ const createUserFromSuggestion = async (userObj) => {
 };
 
 const updateById = async (id, data) => {
-    const { 
-        name, type, pais, departamento, provincia, distrito, 
-        social_instagram, social_facebook 
+    const {
+        name, type, pais, departamento, provincia, distrito,
+        social_instagram, social_facebook, logo
     } = data;
 
     const sql = `
         UPDATE suggested_companies 
         SET name = ?, type = ?, pais = ?, departamento = ?, provincia = ?, distrito = ?, 
-            social_instagram = ?, social_facebook = ?
+            social_instagram = ?, social_facebook = ?, logo = ?
         WHERE id = ?
     `;
 
     return await db.run(sql, [
-        name, type, pais, departamento, provincia, distrito, 
-        social_instagram, social_facebook, 
+        name, type, pais, departamento, provincia, distrito,
+        social_instagram, social_facebook, logo,
         id
     ]);
 };
