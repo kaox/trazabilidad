@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Extractor de Empresas - SQL Generator</title>
+    <title>Extractor de Empresas - Sheets & SQL Generator</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Google Maps JS API - Se añade callback para evitar el error de "google is not defined" -->
     <script
@@ -13,6 +13,7 @@
     <style>
         .custom-scrollbar::-webkit-scrollbar {
             width: 6px;
+            height: 6px;
         }
 
         .custom-scrollbar::-webkit-scrollbar-track {
@@ -27,26 +28,27 @@
         .custom-scrollbar::-webkit-scrollbar-thumb:hover {
             background: #555;
         }
+
+        /* Previene que la columna de acciones se copie al seleccionar texto manualmente */
+        .no-copy {
+            user-select: none;
+        }
     </style>
 </head>
 
 <body class="bg-slate-50 min-h-screen font-sans">
 
-    <div class="max-w-7xl mx-auto px-4 py-8">
+    <div class="max-w-[95%] mx-auto px-4 py-8">
         <header class="mb-10 text-center">
             <h1 class="text-4xl font-extrabold text-slate-800 mb-2">Generador de Empresas Sugeridas</h1>
-            <p class="text-slate-600">Busca establecimientos mediante Google Maps API y genera scripts SQL
-                automáticamente.</p>
+            <p class="text-slate-600">Busca establecimientos y genera datos limpios para Google Sheets o SQL.</p>
         </header>
 
         <!-- Alerta de Error de API -->
         <div id="apiErrorAlert" class="hidden mb-8 p-4 bg-red-100 border-l-4 border-red-500 text-red-700">
-            <p class="font-bold">Error de Google Maps API (RefererNotAllowedMapError)</p>
-            <p class="text-sm">La clave de API actual tiene restricciones de dominio. Para que funcione en este entorno,
-                debes ir a <a href="https://console.cloud.google.com/google/maps-apis/credentials" target="_blank"
-                    class="underline font-semibold">Google Cloud Console</a> y autorizar la URL: <code
-                    class="bg-red-200 px-1 rounded">__file_url__</code> o desactivar las restricciones de HTTP Referrer.
-            </p>
+            <p class="font-bold">Error de Google Maps API</p>
+            <p class="text-sm">La clave de API actual tiene restricciones de dominio. Autoriza la URL actual en Google
+                Cloud Console.</p>
         </div>
 
         <!-- Panel de Control -->
@@ -55,25 +57,31 @@
                 <div>
                     <label class="block text-sm font-semibold text-slate-700 mb-1">Tipo de Búsqueda</label>
                     <select id="searchType"
-                        class="w-full border-slate-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                        class="w-full border-slate-300 p-2 border rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500">
                         <option value="cafeteria de especialidad">Cafetería de Especialidad</option>
                         <option value="chocolateria artesanal">Chocolatería</option>
                     </select>
                 </div>
                 <div>
-                    <label class="block text-sm font-semibold text-slate-700 mb-1">País</label>
-                    <input type="text" id="pais" value="Perú"
-                        class="w-full border-slate-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500">
-                </div>
-                <div>
                     <label class="block text-sm font-semibold text-slate-700 mb-1">Departamento</label>
-                    <input type="text" id="departamento" value="Lima"
-                        class="w-full border-slate-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                    <select id="departamento"
+                        class="w-full border-slate-300 p-2 border rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                        <option value="">Cargando...</option>
+                    </select>
                 </div>
                 <div>
-                    <label class="block text-sm font-semibold text-slate-700 mb-1">Provincia / Distrito</label>
-                    <input type="text" id="provincia" placeholder="Ej: Jesús María"
-                        class="w-full border-slate-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                    <label class="block text-sm font-semibold text-slate-700 mb-1">Provincia</label>
+                    <select id="provincia"
+                        class="w-full border-slate-300 p-2 border rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                        <option value="">Seleccione Departamento primero</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1">Distrito</label>
+                    <select id="distrito"
+                        class="w-full border-slate-300 p-2 border rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                        <option value="">Seleccione Provincia primero</option>
+                    </select>
                 </div>
             </div>
 
@@ -90,30 +98,48 @@
                     </button>
                 </div>
 
-                <button onclick="generarSQL()" id="btnSQL"
-                    class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-lg transition-all shadow-md hidden">
-                    Generar Script SQL
-                </button>
+                <div class="flex gap-2">
+                    <button onclick="copiarParaSheets()" id="btnCopySheets"
+                        class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-lg transition-all shadow-md hidden flex items-center">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                            xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z">
+                            </path>
+                        </svg>
+                        Copiar para Sheets
+                    </button>
+                    <button onclick="generarSQL()" id="btnSQL"
+                        class="bg-slate-800 hover:bg-slate-900 text-white font-bold py-2 px-6 rounded-lg transition-all shadow-md hidden">
+                        Generar SQL
+                    </button>
+                </div>
             </div>
         </div>
 
         <!-- Tabla de Resultados -->
         <div class="bg-white rounded-xl shadow-lg overflow-hidden border border-slate-200">
-            <div class="overflow-x-auto custom-scrollbar" style="max-height: 500px;">
-                <table class="w-full text-left border-collapse">
-                    <thead class="bg-slate-800 text-white sticky top-0">
+            <div class="overflow-x-auto custom-scrollbar" style="max-height: 600px;">
+                <table class="w-full text-left border-collapse whitespace-nowrap">
+                    <thead class="bg-slate-800 text-white sticky top-0 z-10">
                         <tr>
-                            <th class="p-4 text-sm font-medium">Nombre</th>
-                            <th class="p-4 text-sm font-medium">Distrito (Detectado)</th>
-                            <th class="p-4 text-sm font-medium">Coordenadas</th>
-                            <th class="p-4 text-sm font-medium">Calificación</th>
-                            <th class="p-4 text-sm font-medium">Acción</th>
+                            <th class="p-3 text-sm font-medium">Nombre</th>
+                            <th class="p-3 text-sm font-medium">url_instagram</th>
+                            <th class="p-3 text-sm font-medium">url_facebook</th>
+                            <th class="p-3 text-sm font-medium">teléfono</th>
+                            <th class="p-3 text-sm font-medium">dirección</th>
+                            <th class="p-3 text-sm font-medium">website</th>
+                            <th class="p-3 text-sm font-medium">país</th>
+                            <th class="p-3 text-sm font-medium">departamento</th>
+                            <th class="p-3 text-sm font-medium">provincia</th>
+                            <th class="p-3 text-sm font-medium">distrito</th>
+                            <th class="p-3 text-sm font-medium">coordenadas</th>
+                            <th class="p-3 text-sm font-medium no-copy text-center">Acción</th>
                         </tr>
                     </thead>
                     <tbody id="resultadosBody" class="divide-y divide-slate-100">
-                        <!-- Los resultados aparecerán aquí -->
                         <tr>
-                            <td colspan="5" class="p-10 text-center text-slate-400 italic">No hay resultados cargados.
+                            <td colspan="12" class="p-10 text-center text-slate-400 italic">No hay resultados cargados.
                                 Realiza una búsqueda para comenzar.</td>
                         </tr>
                     </tbody>
@@ -144,6 +170,12 @@
         </div>
     </div>
 
+    <!-- Modal de Mensaje Exitoso para Sheets -->
+    <div id="toast"
+        class="fixed bottom-5 right-5 bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg font-bold transition-opacity duration-300 opacity-0 pointer-events-none">
+        ¡Copiado correctamente! Pégalo en Google Sheets.
+    </div>
+
     <div id="map" class="hidden"></div> <!-- Div oculto para el servicio de Places -->
 
     <script>
@@ -155,19 +187,16 @@
         // Callback de error global de Google Maps
         window.gm_authFailure = function () {
             document.getElementById('apiErrorAlert').classList.remove('hidden');
-            console.error("Error de autenticación de Google Maps. Revisa las restricciones de Referer.");
+            console.error("Error de autenticación de Google Maps.");
         };
 
-        // Esta función se ejecuta automáticamente cuando el script de Google Maps carga
         function initApp() {
             isGoogleLoaded = true;
             try {
-                // Inicializar un mapa invisible para usar el servicio de Places
                 map = new google.maps.Map(document.getElementById('map'), {
                     center: { lat: -12.046374, lng: -77.042793 },
                     zoom: 15
                 });
-                console.log("Google Maps SDK cargado correctamente.");
             } catch (e) {
                 console.error("Error inicializando Google Maps:", e);
                 document.getElementById('apiErrorAlert').classList.remove('hidden');
@@ -176,65 +205,192 @@
 
         async function buscarLugares() {
             if (!isGoogleLoaded) {
-                alert("El SDK de Google Maps aún se está cargando o falló debido a restricciones de seguridad.");
+                alert("El SDK de Google Maps aún se está cargando o falló.");
                 return;
             }
 
             const btn = document.getElementById('btnBuscar');
             const loader = document.getElementById('loader');
+
             const queryType = document.getElementById('searchType').value;
-            const pais = document.getElementById('pais').value;
+
             const depto = document.getElementById('departamento').value;
             const prov = document.getElementById('provincia').value;
-
-            const searchQuery = `${queryType} en ${prov}, ${depto}, ${pais}`;
+            const dist = document.getElementById('distrito').value;
 
             btn.disabled = true;
             loader.classList.remove('hidden');
+
+            placesResults = [];
+            document.getElementById('resultadosBody').innerHTML = '<tr><td colspan="12" class="p-10 text-center text-slate-400 italic">Cargando resultados...</td></tr>';
+
+            service = new google.maps.places.PlacesService(map);
+
+            const locationStr = [dist, prov, depto, 'Perú'].filter(Boolean).join(', ');
+            const searchQuery = `${queryType} en ${locationStr}`;
 
             const request = {
                 query: searchQuery,
                 fields: ['name', 'geometry', 'formatted_address', 'photos', 'rating', 'place_id']
             };
+            console.log(request);
 
-            service = new google.maps.places.PlacesService(map);
+            try {
+                const results = await new Promise((resolve, reject) => {
+                    let allResults = [];
+                    let pageCount = 0;
 
-            service.textSearch(request, (results, status) => {
-                btn.disabled = false;
-                loader.classList.add('hidden');
+                    function handleResults(res, status, pagination) {
+                        if (status === google.maps.places.PlacesServiceStatus.OK && res) {
+                            allResults = allResults.concat(res);
+                        }
 
-                if (status === google.maps.places.PlacesServiceStatus.OK) {
-                    placesResults = results;
-                    renderTabla();
-                    document.getElementById('btnSQL').classList.remove('hidden');
-                } else {
-                    alert('Error en la búsqueda de Google Maps: ' + status);
+                        // Google Limits: Max 60 results per textSearch (3 pages of 20)
+                        if (status === google.maps.places.PlacesServiceStatus.OK && pagination && pagination.hasNextPage && pageCount < 2) {
+                            pageCount++;
+                            // La API requiere una pequeña pausa antes de pedir la siguiente página
+                            setTimeout(() => {
+                                pagination.nextPage();
+                            }, 2500);
+                        } else {
+                            // Resolvemos lo que tenemos, incluso si falló la paginación (ej. INVALID_REQUEST por token inmaduro)
+                            if (allResults.length > 0 || status === google.maps.places.PlacesServiceStatus.ZERO_RESULTS || status === google.maps.places.PlacesServiceStatus.OK) {
+                                resolve(allResults);
+                            } else {
+                                reject(status);
+                            }
+                        }
+                    }
+
+                    service.textSearch(request, handleResults);
+                });
+                console.log(results);
+                if (results && results.length > 0) {
+                    const detailPromises = results.map(place => {
+                        return new Promise((resolve) => {
+                            const detailsRequest = {
+                                placeId: place.place_id,
+                                fields: ['name', 'geometry', 'formatted_address', 'formatted_phone_number', 'website', 'address_components', 'place_id']
+                            };
+
+                            service.getDetails(detailsRequest, (details, detailStatus) => {
+                                if (detailStatus === google.maps.places.PlacesServiceStatus.OK) {
+                                    resolve(details);
+                                } else {
+                                    resolve(place);
+                                }
+                            });
+                        });
+                    });
+
+                    const enrichedResults = await Promise.all(detailPromises);
+                    placesResults = [...placesResults, ...enrichedResults];
                 }
+            } catch (err) {
+                console.error('Error buscando', queryType, err);
+            }
+
+            const filteredResults = placesResults.filter(p => {
+                const address = (p.formatted_address || "").toLowerCase();
+                return address.includes(prov.toLowerCase()) || address.includes(depto.toLowerCase());
             });
+
+            // Eliminar duplicados posibles (a veces Google retorna un mismo ID por dos búsquedas similares)
+            const uniquePlaces = [];
+            const placeIds = new Set();
+            for (const p of filteredResults) {
+                if (!placeIds.has(p.place_id)) {
+                    placeIds.add(p.place_id);
+                    uniquePlaces.push(p);
+                }
+            }
+            placesResults = uniquePlaces;
+
+            btn.disabled = false;
+            loader.classList.add('hidden');
+
+            renderTabla();
+
+            if (placesResults.length > 0) {
+                document.getElementById('btnSQL').classList.remove('hidden');
+                document.getElementById('btnCopySheets').classList.remove('hidden');
+            } else {
+                document.getElementById('btnSQL').classList.add('hidden');
+                document.getElementById('btnCopySheets').classList.add('hidden');
+            }
         }
 
         function renderTabla() {
             const body = document.getElementById('resultadosBody');
             if (placesResults.length === 0) {
-                body.innerHTML = `<tr><td colspan="5" class="p-10 text-center text-slate-400 italic">No se encontraron resultados.</td></tr>`;
+                body.innerHTML = `<tr><td colspan="12" class="p-10 text-center text-slate-400 italic">No se encontraron resultados.</td></tr>`;
                 return;
             }
 
+            const pais = 'Perú';
+            const departamento = document.getElementById('departamento').value || '';
+            const provincia = document.getElementById('provincia').value || '';
+
             body.innerHTML = '';
             placesResults.forEach((place, index) => {
+                const name = place.name;
                 const lat = place.geometry.location.lat().toFixed(6);
                 const lng = place.geometry.location.lng().toFixed(6);
-                const address = place.formatted_address || '';
+
+                // Formato de coordenadas JSON estricto solicitado
+                const coordenadas = `{"lat":${lat}, "lng":${lng}}`;
+
+                // Extracción del distrito usando address_components (más preciso) o fallback a formatted_address
+                let distrito = provincia;
+                if (place.address_components) {
+                    const locality = place.address_components.find(c => c.types.includes('locality'));
+                    const sublocality = place.address_components.find(c => c.types.includes('sublocality') || c.types.includes('sublocality_level_1') || c.types.includes('administrative_area_level_3'));
+                    if (sublocality) distrito = sublocality.long_name;
+                    else if (locality) distrito = locality.long_name;
+                } else {
+                    const addressParts = (place.formatted_address || '').split(',');
+                    distrito = addressParts.length >= 2 ? addressParts[addressParts.length - 3].trim() : provincia;
+                }
+
+                const direccion = place.formatted_address || '';
+                const telefono = place.formatted_phone_number || '';
+                let website = place.website || '';
+
+                // Extracción inteligente de redes sociales
+                let url_facebook = place.facebookUrl || '';
+                let url_instagram = place.instagramUrl || '';
+
+                // Muchas veces el dueño pone su Facebook o Instagram en el campo de Website de Google Maps
+                if (website.toLowerCase().includes('facebook.com')) {
+                    url_facebook = url_facebook || website;
+                    website = ''; // Lo limpiamos de website
+                } else if (website.toLowerCase().includes('instagram.com')) {
+                    url_instagram = url_instagram || website;
+                    website = '';
+                }
+
+                if (!url_instagram) url_instagram = "";
+
+                if (!url_facebook) url_facebook = ""; // Vacío como placeholder si no hay
 
                 const row = document.createElement('tr');
-                row.className = 'hover:bg-slate-50 transition-colors';
+                row.className = 'hover:bg-blue-50 transition-colors text-slate-700';
+
+                // Renderizamos las celdas ordenadas para hacer match perfecto con los headers
                 row.innerHTML = `
-                    <td class="p-4 text-sm font-semibold text-slate-800">${place.name}</td>
-                    <td class="p-4 text-sm text-slate-600">${address.split(',')[1] || 'N/A'}</td>
-                    <td class="p-4 text-sm text-slate-500 font-mono">${lat}, ${lng}</td>
-                    <td class="p-4 text-sm text-yellow-500 font-bold">★ ${place.rating || 'N/A'}</td>
-                    <td class="p-4 text-sm">
-                        <button onclick="removerFila(${index})" class="text-red-500 hover:text-red-700 font-bold">Eliminar</button>
+                    <td class="p-3 text-sm font-semibold">${name}</td>
+                    <td class="p-3 text-sm text-blue-600 hover:underline"><a href="${url_instagram}" target="_blank">${url_instagram}</a></td>
+                    <td class="p-3 text-sm">${url_facebook}</td>
+                    <td class="p-3 text-sm">${telefono}</td>
+                    <td class="p-3 text-sm truncate max-w-xs" title="${direccion}">${direccion}</td>
+                    <td class="p-3 text-sm text-blue-600 hover:underline">${website ? `<a href="${website}" target="_blank">Web</a>` : ''}</td>
+                    <td class="p-3 text-sm">${pais}</td>
+                    <td class="p-3 text-sm">${departamento}</td>
+                    <td class="p-3 text-sm">${provincia}</td>
+                    <td class="p-3 text-sm">${distrito}</td>
+                    <td class="p-3 text-sm font-mono text-slate-500">${coordenadas}</td>
+                    <td class="p-3 text-sm text-center no-copy">
+                        <button onclick="removerFila(${index})" class="text-red-500 hover:text-red-700 font-bold bg-red-50 px-3 py-1 rounded-md">Eliminar</button>
                     </td>
                 `;
                 body.appendChild(row);
@@ -250,8 +406,80 @@
             placesResults = [];
             renderTabla();
             document.getElementById('btnSQL').classList.add('hidden');
+            document.getElementById('btnCopySheets').classList.add('hidden');
         }
 
+        // NUEVA FUNCIÓN: Copia limpia usando formato TSV (Tab-Separated Values)
+        function copiarParaSheets() {
+            if (placesResults.length === 0) return;
+
+            const pais = 'Perú';
+            const departamento = document.getElementById('departamento').value;
+            const provincia = document.getElementById('provincia').value;
+
+            // Encabezados separados por Tabulador (\t)
+            let tsv = "Nombre\turl_instagram\turl_facebook\ttelefono\tdireccion\twebsite\tpais\tdepartamento\tprovincia\tdistrito\tcoordenadas\n";
+
+            placesResults.forEach(place => {
+                const name = place.name;
+                const lat = place.geometry.location.lat().toFixed(6);
+                const lng = place.geometry.location.lng().toFixed(6);
+                const coordenadas = `{"lat":${lat}, "lng":${lng}}`;
+
+                let distrito = provincia;
+                if (place.address_components) {
+                    const locality = place.address_components.find(c => c.types.includes('locality'));
+                    const sublocality = place.address_components.find(c => c.types.includes('sublocality') || c.types.includes('sublocality_level_1') || c.types.includes('administrative_area_level_3'));
+                    if (sublocality) distrito = sublocality.long_name;
+                    else if (locality) distrito = locality.long_name;
+                } else {
+                    const addressParts = (place.formatted_address || '').split(',');
+                    distrito = addressParts.length >= 2 ? addressParts[addressParts.length - 3].trim() : provincia;
+                }
+                const direccion = place.formatted_address || '';
+                const telefono = place.formatted_phone_number || '';
+                let website = place.website || '';
+
+                // Extracción inteligente de redes sociales
+                let url_facebook = place.facebookUrl || '';
+                let url_instagram = place.instagramUrl || '';
+
+                // Muchas veces el dueño pone su Facebook o Instagram en el campo de Website de Google Maps
+                if (website.toLowerCase().includes('facebook.com')) {
+                    url_facebook = url_facebook || website;
+                    website = ''; // Lo limpiamos de website
+                } else if (website.toLowerCase().includes('instagram.com')) {
+                    url_instagram = url_instagram || website;
+                    website = '';
+                }
+
+                if (!url_instagram) url_instagram = "";
+                if (!url_facebook) url_facebook = ""; // Vacío como placeholder si no hay
+
+                // Cada valor separado por tabulador, salto de línea al final
+                tsv += `${name}\t${url_instagram}\t${url_facebook}\t${telefono}\t${direccion}\t${website}\t${pais}\t${departamento}\t${provincia}\t${distrito}\t${coordenadas}\n`;
+            });
+
+            // Usamos un textarea temporal para forzar la copia limpia al portapapeles
+            const textarea = document.createElement('textarea');
+            textarea.value = tsv;
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textarea);
+
+            mostrarToast();
+        }
+
+        function mostrarToast() {
+            const toast = document.getElementById('toast');
+            toast.classList.remove('opacity-0');
+            setTimeout(() => {
+                toast.classList.add('opacity-0');
+            }, 3000);
+        }
+
+        // Función original de SQL mantenida
         function generarSQL() {
             const pais = document.getElementById('pais').value;
             const departamento = document.getElementById('departamento').value;
@@ -266,13 +494,11 @@
                 const name = place.name.replace(/'/g, "''");
                 const lat = place.geometry.location.lat().toFixed(6);
                 const lng = place.geometry.location.lng().toFixed(6);
-                const coords = JSON.stringify({ lat: parseFloat(lat), lng: parseFloat(lng) });
+                const coords = `{"lat":${lat}, "lng":${lng}}`;
 
-                // Intentar extraer distrito de la dirección formateada
-                const addressParts = place.formatted_address.split(',');
+                const addressParts = (place.formatted_address || '').split(',');
                 const distrito = addressParts.length >= 2 ? addressParts[addressParts.length - 3].trim() : provincia;
 
-                // URL de Logo ficticia basada en el nombre para Instagram (Placeholders)
                 const igUser = name.toLowerCase().replace(/\s/g, '').normalize("NFD").replace(/[\u0300-\u036f]/g, "");
                 const logo = `https://www.instagram.com/${igUser}/logo.jpg`;
 
@@ -295,8 +521,77 @@
             const textarea = document.getElementById('sqlOutput');
             textarea.select();
             document.execCommand('copy');
-            alert('¡Script SQL copiado al portapapeles!');
+            mostrarToast();
         }
+        // --- UBIGEO LOGIC ---
+        let ubigeoData = [];
+
+        async function initUbigeo() {
+            try {
+                // Fetch de un gist o un recurso local con el ubigeo. Usamos un dataset púbico o lo generamos.
+                // Como las APIs a veces fallan o requieren CORS, para este demo cargamos un JSON estático popular
+                const res = await fetch('https://raw.githubusercontent.com/ernestorivero/Ubigeo-Peru/master/json/ubigeo_peru_2016_departamentos.json');
+                const provRes = await fetch('https://raw.githubusercontent.com/ernestorivero/Ubigeo-Peru/master/json/ubigeo_peru_2016_provincias.json');
+                const distRes = await fetch('https://raw.githubusercontent.com/ernestorivero/Ubigeo-Peru/master/json/ubigeo_peru_2016_distritos.json');
+
+                const deptoData = await res.json();
+                const provData = await provRes.json();
+                const distData = await distRes.json();
+
+                const deptoSelect = document.getElementById('departamento');
+                const provSelect = document.getElementById('provincia');
+                const distSelect = document.getElementById('distrito');
+
+                // Llenar Departamentos
+                deptoSelect.innerHTML = '<option value="">(Todo el Perú)</option>';
+                deptoData.forEach(d => {
+                    deptoSelect.innerHTML += `<option value="${d.name}" data-id="${d.id}">${d.name}</option>`;
+                });
+
+                // Seleccionar Lima por defecto si existe
+                const limaOpt = Array.from(deptoSelect.options).find(o => o.value === 'Lima');
+                if (limaOpt) limaOpt.selected = true;
+
+                // Listeners
+                deptoSelect.addEventListener('change', () => {
+                    const deptoId = deptoSelect.options[deptoSelect.selectedIndex]?.dataset.id;
+                    provSelect.innerHTML = '<option value="">(Todas las provincias)</option>';
+                    distSelect.innerHTML = '<option value="">Seleccione Provincia primero</option>';
+
+                    if (deptoId) {
+                        provData.filter(p => p.department_id === deptoId).forEach(p => {
+                            provSelect.innerHTML += `<option value="${p.name}" data-id="${p.id}">${p.name}</option>`;
+                        });
+                    }
+                });
+
+                provSelect.addEventListener('change', () => {
+                    const provId = provSelect.options[provSelect.selectedIndex]?.dataset.id;
+                    distSelect.innerHTML = '<option value="">(Todos los distritos)</option>';
+
+                    if (provId) {
+                        const deptoId = deptoSelect.options[deptoSelect.selectedIndex]?.dataset.id;
+                        distData.filter(d => d.province_id === provId && d.department_id === deptoId).forEach(d => {
+                            distSelect.innerHTML += `<option value="${d.name}">${d.name}</option>`;
+                        });
+                    }
+                });
+
+                // Trigger inicial para Lima
+                deptoSelect.dispatchEvent(new Event('change'));
+
+            } catch (e) {
+                console.warn("Fallo cargando ubigeo, cambiando a inputs de texto regulares", e);
+                // Fallback a inputs de texto si el fetch github falla
+                document.getElementById('departamento').outerHTML = '<input type="text" id="departamento" placeholder="Departamento" class="w-full border-slate-300 p-2 border rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500">';
+                document.getElementById('provincia').outerHTML = '<input type="text" id="provincia" placeholder="Provincia" class="w-full border-slate-300 p-2 border rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500">';
+                document.getElementById('distrito').outerHTML = '<input type="text" id="distrito" placeholder="Distrito" class="w-full border-slate-300 p-2 border rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500">';
+            }
+        }
+
+        // Cargar ubigeo al inicio
+        document.addEventListener('DOMContentLoaded', initUbigeo);
+
     </script>
 </body>
 

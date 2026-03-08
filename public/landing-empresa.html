@@ -1,43 +1,90 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Detalle de Empresa - Ruru Lab</title>
+    <title>Empresas con Origen Único - Ruru Lab</title>
 
     <meta name="description" content="Descubre el origen y trazabilidad.">
     <meta property="og:type" content="website">
-    <meta property="og:title" content="RuruLab - Trazabilidad y Pasaporte Digital para Café y Cacao">
-    <meta property="og:description" content="Crea un pasaporte digital para tu producto..."> 
+    <meta property="og:title" content="RuruLab - Trazabilidad y Pasaporte Digital para Cacao y Café">
+    <meta property="og:description" content="Crea un pasaporte digital para tu producto...">
     <meta property="og:image" content="https://rurulab.com/images/banner_1.png">
 
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&family=Playfair+Display:wght@700;900&display=swap"
+        rel="stylesheet" crossorigin>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
-    
+
     <!-- AGREGADO: Chart.js para los gráficos sensoriales -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
 
-    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAM37iJTRcIoSAxESlDzB2DxlNJWKasW5U&libraries=geometry,drawing,places&v=weekly" defer></script>
+    <script
+        src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAM37iJTRcIoSAxESlDzB2DxlNJWKasW5U&libraries=geometry,drawing,places&v=weekly"
+        defer></script>
     <style>
-        body { font-family: 'Inter', sans-serif; background-color: #fdfaf6; }
-        .font-display { font-family: 'Playfair Display', serif; }
-        .fade-in { animation: fadeIn 0.5s ease-in-out; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .hide-scrollbar::-webkit-scrollbar { display: none; }
-        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-        .tab-content { display: none; opacity: 0; transition: opacity 0.3s ease-in; }
-        .tab-content.active { display: block; opacity: 1; }
-        .tab-btn.active { background-color: #78350f; color: white; border-color: #78350f; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #fdfaf6;
+        }
+
+        .font-display {
+            font-family: 'Playfair Display', serif;
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        .tab-content {
+            display: none;
+            opacity: 0;
+            transition: opacity 0.3s ease-in;
+        }
+
+        .tab-content.active {
+            display: block;
+            opacity: 1;
+        }
+
+        .tab-btn.active {
+            background-color: #78350f;
+            color: white;
+            border-color: #78350f;
+        }
     </style>
 </head>
+
 <body class="text-stone-800 antialiased min-h-screen flex flex-col">
 
     <div id="public-nav-placeholder"></div>
 
     <main class="flex-grow container mx-auto px-6 py-8">
-        
+
         <!-- Breadcrumbs -->
         <div id="breadcrumbs" class="flex items-center gap-2 text-sm text-stone-500 mb-6">
             <a href="/origen-unico" class="hover:text-amber-800 hover:underline font-medium">Empresas</a>
@@ -67,4 +114,5 @@
     <script src="/js/chart-utils.js"></script>
     <script src="/js/public-nav-loader.js"></script>
 </body>
+
 </html>
