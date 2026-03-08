@@ -133,6 +133,31 @@ CREATE TABLE IF NOT EXISTS company_profiles (
     CONSTRAINT uq_user_company_name UNIQUE (user_id, name)
 );
 
+-- 3.2 LOCALES FÍSICOS (tiendas, cafeterías, chocolaterías, laboratorios)
+-- Puntos de venta o atención al público asociados a una marca.
+CREATE TABLE IF NOT EXISTS locales (
+    id TEXT PRIMARY KEY,
+    brand_id TEXT NOT NULL,
+    user_id INTEGER NOT NULL,
+    nombre TEXT NOT NULL,
+    tipo TEXT DEFAULT 'cafeteria',     -- 'cafeteria', 'chocolateria', 'tienda', 'laboratorio'
+    pais TEXT,
+    departamento TEXT,
+    provincia TEXT,
+    distrito TEXT,
+    direccion TEXT,
+    coordenadas JSONB,
+    telefono TEXT,
+    horario TEXT,
+    imagenes_json JSONB DEFAULT '[]',
+    historia TEXT,
+    is_published BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_local_brand FOREIGN KEY (brand_id) REFERENCES brands(id) ON DELETE CASCADE,
+    CONSTRAINT fk_local_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
 -- 4. CONFIGURACIÓN DE PROCESOS (PLANTILLAS)
 CREATE TABLE IF NOT EXISTS plantillas_proceso (
     id SERIAL PRIMARY KEY,
@@ -479,7 +504,6 @@ CREATE TABLE IF NOT EXISTS suggested_companies (
     name TEXT NOT NULL,
     social_instagram TEXT,
     social_facebook TEXT,
-    logo TEXT
 
     pais TEXT,
     departamento TEXT,
