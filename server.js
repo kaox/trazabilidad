@@ -430,6 +430,11 @@ app.get('/api/procesadoras', authenticateApi, db.getProcesadoras);
 app.post('/api/procesadoras', authenticateApi, db.createProcesadora);
 app.put('/api/procesadoras/:id', authenticateApi, db.updateProcesadora);
 app.delete('/api/procesadoras/:id', authenticateApi, db.deleteProcesadora);
+// Sucursales de Procesadora
+app.get('/api/procesadoras/:procesadoraId/sucursales', authenticateApi, db.getSucursales);
+app.post('/api/procesadoras/:procesadoraId/sucursales', authenticateApi, db.createSucursal);
+app.put('/api/procesadoras/:procesadoraId/sucursales/:sucursalId', authenticateApi, db.updateSucursal);
+app.delete('/api/procesadoras/:procesadoraId/sucursales/:sucursalId', authenticateApi, db.deleteSucursal);
 app.get('/api/perfiles', authenticateApi, db.getPerfiles);
 app.post('/api/perfiles', authenticateApi, db.createPerfil);
 app.put('/api/perfiles/:id', authenticateApi, db.updatePerfil);

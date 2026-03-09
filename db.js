@@ -417,15 +417,14 @@ const getProcesadoras = async (req, res) => {
 
 const createProcesadora = async (req, res) => {
     const userId = req.user.id;
-    // CAMBIO: Quitamos tipo_empresa, agregamos departamento, provincia, distrito
-    let { ruc, razon_social, nombre_comercial, pais, ciudad, departamento, provincia, distrito, direccion, telefono, premios_json, certificaciones_json, coordenadas, imagenes_json, historia, video_link, numero_trabajadores } = req.body;
+    let { ruc, razon_social, nombre_comercial, tipo, pais, ciudad, departamento, provincia, distrito, direccion, telefono, premios_json, certificaciones_json, coordenadas, imagenes_json, historia, video_link, numero_trabajadores } = req.body;
     const id = require('crypto').randomUUID();
 
     numero_trabajadores = sanitizeNumber(numero_trabajadores);
 
-    const sql = 'INSERT INTO procesadoras (id, user_id, ruc, razon_social, nombre_comercial, pais, ciudad, departamento, provincia, distrito, direccion, telefono, premios_json, certificaciones_json, coordenadas, imagenes_json, historia, video_link, numero_trabajadores) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
+    const sql = 'INSERT INTO procesadoras (id, user_id, ruc, razon_social, nombre_comercial, tipo, pais, ciudad, departamento, provincia, distrito, direccion, telefono, premios_json, certificaciones_json, coordenadas, imagenes_json, historia, video_link, numero_trabajadores) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
     try {
-        await run(sql, [id, userId, ruc, razon_social, nombre_comercial, pais, ciudad, departamento, provincia, distrito, direccion, telefono, JSON.stringify(premios_json || []), JSON.stringify(certificaciones_json || []), coordenadas, JSON.stringify(imagenes_json || []), historia, video_link, numero_trabajadores]);
+        await run(sql, [id, userId, ruc, razon_social, nombre_comercial, tipo || null, pais, ciudad, departamento, provincia, distrito, direccion, telefono, JSON.stringify(premios_json || []), JSON.stringify(certificaciones_json || []), coordenadas, JSON.stringify(imagenes_json || []), historia, video_link, numero_trabajadores]);
         res.status(201).json({ message: "Procesadora creada", id: id });
     } catch (err) { res.status(500).json({ error: err.message }); }
 };
@@ -433,14 +432,13 @@ const createProcesadora = async (req, res) => {
 const updateProcesadora = async (req, res) => {
     const userId = req.user.id;
     const { id } = req.params;
-    // CAMBIO: Quitamos tipo_empresa, agregamos departamento, provincia, distrito
-    let { ruc, razon_social, nombre_comercial, pais, ciudad, departamento, provincia, distrito, direccion, telefono, premios_json, certificaciones_json, coordenadas, imagenes_json, historia, video_link, numero_trabajadores } = req.body;
+    let { ruc, razon_social, nombre_comercial, tipo, pais, ciudad, departamento, provincia, distrito, direccion, telefono, premios_json, certificaciones_json, coordenadas, imagenes_json, historia, video_link, numero_trabajadores } = req.body;
 
     numero_trabajadores = sanitizeNumber(numero_trabajadores);
 
-    const sql = 'UPDATE procesadoras SET ruc = ?, razon_social = ?, nombre_comercial = ?, pais = ?, ciudad = ?, departamento = ?, provincia = ?, distrito = ?, direccion = ?, telefono = ?, premios_json = ?, certificaciones_json = ?, coordenadas = ?, imagenes_json = ?, historia = ?, video_link = ?, numero_trabajadores = ? WHERE id = ? AND user_id = ?';
+    const sql = 'UPDATE procesadoras SET ruc = ?, razon_social = ?, nombre_comercial = ?, tipo = ?, pais = ?, ciudad = ?, departamento = ?, provincia = ?, distrito = ?, direccion = ?, telefono = ?, premios_json = ?, certificaciones_json = ?, coordenadas = ?, imagenes_json = ?, historia = ?, video_link = ?, numero_trabajadores = ? WHERE id = ? AND user_id = ?';
     try {
-        await run(sql, [ruc, razon_social, nombre_comercial, pais, ciudad, departamento, provincia, distrito, direccion, telefono, JSON.stringify(premios_json || []), JSON.stringify(certificaciones_json || []), coordenadas, JSON.stringify(imagenes_json || []), historia, video_link, numero_trabajadores, id, userId]);
+        await run(sql, [ruc, razon_social, nombre_comercial, tipo || null, pais, ciudad, departamento, provincia, distrito, direccion, telefono, JSON.stringify(premios_json || []), JSON.stringify(certificaciones_json || []), coordenadas, JSON.stringify(imagenes_json || []), historia, video_link, numero_trabajadores, id, userId]);
         res.status(200).json({ message: "Procesadora actualizada" });
     } catch (err) { res.status(500).json({ error: err.message }); }
 };
@@ -451,6 +449,67 @@ const deleteProcesadora = async (req, res) => {
     try {
         const result = await run('DELETE FROM procesadoras WHERE id = ? AND user_id = ?', [id, userId]);
         if (result.changes === 0) return res.status(404).json({ error: "Procesadora no encontrada o no tienes permiso." });
+        res.status(204).send();
+    } catch (err) { res.status(500).json({ error: err.message }); }
+};
+
+// --- Sucursales de Procesadora ---
+const getSucursales = async (req, res) => {
+    const userId = req.user.id;
+    const { procesadoraId } = req.params;
+    try {
+        // Verificar propiedad de la procesadora
+        const procesadora = await get('SELECT id FROM procesadoras WHERE id = ? AND user_id = ?', [procesadoraId, userId]);
+        if (!procesadora) return res.status(403).json({ error: 'No tienes permiso para ver estas sucursales.' });
+        const rows = await all('SELECT * FROM procesadora_sucursales WHERE procesadora_id = ? ORDER BY nombre_sucursal', [procesadoraId]);
+        const sucursales = rows.map(s => ({
+            ...s,
+            coordenadas: safeJSONParse(s.coordenadas || 'null')
+        }));
+        res.status(200).json(sucursales);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+};
+
+const createSucursal = async (req, res) => {
+    const userId = req.user.id;
+    const { procesadoraId } = req.params;
+    const { nombre_sucursal, tipo_sucursal, direccion, ciudad, distrito, coordenadas, telefono } = req.body;
+    const id = require('crypto').randomUUID();
+    try {
+        const procesadora = await get('SELECT id FROM procesadoras WHERE id = ? AND user_id = ?', [procesadoraId, userId]);
+        if (!procesadora) return res.status(403).json({ error: 'No tienes permiso.' });
+        await run(
+            'INSERT INTO procesadora_sucursales (id, procesadora_id, nombre_sucursal, tipo_sucursal, direccion, ciudad, distrito, coordenadas, telefono) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            [id, procesadoraId, nombre_sucursal, tipo_sucursal || null, direccion || null, ciudad || null, distrito || null, coordenadas ? JSON.stringify(coordenadas) : null, telefono || null]
+        );
+        res.status(201).json({ message: 'Sucursal creada', id });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+};
+
+const updateSucursal = async (req, res) => {
+    const userId = req.user.id;
+    const { procesadoraId, sucursalId } = req.params;
+    const { nombre_sucursal, tipo_sucursal, direccion, ciudad, distrito, coordenadas, telefono } = req.body;
+    try {
+        const procesadora = await get('SELECT id FROM procesadoras WHERE id = ? AND user_id = ?', [procesadoraId, userId]);
+        if (!procesadora) return res.status(403).json({ error: 'No tienes permiso.' });
+        const result = await run(
+            'UPDATE procesadora_sucursales SET nombre_sucursal = ?, tipo_sucursal = ?, direccion = ?, ciudad = ?, distrito = ?, coordenadas = ?, telefono = ? WHERE id = ? AND procesadora_id = ?',
+            [nombre_sucursal, tipo_sucursal || null, direccion || null, ciudad || null, distrito || null, coordenadas ? JSON.stringify(coordenadas) : null, telefono || null, sucursalId, procesadoraId]
+        );
+        if (result.changes === 0) return res.status(404).json({ error: 'Sucursal no encontrada.' });
+        res.status(200).json({ message: 'Sucursal actualizada' });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+};
+
+const deleteSucursal = async (req, res) => {
+    const userId = req.user.id;
+    const { procesadoraId, sucursalId } = req.params;
+    try {
+        const procesadora = await get('SELECT id FROM procesadoras WHERE id = ? AND user_id = ?', [procesadoraId, userId]);
+        if (!procesadora) return res.status(403).json({ error: 'No tienes permiso.' });
+        const result = await run('DELETE FROM procesadora_sucursales WHERE id = ? AND procesadora_id = ?', [sucursalId, procesadoraId]);
+        if (result.changes === 0) return res.status(404).json({ error: 'Sucursal no encontrada.' });
         res.status(204).send();
     } catch (err) { res.status(500).json({ error: err.message }); }
 };
@@ -2973,6 +3032,7 @@ module.exports = {
     registerUser, loginUser, logoutUser, handleGoogleLogin,
     getFincas, createFinca, updateFinca, deleteFinca, generateFincaToken, getFincaByToken, updateFincaByToken,
     getProcesadoras, createProcesadora, updateProcesadora, deleteProcesadora,
+    getSucursales, createSucursal, updateSucursal, deleteSucursal,
     getPerfiles, createPerfil, updatePerfil, deletePerfil,
     getTemplates, createTemplate, updateTemplate, deleteTemplate,
     getSystemTemplates, cloneTemplate, // <-- NUEVAS FUNCIONES EXPORTADAS
