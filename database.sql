@@ -58,6 +58,7 @@ CREATE TABLE IF NOT EXISTS fincas (
     propietario TEXT,
     dni_ruc TEXT,
     nombre_finca TEXT NOT NULL,
+    tipo TEXT, -- 'INDIVIDUAL', 'COOPERATIVA', 'ASOCIACION', 'VIVERO'
     pais TEXT,
     departamento TEXT,
     provincia TEXT,
@@ -81,6 +82,17 @@ CREATE TABLE IF NOT EXISTS fincas (
     UNIQUE(user_id, nombre_finca)
 );
 
+-- Nueva tabla para los polígonos/lotes
+CREATE TABLE IF NOT EXISTS finca_lotes (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    finca_id TEXT NOT NULL, -- Relación con tu tabla 'fincas'
+    nombre_lote TEXT, -- Ej: "Parcela Norte", "Lote Cacao Premium"
+    superficie_lote DOUBLE PRECISION,
+    coordenadas_json JSONB, -- Aquí guardas el polígono GeoJSON específico
+    cultivo_tipo TEXT, -- 'CAFE' o 'CACAO'
+    FOREIGN KEY (finca_id) REFERENCES fincas(id) ON DELETE CASCADE
+);
+
 -- 3. UNIDADES DE PROCESAMIENTO (PLANTAS)
 CREATE TABLE IF NOT EXISTS procesadoras (
     id TEXT PRIMARY KEY, -- UUID
@@ -89,6 +101,7 @@ CREATE TABLE IF NOT EXISTS procesadoras (
     razon_social TEXT NOT NULL,
     nombre_comercial TEXT,
     tipo_empresa TEXT,
+    tipo TEXT, -- 'ACOPIADORA', 'BENEFICIO_SECO', 'TOSTADORA', 'CHOCOLATERIA', 'CAFETERIA_ESPECIALIDAD', 'LABORATORIO_CATACION', 'EXPORTADORA'
     pais TEXT,
     ciudad TEXT,
     departamento TEXT,
@@ -107,6 +120,20 @@ CREATE TABLE IF NOT EXISTS procesadoras (
     updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     UNIQUE(user_id, ruc)
+);
+
+-- Nueva tabla para las sucursales
+CREATE TABLE IF NOT EXISTS procesadora_sucursales (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    procesadora_id TEXT NOT NULL, -- Relación con tu tabla 'procesadoras'
+    nombre_sucursal TEXT NOT NULL, -- Ej: "Tienda Miraflores", "Planta Industrial"
+    tipo_sucursal TEXT, -- 'PLANTA', 'CAFETERIA', 'PUNTO_VENTA'
+    direccion TEXT,
+    ciudad TEXT,
+    distrito TEXT,
+    coordenadas JSONB, -- Lat/Lng de la sucursal
+    telefono TEXT,
+    FOREIGN KEY (procesadora_id) REFERENCES procesadoras(id) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS company_profiles (
