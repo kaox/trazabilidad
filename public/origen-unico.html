@@ -89,6 +89,17 @@
             box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
         }
 
+        /* Clases para estados de filtros de Subtipo */
+        .subtype-filter-btn.active {
+            background-color: #dbeafe;
+            /* blue-100 */
+            color: #1e40af;
+            /* blue-800 */
+            border-color: #3b82f6;
+            /* blue-500 */
+            box-shadow: 0 2px 8px rgba(59, 130, 246, 0.2);
+        }
+
         /* Scrollbar suave para filtros en móvil */
         .hide-scrollbar::-webkit-scrollbar {
             display: none;
@@ -158,6 +169,15 @@
                     </button>
                 </div>
             </div>
+            <!-- FILTRO 3: SUBTIPO (Depende del tipo de entidad) -->
+            <div id="subtypes-filter" class="mt-4 flex items-center gap-2 overflow-x-auto hide-scrollbar pt-4 border-t border-stone-200 hidden">
+                <span class="text-xs font-bold text-stone-400 uppercase tracking-widest mr-2">Subtipo:</span>
+                <button onclick="app.setSubtypeFilter('all')" data-subtype-filter="all"
+                    class="subtype-filter-btn active whitespace-nowrap px-4 py-1.5 rounded-full border border-stone-200 bg-white text-stone-600 font-bold text-xs transition-all">
+                    Todos
+                </button>
+                <div id="subtypes-container" class="flex items-center gap-2"></div>
+            </div>
             <!-- FILTRO 2: TIPO DE PRODUCTO (NUEVO) -->
             <div class="mt-4 flex items-center gap-2 overflow-x-auto hide-scrollbar pt-4 border-t border-stone-200">
                 <span class="text-xs font-bold text-stone-400 uppercase tracking-widest mr-2">Producto:</span>
@@ -182,6 +202,7 @@
                     📦 Otros
                 </button>
             </div>
+            
         </div>
 
         <!-- Contenedor Mapa -->

@@ -4,7 +4,24 @@ const app = {
         selectedCompany: null,
         companies: [], // Almacén para evitar peticiones repetidas
         currentFilter: 'all',        // Filtro de Entidad (Finca/Procesadora)
-        currentProductFilter: 'all'  // Filtro de Producto (Cafe/Cacao/Miel)
+        currentProductFilter: 'all',  // Filtro de Producto (Cafe/Cacao/Miel)
+        currentSubtypeFilter: 'all',  // Filtro de Subtipo (depende del tipo)
+        organizaciones: []            // Almacenar datos de organizaciones/subtipos
+    },
+
+    // Mapeo de iconos FontAwesome para subtipos
+    subtypeIcons: {
+        // Finca subtipos
+        'Individual': 'fas fa-user text-amber-600',
+        'Cooperativa': 'fas fa-users text-green-600',
+        'Asociación': 'fas fa-handshake text-blue-600',
+        // Procesadora subtipos
+        'Acopiadora': 'fas fa-warehouse text-purple-600',
+        'Tostadora': 'fas fa-fire text-orange-600',
+        'Chocolateria': 'fas fa-candy-cane text-pink-600',
+        'Cafeteria': 'fas fa-mug-hot text-amber-700',
+        'Laboratorio': 'fas fa-flask text-indigo-600',
+        'Exportadora': 'fas fa-globe text-cyan-600'
     },
 
     container: document.getElementById('app-container'),
@@ -19,6 +36,8 @@ const app = {
         if (typeof google !== 'undefined' && google.maps) {
             this.infoWindow = new google.maps.InfoWindow();
         }
+        // Cargar datos de organizaciones (subtipos)
+        await this.loadOrganizaciones();
         // En esta vista solo cargamos las empresas y configuramos el formulario
         await this.loadCompanies();
         this.setupSuggestForm();
@@ -42,6 +61,17 @@ const app = {
                 })
             });
         } catch (e) { }
+    },
+
+    // --- CARGAR ORGANIZACIONES (SUBTIPOS) ---
+    loadOrganizaciones: async function () {
+        try {
+            const res = await fetch('/data/organizaciones.json');
+            this.state.organizaciones = await res.json();
+        } catch (e) {
+            console.error('Error al cargar organizaciones:', e);
+            this.state.organizaciones = [];
+        }
     },
 
     // --- UTILS ---
@@ -74,8 +104,73 @@ const app = {
             }
         });
 
+        // Actualizar subtipos disponibles
+        this.updateSubtypeButtons();
+        
+        // Resetear filtro de subtipo al cambiar tipo
+        this.state.currentSubtypeFilter = 'all';
+
         this.renderCompanies();
         this.renderMap();
+    },
+
+    setSubtypeFilter: function (subtypeValue) {
+        this.state.currentSubtypeFilter = subtypeValue.toLowerCase();
+        
+        // Actualizar UI de botones de Subtipo
+        document.querySelectorAll('.subtype-filter-btn').forEach(btn => {
+            if (btn.getAttribute('data-subtype-filter') === subtypeValue.toLowerCase()) {
+                btn.classList.add('active');
+            } else {
+                btn.classList.remove('active');
+            }
+        });
+
+        this.renderCompanies();
+        this.renderMap();
+    },
+
+    updateSubtypeButtons: function () {
+        const subtypesFilterSection = document.getElementById('subtypes-filter');
+        const subtypesContainer = document.getElementById('subtypes-container');
+        const currentType = this.state.currentFilter;
+
+        // Si el filtro es 'all', ocultar el selector de subtipos
+        if (currentType === 'all') {
+            subtypesFilterSection.classList.add('hidden');
+            return;
+        }
+
+        // Encontrar el objeto del tipo actual en las organizaciones
+        const tipoData = this.state.organizaciones.find(org => org.tipo === currentType);
+        
+        if (!tipoData || !tipoData.subtipos || tipoData.subtipos.length === 0) {
+            subtypesFilterSection.classList.add('hidden');
+            return;
+        }
+
+        // Mostrar el selector de subtipos
+        subtypesFilterSection.classList.remove('hidden');
+
+        // Limpiar botones anteriores
+        subtypesContainer.innerHTML = '';
+
+        // Crear botones para cada subtipo
+        tipoData.subtipos.forEach(subtipo => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'subtype-filter-btn whitespace-nowrap px-4 py-1.5 rounded-full border border-stone-200 bg-white text-stone-600 font-bold text-xs transition-all flex items-center gap-1.5';
+            const subtypeNormalized = subtipo.toLowerCase();
+            btn.setAttribute('data-subtype-filter', subtypeNormalized);
+            
+            // Obtener icono para este subtipo
+            const iconClass = this.subtypeIcons[subtipo] || 'fas fa-tag text-stone-600';
+            
+            // Crear contenido con icono
+            btn.innerHTML = `<i class="${iconClass}"></i> ${subtipo}`;
+            btn.onclick = () => this.setSubtypeFilter(subtypeNormalized);
+            subtypesContainer.appendChild(btn);
+        });
     },
 
     setProductFilter: function(prodFilterType) {
@@ -94,10 +189,11 @@ const app = {
         this.renderMap();
     },
 
-    // Función Helper para obtener empresas filtradas por ambos criterios
+    // Función Helper para obtener empresas filtradas por todos los criterios
     getFilteredCompanies: function() {
         const typeFilter = this.state.currentFilter;
         const prodFilter = this.state.currentProductFilter;
+        const subtypeFilter = this.state.currentSubtypeFilter;
         
         return this.state.companies.filter(c => {
             // 1. Filtro por Tipo de Entidad
@@ -116,7 +212,14 @@ const app = {
                 matchProduct = categories && categories.includes(prodFilter);
             }
 
-            return matchType && matchProduct;
+            // 3. Filtro por Subtipo (si está disponible)
+            let matchSubtype = true;
+            if (subtypeFilter !== 'all') {
+                const cSubtype = c.sub_type ? String(c.sub_type).toLowerCase() : '';
+                matchSubtype = cSubtype === subtypeFilter;
+            }
+
+            return matchType && matchProduct && matchSubtype;
         });
     },
 

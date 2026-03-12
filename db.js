@@ -2364,7 +2364,7 @@ const ensureTemplateAndStageExists = async (userId, systemTemplateName, stageNam
 const getPublicCompaniesWithImmutable = async (req, res) => {
     try {
         // A. Empresas Verificadas (Usuarios del sistema)
-        // Hacemos JOIN con fincas y procesadoras para obtener la ubicación
+        // Hacemos JOIN con fincas y procesadoras para obtener la ubicación y subtipo
         const sqlVerified = `
             SELECT 
                 CAST(u.id AS TEXT) as id, 
@@ -2377,7 +2377,8 @@ const getPublicCompaniesWithImmutable = async (req, res) => {
                 COALESCE(f.pais, p.pais) as pais,
                 COALESCE(f.departamento, p.departamento) as departamento,
                 COALESCE(f.provincia, p.provincia) as provincia,
-                COALESCE(f.coordenadas, p.coordenadas) as coordenadas
+                COALESCE(f.coordenadas, p.coordenadas) as coordenadas,
+                LOWER(COALESCE(f.tipo, p.tipo)) as sub_type
             FROM users u
             JOIN company_profiles cp ON u.id = cp.user_id
             LEFT JOIN fincas f ON cp.company_type = 'finca' AND cp.company_id = f.id
@@ -2386,11 +2387,11 @@ const getPublicCompaniesWithImmutable = async (req, res) => {
                 AND tr.blockchain_hash IS NOT NULL 
                 AND tr.blockchain_hash != ''
             WHERE cp.is_published = TRUE 
-            GROUP BY u.id, cp.name, cp.logo_url, cp.company_type, cp.product_categories, f.pais, f.departamento, f.provincia, p.pais, p.departamento, p.provincia, f.coordenadas, p.coordenadas
+            GROUP BY u.id, cp.name, cp.logo_url, cp.company_type, cp.product_categories, f.pais, f.departamento, f.provincia, p.pais, p.departamento, p.provincia, f.coordenadas, p.coordenadas, f.tipo, p.tipo
         `;
 
         // B. Empresas Sugeridas (Pendientes)
-        // Estas ya tienen las columnas en su tabla plana
+        // Estas ya tienen las columnas en su tabla plana, incluyendo sub_type
         const sqlSuggested = `
             SELECT 
                 id, 
@@ -2403,7 +2404,8 @@ const getPublicCompaniesWithImmutable = async (req, res) => {
                 provincia,
                 distrito,
                 0 as lotes_count,
-                coordenadas
+                coordenadas,
+                LOWER(sub_type) as sub_type
             FROM suggested_companies
             WHERE status = 'pending'
         `;
