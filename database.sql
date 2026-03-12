@@ -84,7 +84,7 @@ CREATE TABLE IF NOT EXISTS fincas (
 
 -- Nueva tabla para los polígonos/lotes
 CREATE TABLE IF NOT EXISTS finca_lotes (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id TEXT PRIMARY KEY, -- UUID
     finca_id TEXT NOT NULL, -- Relación con tu tabla 'fincas'
     nombre_lote TEXT, -- Ej: "Parcela Norte", "Lote Cacao Premium"
     superficie_lote DOUBLE PRECISION,
@@ -124,7 +124,7 @@ CREATE TABLE IF NOT EXISTS procesadoras (
 
 -- Nueva tabla para las sucursales
 CREATE TABLE IF NOT EXISTS procesadora_sucursales (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id TEXT PRIMARY KEY, -- UUID
     procesadora_id TEXT NOT NULL, -- Relación con tu tabla 'procesadoras'
     nombre_sucursal TEXT NOT NULL, -- Ej: "Tienda Miraflores", "Planta Industrial"
     tipo_sucursal TEXT, -- 'PLANTA', 'CAFETERIA', 'PUNTO_VENTA'

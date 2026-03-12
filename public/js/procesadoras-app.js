@@ -7,9 +7,42 @@ document.addEventListener('DOMContentLoaded', () => {
     const form = document.getElementById('procesadora-form');
     const procesadorasList = document.getElementById('procesadoras-list');
     const editIdInput = document.getElementById('edit-id');
-    const submitButton = form.querySelector('button[type="submit"]');
     const cancelEditBtn = document.getElementById('cancel-edit-btn');
     const formTitle = document.getElementById('form-title');
+
+    const btnShowForm = document.getElementById('btn-show-form');
+    const btnCloseForm = document.getElementById('btn-close-form');
+    const btnCancel = document.getElementById('cancel-edit-btn');
+    const listSection = document.getElementById('procesadoras-list-section');
+    const formSection = document.getElementById('procesadora-section');
+
+    function toggleView(showForm) {
+        if (showForm) {
+            // Mostrar Formulario y reducir lista
+            console.log(1);
+            listSection.classList.replace('lg:col-span-12', 'lg:col-span-4');
+            formSection.classList.remove('hidden');
+            btnShowForm.classList.add('hidden');
+        } else {
+            // Ocultar Formulario y expandir lista
+            console.log(2);
+            listSection.classList.replace('lg:col-span-4', 'lg:col-span-12');
+            formSection.classList.add('hidden');
+            btnShowForm.classList.remove('hidden');
+        }
+        // Disparar evento de resize para que Google Maps se ajuste al nuevo tamaño del contenedor
+        setTimeout(() => window.dispatchEvent(new Event('resize')), 300);
+    }
+
+    btnShowForm.addEventListener('click', () => {
+        resetForm();
+        toggleView(true);
+        setTimeout(() => rucInput.focus(), 400); // El delay es para esperar que termine la animación de toggleView
+    });
+    btnCloseForm.addEventListener('click', () => toggleView(false));
+    btnCancel.addEventListener('click', () => toggleView(false));
+
+    
     
     // Inputs del formulario
     const rucInput = document.getElementById('ruc');
@@ -20,7 +53,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const provinciaInput = document.getElementById('provincia');
     const distritoInput = document.getElementById('distrito');
     const tipoInput = document.getElementById('tipo');
-    // Otros inputs
     const paisInput = document.getElementById('pais');
     const ciudadInput = document.getElementById('ciudad');
     const telefonoInput = document.getElementById('telefono');
@@ -29,7 +61,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Búsqueda en Mapa
     const locationSearchInput = document.getElementById('location-search');
-    const searchLocationBtn = document.getElementById('search-btn');
 
     // Listas dinámicas y sus contenedores
     const certSelect = document.getElementById('certification-select');
@@ -68,13 +99,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const sucursalEditId = document.getElementById('sucursal-edit-id');
     const sucNombre = document.getElementById('suc-nombre');
     const sucTipo = document.getElementById('suc-tipo');
+    const sucPais = document.getElementById('suc-pais');
+    const sucDepartamento = document.getElementById('suc-departamento');
+    const sucProvincia = document.getElementById('suc-provincia');
     const sucCiudad = document.getElementById('suc-ciudad');
     const sucDistrito = document.getElementById('suc-distrito');
     const sucDireccion = document.getElementById('suc-direccion');
     const sucTelefono = document.getElementById('suc-telefono');
     const sucCoordenadas = document.getElementById('suc-coordenadas');
     const sucLocationSearch = document.getElementById('suc-location-search');
-    const sucSearchBtn = document.getElementById('suc-search-btn');
 
     let currentProcesadoraId = null;
     let currentProcesadoraNombre = null;
@@ -85,7 +118,7 @@ document.addEventListener('DOMContentLoaded', () => {
     init();
 
     async function init() {
-        // Exponer initMap globalmente para el callback de Google si fuera necesario
+        // Exponer initMap globalmente para el callback de Google
         window.initMap = initMap;
         
         setupEventListeners();
@@ -106,20 +139,63 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // --- MAPA GOOGLE (Procesadora Principal) ---
+    // --- MAPA GOOGLE (Procesadora Principal & Sucursal) ---
     function initMap() {
         if (map) return;
         const mapContainer = document.getElementById('map');
         if (!mapContainer || typeof google === 'undefined') return;
+        
         try {
-            const defaultLoc = { lat: -9.19, lng: -75.015 };
+            const defaultLoc = { lat: -9.189967, lng: -75.015152 }; // Centro de Perú
             map = new google.maps.Map(mapContainer, {
                 zoom: 5,
                 center: defaultLoc,
-                mapTypeId: 'roadmap',
-                streetViewControl: false
+                mapTypeControl: false,
+                streetViewControl: false,
+                fullscreenControl: false
             });
-            map.addListener("click", (e) => { placeMarker(e.latLng); });
+
+            marker = new google.maps.Marker({
+                map: map,
+                draggable: true,
+                animation: google.maps.Animation.DROP
+            });
+
+            // Autocompletado Principal
+            if (locationSearchInput) {
+                const autocomplete = new google.maps.places.Autocomplete(locationSearchInput);
+                autocomplete.bindTo("bounds", map);
+                autocomplete.addListener("place_changed", () => {
+                    const place = autocomplete.getPlace();
+                    if (!place.geometry || !place.geometry.location) return;
+                    
+                    map.setCenter(place.geometry.location);
+                    map.setZoom(17);
+                    
+                    // SEGURIDAD: Verificar que marker exista antes de moverlo
+                    if (marker) marker.setPosition(place.geometry.location);
+                    
+                    updateCoordinatesInput(place.geometry.location, 'coordenadas');
+                    fillAddressFields(place, "");
+                });
+            }
+
+            // Click en Mapa Principal
+            map.addListener("click", (e) => {
+                if (marker) marker.setPosition(e.latLng);
+                map.panTo(e.latLng);
+                updateCoordinatesInput(e.latLng, 'coordenadas');
+                reverseGeocode(e.latLng, "", "location-search");
+            });
+
+            // Arrastrar Pinche Principal
+            if (marker) {
+                marker.addListener("dragend", (e) => {
+                    map.panTo(e.latLng);
+                    updateCoordinatesInput(e.latLng, 'coordenadas');
+                    reverseGeocode(e.latLng, "", "location-search");
+                });
+            }
         } catch(e) {
             console.error("Error inicializando Google Maps:", e);
         }
@@ -129,82 +205,118 @@ document.addEventListener('DOMContentLoaded', () => {
         if (mapSucursal) return;
         const mapContainer = document.getElementById('map-sucursal');
         if (!mapContainer || typeof google === 'undefined') return;
+        
         try {
-            const defaultLoc = { lat: -9.19, lng: -75.015 };
+            const defaultLoc = { lat: -9.189967, lng: -75.015152 };
             mapSucursal = new google.maps.Map(mapContainer, {
                 zoom: 5,
                 center: defaultLoc,
-                mapTypeId: 'roadmap',
-                streetViewControl: false
+                mapTypeControl: false,
+                streetViewControl: false,
+                fullscreenControl: false
             });
-            mapSucursal.addListener("click", (e) => { placeMarkerSucursal(e.latLng); });
+
+            markerSucursal = new google.maps.Marker({
+                map: mapSucursal,
+                draggable: true,
+                animation: google.maps.Animation.DROP
+            });
+
+            // Autocompletado Sucursal
+            if (sucLocationSearch) {
+                const autocompleteSuc = new google.maps.places.Autocomplete(sucLocationSearch);
+                autocompleteSuc.bindTo("bounds", mapSucursal);
+                autocompleteSuc.addListener("place_changed", () => {
+                    const place = autocompleteSuc.getPlace();
+                    if (!place.geometry || !place.geometry.location) return;
+                    
+                    mapSucursal.setCenter(place.geometry.location);
+                    mapSucursal.setZoom(17);
+                    
+                    // SEGURIDAD: Verificar que markerSucursal exista
+                    if (markerSucursal) markerSucursal.setPosition(place.geometry.location);
+                    
+                    updateCoordinatesInput(place.geometry.location, 'suc-coordenadas');
+                    fillAddressFields(place, "suc-");
+                });
+            }
+
+            // Click en Mapa Sucursal
+            mapSucursal.addListener("click", (e) => {
+                if (markerSucursal) markerSucursal.setPosition(e.latLng);
+                mapSucursal.panTo(e.latLng);
+                updateCoordinatesInput(e.latLng, 'suc-coordenadas');
+                reverseGeocode(e.latLng, "suc-", "suc-location-search");
+            });
+
+            // Arrastrar Pinche Sucursal
+            if (markerSucursal) {
+                markerSucursal.addListener("dragend", (e) => {
+                    mapSucursal.panTo(e.latLng);
+                    updateCoordinatesInput(e.latLng, 'suc-coordenadas');
+                    reverseGeocode(e.latLng, "suc-", "suc-location-search");
+                });
+            }
         } catch(e) {
             console.error("Error inicializando mapa sucursal:", e);
         }
     }
 
-    function placeMarker(latLng) {
-        if (marker) marker.setMap(null);
-        marker = new google.maps.Marker({ position: latLng, map: map, draggable: true });
-        marker.addListener('dragend', (e) => { updateCoordinatesInput(e.latLng); });
-        updateCoordinatesInput(latLng);
-    }
-
-    function updateCoordinatesInput(latLng) {
+    // --- Helpers Mapa ---
+    function updateCoordinatesInput(latLng, inputId) {
         const coords = { lat: latLng.lat(), lng: latLng.lng() };
-        document.getElementById('coordenadas').value = JSON.stringify(coords);
+        const el = document.getElementById(inputId);
+        if (el) el.value = JSON.stringify(coords);
     }
 
-    function placeMarkerSucursal(latLng) {
-        if (markerSucursal) markerSucursal.setMap(null);
-        markerSucursal = new google.maps.Marker({ position: latLng, map: mapSucursal, draggable: true });
-        markerSucursal.addListener('dragend', (e) => {
-            const coords = { lat: e.latLng.lat(), lng: e.latLng.lng() };
-            sucCoordenadas.value = JSON.stringify(coords);
+    function reverseGeocode(latLng, prefixId, searchInputId) {
+        const geocoder = new google.maps.Geocoder();
+        geocoder.geocode({ location: latLng }, (results, status) => {
+            if (status === 'OK' && results[0]) {
+                const searchInput = document.getElementById(searchInputId);
+                if (searchInput) searchInput.value = results[0].formatted_address;
+                fillAddressFields(results[0], prefixId);
+            }
         });
-        sucCoordenadas.value = JSON.stringify({ lat: latLng.lat(), lng: latLng.lng() });
     }
 
-    async function handleSearchLocation() {
-        const query = locationSearchInput.value;
-        if (!query) return;
-        try {
-            const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`);
-            const data = await response.json();
-            if (data && data.length > 0) {
-                const { lat, lon } = data[0];
-                const latLng = new google.maps.LatLng(parseFloat(lat), parseFloat(lon));
-                map.setCenter(latLng);
-                map.setZoom(15);
-                placeMarker(latLng);
-            } else {
-                alert('Ubicación no encontrada.');
-            }
-        } catch (e) {
-            console.error(e);
-            alert('Error al buscar ubicación.');
-        }
-    }
+    function fillAddressFields(place, prefixId = "") {
+        let addressData = { pais: '', departamento: '', provincia: '', distrito: '', direccion: '', ciudad: '' };
 
-    async function handleSearchSucursalLocation() {
-        const query = sucLocationSearch.value;
-        if (!query) return;
-        try {
-            const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`);
-            const data = await response.json();
-            if (data && data.length > 0) {
-                const { lat, lon } = data[0];
-                const latLng = new google.maps.LatLng(parseFloat(lat), parseFloat(lon));
-                mapSucursal.setCenter(latLng);
-                mapSucursal.setZoom(15);
-                placeMarkerSucursal(latLng);
-            } else {
-                alert('Ubicación no encontrada.');
-            }
-        } catch (e) {
-            console.error(e);
-            alert('Error al buscar ubicación.');
+        if (place.address_components) {
+            place.address_components.forEach(component => {
+                const types = component.types;
+                if (types.includes('country')) addressData.pais = component.long_name;
+                if (types.includes('administrative_area_level_1')) addressData.departamento = component.long_name;
+                if (types.includes('administrative_area_level_2')) addressData.provincia = component.long_name;
+                if (types.includes('locality') || types.includes('administrative_area_level_3')) {
+                    addressData.ciudad = component.long_name;
+                    if(!addressData.distrito) addressData.distrito = component.long_name;
+                }
+                if (types.includes('sublocality') || types.includes('sublocality_level_1')) {
+                    addressData.distrito = component.long_name;
+                }
+                if (types.includes('route')) addressData.direccion = component.long_name;
+                if (types.includes('street_number')) addressData.direccion += ' ' + component.long_name;
+            });
         }
+        //console.log(addressData.direccion);
+        if (!addressData.direccion && place.name && !place.name.includes(addressData.provincia)) {
+            addressData.direccion = place.name; 
+        }
+
+        const fields = ['pais', 'departamento', 'provincia', 'ciudad', 'distrito', 'direccion'];
+        fields.forEach(f => {
+            const el = document.getElementById(prefixId + f);
+            if (el) {
+                el.value = addressData[f].trim();
+                if (el.value !== "") {
+                    el.classList.remove('field-updated');
+                    void el.offsetWidth; // trigger reflow
+                    el.classList.add('field-updated');
+                }
+            }
+        });
     }
 
     function setupEventListeners() {
@@ -220,14 +332,12 @@ document.addEventListener('DOMContentLoaded', () => {
         if(fotosPreviewContainer) fotosPreviewContainer.addEventListener('click', handleImageDelete);
 
         if (searchRucBtn) searchRucBtn.addEventListener('click', handleSearchRuc);
-        if (searchLocationBtn) searchLocationBtn.addEventListener('click', handleSearchLocation);
 
         // Sucursales
-        if (addSucursalBtn) addSucursalBtn.addEventListener('click', showSucursalForm);
+        if (addSucursalBtn) addSucursalBtn.addEventListener('click', () => showSucursalForm(null));
         if (cancelSucursalBtn) cancelSucursalBtn.addEventListener('click', hideSucursalForm);
         if (sucursalForm) sucursalForm.addEventListener('submit', handleSucursalFormSubmit);
         if (sucursalesList) sucursalesList.addEventListener('click', handleSucursalListClick);
-        if (sucSearchBtn) sucSearchBtn.addEventListener('click', handleSearchSucursalLocation);
     }
 
     // --- LÓGICA: BÚSQUEDA RUC ---
@@ -248,8 +358,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 departamentoInput.value = response.departamento || '';
                 provinciaInput.value = response.provincia || '';
                 distritoInput.value = response.distrito || '';
-                razonSocialInput.classList.add('bg-green-50');
-                setTimeout(() => razonSocialInput.classList.remove('bg-green-50'), 1000);
+                
+                razonSocialInput.classList.remove('field-updated');
+                void razonSocialInput.offsetWidth;
+                razonSocialInput.classList.add('field-updated');
             }
         } catch (error) {
             console.error(error);
@@ -260,7 +372,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // --- API CALLS ---
+    // --- API CALLS & CRUD PROCESADORAS ---
     async function loadProcesadoras() {
         try {
             const data = await api('/api/procesadoras');
@@ -269,21 +381,14 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     const TIPO_LABELS = {
-        ACOPIADORA: 'Acopiadora',
-        TOSTADORA: 'Tostadora',
-        CHOCOLATERIA: 'Chocolatería',
-        CAFETERIA: 'Cafetería',
-        LABORATORIO: 'Laboratorio',
-        EXPORTADORA: 'Exportadora'
+        ACOPIADORA: 'Acopiadora', TOSTADORA: 'Tostadora', CHOCOLATERIA: 'Chocolatería',
+        CAFETERIA: 'Cafetería', LABORATORIO: 'Laboratorio', EXPORTADORA: 'Exportadora'
     };
 
     const TIPO_COLORS = {
-        ACOPIADORA: 'bg-blue-100 text-blue-800',
-        TOSTADORA: 'bg-orange-100 text-orange-800',
-        CHOCOLATERIA: 'bg-amber-100 text-amber-800',
-        CAFETERIA: 'bg-green-100 text-green-800',
-        LABORATORIO: 'bg-purple-100 text-purple-800',
-        EXPORTADORA: 'bg-sky-100 text-sky-800'
+        ACOPIADORA: 'bg-blue-100 text-blue-800', TOSTADORA: 'bg-orange-100 text-orange-800',
+        CHOCOLATERIA: 'bg-amber-100 text-amber-800', CAFETERIA: 'bg-green-100 text-green-800',
+        LABORATORIO: 'bg-purple-100 text-purple-800', EXPORTADORA: 'bg-sky-100 text-sky-800'
     };
 
     function renderList(list) {
@@ -291,24 +396,26 @@ document.addEventListener('DOMContentLoaded', () => {
         procesadorasList.innerHTML = list.length === 0 ? 
             '<p class="text-stone-500 text-center py-4">No hay procesadoras registradas.</p>' : 
             list.map(p => {
+                const pid = p.id || p._id; // Soporte robusto si el backend devuelve _id
                 const tipoLabel = p.tipo ? TIPO_LABELS[p.tipo] || p.tipo : null;
                 const tipoColor = p.tipo ? (TIPO_COLORS[p.tipo] || 'bg-stone-100 text-stone-700') : '';
-                const isActive = p.id === currentProcesadoraId;
+                const isActive = String(pid) === String(currentProcesadoraId); // Comparación estricta segura
+
                 return `
                 <div class="p-4 border rounded-xl ${isActive ? 'bg-amber-50 border-amber-300' : 'bg-stone-50'} hover:shadow-sm transition">
                     <div class="flex justify-between items-start">
                         <div class="flex-1 min-w-0">
                             <div class="flex items-center gap-2 flex-wrap">
-                                <h3 class="font-bold text-amber-900">${p.nombre_comercial || p.razon_social}</h3>
+                                <h3 class="font-bold text-amber-900 truncate">${p.nombre_comercial || p.razon_social}</h3>
                                 ${tipoLabel ? `<span class="text-xs font-semibold px-2 py-0.5 rounded-full ${tipoColor}">${tipoLabel}</span>` : ''}
                             </div>
-                            <p class="text-xs text-stone-500">RUC: ${p.ruc}</p>
-                            <p class="text-xs text-stone-500">${p.distrito || ''}, ${p.provincia || ''} - ${p.departamento || ''}</p>
+                            <p class="text-xs text-stone-500 mt-1">RUC: ${p.ruc}</p>
+                            <p class="text-xs text-stone-500 truncate">${p.distrito || ''}${p.distrito && p.provincia ? ', ' : ''}${p.provincia || ''} ${p.departamento ? '- ' + p.departamento : ''}</p>
                         </div>
                         <div class="flex gap-1 flex-shrink-0 ml-2">
-                            <button data-id="${p.id}" data-nombre="${p.nombre_comercial || p.razon_social}" class="sucursales-btn text-green-600 hover:bg-green-100 p-2 rounded transition" title="Ver Sucursales"><i class="fas fa-store"></i></button>
-                            <button data-id="${p.id}" class="edit-btn text-sky-600 hover:bg-sky-100 p-2 rounded transition"><i class="fas fa-pen"></i></button>
-                            <button data-id="${p.id}" class="delete-btn text-red-600 hover:bg-red-100 p-2 rounded transition"><i class="fas fa-trash"></i></button>
+                            <button data-id="${pid}" data-nombre="${p.nombre_comercial || p.razon_social}" class="sucursales-btn text-green-600 hover:bg-green-100 p-2 rounded transition" title="Ver Sucursales"><i class="fas fa-store"></i></button>
+                            <button data-id="${pid}" class="edit-btn text-sky-600 hover:bg-sky-100 p-2 rounded transition"><i class="fas fa-pen"></i></button>
+                            <button data-id="${pid}" class="delete-btn text-red-600 hover:bg-red-100 p-2 rounded transition"><i class="fas fa-trash"></i></button>
                         </div>
                     </div>
                 </div>
@@ -361,7 +468,13 @@ document.addEventListener('DOMContentLoaded', () => {
     async function handleListClick(e) {
         const btn = e.target.closest('button');
         if (!btn) return;
+        
         const id = btn.dataset.id;
+        if (!id || id === "undefined" || id === "null") {
+            console.error("El botón no tiene un ID válido asociado:", btn.dataset);
+            alert("Error: No se pudo obtener el identificador de esta procesadora.");
+            return;
+        }
 
         if (btn.classList.contains('delete-btn')) {
             if (confirm("¿Eliminar procesadora? También se eliminarán sus sucursales.")) {
@@ -374,6 +487,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         if (btn.classList.contains('edit-btn')) {
             populateForm(id);
+            toggleView(true);
         }
         if (btn.classList.contains('sucursales-btn')) {
             const nombre = btn.dataset.nombre;
@@ -384,31 +498,24 @@ document.addEventListener('DOMContentLoaded', () => {
     async function populateForm(id) {
         try {
             const list = await api('/api/procesadoras');
-            const item = list.find(x => x.id === id);
+            const item = list.find(x => String(x.id || x._id) === String(id)); // Búsqueda estricta corregida
             if (!item) return;
 
             resetForm();
-            editIdInput.value = item.id;
+            editIdInput.value = item.id || item._id;
             formTitle.textContent = "Editar Procesadora";
             cancelEditBtn.classList.remove('hidden');
             
             const submitBtn = form.querySelector('button[type="submit"]');
-            if(submitBtn) submitBtn.textContent = "Actualizar";
+            if(submitBtn) submitBtn.innerHTML = '<i class="fas fa-save"></i> Actualizar';
 
-            if(document.getElementById('ruc')) document.getElementById('ruc').value = item.ruc;
-            if(document.getElementById('razon_social')) document.getElementById('razon_social').value = item.razon_social;
-            if(document.getElementById('nombre_comercial')) document.getElementById('nombre_comercial').value = item.nombre_comercial || '';
-            if(document.getElementById('tipo')) document.getElementById('tipo').value = item.tipo || '';
-            if(document.getElementById('direccion')) document.getElementById('direccion').value = item.direccion || '';
-            if(document.getElementById('telefono')) document.getElementById('telefono').value = item.telefono || '';
-            if(document.getElementById('numero_trabajadores')) document.getElementById('numero_trabajadores').value = item.numero_trabajadores || '';
-            if(document.getElementById('ciudad')) document.getElementById('ciudad').value = item.ciudad || '';
-            if(document.getElementById('pais')) document.getElementById('pais').value = item.pais || '';
-            if(document.getElementById('departamento')) document.getElementById('departamento').value = item.departamento || '';
-            if(document.getElementById('provincia')) document.getElementById('provincia').value = item.provincia || '';
-            if(document.getElementById('distrito')) document.getElementById('distrito').value = item.distrito || '';
-            if(document.getElementById('historia')) document.getElementById('historia').value = item.historia || '';
-            if(document.getElementById('video_link')) document.getElementById('video_link').value = item.video_link || '';
+            // Llenar inputs
+            ['ruc', 'razon_social', 'nombre_comercial', 'tipo', 'direccion', 'telefono', 
+             'numero_trabajadores', 'ciudad', 'pais', 'departamento', 'provincia', 
+             'distrito', 'historia', 'video_link'].forEach(field => {
+                const el = document.getElementById(field);
+                if (el) el.value = item[field] || '';
+            });
 
             currentImages = item.imagenes_json || [];
             currentCertifications = item.certificaciones_json || [];
@@ -417,12 +524,21 @@ document.addEventListener('DOMContentLoaded', () => {
             renderAddedCertifications();
             renderAddedPremios();
 
+            // Ubicar en el mapa
             if (item.coordenadas && item.coordenadas.lat && map) {
                 const latLng = new google.maps.LatLng(item.coordenadas.lat, item.coordenadas.lng);
-                placeMarker(latLng);
+                if (marker) marker.setPosition(latLng);
                 map.setCenter(latLng);
                 map.setZoom(15);
+                document.getElementById('coordenadas').value = JSON.stringify(item.coordenadas);
             }
+
+            currentProcesadoraId = item.id || item._id;
+            currentProcesadoraNombre = item.nombre_comercial || item.razon_social;
+            sucursalesProcessadoraNombre.textContent = `Procesadora: ${currentProcesadoraNombre}`;
+            sucursalesSection.classList.remove('hidden');
+            hideSucursalForm();
+            loadSucursales();
 
             form.scrollIntoView({ behavior: 'smooth' });
         } catch(e) { console.error("Error populando form:", e); }
@@ -435,20 +551,27 @@ document.addEventListener('DOMContentLoaded', () => {
         currentCertifications = [];
         currentPremios = [];
         
-        if (marker) { marker.setMap(null); marker = null; }
-        if (map) { map.setCenter({ lat: -9.19, lng: -75.015 }); map.setZoom(5); }
+        // Reset Map Principal sin destruir el marker
+        if (map) {
+            map.setCenter({ lat: -9.189967, lng: -75.015152 }); 
+            map.setZoom(5); 
+        }
+        if (marker) marker.setPosition(null); // Oculta el pinche, NO destruye la variable
 
         document.getElementById('coordenadas').value = '';
-        if(document.getElementById('historia')) document.getElementById('historia').value = '';
-        if(document.getElementById('video_link')) document.getElementById('video_link').value = '';
+        if (locationSearchInput) locationSearchInput.value = '';
+        if (document.getElementById('historia')) document.getElementById('historia').value = '';
 
         renderImages();
         renderAddedCertifications();
         renderAddedPremios();
         formTitle.textContent = "Nueva Procesadora";
+        
         const submitBtn = form.querySelector('button[type="submit"]');
-        if(submitBtn) submitBtn.textContent = "Guardar Procesadora";
+        if(submitBtn) submitBtn.innerHTML = '<i class="fas fa-save"></i> Guardar Procesadora';
         cancelEditBtn.classList.add('hidden');
+
+        hideSucursalesSection();
     }
 
     // ============================================================
@@ -456,14 +579,15 @@ document.addEventListener('DOMContentLoaded', () => {
     // ============================================================
 
     async function loadSucursalesSection(procesadoraId, nombre) {
-        currentProcesadoraId = procesadoraId;
+        currentProcesadoraId = procesadoraId; // Se asigna de forma segura aquí
         currentProcesadoraNombre = nombre;
         sucursalesProcessadoraNombre.textContent = `Procesadora: ${nombre}`;
         sucursalesSection.classList.remove('hidden');
         hideSucursalForm();
         await loadSucursales();
         sucursalesSection.scrollIntoView({ behavior: 'smooth' });
-        // Re-render list to highlight active procesadora
+        
+        // Highlight active
         const list = await api('/api/procesadoras').catch(() => []);
         renderList(list);
     }
@@ -475,7 +599,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function loadSucursales() {
-        if (!currentProcesadoraId) return;
+        if (!currentProcesadoraId || currentProcesadoraId === "undefined" || currentProcesadoraId === "null") return;
         try {
             const data = await api(`/api/procesadoras/${currentProcesadoraId}/sucursales`);
             renderSucursalesList(data);
@@ -492,22 +616,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function renderSucursalesList(list) {
         if (list.length === 0) {
-            sucursalesList.innerHTML = '<p class="text-stone-400 text-center py-4 text-sm">No hay sucursales registradas. Agrega la primera.</p>';
+            sucursalesList.innerHTML = '<p class="text-stone-400 text-center py-4 text-sm bg-stone-50 border border-dashed rounded-xl">No hay sucursales registradas. Agrega la primera.</p>';
             return;
         }
-        sucursalesList.innerHTML = list.map(s => `
-            <div class="flex items-center justify-between p-3 bg-stone-50 border border-stone-200 rounded-xl">
+        sucursalesList.innerHTML = list.map(s => {
+            const sid = s.id || s._id; // Soporte _id para la sucursal también
+            return `
+            <div class="flex items-center justify-between p-4 bg-stone-50 border border-stone-200 rounded-xl hover:shadow-sm transition">
                 <div>
-                    <p class="font-semibold text-stone-800 text-sm">${s.nombre_sucursal}</p>
-                    <p class="text-xs text-stone-500">${s.tipo_sucursal ? (TIPO_SUC_LABELS[s.tipo_sucursal] || s.tipo_sucursal) + ' · ' : ''}${s.direccion || ''}${s.ciudad ? (s.direccion ? ', ' : '') + s.ciudad : ''}${s.distrito ? ' - ' + s.distrito : ''}</p>
-                    ${s.telefono ? `<p class="text-xs text-stone-400"><i class="fas fa-phone text-xs mr-1"></i>${s.telefono}</p>` : ''}
+                    <p class="font-bold text-stone-800 text-sm">${s.nombre_sucursal}</p>
+                    <p class="text-xs text-stone-500 mt-1">${s.tipo_sucursal ? (TIPO_SUC_LABELS[s.tipo_sucursal] || s.tipo_sucursal) + ' · ' : ''}${s.direccion || ''}${s.ciudad ? ', ' + s.ciudad : ''}${s.distrito ? ' - ' + s.distrito : ''}</p>
+                    ${s.telefono ? `<p class="text-xs text-stone-400 mt-1"><i class="fas fa-phone mr-1"></i>${s.telefono}</p>` : ''}
                 </div>
                 <div class="flex gap-1 flex-shrink-0 ml-2">
-                    <button data-id="${s.id}" class="edit-suc-btn text-sky-600 hover:bg-sky-100 p-2 rounded transition text-sm"><i class="fas fa-pen"></i></button>
-                    <button data-id="${s.id}" class="delete-suc-btn text-red-600 hover:bg-red-100 p-2 rounded transition text-sm"><i class="fas fa-trash"></i></button>
+                    <button data-id="${sid}" class="edit-suc-btn text-sky-600 hover:bg-sky-100 p-2 rounded transition text-sm"><i class="fas fa-pen"></i></button>
+                    <button data-id="${sid}" class="delete-suc-btn text-red-600 hover:bg-red-100 p-2 rounded transition text-sm"><i class="fas fa-trash"></i></button>
                 </div>
             </div>
-        `).join('');
+        `}).join('');
     }
 
     function showSucursalForm(sucursal = null) {
@@ -518,9 +644,12 @@ document.addEventListener('DOMContentLoaded', () => {
         sucursalFormTitle.textContent = sucursal ? 'Editar Sucursal' : 'Nueva Sucursal';
 
         if (sucursal) {
-            sucursalEditId.value = sucursal.id;
+            sucursalEditId.value = sucursal.id || sucursal._id;
             sucNombre.value = sucursal.nombre_sucursal || '';
             sucTipo.value = sucursal.tipo_sucursal || '';
+            sucPais.value = sucursal.pais || 'Perú';
+            sucDepartamento.value = sucursal.departamento || '';
+            sucProvincia.value = sucursal.provincia || '';
             sucCiudad.value = sucursal.ciudad || '';
             sucDistrito.value = sucursal.distrito || '';
             sucDireccion.value = sucursal.direccion || '';
@@ -537,14 +666,15 @@ document.addEventListener('DOMContentLoaded', () => {
             } else {
                 google.maps.event.trigger(mapSucursal, 'resize');
             }
+
             if (sucursal && sucursal.coordenadas && sucursal.coordenadas.lat && mapSucursal) {
                 const latLng = new google.maps.LatLng(sucursal.coordenadas.lat, sucursal.coordenadas.lng);
-                placeMarkerSucursal(latLng);
+                if (markerSucursal) markerSucursal.setPosition(latLng);
                 mapSucursal.setCenter(latLng);
                 mapSucursal.setZoom(15);
             } else if (mapSucursal && (!sucursal || !sucursal.coordenadas)) {
-                if (markerSucursal) { markerSucursal.setMap(null); markerSucursal = null; }
-                mapSucursal.setCenter({ lat: -9.19, lng: -75.015 });
+                if (markerSucursal) markerSucursal.setPosition(null);
+                mapSucursal.setCenter({ lat: -9.189967, lng: -75.015152 });
                 mapSucursal.setZoom(5);
             }
         }, 100);
@@ -557,16 +687,26 @@ document.addEventListener('DOMContentLoaded', () => {
         sucursalForm.reset();
         sucursalEditId.value = '';
         sucCoordenadas.value = '';
-        if (markerSucursal) { markerSucursal.setMap(null); markerSucursal = null; }
+        if (sucLocationSearch) sucLocationSearch.value = '';
+        if (markerSucursal) markerSucursal.setPosition(null); // Nunca hacer = null
     }
 
     async function handleSucursalFormSubmit(e) {
         e.preventDefault();
-        if (!currentProcesadoraId) return;
+
+        // VALIDADOR ANTI-FALLO SILENCIOSO
+        if (!currentProcesadoraId || currentProcesadoraId === "undefined" || currentProcesadoraId === "null") {
+            console.error("No se puede guardar: currentProcesadoraId es inválido:", currentProcesadoraId);
+            alert("Error crítico: No se ha detectado a qué procesadora pertenece esta sucursal. Por favor, selecciona la procesadora de la lista nuevamente.");
+            return; 
+        }
 
         const submitBtn = sucursalForm.querySelector('button[type="submit"]');
-        const originalText = submitBtn ? submitBtn.innerText : 'Guardar';
-        if (submitBtn) { submitBtn.disabled = true; submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...'; }
+        const originalText = submitBtn ? submitBtn.innerText : 'Guardar Sucursal';
+        if (submitBtn) { 
+            submitBtn.disabled = true; 
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...'; 
+        }
 
         let coordsValue = null;
         if (sucCoordenadas.value) {
@@ -576,6 +716,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const data = {
             nombre_sucursal: sucNombre.value,
             tipo_sucursal: sucTipo.value || null,
+            pais: sucPais.value || null,
+            departamento: sucDepartamento.value || null,
+            provincia: sucProvincia.value || null,
             ciudad: sucCiudad.value || null,
             distrito: sucDistrito.value || null,
             direccion: sucDireccion.value || null,
@@ -603,7 +746,12 @@ document.addEventListener('DOMContentLoaded', () => {
     async function handleSucursalListClick(e) {
         const btn = e.target.closest('button');
         if (!btn || !currentProcesadoraId) return;
+        
         const id = btn.dataset.id;
+        if (!id || id === "undefined" || id === "null") {
+            alert("Error: No se pudo identificar la sucursal seleccionada.");
+            return;
+        }
 
         if (btn.classList.contains('delete-suc-btn')) {
             if (confirm("¿Eliminar esta sucursal?")) {
@@ -614,7 +762,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (btn.classList.contains('edit-suc-btn')) {
             try {
                 const list = await api(`/api/procesadoras/${currentProcesadoraId}/sucursales`);
-                const suc = list.find(s => s.id === id);
+                const suc = list.find(s => String(s.id || s._id) === String(id)); // Búsqueda estricta corregida
                 if (suc) showSucursalForm(suc);
             } catch(e) { console.error(e); }
         }
@@ -639,7 +787,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if(premioSelect) premioSelect.innerHTML = `<option value="">Seleccionar...</option>` + uniquePremios.map(p => `<option value="${p.nombre}">${p.nombre}</option>`).join('');
     }
 
-    // --- Manejadores de Listas ---
+    // --- Manejadores de Multimedia y Arrays ---
     async function handleImageUpload(e) {
         const files = Array.from(e.target.files);
         try {
@@ -668,7 +816,7 @@ document.addEventListener('DOMContentLoaded', () => {
         fotosPreviewContainer.innerHTML = currentImages.map((img, i) => 
             `<div class="relative group">
                 <img src="${img}" class="w-full h-24 object-cover rounded-lg">
-                <button type="button" data-index="${i}" class="delete-img-btn absolute top-1 right-1 bg-red-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition">&times;</button>
+                <button type="button" data-index="${i}" class="delete-img-btn absolute top-1 right-1 bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition shadow-md">&times;</button>
              </div>`
         ).join('');
     }
@@ -695,9 +843,9 @@ document.addEventListener('DOMContentLoaded', () => {
     function renderAddedCertifications() {
         if(!certsListContainer) return;
         certsListContainer.innerHTML = currentCertifications.map((c, i) => 
-            `<div class="flex justify-between items-center bg-stone-100 p-2 rounded mb-2">
-                <span>${c.nombre}</span>
-                <button type="button" class="delete-cert-btn text-red-500 hover:text-red-700 font-bold" data-index="${i}">&times;</button>
+            `<div class="flex justify-between items-center bg-stone-100 p-2 px-3 rounded-lg mb-2 text-sm">
+                <span><i class="fas fa-certificate text-amber-600 mr-2"></i>${c.nombre} ${c.expiry ? `(Vence: ${c.expiry})` : ''}</span>
+                <button type="button" class="delete-cert-btn text-red-500 hover:bg-red-100 rounded-full w-6 h-6 flex items-center justify-center transition" data-index="${i}">&times;</button>
              </div>`
         ).join('');
     }
@@ -724,9 +872,9 @@ document.addEventListener('DOMContentLoaded', () => {
     function renderAddedPremios() {
         if(!premiosListContainer) return;
         premiosListContainer.innerHTML = currentPremios.map((p, i) => 
-            `<div class="flex justify-between items-center bg-stone-100 p-2 rounded mb-2">
-                <span>${p.nombre} (${p.year})</span>
-                <button type="button" class="delete-premio-btn text-red-500 hover:text-red-700 font-bold" data-index="${i}">&times;</button>
+            `<div class="flex justify-between items-center bg-stone-100 p-2 px-3 rounded-lg mb-2 text-sm">
+                <span><i class="fas fa-award text-amber-600 mr-2"></i>${p.nombre} (${p.year})</span>
+                <button type="button" class="delete-premio-btn text-red-500 hover:bg-red-100 rounded-full w-6 h-6 flex items-center justify-center transition" data-index="${i}">&times;</button>
              </div>`
         ).join('');
     }
