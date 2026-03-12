@@ -19,13 +19,11 @@ document.addEventListener('DOMContentLoaded', () => {
     function toggleView(showForm) {
         if (showForm) {
             // Mostrar Formulario y reducir lista
-            console.log(1);
             listSection.classList.replace('lg:col-span-12', 'lg:col-span-4');
             formSection.classList.remove('hidden');
             btnShowForm.classList.add('hidden');
         } else {
             // Ocultar Formulario y expandir lista
-            console.log(2);
             listSection.classList.replace('lg:col-span-4', 'lg:col-span-12');
             formSection.classList.add('hidden');
             btnShowForm.classList.remove('hidden');

@@ -440,6 +440,7 @@ async function initializeDatabase() {
                 CREATE TABLE IF NOT EXISTS suggested_companies (
                     id TEXT PRIMARY KEY,
                     type TEXT NOT NULL, -- 'finca' o 'procesadora'
+                    sub_type TEXT, -- 'INDIVIDUAL', 'COOPERATIVA', 'ASOCIACION' para fincas; 'ACOPIADORA', 'BENEFICIO_SECO', 'TOSTADORA', 'CHOCOLATERIA', 'CAFETERIA_ESPECIALIDAD', 'LABORATORIO_CATACION', 'EXPORTADORA' para procesadoras
                     name TEXT NOT NULL,
                     social_instagram TEXT,
                     social_facebook TEXT,

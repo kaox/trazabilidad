@@ -1,0 +1,17 @@
+{
+  "categorias_sector_cafe": {
+    "tipos_fincas": [
+      "Individual",
+      "Cooperativa",
+      "Asociación"
+    ],
+    "tipos_procesadoras": [
+      "Acopiadora",
+      "Tostadora",
+      "Chocolateria",
+      "Cafeteria",
+      "Laboratorio",
+      "Exportadora"
+    ]
+  }
+}

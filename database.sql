@@ -58,7 +58,7 @@ CREATE TABLE IF NOT EXISTS fincas (
     propietario TEXT,
     dni_ruc TEXT,
     nombre_finca TEXT NOT NULL,
-    tipo TEXT, -- 'INDIVIDUAL', 'COOPERATIVA', 'ASOCIACION', 'VIVERO'
+    tipo TEXT, -- 'INDIVIDUAL', 'COOPERATIVA', 'ASOCIACION'
     pais TEXT,
     departamento TEXT,
     provincia TEXT,
@@ -528,6 +528,7 @@ CREATE TABLE IF NOT EXISTS analytics_events (
 CREATE TABLE IF NOT EXISTS suggested_companies (
     id TEXT PRIMARY KEY,
     type TEXT NOT NULL, -- 'finca' o 'procesadora'
+    sub_type TEXT, -- 'INDIVIDUAL', 'COOPERATIVA', 'ASOCIACION' para fincas; 'ACOPIADORA', 'BENEFICIO_SECO', 'TOSTADORA', 'CHOCOLATERIA', 'CAFETERIA_ESPECIALIDAD', 'LABORATORIO_CATACION', 'EXPORTADORA' para procesadoras
     name TEXT NOT NULL,
     social_instagram TEXT,
     social_facebook TEXT,
@@ -536,8 +537,10 @@ CREATE TABLE IF NOT EXISTS suggested_companies (
     departamento TEXT,
     provincia TEXT,
     distrito TEXT,
+    logo TEXT,
+    magic_token TEXT UNIQUE,
     coordenadas JSONB,
-    magic_token TEXT,
+    product_categories TEXT,
     
     status TEXT DEFAULT 'pending', -- 'pending', 'verified', 'claimed'
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
