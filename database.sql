@@ -532,6 +532,8 @@ CREATE TABLE IF NOT EXISTS suggested_companies (
     name TEXT NOT NULL,
     social_instagram TEXT,
     social_facebook TEXT,
+    website_url TEXT,
+    telefono TEXT,
 
     pais TEXT,
     departamento TEXT,

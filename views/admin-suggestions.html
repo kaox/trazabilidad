@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Sugerencias - Ruru Lab</title>
     <script src="/auth.js"></script>
+    <script src="/js/file-utils.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet">
     <link
@@ -306,17 +307,25 @@
         }
 
         // Leer el archivo cuando el usuario selecciona uno
-        document.getElementById('edit-logo-file').addEventListener('change', function (e) {
+        document.getElementById('edit-logo-file').addEventListener('change', async function (e) {
             const file = e.target.files[0];
             if (!file) return;
 
-            const reader = new FileReader();
-            reader.onload = function (event) {
-                const base64String = event.target.result;
-                document.getElementById('edit-logo-preview').src = base64String;
-                document.getElementById('edit-logo-base64').value = base64String;
-            };
-            reader.readAsDataURL(file);
+            try {
+                const compressedBase64 = await compressImage(file);
+                document.getElementById('edit-logo-preview').src = compressedBase64;
+                document.getElementById('edit-logo-base64').value = compressedBase64;
+            } catch (error) {
+                console.error('Error compressing image:', error);
+                // Fallback to original
+                const reader = new FileReader();
+                reader.onload = function (event) {
+                    const base64String = event.target.result;
+                    document.getElementById('edit-logo-preview').src = base64String;
+                    document.getElementById('edit-logo-base64').value = base64String;
+                };
+                reader.readAsDataURL(file);
+            }
         });
 
         document.getElementById('edit-form').addEventListener('submit', async (e) => {

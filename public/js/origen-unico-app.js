@@ -21,7 +21,8 @@ const app = {
         'Chocolateria': 'fas fa-candy-cane text-pink-600',
         'Cafeteria': 'fas fa-mug-hot text-amber-700',
         'Laboratorio': 'fas fa-flask text-indigo-600',
-        'Exportadora': 'fas fa-globe text-cyan-600'
+        'Exportadora': 'fas fa-globe text-cyan-600',
+        'Experiencia': 'fas fa-graduation-cap text-yellow-600'
     },
 
     container: document.getElementById('app-container'),
