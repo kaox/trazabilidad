@@ -450,7 +450,12 @@ const app = {
                             '@type': 'Product',
                             name: prod.nombre,
                             description: prod.descripcion || undefined,
-                            image: (prod.imagenes && prod.imagenes.length > 0) ? prod.imagenes[0] : undefined
+                            image: (prod.imagenes && prod.imagenes.length > 0) ? prod.imagenes[0] : undefined,
+                            offers: {
+                                '@type': 'Offer',
+                                availability: 'https://schema.org/InStock',
+                                url: window.location.href
+                            }
                         }
                     }))
                 }
