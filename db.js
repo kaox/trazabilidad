@@ -2939,9 +2939,9 @@ const getPublicCompaniesDataInternal = async () => {
     try {
         // 1. Obtener empresas verificadas (tabla users)
         const users = await all(`
-            SELECT id, empresa, company_logo 
-            FROM users 
-            WHERE empresa IS NOT NULL AND empresa != ''
+            SELECT user_id as id, name as empresa, logo_url as company_logo 
+            FROM company_profiles 
+            WHERE name IS NOT NULL AND name != ''
         `);
 
         // 2. Obtener empresas sugeridas (tabla suggested_companies)

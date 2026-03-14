@@ -278,6 +278,7 @@ app.get('/origen-unico/:slug', async (req, res) => {
 
             // 1. Intentar buscar por ID al final del string (Formato nuevo: nombre-123)
             const lastHyphenIndex = slugParam.lastIndexOf('-');
+            const penultimoGuion = slugParam.lastIndexOf('-', lastHyphenIndex - 1);
             if (lastHyphenIndex !== -1) {
                 const potentialId = slugParam.substring(lastHyphenIndex + 1);
                 // Verificamos si lo que hay después del guion parece un ID (número o string corto)
@@ -286,9 +287,9 @@ app.get('/origen-unico/:slug', async (req, res) => {
 
             // 2. Si no se encuentra por ID, buscar por Slug tradicional (Compatibilidad hacia atrás)
             if (!company) {
-                company = companies.find(c => createSlug(c.empresa) === slugParam);
+                potentialId = slugParam.substring(penultimoGuion + 1);
+                company = companies.find(c => String(c.id) === potentialId);
             }
-
             if (company) {
                 const title = `${company.empresa} - Origen Único Verificado`;
                 const description = `Conoce la trazabilidad y origen de ${company.empresa} en Ruru Lab.`;
