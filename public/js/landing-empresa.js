@@ -29,7 +29,6 @@ const app = {
 
         // CASO A: Subdominio (ej: finca-esperanza.rurulab.com)
         if (window.IS_SUBDOMAIN && window.CURRENT_COMPANY_ID) {
-            console.log("🚀 Modo Subdominio Activo. ID:", window.CURRENT_COMPANY_ID);
 
             // Ocultar la navegación de "Volver al directorio" para que parezca web propia
             if (this.breadcrumbs) this.breadcrumbs.style.display = 'none';
@@ -137,7 +136,6 @@ const app = {
             let coverImage = 'https://images.unsplash.com/photo-1511537632536-b7a4896848a5?auto=format&fit=crop&q=80&w=1000';
 
             const mediaItems = [];
-            console.log(user);
             // 1. Agregar imágenes
             if (!isSuggested) {
                 if (user.cover && user.cover !== '') {
@@ -368,11 +366,102 @@ const app = {
             this.container.innerHTML = html;
             window.scrollTo(0, 0);
 
+            // Inyectar JSON-LD con datos reales de la empresa
+            this.injectJsonLd({ user, entity, products, isFinca, entityName, locationStr, coverImage });
+
             if (entity.coordenadas) setTimeout(() => this.initMiniMap(entity.coordenadas), 500);
 
             setTimeout(() => this.initProductCharts(products), 100);
 
         } catch (e) { console.error(e); }
+    },
+
+    // --- JSON-LD ---
+    injectJsonLd: function ({ user, entity, products, isFinca, entityName, locationStr, coverImage }) {
+        // Eliminar script previo si existe (por si se recarga)
+        const existing = document.getElementById('json-ld-landing');
+        if (existing) existing.remove();
+
+        // Construir dirección estructurada
+        const addressParts = {
+            streetAddress: entity.direccion || '',
+            addressLocality: this.toTitleCase(entity.distrito || entity.provincia || ''),
+            addressRegion: this.toTitleCase(entity.departamento || ''),
+            addressCountry: this.toTitleCase(entity.pais || 'PE')
+        };
+
+        // Coordenadas para geo (si existen como {lat, lng} o como primer punto de polígono)
+        let geoSchema = null;
+        if (entity.coordenadas) {
+            let lat, lng;
+            if (entity.coordenadas.lat && entity.coordenadas.lng) {
+                lat = entity.coordenadas.lat;
+                lng = entity.coordenadas.lng;
+            } else if (Array.isArray(entity.coordenadas) && entity.coordenadas.length > 0) {
+                if (Array.isArray(entity.coordenadas[0])) {
+                    lat = entity.coordenadas[0][0];
+                    lng = entity.coordenadas[0][1];
+                }
+            }
+            if (lat && lng) {
+                geoSchema = { '@type': 'GeoCoordinates', latitude: lat, longitude: lng };
+            }
+        }
+
+        // URL canónica de la página
+        const pageUrl = window.location.href;
+
+        // Teléfono limpio
+        const phone = user.celular ? user.celular.replace(/\D/g, '') : null;
+
+        // Redes sociales
+        const sameAs = [];
+        const instagram = user.instagram || entity.social_instagram;
+        const facebook = user.facebook || entity.social_facebook;
+        if (instagram) sameAs.push(instagram.startsWith('http') ? instagram : `https://instagram.com/${instagram.replace('@', '')}`);
+        if (facebook) sameAs.push(facebook.startsWith('http') ? facebook : `https://facebook.com/${facebook}`);
+
+        // Tipo de schema según si es finca o procesadora
+        const schemaType = isFinca ? 'Organization' : 'LocalBusiness';
+
+        const jsonLd = {
+            '@context': 'https://schema.org',
+            '@type': schemaType,
+            name: entityName,
+            description: user.history || entity.historia || 'Trazabilidad y origen único para productos de especialidad.',
+            url: pageUrl,
+            image: coverImage || undefined,
+            ...(phone && { telephone: `+${phone}` }),
+            ...(sameAs.length && { sameAs }),
+            address: {
+                '@type': 'PostalAddress',
+                ...addressParts
+            },
+            ...(geoSchema && { geo: geoSchema }),
+            // Productos como ItemList
+            ...(products && products.length > 0 && {
+                hasOfferCatalog: {
+                    '@type': 'OfferCatalog',
+                    name: `Catálogo de ${entityName}`,
+                    itemListElement: products.map((prod, idx) => ({
+                        '@type': 'Offer',
+                        position: idx + 1,
+                        itemOffered: {
+                            '@type': 'Product',
+                            name: prod.nombre,
+                            description: prod.descripcion || undefined,
+                            image: (prod.imagenes && prod.imagenes.length > 0) ? prod.imagenes[0] : undefined
+                        }
+                    }))
+                }
+            })
+        };
+
+        const script = document.createElement('script');
+        script.id = 'json-ld-landing';
+        script.type = 'application/ld+json';
+        script.textContent = JSON.stringify(jsonLd);
+        document.head.appendChild(script);
     },
 
     renderProductList: function (products, phone, userId) {

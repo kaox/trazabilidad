@@ -66,7 +66,6 @@ app.use(async (req, res, next) => {
             const description = `Bienvenido al sitio oficial de ${company.empresa}. Conoce nuestra historia, productos y trazabilidad.`;
 
             // Inyección de Script de Configuración Global
-            // Esto le dice al JS del frontend qué ID cargar sin mirar la URL
             const injectionScript = `
                 <script>
                     window.IS_SUBDOMAIN = true;
@@ -74,9 +73,23 @@ app.use(async (req, res, next) => {
                 </script>
             `;
 
+            // JSON-LD server-side
+            let jsonLdTag = '';
+            try {
+                const protocol = req.headers['x-forwarded-proto'] || req.protocol;
+                const host = req.get('host');
+                const landingData = await db.getCompanyLandingDataInternal(company.id);
+                if (landingData) {
+                    jsonLdTag = buildJsonLd({
+                        ...landingData,
+                        pageUrl: `${protocol}://${host}`
+                    });
+                }
+            } catch (e) { console.error('JSON-LD subdominio error:', e); }
+
             // Reemplazar en el HTML
             let injectedHtml = htmlData
-                .replace('<head>', `<head>${injectionScript}`) // Inyectar script ID
+                .replace('<head>', `<head>${injectionScript}${jsonLdTag}`) // Inyectar script ID + JSON-LD
                 .replace('<title>Detalle de Empresa - Ruru Lab</title>', `<title>${title}</title>`)
                 .replace(/content="Descubre el origen y trazabilidad."/g, `content="${description}"`)
                 .replace(/content="RuruLab - Trazabilidad y Pasaporte Digital para Café y Cacao"/g, `content="${title}"`);
@@ -84,6 +97,7 @@ app.use(async (req, res, next) => {
             // Servir el HTML modificado
             res.send(injectedHtml);
         });
+
 
     } catch (error) {
         console.error("Error procesando subdominio:", error);
@@ -106,6 +120,98 @@ const createSlug = (text) => {
         .replace(/[^\w\-]+/g, '')
         .replace(/\-\-+/g, '-');
 };
+
+// --- JSON-LD SERVER-SIDE ---
+const buildJsonLd = ({ user, entity, products, pageUrl }) => {
+    if (!user || !entity) return '';
+
+    const isFinca = (user.type || '').toLowerCase() === 'finca';
+    const entityName = isFinca
+        ? (entity.nombre_finca || user.name || '')
+        : (entity.nombre_comercial || user.name || '');
+
+    const toTitleCase = (str) => {
+        if (!str) return '';
+        return str.toLowerCase().split(' ')
+            .map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+    };
+
+    // Dirección
+    const address = {
+        '@type': 'PostalAddress',
+        streetAddress: entity.direccion || '',
+        addressLocality: toTitleCase(entity.distrito || entity.provincia || ''),
+        addressRegion: toTitleCase(entity.departamento || ''),
+        addressCountry: toTitleCase(entity.pais || 'PE')
+    };
+
+    // Coordenadas
+    let geo = null;
+    if (entity.coordenadas) {
+        let lat, lng;
+        if (entity.coordenadas.lat && entity.coordenadas.lng) {
+            lat = entity.coordenadas.lat; lng = entity.coordenadas.lng;
+        } else if (Array.isArray(entity.coordenadas) && entity.coordenadas.length > 0) {
+            if (Array.isArray(entity.coordenadas[0])) {
+                lat = entity.coordenadas[0][0]; lng = entity.coordenadas[0][1];
+            }
+        }
+        if (lat && lng) geo = { '@type': 'GeoCoordinates', latitude: lat, longitude: lng };
+    }
+
+    // Redes sociales
+    const sameAs = [];
+    if (user.instagram) sameAs.push(user.instagram.startsWith('http') ? user.instagram : `https://instagram.com/${user.instagram.replace('@', '')}`);
+    if (user.facebook) sameAs.push(user.facebook.startsWith('http') ? user.facebook : `https://facebook.com/${user.facebook}`);
+
+    // Imagen de portada
+    let coverImage;
+
+    if (user.logo) {
+        if (user.logo.startsWith('http')) {
+            coverImage = user.logo;
+        } else {
+            coverImage = `https://rurulab.com/api/public/companies/${user.id}/logo`;
+        }
+    }
+
+    console.log(user);
+    console.log(entity);
+
+    const phone = user.celular ? String(user.celular).replace(/\D/g, '') : null;
+
+    const jsonLd = {
+        '@context': 'https://schema.org',
+        '@type': isFinca ? 'Organization' : 'LocalBusiness',
+        name: entityName,
+        description: user.history || entity.historia || 'Trazabilidad y origen único para productos de especialidad.',
+        url: pageUrl,
+        ...(coverImage && { image: coverImage }),
+        ...(phone && { telephone: `+${phone}` }),
+        ...(sameAs.length && { sameAs }),
+        address,
+        ...(geo && { geo }),
+        ...(products && products.length > 0 && {
+            hasOfferCatalog: {
+                '@type': 'OfferCatalog',
+                name: `Catálogo de ${entityName}`,
+                itemListElement: products.map((prod, idx) => ({
+                    '@type': 'Offer',
+                    position: idx + 1,
+                    itemOffered: {
+                        '@type': 'Product',
+                        name: prod.nombre,
+                        ...(prod.descripcion && { description: prod.descripcion }),
+                        ...(prod.imagenes && prod.imagenes.length > 0 && { image: prod.imagenes[0] })
+                    }
+                }))
+            }
+        })
+    };
+
+    return `<script type="application/ld+json">${JSON.stringify(jsonLd)}</script>`;
+};
+
 
 // 4. MIDDLEWARES DE AUTENTICACIÓN Y CONTROL DE ACCESO
 const authenticate = (req, res, next, isPageRequest = false) => {
@@ -306,13 +412,25 @@ app.get('/origen-unico/:slug', async (req, res) => {
                     }
                 }
 
+                // JSON-LD server-side
+                let jsonLdTag = '';
+                try {
+                    const pageUrl = `${protocol}://${host}${req.originalUrl}`;
+                    const landingData = await db.getCompanyLandingDataInternal(company.id);
+                    if (landingData) {
+                        jsonLdTag = buildJsonLd({ ...landingData, pageUrl });
+                    }
+                } catch (e) { console.error('JSON-LD slug error:', e); }
+
                 let injectedHtml = htmlData
+                    .replace('</head>', `${jsonLdTag}\n</head>`)
                     .replace('<title>Empresas con Origen Único - Ruru Lab</title>', `<title>${title}</title>`)
                     .replace(/content="RuruLab - Trazabilidad y Pasaporte Digital para Cacao y Café"/g, `content="${title}"`)
                     .replace(/content="Crea un pasaporte digital para tu producto..."/g, `content="${description}"`)
                     .replace(/content="https:\/\/rurulab\.com\/images\/banner_1\.png"/g, `content="${image}"`);
 
                 res.send(injectedHtml);
+
             } else {
                 // Si no se encuentra, enviamos el HTML base. 
                 // El frontend se encargará de mostrar "Empresa no encontrada" al no poder cargar la API.
