@@ -451,10 +451,17 @@ const app = {
                             name: prod.nombre,
                             description: prod.descripcion || undefined,
                             image: (prod.imagenes && prod.imagenes.length > 0) ? prod.imagenes[0] : undefined,
-                            offers: {
-                                '@type': 'Offer',
-                                availability: 'https://schema.org/InStock',
-                                url: window.location.href
+                            review: {
+                                '@type': 'Review',
+                                reviewRating: {
+                                    '@type': 'Rating',
+                                    ratingValue: 5,
+                                    bestRating: 5
+                                },
+                                author: {
+                                    '@type': 'Organization',
+                                    name: entityName
+                                }
                             }
                         }
                     }))

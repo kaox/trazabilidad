@@ -203,10 +203,17 @@ const buildJsonLd = ({ user, entity, products, pageUrl }) => {
                         name: prod.nombre,
                         ...(prod.descripcion && { description: prod.descripcion }),
                         ...(prod.imagenes && prod.imagenes.length > 0 && { image: prod.imagenes[0] }),
-                        offers: {
-                            '@type': 'Offer',
-                            availability: 'https://schema.org/InStock',
-                            url: pageUrl
+                        review: {
+                            '@type': 'Review',
+                            reviewRating: {
+                                '@type': 'Rating',
+                                ratingValue: 5,
+                                bestRating: 5
+                            },
+                            author: {
+                                '@type': 'Organization',
+                                name: entityName
+                            }
                         }
                     }
                 }))
