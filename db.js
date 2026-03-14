@@ -2405,6 +2405,7 @@ const getPublicCompaniesWithImmutable = async (req, res) => {
                 distrito,
                 0 as lotes_count,
                 coordenadas,
+                product_categories,
                 LOWER(sub_type) as sub_type
             FROM suggested_companies
             WHERE status = 'pending'
