@@ -267,6 +267,7 @@ async function fetchProducts(page = 1) {
         } else {
             state.products.push(...(data.products || []));
         }
+        console.log(data);
         state.total = data.total || 0;
         state.hasMore = state.products.length < state.total;
         renderProductCards();
@@ -304,7 +305,7 @@ function renderProductCards() {
 function renderProductCard(p) {
     const companySlug = p.empresa.slug || p.empresa.id;
     const productLink = `/${companySlug}`;
-
+    console.log(p);
     // Tags de sabor
     const flavorTags = (p.sabores || []).slice(0, 3).map(s => `<span class="bg-amber-100 text-amber-800 text-xs px-2 py-1 rounded">${s.category || s.subnote}</span>`).join('');
 
@@ -323,10 +324,37 @@ function renderProductCard(p) {
     // Mini radar
     const radarId = `mini-radar-${p.id}`;
 
+    const normalizeImageValue = (value) => {
+        if (!value) return null;
+        if (typeof value === 'string') {
+            const trimmed = value.trim();
+            // Si viene como JSON (p.ej. '["data:image/..."]' o '{"url":"..."}')
+            if ((trimmed.startsWith('[') && trimmed.endsWith(']')) || (trimmed.startsWith('{') && trimmed.endsWith('}'))) {
+                try {
+                    const parsed = JSON.parse(trimmed);
+                    return normalizeImageValue(parsed);
+                } catch (e) {
+                    // No es JSON válido, usar el string tal cual
+                }
+            }
+            return value;
+        }
+        if (Array.isArray(value) && value.length > 0) return normalizeImageValue(value[0]);
+        if (typeof value === 'object') return value.url || value.src || value.image || null;
+        return null;
+    };
+
+    // Preferimos usar el valor directo, luego el primer elemento de imagenes_json y finalmente una URL que sirve la imagen desde el backend.
+    const imageSrc = [
+        normalizeImageValue(p.imagen),
+        normalizeImageValue(p.imagenes_json),
+        `/api/public/products/${p.id}/image`
+    ].find(Boolean);
+
     return `
         <div class="bg-white rounded-lg shadow-md overflow-hidden card-hover">
             <div class="aspect-w-16 aspect-h-9 bg-gray-200">
-                ${p.imagen ? `<img src="${p.imagen}" alt="${p.nombre}" class="w-full h-48 object-cover">` : '<div class="w-full h-48 flex items-center justify-center text-gray-400"><i class="fas fa-image text-4xl"></i></div>'}
+                ${imageSrc ? `<img src="${imageSrc}" alt="${p.nombre}" class="w-full h-48 object-cover">` : '<div class="w-full h-48 flex items-center justify-center text-gray-400"><i class="fas fa-image text-4xl"></i></div>'}
             </div>
             <div class="p-6">
                 <h3 class="text-xl font-bold text-stone-800 mb-2">${p.nombre}</h3>

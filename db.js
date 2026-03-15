@@ -2386,7 +2386,7 @@ const getPublicCompaniesWithImmutable = async (req, res) => {
             LEFT JOIN traceability_registry tr ON CAST(u.id AS TEXT) = CAST(tr.user_id AS TEXT)
                 AND tr.blockchain_hash IS NOT NULL 
                 AND tr.blockchain_hash != ''
-            WHERE cp.is_published = TRUE 
+            WHERE cp.is_published IS TRUE
             GROUP BY u.id, cp.name, cp.logo_url, cp.company_type, cp.product_categories, f.pais, f.departamento, f.provincia, p.pais, p.departamento, p.provincia, f.coordenadas, p.coordenadas, f.tipo, p.tipo
         `;
 
@@ -3099,6 +3099,7 @@ const getMarketplaceProducts = async (req, res) => {
                 p.nivel_tueste as product_nivel_tueste,
                 p.puntaje_sca as product_puntaje_sca,
                 p.premios_json as product_premios_json,
+                p.imagenes_json as product_imagenes_json,
                 perf.perfil_data as perfil_data,
                 perf.tipo as perfil_tipo,
                 rueda.notas_json as sabores_json,
@@ -3111,7 +3112,7 @@ const getMarketplaceProducts = async (req, res) => {
             LEFT JOIN company_profiles cp ON u.id = cp.user_id
             LEFT JOIN perfiles perf ON p.perfil_id = perf.id
             LEFT JOIN ruedas_sabores rueda ON p.rueda_id = rueda.id
-            WHERE p.is_published = TRUE AND p.deleted_at IS NULL
+            WHERE p.is_published IS TRUE AND p.deleted_at IS NULL
         `;
         const params = [];
 
@@ -3128,6 +3129,34 @@ const getMarketplaceProducts = async (req, res) => {
             const saboresData = safeJSONParse(row.sabores_json);
             const perfilData = safeJSONParse(row.perfil_data);
             const premiosData = safeJSONParse(row.product_premios_json);
+            const imagenesDataRaw = safeJSONParse(row.product_imagenes_json || '[]');
+
+            const normalizeImage = (data) => {
+                if (!data) return null;
+                if (typeof data === 'string') {
+                    const trimmed = data.trim();
+                    // Si es un JSON válido, parsear y volver a normalizar
+                    if ((trimmed.startsWith('[') && trimmed.endsWith(']')) || (trimmed.startsWith('{') && trimmed.endsWith('}'))) {
+                        try {
+                            const parsed = JSON.parse(trimmed);
+                            return normalizeImage(parsed);
+                        } catch (e) {
+                            // No es JSON, usar como string normal
+                        }
+                    }
+                    return data;
+                }
+                if (Array.isArray(data)) {
+                    return data.length > 0 ? normalizeImage(data[0]) : null;
+                }
+                if (typeof data === 'object') {
+                    return data.url || data.src || data.image || null;
+                }
+                return null;
+            };
+
+            const imagen = normalizeImage(imagenesDataRaw);
+            const imagenesData = Array.isArray(imagenesDataRaw) ? imagenesDataRaw : (imagenesDataRaw ? [imagenesDataRaw] : []);
 
             return {
                 id: row.product_id,
@@ -3138,7 +3167,8 @@ const getMarketplaceProducts = async (req, res) => {
                 proceso: row.product_proceso,
                 nivel_tueste: row.product_nivel_tueste,
                 puntaje_sca: row.product_puntaje_sca,
-                imagen: row.product_imagen,
+                imagen,
+                imagenes_json: imagenesData,
                 sabores: saboresData,
                 perfil: perfilData,
                 premios: Array.isArray(premiosData) ? premiosData : [],
