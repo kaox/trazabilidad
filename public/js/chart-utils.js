@@ -7,6 +7,19 @@ const ChartUtils = {
     // Registro de instancias para limpieza de memoria
     instances: {},
 
+    // Convierte un color HEX a rgba con alpha
+    hexToRgba: function (hex, alpha = 1) {
+        let h = hex.replace('#', '');
+        if (h.length === 3) {
+            h = h.split('').map(c => c + c).join('');
+        }
+        const intVal = parseInt(h, 16);
+        const r = (intVal >> 16) & 255;
+        const g = (intVal >> 8) & 255;
+        const b = intVal & 255;
+        return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+    },
+
     /**
      * Renderiza un Radar de Perfil Sensorial o de Taza
      * @param {string} canvasId - ID del elemento canvas
@@ -147,7 +160,12 @@ const ChartUtils = {
                 const isSelectedByNotes = notes.some(n => n.category === categoryName && n.subnote === child.name);
                 const isSelectedByState = selectedSubnotes.includes(child.name);
 
-                return (isSelectedByNotes || isSelectedByState) ? d.color : '#E5E7EB';
+                if (isSelectedByNotes || isSelectedByState) {
+                    // Nivel 2 seleccionado: color más suave que el color padre
+                    return this.hexToRgba(d.color, 0.55);
+                }
+
+                return '#E5E7EB';
             });
         });
 
