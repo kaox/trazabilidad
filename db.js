@@ -3111,7 +3111,7 @@ const getMarketplaceProducts = async (req, res) => {
             LEFT JOIN company_profiles cp ON u.id = cp.user_id
             LEFT JOIN perfiles perf ON p.perfil_id = perf.id
             LEFT JOIN ruedas_sabores rueda ON p.rueda_id = rueda.id
-            WHERE p.is_published = 1 AND p.deleted_at IS NULL
+            WHERE p.is_published = TRUE AND p.deleted_at IS NULL
         `;
         const params = [];
 
