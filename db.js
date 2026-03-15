@@ -3078,6 +3078,134 @@ const claimSuggestion = async (req, res) => {
     }
 };
 
+const getMarketplaceProducts = async (req, res) => {
+    try {
+        const { tipo, sabores, premios: premiosFiltro } = req.query;
+        // perfil_min puede venir como perfil_min[acidez]=7 etc.
+        const perfilMin = req.query.perfil_min || {};
+
+        // Construir query base para productos con su empresa
+        let sql = `
+            SELECT
+                p.id as product_id,
+                p.user_id as company_id,
+                p.nombre as product_name,
+                p.imagen as product_imagen,
+                p.descripcion as product_descripcion,
+                p.tipo as product_tipo,
+                p.subtipo as product_subtipo,
+                p.variedad as product_variedad,
+                p.proceso as product_proceso,
+                p.nivel_tueste as product_nivel_tueste,
+                p.puntaje_sca as product_puntaje_sca,
+                p.premios as product_premios,
+                p.sabores as product_sabores,
+                p.perfil_sensorial as product_perfil,
+                u.empresa as company_name,
+                u.company_type as company_type,
+                COALESCE(cp.slug, u.id) as company_slug,
+                COALESCE(cp.logo_url, u.company_logo) as company_logo,
+                cp.pais as company_pais
+            FROM products p
+            JOIN users u ON p.user_id = u.id
+            LEFT JOIN company_profiles cp ON u.id = cp.user_id
+            WHERE p.is_active = 1
+        `;
+        const params = [];
+
+        // Filtro 1: Tipo de producto
+        if (tipo && tipo !== 'todos') {
+            sql += ` AND LOWER(p.tipo) = LOWER(?)`;
+            params.push(tipo);
+        }
+
+        const rows = await all(sql, params);
+
+        // Post-filtrado en memoria (para sabores y perfil)
+        let products = rows.map(row => {
+            const saboresData = safeJSONParse(row.product_sabores);
+            const perfilData = safeJSONParse(row.product_perfil);
+            const premiosData = safeJSONParse(row.product_premios);
+
+            return {
+                id: row.product_id,
+                nombre: row.product_name,
+                descripcion: row.product_descripcion,
+                tipo: row.product_tipo,
+                subtipo: row.product_subtipo,
+                variedad: row.product_variedad,
+                proceso: row.product_proceso,
+                nivel_tueste: row.product_nivel_tueste,
+                puntaje_sca: row.product_puntaje_sca,
+                imagen: row.product_imagen ? `/api/public/products/${row.product_id}/image` : null,
+                sabores: saboresData,
+                perfil: perfilData,
+                premios: Array.isArray(premiosData) ? premiosData : [],
+                empresa: {
+                    id: row.company_id,
+                    nombre: row.company_name,
+                    tipo: row.company_type,
+                    slug: row.company_slug,
+                    logo: row.company_logo ? `/api/public/companies/${row.company_id}/logo` : null,
+                    pais: row.company_pais
+                }
+            };
+        });
+
+        // Filtro 2: Sabores (array de categorías/subnotes seleccionadas)
+        if (sabores) {
+            const selectedFlavors = Array.isArray(sabores) ? sabores : [sabores];
+            if (selectedFlavors.length > 0) {
+                products = products.filter(p => {
+                    if (!p.sabores || !p.sabores.notas_json) return false;
+                    const productNotes = p.sabores.notas_json;
+                    return selectedFlavors.some(flavor =>
+                        productNotes.some(n =>
+                            (n.category && n.category.toLowerCase() === flavor.toLowerCase()) ||
+                            (n.subnote && n.subnote.toLowerCase() === flavor.toLowerCase())
+                        )
+                    );
+                });
+            }
+        }
+
+        // Filtro 3: Perfil mínimo
+        const perfilKeys = Object.keys(perfilMin);
+        if (perfilKeys.length > 0) {
+            products = products.filter(p => {
+                if (!p.perfil) return false;
+                return perfilKeys.every(attr => {
+                    const minVal = parseFloat(perfilMin[attr]);
+                    const productVal = parseFloat(p.perfil[attr]);
+                    if (isNaN(minVal) || minVal <= 0) return true; // Sin filtro
+                    if (isNaN(productVal)) return false;
+                    return productVal >= minVal;
+                });
+            });
+        }
+
+        // Filtro 4: Premios
+        if (premiosFiltro) {
+            const premiosArray = Array.isArray(premiosFiltro) ? premiosFiltro : [premiosFiltro];
+            if (premiosArray.length > 0) {
+                products = products.filter(p => {
+                    if (!p.premios || p.premios.length === 0) return false;
+                    return premiosArray.some(prem =>
+                        p.premios.some(pp =>
+                            pp.nombre && pp.nombre.toLowerCase().includes(prem.toLowerCase())
+                        )
+                    );
+                });
+            }
+        }
+
+        res.json({ total: products.length, products });
+    } catch (err) {
+        console.error("Error getMarketplaceProducts:", err);
+        res.status(500).json({ error: err.message });
+    }
+};
+
 const serveCompanyLogo = async (req, res) => {
     const { id } = req.params;
     try {

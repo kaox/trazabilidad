@@ -574,7 +574,7 @@ const app = {
                             <p class="text-stone-600 text-sm leading-relaxed line-clamp-4">${prod.descripcion || 'Sin descripción detallada.'}</p>
                         </div>
 
-                        <!-- TAB 2: PERFIL SENSORIAL -->
+                        <!-- TAB 2: PERFIL SENSORIAL o Taza -->
                         ${hasSensory ? `
                         <div id="sensory-${prod.id}" class="tab-content hidden opacity-0 h-48 w-full flex items-center justify-center">
                             <div class="w-full h-full max-w-md relative">
@@ -582,7 +582,7 @@ const app = {
                             </div>
                         </div>` : ''}
 
-                        <!-- TAB 3: RUEDA SABOR -->
+                        <!-- TAB 3: RUEDA SABOR SCA Cacao of Excellence -->
                         ${hasWheel ? `
                         <div id="wheel-${prod.id}" class="tab-content hidden opacity-0 h-auto w-full flex flex-col items-center justify-center">
                             <div class="w-full h-full max-w-md relative">
