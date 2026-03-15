@@ -5,7 +5,7 @@
 
 const state = {
     tipo: 'cafe',          // tipo de producto activo
-    selectedCategories: [], // categorías seleccionadas en la rueda
+    explicitCategories: [], // categorías seleccionadas explícitamente (nivel 1)
     selectedSubnotes: [],  // subnotas (nivel 2) seleccionadas en la rueda
     perfilMin: {},         // { acidez: 0, cuerpo: 0, ... }
     products: [],          // productos actualmente mostrados
@@ -13,11 +13,20 @@ const state = {
     perfilesData: null,
     premiosData: null,
     wheelChart: null,      // instancia Chart.js de la rueda interactiva
-    perfilSliders: {},      // referencias a sliders
+    perfilSliders: {},     // referencias a sliders
     page: 1,
     hasMore: true,
     total: 0
 };
+
+function getEffectiveSelectedCategories(flavorData) {
+    const fromSubnotes = state.selectedSubnotes
+        .map(sn => findCategoryForSubnote(sn, flavorData))
+        .filter(Boolean);
+
+    return Array.from(new Set([...state.explicitCategories, ...fromSubnotes]));
+}
+
 
 // Encuentra categoría asociada a una subnota
 function findCategoryForSubnote(subnote, flavorData) {
@@ -61,7 +70,8 @@ async function init() {
 // Cambiar tipo de producto
 function setTipo(tipo) {
     state.tipo = tipo;
-    state.selectedCategories = [];
+    state.explicitCategories = [];
+    state.selectedSubnotes = [];
     state.perfilMin = {};
     state.page = 1;
     state.hasMore = true;
@@ -98,8 +108,10 @@ function renderInteractiveWheel() {
     }
 
     const ruedaData = { notas_json: [], tipo: state.tipo };
+    const effectiveCategories = getEffectiveSelectedCategories(state.flavorWheelsData[state.tipo]);
+
     state.wheelChart = ChartUtils.initializeRuedaChart('flavor-wheel', ruedaData, state.flavorWheelsData, {
-        selectedCategories: state.selectedCategories,
+        selectedCategories: effectiveCategories,
         selectedSubnotes: state.selectedSubnotes,
         showAllLabels: true,
         onClick: (event, elements) => {
@@ -115,19 +127,18 @@ function renderInteractiveWheel() {
                     const category = l1_labels[index];
 
                     // Toggle selección de categoría
-                    if (state.selectedCategories.includes(category)) {
-                        state.selectedCategories = state.selectedCategories.filter(c => c !== category);
+                    if (state.explicitCategories.includes(category)) {
+                        state.explicitCategories = state.explicitCategories.filter(c => c !== category);
                         // Quitar subnotas asociadas
                         state.selectedSubnotes = state.selectedSubnotes.filter(sn => {
                             const cat = findCategoryForSubnote(sn, FLAVOR_DATA);
                             return cat !== category;
                         });
                     } else {
-                        state.selectedCategories.push(category);
+                        state.explicitCategories.push(category);
                     }
                 } else if (datasetIndex === 0) { // inner ring, subnotas
                     const subnote = state.wheelChart.data.labels[index];
-                    const category = findCategoryForSubnote(subnote, FLAVOR_DATA);
 
                     // Toggle selección de subnota
                     if (state.selectedSubnotes.includes(subnote)) {
@@ -136,17 +147,8 @@ function renderInteractiveWheel() {
                         state.selectedSubnotes.push(subnote);
                     }
 
-                    // Mantener marcada la categoría cuando se selecciona alguna subnota
-                    if (category) {
-                        const hasSubnotesInCat = state.selectedSubnotes.some(sn => findCategoryForSubnote(sn, FLAVOR_DATA) === category);
-                        if (hasSubnotesInCat) {
-                            if (!state.selectedCategories.includes(category)) {
-                                state.selectedCategories.push(category);
-                            }
-                        } else {
-                            state.selectedCategories = state.selectedCategories.filter(c => c !== category);
-                        }
-                    }
+                    // No marcar automáticamente la categoría cuando se selecciona una subnota
+                    // (para que el color se aplique solo al segmento interno)
                 }
 
                 // Update colors
@@ -169,8 +171,11 @@ function updateWheelColors() {
     const FLAVOR_DATA = state.flavorWheelsData[state.tipo];
     const l1_labels = Object.keys(FLAVOR_DATA);
 
+    // Determine categories to color based on selected explicit categories + subnotes
+    const effectiveCategories = getEffectiveSelectedCategories(FLAVOR_DATA);
+
     // Colores para el primer nivel (categorías)
-    const l1_colors = l1_labels.map(label => state.selectedCategories.includes(label) ? FLAVOR_DATA[label].color : '#E5E7EB');
+    const l1_colors = l1_labels.map(label => effectiveCategories.includes(label) ? FLAVOR_DATA[label].color : '#E5E7EB');
 
     // Colores para el segundo nivel (subnotas)
     const subnoteToColor = {};
@@ -239,11 +244,14 @@ function loadMore() {
 
 // Cargar productos desde API
 async function fetchProducts(page = 1) {
+    const effectiveCategories = getEffectiveSelectedCategories(state.flavorWheelsData?.[state.tipo] || {});
+
     const params = new URLSearchParams({
         tipo: state.tipo,
         limit: 20,
         offset: (page - 1) * 20,
-        ...(state.selectedCategories.length > 0 && { categorias: state.selectedCategories }),
+        ...(effectiveCategories.length > 0 && { categorias: effectiveCategories }),
+        ...(state.selectedSubnotes.length > 0 && { sabores: state.selectedSubnotes }),
         ...Object.fromEntries(
             Object.entries(state.perfilMin)
                 .filter(([_, v]) => v > 0)

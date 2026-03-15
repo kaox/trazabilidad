@@ -124,27 +124,17 @@ const ChartUtils = {
         });
 
         // Si se pasa un arreglo de categorías seleccionadas (nivel 1) o subnotas (nivel 2), úsalos para colorear y leyenda
-        const selectedCategoryNames = Array.isArray(options.selectedCategories) ? options.selectedCategories : null;
-        const selectedSubnotes = Array.isArray(options.selectedSubnotes) ? options.selectedSubnotes : [];
-        const showAllLabels = options.showAllLabels !== false;
-
-        if (Array.isArray(selectedCategoryNames) && Object.keys(selectedCategories).length === 0) {
-            selectedCategoryNames.forEach(cat => {
-                if (FLAVOR_DATA[cat]) {
-                    selectedCategories[cat] = {
-                        color: FLAVOR_DATA[cat].color,
-                        children: FLAVOR_DATA[cat].children.map(c => c.name)
-                    };
-                }
-            });
-        }
+        const selectedCategoryNames = Array.isArray(options.selectedCategories)
+            ? options.selectedCategories
+            : Object.keys(selectedCategories);
+        const selectedSubnotes = Array.isArray(options.selectedSubnotes)
+            ? options.selectedSubnotes
+            : notes.map(n => n.subnote).filter(Boolean);
+        const showAllLabels = options.showAllLabels === true;
 
         const l1_labels = Object.keys(FLAVOR_DATA);
         const l1_data = l1_labels.map(cat => FLAVOR_DATA[cat].children.length);
         const l1_colors = l1_labels.map(label => {
-            if (selectedCategoryNames === null) {
-                return FLAVOR_DATA[label].color; // mostrar siempre el color base
-            }
             return selectedCategoryNames.includes(label) ? FLAVOR_DATA[label].color : '#E5E7EB';
         });
 
@@ -209,13 +199,12 @@ const ChartUtils = {
                         },
                         formatter: function (value, context) {
                             if (context.datasetIndex === 0) {
-                                const resultado = notes.find(item => {
-                                    return item.subnote && item.subnote.toLowerCase().includes(l2_labels[context.dataIndex].toLowerCase());
-                                });
-                                return resultado ? l2_labels[context.dataIndex] : "";
+                                // Nivel 2 (subnotas): mostrar solo si está seleccionada o si se muestran todos los labels
+                                if (showAllLabels) return l2_labels[context.dataIndex];
+                                return selectedSubnotes.includes(l2_labels[context.dataIndex]) ? l2_labels[context.dataIndex] : "";
                             } else {
-                                // Si no se indican categorías seleccionadas, siempre mostramos el label de nivel 1
-                                if (selectedCategoryNames === null) return l1_labels[context.dataIndex];
+                                // Nivel 1 (categorías)
+                                if (showAllLabels) return l1_labels[context.dataIndex];
                                 return selectedCategoryNames.includes(l1_labels[context.dataIndex]) ? l1_labels[context.dataIndex] : "";
                             }
                         },
