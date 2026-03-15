@@ -3079,8 +3079,9 @@ const claimSuggestion = async (req, res) => {
 };
 
 const getMarketplaceProducts = async (req, res) => {
+    console.log("Hola");
     try {
-        const { tipo, sabores, premios: premiosFiltro } = req.query;
+        const { tipo, categorias, sabores, premios: premiosFiltro, limit = 20, offset = 0 } = req.query;
         // perfil_min puede venir como perfil_min[acidez]=7 etc.
         const perfilMin = req.query.perfil_min || {};
 
@@ -3090,32 +3091,33 @@ const getMarketplaceProducts = async (req, res) => {
                 p.id as product_id,
                 p.user_id as company_id,
                 p.nombre as product_name,
-                p.imagen as product_imagen,
+                p.imagen_url as product_imagen,
                 p.descripcion as product_descripcion,
-                p.tipo as product_tipo,
-                p.subtipo as product_subtipo,
+                p.tipo_producto as product_tipo,
                 p.variedad as product_variedad,
                 p.proceso as product_proceso,
                 p.nivel_tueste as product_nivel_tueste,
                 p.puntaje_sca as product_puntaje_sca,
-                p.premios as product_premios,
-                p.sabores as product_sabores,
-                p.perfil_sensorial as product_perfil,
+                p.premios_json as product_premios_json,
+                perf.perfil_data as perfil_data,
+                perf.tipo as perfil_tipo,
+                rueda.notas_json as sabores_json,
+                rueda.tipo as sabores_tipo,
                 u.empresa as company_name,
                 u.company_type as company_type,
-                COALESCE(cp.slug, u.id) as company_slug,
-                COALESCE(cp.logo_url, u.company_logo) as company_logo,
-                cp.pais as company_pais
-            FROM products p
+                COALESCE(cp.logo_url, u.company_logo) as company_logo
+            FROM productos p
             JOIN users u ON p.user_id = u.id
             LEFT JOIN company_profiles cp ON u.id = cp.user_id
-            WHERE p.is_active = 1
+            LEFT JOIN perfiles perf ON p.perfil_id = perf.id
+            LEFT JOIN ruedas_sabores rueda ON p.rueda_id = rueda.id
+            WHERE p.is_published = 1 AND p.deleted_at IS NULL
         `;
         const params = [];
 
         // Filtro 1: Tipo de producto
         if (tipo && tipo !== 'todos') {
-            sql += ` AND LOWER(p.tipo) = LOWER(?)`;
+            sql += ` AND LOWER(p.tipo_producto) = LOWER(?)`;
             params.push(tipo);
         }
 
@@ -3123,21 +3125,20 @@ const getMarketplaceProducts = async (req, res) => {
 
         // Post-filtrado en memoria (para sabores y perfil)
         let products = rows.map(row => {
-            const saboresData = safeJSONParse(row.product_sabores);
-            const perfilData = safeJSONParse(row.product_perfil);
-            const premiosData = safeJSONParse(row.product_premios);
+            const saboresData = safeJSONParse(row.sabores_json);
+            const perfilData = safeJSONParse(row.perfil_data);
+            const premiosData = safeJSONParse(row.product_premios_json);
 
             return {
                 id: row.product_id,
                 nombre: row.product_name,
                 descripcion: row.product_descripcion,
                 tipo: row.product_tipo,
-                subtipo: row.product_subtipo,
                 variedad: row.product_variedad,
                 proceso: row.product_proceso,
                 nivel_tueste: row.product_nivel_tueste,
                 puntaje_sca: row.product_puntaje_sca,
-                imagen: row.product_imagen ? `/api/public/products/${row.product_id}/image` : null,
+                imagen: row.product_imagen,
                 sabores: saboresData,
                 perfil: perfilData,
                 premios: Array.isArray(premiosData) ? premiosData : [],
@@ -3146,24 +3147,33 @@ const getMarketplaceProducts = async (req, res) => {
                     nombre: row.company_name,
                     tipo: row.company_type,
                     slug: row.company_slug,
-                    logo: row.company_logo ? `/api/public/companies/${row.company_id}/logo` : null,
+                    logo: row.company_logo,
                     pais: row.company_pais
                 }
             };
         });
 
-        // Filtro 2: Sabores (array de categorías/subnotes seleccionadas)
-        if (sabores) {
-            const selectedFlavors = Array.isArray(sabores) ? sabores : [sabores];
-            if (selectedFlavors.length > 0) {
+        // Filtro 2: Categorías de sabores (nivel 1)
+        if (categorias) {
+            const selectedCategories = Array.isArray(categorias) ? categorias : [categorias];
+            if (selectedCategories.length > 0) {
                 products = products.filter(p => {
-                    if (!p.sabores || !p.sabores.notas_json) return false;
-                    const productNotes = p.sabores.notas_json;
-                    return selectedFlavors.some(flavor =>
-                        productNotes.some(n =>
-                            (n.category && n.category.toLowerCase() === flavor.toLowerCase()) ||
-                            (n.subnote && n.subnote.toLowerCase() === flavor.toLowerCase())
-                        )
+                    if (!p.sabores || !Array.isArray(p.sabores)) return false;
+                    return selectedCategories.some(cat =>
+                        p.sabores.some(n => n.category && n.category.toLowerCase() === cat.toLowerCase())
+                    );
+                });
+            }
+        }
+
+        // Filtro adicional: Subnotas/Sabores (nivel 2)
+        if (sabores) {
+            const selectedSubnotes = Array.isArray(sabores) ? sabores : [sabores];
+            if (selectedSubnotes.length > 0) {
+                products = products.filter(p => {
+                    if (!p.sabores || !Array.isArray(p.sabores)) return false;
+                    return selectedSubnotes.some(sub =>
+                        p.sabores.some(n => n.subnote && n.subnote.toLowerCase() === sub.toLowerCase())
                     );
                 });
             }
@@ -3199,7 +3209,11 @@ const getMarketplaceProducts = async (req, res) => {
             }
         }
 
-        res.json({ total: products.length, products });
+        // Aplicar paginación
+        const total = products.length;
+        const paginatedProducts = products.slice(parseInt(offset), parseInt(offset) + parseInt(limit));
+
+        res.json({ total, products: paginatedProducts });
     } catch (err) {
         console.error("Error getMarketplaceProducts:", err);
         res.status(500).json({ error: err.message });
@@ -3288,5 +3302,6 @@ module.exports = {
     getPublicCompaniesDataInternal,
     getCompanyLandingDataInternal,
     createSuggestion, getSuggestionById, claimSuggestion,
-    serveCompanyLogo
+    serveCompanyLogo,
+    getMarketplaceProducts
 };

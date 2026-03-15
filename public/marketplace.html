@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Marketplace - Rurulab</title>
+
+    <meta name="description" content="Descubre productos de café de especialidad y cacao fino de múltiples proveedores.">
+
+    <!-- Open Graph / Facebook / WhatsApp -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://rurulab.com/marketplace">
+    <meta property="og:title" content="Marketplace - Rurulab">
+    <meta property="og:description" content="Descubre productos de café de especialidad y cacao fino de múltiples proveedores.">
+    <meta property="og:image" content="https://rurulab.com/images/banner_1.png">
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:title" content="Marketplace - Rurulab">
+    <meta property="twitter:description" content="Descubre productos de café de especialidad y cacao fino de múltiples proveedores.">
+    <meta property="twitter:image" content="https://rurulab.com/images/banner_1.png">
+
+    <link href="/css/styles.css" rel="stylesheet">
+
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Playfair+Display:wght@700;900&display=swap"
+        rel="stylesheet" crossorigin>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+        crossorigin />
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
+    <script src="/js/analytics-loader.js" defer></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #fdfaf6;
+        }
+
+        .font-display {
+            font-family: 'Playfair Display', serif;
+        }
+
+        .card-hover:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+
+        .filter-section {
+            background: linear-gradient(135deg, #1f2937 0%, #374151 100%);
+            color: white;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .flavor-wheel {
+            max-width: 300px;
+            margin: 0 auto;
+            height: 300px;
+        }
+
+        .perfil-sliders {
+            max-width: 400px;
+            margin: 0 auto;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .product-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+
+        @media (max-width: 768px) {
+            .product-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body class="text-stone-800 antialiased">
+    <div id="public-nav-placeholder"></div>
+
+    <!-- Hero Section -->
+    <section class="bg-gradient-to-br from-amber-900 to-stone-800 text-white py-20">
+        <div class="container mx-auto px-4 text-center">
+            <h1 class="text-5xl md:text-6xl font-bold font-display mb-6">Marketplace</h1>
+            <p class="text-xl md:text-2xl text-amber-100 max-w-3xl mx-auto">
+                Descubre productos de café de especialidad y cacao fino de múltiples proveedores
+            </p>
+        </div>
+    </section>
+
+    <!-- Filters Section -->
+    <section class="filter-section py-12">
+        <div class="container mx-auto px-4">
+            <div class="flex flex-wrap justify-center gap-4 mb-8">
+                <button onclick="setTipo('cafe')" class="tipo-btn active bg-amber-600 hover:bg-amber-700 text-white px-6 py-3 rounded-full font-semibold transition">
+                    <i class="fas fa-coffee mr-2"></i>Café ☕
+                </button>
+                <button onclick="setTipo('cacao')" class="tipo-btn bg-stone-600 hover:bg-stone-700 text-white px-6 py-3 rounded-full font-semibold transition">
+                    <i class="fas fa-seedling mr-2"></i>Cacao 🍫
+                </button>
+                <button onclick="setTipo('miel')" class="tipo-btn bg-stone-600 hover:bg-stone-700 text-white px-6 py-3 rounded-full font-semibold transition">
+                    <i class="fas fa-tint mr-2"></i>Miel 🍯
+                </button>
+                <button onclick="setTipo('otros')" class="tipo-btn bg-stone-600 hover:bg-stone-700 text-white px-6 py-3 rounded-full font-semibold transition">
+                    <i class="fas fa-box mr-2"></i>Otros
+                </button>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-8">
+                <!-- Rueda de Sabores -->
+                <div id="flavor-wheel-container" class="text-center">
+                    <h3 class="text-2xl font-bold mb-4">Rueda de Sabores</h3>
+                    <canvas id="flavor-wheel-l1" class="flavor-wheel" width="300" height="300"></canvas>
+                    <p class="text-sm mt-4 opacity-80">Haz clic en los sectores para filtrar por sabores</p>
+                </div>
+
+                <!-- Perfil de Taza -->
+                <div id="perfil-container" class="text-center">
+                    <h3 class="text-2xl font-bold mb-4">Perfil de Taza Mínimo</h3>
+                    <div id="perfil-sliders" class="perfil-sliders"></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Products Section -->
+    <section class="py-16 bg-white min-h-screen">
+        <div class="container mx-auto px-4">
+            <div class="text-center mb-12">
+                <h2 class="text-4xl font-bold font-display text-stone-800 mb-4">Productos Disponibles</h2>
+                <p class="text-lg text-stone-600">Explora nuestra selección curada de productos premium</p>
+            </div>
+
+            <div id="products-container" class="product-grid">
+                <!-- Products will be loaded here -->
+                <div class="col-span-full text-center py-12">
+                    <i class="fas fa-spinner fa-spin text-4xl text-amber-600 mb-4"></i>
+                    <p class="text-stone-600">Cargando productos...</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <script src="/js/public-nav-loader.js"></script>
+    <script src="/js/chart-utils.js"></script>
+    <script src="/js/marketplace.js"></script>
+</body>
+
+</html>

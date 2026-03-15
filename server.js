@@ -381,6 +381,7 @@ app.get('/01/:gtin/10/:loteId', gs1Resolver.resolve);
 
 // 7. SECCIÓN ORIGEN ÚNICO (Con inyección de metadatos)
 app.get('/origen-unico', (req, res) => res.sendFile(path.join(__dirname, 'public', 'origen-unico.html')));
+app.get('/marketplace', (req, res) => res.sendFile(path.join(__dirname, 'public', 'marketplace.html')));
 
 app.get('/origen-unico/:slug', async (req, res) => {
     const slugParam = req.params.slug;
@@ -502,6 +503,7 @@ app.get('/api/public/companies', db.getPublicCompaniesWithImmutable);
 app.get('/api/public/companies/:userId/products', db.getPublicProductsWithImmutable);
 app.get('/api/public/products/:productId/batches', db.getPublicBatchesForProduct);
 app.get('/api/public/companies/:userId/landing', db.getCompanyLandingData);
+app.get('/api/public/marketplace/products', db.getMarketplaceProducts);
 
 // 8. RUTAS PROTEGIDAS (VISTAS APP)
 //app.get('/app/dashboard', authenticatePage, checkSubscription('profesional'), (req, res) => res.sendFile(path.join(__dirname, 'views', 'dashboard.html')));

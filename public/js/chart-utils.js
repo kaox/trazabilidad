@@ -98,11 +98,11 @@ const ChartUtils = {
      * @param {object} ruedaData - Objeto con datos de la rueda (notas_json, tipo)
      * @param {object} flavorWheelsData - Configuración global de colores y categorías
      */
-    initializeRuedaChart: function (baseId, ruedaData, flavorWheelsData) {
+    initializeRuedaChart: function (baseId, ruedaData, flavorWheelsData, options = {}) {
         const canvasId = `${baseId}-l1`;
         const ctxL1 = document.getElementById(canvasId);
 
-        if (!ctxL1 || !ruedaData || !ruedaData.notas_json || !flavorWheelsData) return;
+        if (!ctxL1 || !ruedaData || !ruedaData.notas_json || !flavorWheelsData) return null;
 
         if (this.instances[canvasId]) {
             this.instances[canvasId].destroy();
@@ -111,7 +111,7 @@ const ChartUtils = {
         const notes = ruedaData.notas_json;
         const FLAVOR_DATA = ruedaData.tipo === 'cafe' ? flavorWheelsData.cafe : flavorWheelsData.cacao;
 
-        if (!FLAVOR_DATA) return;
+        if (!FLAVOR_DATA) return null;
 
         const selectedCategories = {};
         notes.forEach(note => {
@@ -123,21 +123,45 @@ const ChartUtils = {
             }
         });
 
+        // Si se pasa un arreglo de categorías seleccionadas (nivel 1) o subnotas (nivel 2), úsalos para colorear y leyenda
+        const selectedCategoryNames = Array.isArray(options.selectedCategories) ? options.selectedCategories : null;
+        const selectedSubnotes = Array.isArray(options.selectedSubnotes) ? options.selectedSubnotes : [];
+        const showAllLabels = options.showAllLabels !== false;
+
+        if (Array.isArray(selectedCategoryNames) && Object.keys(selectedCategories).length === 0) {
+            selectedCategoryNames.forEach(cat => {
+                if (FLAVOR_DATA[cat]) {
+                    selectedCategories[cat] = {
+                        color: FLAVOR_DATA[cat].color,
+                        children: FLAVOR_DATA[cat].children.map(c => c.name)
+                    };
+                }
+            });
+        }
+
         const l1_labels = Object.keys(FLAVOR_DATA);
         const l1_data = l1_labels.map(cat => FLAVOR_DATA[cat].children.length);
-        const l1_colors = l1_labels.map(label => selectedCategories[label] ? FLAVOR_DATA[label].color : '#E5E7EB');
+        const l1_colors = l1_labels.map(label => {
+            if (selectedCategoryNames === null) {
+                return FLAVOR_DATA[label].color; // mostrar siempre el color base
+            }
+            return selectedCategoryNames.includes(label) ? FLAVOR_DATA[label].color : '#E5E7EB';
+        });
 
         const l2_labels = Object.values(FLAVOR_DATA).flatMap(d => d.children.map(c => c.name));
         const l2_data = Array(l2_labels.length).fill(1);
         const l2_colors = Object.values(FLAVOR_DATA).flatMap(d => {
             return d.children.map(child => {
                 const categoryName = Object.keys(FLAVOR_DATA).find(k => FLAVOR_DATA[k] === d);
-                const isSelected = notes.some(n => n.category === categoryName && n.subnote === child.name);
-                return isSelected ? d.color : '#E5E7EB';
+
+                const isSelectedByNotes = notes.some(n => n.category === categoryName && n.subnote === child.name);
+                const isSelectedByState = selectedSubnotes.includes(child.name);
+
+                return (isSelectedByNotes || isSelectedByState) ? d.color : '#E5E7EB';
             });
         });
 
-        this.instances[canvasId] = new Chart(ctxL1, {
+        const chart = new Chart(ctxL1, {
             type: 'doughnut',
             data: {
                 labels: l2_labels,
@@ -159,7 +183,7 @@ const ChartUtils = {
                 ]
             },
             options: {
-                responsive: true,
+                responsive: false,
                 maintainAspectRatio: false,
                 cutout: '25%',
                 layout: { top: 0, left: 0, right: 0, bottom: 0 },
@@ -190,7 +214,9 @@ const ChartUtils = {
                                 });
                                 return resultado ? l2_labels[context.dataIndex] : "";
                             } else {
-                                return selectedCategories[l1_labels[context.dataIndex]] ? l1_labels[context.dataIndex] : "";
+                                // Si no se indican categorías seleccionadas, siempre mostramos el label de nivel 1
+                                if (selectedCategoryNames === null) return l1_labels[context.dataIndex];
+                                return selectedCategoryNames.includes(l1_labels[context.dataIndex]) ? l1_labels[context.dataIndex] : "";
                             }
                         },
                         anchor: 'center',
@@ -222,7 +248,18 @@ const ChartUtils = {
             }
         });
 
-        this.renderCustomLegend(baseId, selectedCategories, FLAVOR_DATA);
+        if (options.onClick) {
+            chart.options.onClick = options.onClick;
+        }
+
+        this.instances[canvasId] = chart;
+
+        // Renderizar leyenda personalizada por defecto, pero permitir ocultarla si se pasa hideLegend=true
+        if (!options.hideLegend) {
+            this.renderCustomLegend(baseId, selectedCategories, FLAVOR_DATA);
+        }
+
+        return chart;
     },
 
     renderCustomLegend: function (baseId, selectedCategories, FLAVOR_DATA) {
