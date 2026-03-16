@@ -18,15 +18,17 @@ const create = async (data) => {
         INSERT INTO productos (
             id, user_id, nombre, descripcion, gtin, is_formal_gtin, 
             imagenes_json, ingredientes, tipo_producto, peso, premios_json, 
-            receta_nutricional_id, is_published, perfil_id, rueda_id
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            receta_nutricional_id, is_published, perfil_id, rueda_id,
+            variedad, proceso, nivel_tueste, puntaje_sca
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
-    
+
     // El orden de los parámetros debe coincidir con la query
     const params = [
         data.id, data.user_id, data.nombre, data.descripcion, data.gtin, data.is_formal_gtin,
         data.imagenes_json, data.ingredientes, data.tipo_producto, data.peso, data.premios_json,
-        data.receta_nutricional_id, data.is_published, data.perfil_id, data.rueda_id
+        data.receta_nutricional_id, data.is_published, data.perfil_id, data.rueda_id,
+        data.variedad, data.proceso, data.nivel_tueste, data.puntaje_sca
     ];
 
     return await db.run(sql, params);
@@ -38,7 +40,8 @@ const update = async (id, userId, data) => {
         UPDATE productos SET 
             nombre = ?, descripcion = ?, gtin = ?, imagenes_json = ?, 
             ingredientes = ?, tipo_producto = ?, peso = ?, premios_json = ?, 
-            receta_nutricional_id = ?, is_published = ?, perfil_id = ?, rueda_id = ? 
+            receta_nutricional_id = ?, is_published = ?, perfil_id = ?, rueda_id = ?,
+            variedad = ?, proceso = ?, nivel_tueste = ?, puntaje_sca = ?
         WHERE id = ? AND user_id = ?
     `;
 
@@ -46,6 +49,7 @@ const update = async (id, userId, data) => {
         data.nombre, data.descripcion, data.gtin, data.imagenes_json,
         data.ingredientes, data.tipo_producto, data.peso, data.premios_json,
         data.receta_nutricional_id, data.is_published, data.perfil_id, data.rueda_id,
+        data.variedad, data.proceso, data.nivel_tueste, data.puntaje_sca,
         id, userId
     ];
 
@@ -60,7 +64,7 @@ const checkUsageInBatches = async (productId) => {
 // Eliminación Lógica (Soft Delete): Solo marca la fecha, no borra el registro
 const softDelete = async (id, userId) => {
     return await db.run(
-        'UPDATE productos SET deleted_at = CURRENT_TIMESTAMP WHERE id = ? AND user_id = ?', 
+        'UPDATE productos SET deleted_at = CURRENT_TIMESTAMP WHERE id = ? AND user_id = ?',
         [id, userId]
     );
 };
@@ -68,7 +72,7 @@ const softDelete = async (id, userId) => {
 // Eliminación Física (Hard Delete): Borra el registro de la BD
 const hardDelete = async (id, userId) => {
     return await db.run(
-        'DELETE FROM productos WHERE id = ? AND user_id = ?', 
+        'DELETE FROM productos WHERE id = ? AND user_id = ?',
         [id, userId]
     );
 };

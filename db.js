@@ -3001,7 +3001,8 @@ const getCompanyLandingDataInternal = async (userId) => {
         }
 
         const productsPromise = all(`
-            SELECT p.id, p.nombre, p.descripcion, p.imagenes_json, p.tipo_producto
+            SELECT p.id, p.nombre, p.descripcion, p.imagenes_json, p.tipo_producto,
+            p.variedad, p.proceso, p.nivel_tueste, p.puntaje_sca
             FROM productos p
             WHERE p.user_id = ? AND p.deleted_at IS NULL
               AND (p.is_published IS TRUE OR p.is_published IS NULL)
@@ -3079,7 +3080,6 @@ const claimSuggestion = async (req, res) => {
 };
 
 const getMarketplaceProducts = async (req, res) => {
-    console.log("Hola");
     try {
         const { tipo, categorias, sabores, premios: premiosFiltro, limit = 20, offset = 0 } = req.query;
         // perfil_min puede venir como perfil_min[acidez]=7 etc.

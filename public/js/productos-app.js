@@ -367,6 +367,10 @@ window.openProductModal = (id = null) => {
     form.reset();
     document.getElementById('prod-id').value = '';
     document.getElementById('modal-title').innerText = 'Nuevo Producto';
+    document.getElementById('variedad').value = '';
+    document.getElementById('proceso').value = '';
+    document.getElementById('nivel_tueste').value = '';
+    document.getElementById('puntaje_sca').value = '';
 
     currentImages = [];
     currentAwards = [];
@@ -391,6 +395,10 @@ window.openProductModal = (id = null) => {
             document.getElementById('descripcion').value = p.descripcion || '';
             document.getElementById('ingredientes').value = p.ingredientes || '';
             document.getElementById('peso').value = p.peso || '';
+            document.getElementById('variedad').value = p.variedad || '';
+            document.getElementById('proceso').value = p.proceso || '';
+            document.getElementById('nivel_tueste').value = p.nivel_tueste || '';
+            document.getElementById('puntaje_sca').value = p.puntaje_sca || '';
             document.getElementById('is_published').checked = (p.is_published !== 0 && p.is_published !== false);
 
             // CORRECCIÓN: Orden de ejecución
@@ -459,6 +467,10 @@ document.getElementById('product-form').addEventListener('submit', async (e) => 
         descripcion: document.getElementById('descripcion').value,
         ingredientes: document.getElementById('ingredientes').value,
         peso: document.getElementById('peso').value,
+        variedad: document.getElementById('variedad').value,
+        proceso: document.getElementById('proceso').value,
+        nivel_tueste: document.getElementById('nivel_tueste').value,
+        puntaje_sca: document.getElementById('puntaje_sca').value ? parseFloat(document.getElementById('puntaje_sca').value) : null,
         tipo_producto: document.getElementById('tipo_producto').value,
         receta_nutricional_id: document.getElementById('receta_nutricional').value,
 
