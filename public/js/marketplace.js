@@ -152,7 +152,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (!childrenArray || childrenArray.length === 0) return;
 
                 childrenArray.forEach(child => {
-                    const isSelected = state.selectedFlavors.includes(child.name) || isCatSelected;
+                    const isSelected = state.selectedFlavors.includes(child.name);
 
                     const childNode = {
                         name: child.name,
@@ -235,6 +235,17 @@ document.addEventListener('DOMContentLoaded', () => {
                         toggleFlavor(current.data.name, true);
                         current = current.parent;
                     }
+                    
+                    // Si prendemos, prendemos también a los descendientes explícitos de este nodo pulsado
+                    const turnOnDescendants = (node) => {
+                        if (node.children) {
+                            node.children.forEach(child => {
+                                toggleFlavor(child.data.name, true);
+                                turnOnDescendants(child);
+                            });
+                        }
+                    };
+                    turnOnDescendants(d);
                 } else {
                     // Si apagamos, apagamos también a los descendientes (hijos)
                     const turnOffDescendants = (node) => {
@@ -246,6 +257,27 @@ document.addEventListener('DOMContentLoaded', () => {
                         }
                     };
                     turnOffDescendants(d);
+
+                    // Si apagamos, verificamos si el padre debe apagarse o quedarse encendido si tiene otros hijos activos
+                    let current = d.parent;
+                    while (current && current.depth > 0) {
+                        const hasActiveDescendant = (node) => {
+                            if (!node.children) return false;
+                            for (let child of node.children) {
+                                if (state.selectedFlavors.includes(child.data.name) || hasActiveDescendant(child)) {
+                                    return true;
+                                }
+                            }
+                            return false;
+                        };
+
+                        if (!hasActiveDescendant(current)) {
+                            toggleFlavor(current.data.name, false);
+                        } else {
+                            break;
+                        }
+                        current = current.parent;
+                    }
                 }
 
                 renderInteractiveWheel();

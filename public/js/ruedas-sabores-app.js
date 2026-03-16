@@ -287,7 +287,7 @@ document.addEventListener('DOMContentLoaded', () => {
             .selectAll("text")
             .data(root.descendants().slice(1).filter(d => (d.x1 - d.x0) > 0.04))
             .join("text")
-            .style("font-size", d => d.depth === 1 ? "13px" : "12px")
+            .style("font-size", d => d.depth === 1 ? "16px" : "14px")
             .style("font-weight", "600")
             .style("font-family", "Arial, sans-serif")
             .style("fill", d => {
@@ -407,6 +407,26 @@ document.addEventListener('DOMContentLoaded', () => {
             if (nextDiv && nextDiv.classList.contains('ml-4')) {
                 const childTags = nextDiv.querySelectorAll('.flavor-tag');
                 childTags.forEach(childBtn => setTagState(childBtn, false));
+            }
+            
+            // Revisar padres jerárquicos para apagarlos SOLO SI no les quedan otros hijos encendidos
+            let parentContainer = tag.parentElement;
+            while (parentContainer && parentContainer.classList.contains('pl-2')) {
+                // Comprobamos si este contenedor tiene algún botón que siga encendido
+                const hasActiveChildren = parentContainer.querySelector('.flavor-tag.active');
+                
+                if (hasActiveChildren) {
+                    // Si hay algún otro hijo encendido, detenemos la propagación (los padres se quedan encendidos)
+                    break;
+                }
+                
+                // Si no hay hijos encendidos en este nivel, apagamos al padre
+                if (parentContainer.previousElementSibling && parentContainer.previousElementSibling.classList.contains('flavor-tag')) {
+                    setTagState(parentContainer.previousElementSibling, false);
+                }
+                
+                // Subir al siguiente nivel
+                parentContainer = parentContainer.parentElement;
             }
         }
 
