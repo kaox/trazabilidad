@@ -1,155 +1,142 @@
 <!DOCTYPE html>
 <html lang="es">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Marketplace - Rurulab</title>
-
-    <meta name="description" content="Descubre productos de café de especialidad y cacao fino de múltiples proveedores.">
-
-    <!-- Open Graph / Facebook / WhatsApp -->
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="https://rurulab.com/marketplace">
-    <meta property="og:title" content="Marketplace - Rurulab">
-    <meta property="og:description" content="Descubre productos de café de especialidad y cacao fino de múltiples proveedores.">
-    <meta property="og:image" content="https://rurulab.com/images/banner_1.png">
-
-    <!-- Twitter -->
-    <meta property="twitter:card" content="summary_large_image">
-    <meta property="twitter:title" content="Marketplace - Rurulab">
-    <meta property="twitter:description" content="Descubre productos de café de especialidad y cacao fino de múltiples proveedores.">
-    <meta property="twitter:image" content="https://rurulab.com/images/banner_1.png">
-
+    <title>Marketplace de Café y Cacao - Ruru Lab</title>
+    
     <link href="/css/styles.css" rel="stylesheet">
-
-    <link
-        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Playfair+Display:wght@700;900&display=swap"
-        rel="stylesheet" crossorigin>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
-        crossorigin />
-
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <script src="https://d3js.org/d3.v7.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
     <script src="/js/analytics-loader.js" defer></script>
+    
     <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #fdfaf6;
+        body { font-family: 'Inter', sans-serif; background-color: #fcfaf8; }
+        .font-display { font-family: 'Playfair Display', serif; }
+        
+        /* Ocultar scrollbars */
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        .filter-chip {
+            transition: all 0.2s;
+            border: 1px solid #e5e7eb;
+            background-color: white;
+            color: #4b5563;
         }
-
-        .font-display {
-            font-family: 'Playfair Display', serif;
+        .filter-chip.active {
+            background-color: #78350f;
+            color: white;
+            border-color: #78350f;
+            box-shadow: 0 4px 6px -1px rgba(120, 53, 15, 0.2);
         }
-
-        .card-hover:hover {
+        
+        .product-card {
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .product-card:hover {
             transform: translateY(-4px);
             box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
         }
-
-        .filter-section {
-            background: linear-gradient(135deg, #1f2937 0%, #374151 100%);
-            color: white;
-            max-height: 80vh;
-            overflow-y: auto;
-        }
-
-        .flavor-wheel {
-            max-width: 300px;
-            margin: 0 auto;
-            height: 300px;
-        }
-
-        .perfil-sliders {
-            max-width: 400px;
-            margin: 0 auto;
-            max-height: 300px;
-            overflow-y: auto;
-        }
-
-        .product-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 2rem;
-        }
-
-        @media (max-width: 768px) {
-            .product-grid {
-                grid-template-columns: 1fr;
-            }
-        }
     </style>
 </head>
+<body class="text-stone-800 antialiased min-h-screen flex flex-col">
 
-<body class="text-stone-800 antialiased">
+    <!-- Nav -->
     <div id="public-nav-placeholder"></div>
 
-    <!-- Hero Section -->
-    <section class="bg-gradient-to-br from-amber-900 to-stone-800 text-white py-20">
+    <!-- Hero -->
+    <header class="bg-gradient-to-r from-stone-900 to-amber-900 text-white py-12">
         <div class="container mx-auto px-4 text-center">
-            <h1 class="text-5xl md:text-6xl font-bold font-display mb-6">Marketplace</h1>
-            <p class="text-xl md:text-2xl text-amber-100 max-w-3xl mx-auto">
-                Descubre productos de café de especialidad y cacao fino de múltiples proveedores
+            <h1 class="text-4xl md:text-5xl font-display font-bold mb-3">Marketplace Sensorial</h1>
+            <p class="text-lg text-amber-100/80 max-w-2xl mx-auto">
+                Encuentra el café o cacao perfecto filtrando por sus verdaderas notas de sabor y perfil de taza.
             </p>
         </div>
-    </section>
+    </header>
 
-    <!-- Filters Section -->
-    <section class="filter-section py-12">
-        <div class="container mx-auto px-4">
-            <div class="flex flex-wrap justify-center gap-4 mb-8">
-                <button onclick="setTipo('cafe')" class="tipo-btn active bg-amber-600 hover:bg-amber-700 text-white px-6 py-3 rounded-full font-semibold transition">
-                    <i class="fas fa-coffee mr-2"></i>Café ☕
-                </button>
-                <button onclick="setTipo('cacao')" class="tipo-btn bg-stone-600 hover:bg-stone-700 text-white px-6 py-3 rounded-full font-semibold transition">
-                    <i class="fas fa-seedling mr-2"></i>Cacao 🍫
-                </button>
-                <button onclick="setTipo('miel')" class="tipo-btn bg-stone-600 hover:bg-stone-700 text-white px-6 py-3 rounded-full font-semibold transition">
-                    <i class="fas fa-tint mr-2"></i>Miel 🍯
-                </button>
-                <button onclick="setTipo('otros')" class="tipo-btn bg-stone-600 hover:bg-stone-700 text-white px-6 py-3 rounded-full font-semibold transition">
-                    <i class="fas fa-box mr-2"></i>Otros
-                </button>
-            </div>
-
-            <div class="grid md:grid-cols-2 gap-8">
-                <!-- Rueda de Sabores -->
-                <div id="flavor-wheel-container" class="text-center">
-                    <h3 class="text-2xl font-bold mb-4">Rueda de Sabores</h3>
-                    <canvas id="flavor-wheel-l1" class="flavor-wheel" width="300" height="300"></canvas>
-                    <p class="text-sm mt-4 opacity-80">Haz clic en los sectores para filtrar por sabores</p>
-                </div>
-
-                <!-- Perfil de Taza -->
-                <div id="perfil-container" class="text-center">
-                    <h3 class="text-2xl font-bold mb-4">Perfil de Taza Mínimo</h3>
-                    <div id="perfil-sliders" class="perfil-sliders"></div>
+    <main class="container mx-auto px-4 py-8 flex-grow flex flex-col md:flex-row gap-8">
+        
+        <!-- Sidebar Filtros -->
+        <aside class="w-full md:w-80 flex-shrink-0 space-y-6">
+            <!-- Tipo de Producto -->
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-stone-100">
+                <h3 class="font-bold text-stone-800 mb-3">Tipo de Producto</h3>
+                <div class="flex flex-wrap gap-2" id="tipo-filtros">
+                    <button class="filter-chip active px-4 py-2 rounded-full text-sm font-medium" data-tipo="cafe">
+                        <i class="fas fa-mug-hot mr-1"></i> Café
+                    </button>
+                    <button class="filter-chip px-4 py-2 rounded-full text-sm font-medium" data-tipo="cacao">
+                        <i class="fas fa-cookie-bite mr-1"></i> Cacao
+                    </button>
+                    <button class="filter-chip px-4 py-2 rounded-full text-sm font-medium" data-tipo="miel">
+                        <i class="fas fa-jar mr-1"></i> Miel
+                    </button>
+                    <button class="filter-chip px-4 py-2 rounded-full text-sm font-medium" data-tipo="todos">
+                        Todos
+                    </button>
                 </div>
             </div>
-        </div>
-    </section>
 
-    <!-- Products Section -->
-    <section class="py-16 bg-white min-h-screen">
-        <div class="container mx-auto px-4">
-            <div class="text-center mb-12">
-                <h2 class="text-4xl font-bold font-display text-stone-800 mb-4">Productos Disponibles</h2>
-                <p class="text-lg text-stone-600">Explora nuestra selección curada de productos premium</p>
+            <!-- Rueda de Sabores -->
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-stone-100" id="rueda-container">
+                <h3 class="font-bold text-stone-800 mb-2">Filtrar por Notas de Sabor</h3>
+                <p class="text-xs text-stone-500 mb-4">Click en la rueda para filtrar</p>
+                <div id="flavor-wheel-chart" class="relative w-full aspect-square max-w-[280px] mx-auto"></div>
+                
+                <!-- Tooltip D3 -->
+                <div id="flavor-wheel-info" class="hidden absolute top-0 left-0 bg-white p-2 rounded-lg shadow border-l-4 pointer-events-none z-10">
+                    <h4 id="flavor-wheel-info-title" class="text-sm font-bold m-0">Sabor</h4>
+                    <p id="flavor-wheel-info-path" class="text-xs text-stone-500 m-0">Categoría</p>
+                </div>
+                
+                <!-- Tags Seleccionados -->
+                <div id="selected-flavors" class="mt-4 flex flex-wrap gap-1"></div>
             </div>
 
-            <div id="products-container" class="product-grid">
-                <!-- Products will be loaded here -->
-                <div class="col-span-full text-center py-12">
-                    <i class="fas fa-spinner fa-spin text-4xl text-amber-600 mb-4"></i>
-                    <p class="text-stone-600">Cargando productos...</p>
+            <!-- Precios (Temporal, o Perfil de Taza) -->
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-stone-100" id="perfil-container">
+                <h3 class="font-bold text-stone-800 mb-4">Perfil Mínimo</h3>
+                <div id="perfil-sliders" class="space-y-4">
+                    <!-- Sliders se generan dinámicamente -->
                 </div>
             </div>
-        </div>
-    </section>
+        </aside>
 
-    <script src="/js/public-nav-loader.js"></script>
+        <!-- Resultados -->
+        <section class="flex-grow">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-xl font-bold text-stone-800"><span id="results-count">0</span> resultados</h2>
+            </div>
+            
+            <div id="products-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Se llena con JS -->
+            </div>
+            
+            <div id="loading-indicator" class="hidden flex justify-center py-12">
+                <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-800"></div>
+            </div>
+            
+            <div id="empty-state" class="hidden text-center py-16 bg-white rounded-2xl border border-dashed border-stone-300">
+                <i class="fas fa-search text-4xl text-stone-300 mb-4"></i>
+                <h3 class="text-lg font-bold text-stone-700">No hay resultados</h3>
+                <p class="text-stone-500">Intenta quitar algunos filtros para ver más productos.</p>
+                <button id="clear-filters-btn" class="mt-4 text-amber-700 font-medium hover:underline">Limpiar filtros</button>
+            </div>
+        </section>
+
+    </main>
+
     <script src="/js/chart-utils.js"></script>
     <script src="/js/marketplace.js"></script>
+    <script src="/js/public-nav-loader.js" defer></script>
 </body>
-
 </html>

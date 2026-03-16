@@ -135,44 +135,155 @@ document.addEventListener('DOMContentLoaded', () => {
         const notes = rueda ? rueda.notas_json : [];
         const FLAVOR_DATA = state.flavorData ? state.flavorData[state.currentType] : {};
 
-        ['l1', 'l2'].forEach(l => { if (charts[l]) charts[l].destroy(); });
+        // Limpiar contenedor D3
+        const chartContainer = d3.select("#flavor-wheel-chart");
+        chartContainer.selectAll("*").remove();
 
-        const chartOptions = { responsive: true, maintainAspectRatio: true, plugins: { legend: { display: false }, tooltip: { enabled: true }, datalabels: { display: false } } };
-        
-        const selectedCategories = {};
-        notes.forEach(note => {
-            if (!selectedCategories[note.category]) {
-                selectedCategories[note.category] = { color: FLAVOR_DATA[note.category].color, children: [] };
-            }
-            selectedCategories[note.category].children.push(note.subnote);
-        });
-
-        const level1_labels = Object.keys(FLAVOR_DATA);
-        const level1_data = level1_labels.map(cat => FLAVOR_DATA[cat].children.length);
-        const level1_colors = level1_labels.map(l => selectedCategories[l] ? FLAVOR_DATA[l].color : '#E5E7EB');
-
-        const level2_labels = Object.values(FLAVOR_DATA).flatMap(d => d.children.map(c => c.name));
-        const level2_data = Array(level2_labels.length).fill(1);
-        const level2_colors = level2_labels.map(label => {
-            const note = notes.find(n => n.subnote === label);
-            return note ? FLAVOR_DATA[note.category].color : '#E5E7EB';
-        });
-
-        charts.l1 = new Chart(document.getElementById('flavor-wheel-chart-l1'), { 
-            type: 'doughnut', 
-            data: { labels: level1_labels, datasets: [{ data: level1_data, backgroundColor: level1_colors, borderWidth: 2, borderColor: '#fdfaf6' }] }, 
-            options: {...chartOptions, cutout: '30%'} 
-        });
-
-        charts.l2 = new Chart(document.getElementById('flavor-wheel-chart-l2'), { 
-            type: 'doughnut', 
-            data: { labels: level2_labels, datasets: [{ data: level2_data, backgroundColor: level2_colors, borderWidth: 2, borderColor: '#fdfaf6' }] }, 
-            options: {...chartOptions, cutout: '65%'} 
-        });
-        
         if(chartTitle) {
             chartTitle.textContent = title;
         }
+
+        if (!FLAVOR_DATA || Object.keys(FLAVOR_DATA).length === 0) return;
+
+        // Construir jerarquía para D3
+        const rootData = { name: "Root", children: [] };
+        
+        // selectedCategories nos ayuda para el custom legend
+        const selectedCategories = {};
+
+        // Recorrer FLAVOR_DATA y transponer en formato jerárquico
+        Object.entries(FLAVOR_DATA).forEach(([catName, catData]) => {
+            // Verificar si alguna subnota de esta categoría está seleccionada
+            const isCatSelected = notes.some(n => n.category === catName);
+            if (isCatSelected) {
+                selectedCategories[catName] = { color: catData.color, children: [] };
+            }
+
+            const catNode = {
+                name: catName,
+                color: isCatSelected ? catData.color : '#E5E7EB',
+                baseColor: catData.color,
+                children: [],
+                icon: catData.icon
+            };
+
+            // Función recursiva para anidar children
+            const processChildren = (childrenArray, parentNode) => {
+                if (!childrenArray || childrenArray.length === 0) return;
+                
+                childrenArray.forEach(child => {
+                    // Verificar si esta nota específica está en notas_json
+                    const isSelected = notes.some(n => n.category === catName && n.subnote === child.name);
+                    
+                    if (isSelected && selectedCategories[catName] && !selectedCategories[catName].children.includes(child.name)) {
+                        selectedCategories[catName].children.push(child.name);
+                    }
+
+                    const childNode = {
+                        name: child.name,
+                        color: isSelected ? catData.color : '#E5E7EB',
+                        baseColor: catData.color,
+                        children: [],
+                        icon: child.icon
+                    };
+
+                    if (child.children && child.children.length > 0) {
+                        processChildren(child.children, childNode);
+                    }
+                    
+                    parentNode.children.push(childNode);
+                });
+            };
+
+            processChildren(catData.children, catNode);
+            rootData.children.push(catNode);
+        });
+
+        const width = 450;
+        const radius = width / 6;
+
+        const root = d3.hierarchy(rootData)
+            .sum(d => d.children && d.children.length > 0 ? 0 : 1) // Las hojas valen 1
+            .sort((a, b) => b.value - a.value);
+
+        d3.partition().size([2 * Math.PI, root.height + 1])(root);
+
+        const arc = d3.arc()
+            .startAngle(d => d.x0)
+            .endAngle(d => d.x1)
+            .padAngle(d => Math.min((d.x1 - d.x0) / 2, 0.005))
+            .innerRadius(d => d.y0 * radius)
+            .outerRadius(d => Math.max(d.y0 * radius, d.y1 * radius - 1));
+
+        const svg = chartContainer.append("svg")
+            .attr("viewBox", [0, 0, width, width])
+            .style("width", "100%")
+            .style("height", "auto")
+            .append("g")
+            .attr("transform", `translate(${width / 2},${width / 2})`);
+
+        // Arcos
+        const arcs = svg.selectAll("path")
+            .data(root.descendants().slice(1))
+            .join("path")
+            .attr("class", "arc")
+            .attr("fill", d => d.data.color)
+            .attr("stroke", "#fff")
+            .attr("stroke-width", "1.5px")
+            .attr("d", arc)
+            .style("cursor", "pointer")
+            .style("transition", "opacity 0.2s, filter 0.2s")
+            .on("mouseenter", (event, d) => {
+                d3.selectAll(".arc").style("opacity", 0.3);
+                const ancestors = d.ancestors();
+                d3.selectAll(".arc").filter(node => ancestors.includes(node)).style("opacity", 1);
+
+                const info = document.getElementById("flavor-wheel-info");
+                if (info) {
+                    document.getElementById("flavor-wheel-info-title").innerText = d.data.name;
+                    document.getElementById("flavor-wheel-info-path").innerText = d.ancestors().reverse().slice(1).map(a => a.data.name).join(" > ");
+                    info.style.display = "block";
+                    info.style.borderLeftColor = d.data.baseColor;
+                }
+            })
+            .on("mouseleave", () => {
+                d3.selectAll(".arc").style("opacity", 1);
+                const info = document.getElementById("flavor-wheel-info");
+                if (info) info.style.display = "none";
+            });
+
+        // Etiquetas
+        svg.append("g")
+            .attr("pointer-events", "none")
+            .attr("text-anchor", "middle")
+            .selectAll("text")
+            .data(root.descendants().slice(1).filter(d => (d.x1 - d.x0) > 0.05))
+            .join("text")
+            .style("font-size", d => d.depth === 1 ? "11px" : "9px")
+            .style("font-weight", "600")
+            .style("font-family", "Arial, sans-serif")
+            .style("fill", d => {
+                if (d.data.color === '#E5E7EB') return '#6b7280'; // Gris para nodos inactivos
+                return d.depth === 1 ? "white" : "#333";
+            })
+            .attr("transform", function (d) {
+                const x = (d.x0 + d.x1) / 2 * 180 / Math.PI;
+                const y = (d.y0 + d.y1) / 2 * radius;
+                return `rotate(${x - 90}) translate(${y}, 0) rotate(${x < 180 ? 0 : 180})`;
+            })
+            .attr("dy", "0.35em")
+            .text(d => d.data.name.length > 15 ? d.data.name.substring(0,12) + "..." : d.data.name);
+
+        // Centro
+        svg.append("circle").attr("r", radius - 2).attr("fill", "#fff");
+        svg.append("text")
+            .attr("text-anchor", "middle")
+            .attr("font-weight", "bold")
+            .style("fill", "#333")
+            .style("font-size", "14px")
+            .attr("dy", "0.35em")
+            .text(state.currentType.toUpperCase());
+
         renderCustomLegend(selectedCategories);
     }
     

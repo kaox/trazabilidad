@@ -1,399 +1,417 @@
-/**
- * marketplace.js
- * Lógica del Marketplace para filtrar y mostrar productos
- */
+document.addEventListener('DOMContentLoaded', () => {
 
-const state = {
-    tipo: 'cafe',          // tipo de producto activo
-    explicitCategories: [], // categorías seleccionadas explícitamente (nivel 1)
-    selectedSubnotes: [],  // subnotas (nivel 2) seleccionadas en la rueda
-    perfilMin: {},         // { acidez: 0, cuerpo: 0, ... }
-    products: [],          // productos actualmente mostrados
-    flavorWheelsData: null,
-    perfilesData: null,
-    premiosData: null,
-    wheelChart: null,      // instancia Chart.js de la rueda interactiva
-    perfilSliders: {},     // referencias a sliders
-    page: 1,
-    hasMore: true,
-    total: 0
-};
-
-function getEffectiveSelectedCategories(flavorData) {
-    const fromSubnotes = state.selectedSubnotes
-        .map(sn => findCategoryForSubnote(sn, flavorData))
-        .filter(Boolean);
-
-    return Array.from(new Set([...state.explicitCategories, ...fromSubnotes]));
-}
-
-
-// Encuentra categoría asociada a una subnota
-function findCategoryForSubnote(subnote, flavorData) {
-    for (const [category, data] of Object.entries(flavorData)) {
-        if (data.children.some(c => c.name === subnote)) {
-            return category;
-        }
-    }
-    return null;
-}
-
-
-// Inicialización
-async function init() {
-    try {
-        // Cargar datos estáticos
-        state.flavorWheelsData = await fetch('/data/flavor-wheels.json').then(r => r.json()).catch(err => {
-            console.error('Error loading flavor wheels:', err);
-            return null;
-        });
-        state.premiosData = await fetch('/data/premios.json').then(r => r.json()).catch(err => {
-            console.error('Error loading premios:', err);
-            return null;
-        });
-        state.perfilesData = await fetch('/data/perfiles.json').then(r => r.json()).catch(err => {
-            console.error('Error loading perfiles:', err);
-            return null;
-        });
-
-        // Inicializar filtros
-        renderInteractiveWheel();
-        renderPerfilSliders();
-
-        // Cargar productos iniciales
-        await fetchProducts();
-    } catch (error) {
-        console.error('Error initializing marketplace:', error);
-    }
-}
-
-// Cambiar tipo de producto
-function setTipo(tipo) {
-    state.tipo = tipo;
-    state.explicitCategories = [];
-    state.selectedSubnotes = [];
-    state.perfilMin = {};
-    state.page = 1;
-    state.hasMore = true;
-
-    // Actualizar botones
-    document.querySelectorAll('.tipo-btn').forEach(btn => btn.classList.remove('active', 'bg-amber-600'));
-    document.querySelector(`[onclick="setTipo('${tipo}')"]`).classList.add('active', 'bg-amber-600');
-
-    // Re-renderizar filtros
-    renderInteractiveWheel();
-    renderPerfilSliders();
-
-    // Recargar productos
-    fetchProducts();
-}
-
-// Renderizar rueda interactiva
-function renderInteractiveWheel() {
-    const container = document.getElementById('flavor-wheel-container');
-    const canvas = document.getElementById('flavor-wheel-l1');
-    if (!canvas) {
-        console.error('Canvas not found');
-        return;
-    }
-
-    if (!state.flavorWheelsData || !state.flavorWheelsData[state.tipo]) {
-        // Don't remove canvas, just don't create chart
-        return;
-    }
-
-    // Destruir chart anterior
-    if (state.wheelChart) {
-        state.wheelChart.destroy();
-    }
-
-    const ruedaData = { notas_json: [], tipo: state.tipo };
-    const effectiveCategories = getEffectiveSelectedCategories(state.flavorWheelsData[state.tipo]);
-
-    state.wheelChart = ChartUtils.initializeRuedaChart('flavor-wheel', ruedaData, state.flavorWheelsData, {
-        selectedCategories: effectiveCategories,
-        selectedSubnotes: state.selectedSubnotes,
-        showAllLabels: true,
-        onClick: (event, elements) => {
-            if (elements.length > 0) {
-                const element = elements[0];
-                const datasetIndex = element.datasetIndex;
-                const index = element.index;
-
-                const FLAVOR_DATA = state.flavorWheelsData[state.tipo];
-                const l1_labels = Object.keys(FLAVOR_DATA);
-
-                if (datasetIndex === 1) { // outer ring, categories
-                    const category = l1_labels[index];
-
-                    // Toggle selección de categoría
-                    if (state.explicitCategories.includes(category)) {
-                        state.explicitCategories = state.explicitCategories.filter(c => c !== category);
-                        // Quitar subnotas asociadas
-                        state.selectedSubnotes = state.selectedSubnotes.filter(sn => {
-                            const cat = findCategoryForSubnote(sn, FLAVOR_DATA);
-                            return cat !== category;
-                        });
-                    } else {
-                        state.explicitCategories.push(category);
-                    }
-                } else if (datasetIndex === 0) { // inner ring, subnotas
-                    const subnote = state.wheelChart.data.labels[index];
-
-                    // Toggle selección de subnota
-                    if (state.selectedSubnotes.includes(subnote)) {
-                        state.selectedSubnotes = state.selectedSubnotes.filter(s => s !== subnote);
-                    } else {
-                        state.selectedSubnotes.push(subnote);
-                    }
-
-                    // No marcar automáticamente la categoría cuando se selecciona una subnota
-                    // (para que el color se aplique solo al segmento interno)
-                }
-
-                // Update colors
-                updateWheelColors();
-
-                // Reset pagination
-                state.page = 1;
-                state.hasMore = true;
-
-                fetchProducts();
-            }
-        }
-    });
-}
-
-// Actualizar colores de la rueda según selección
-function updateWheelColors() {
-    if (!state.wheelChart || !state.flavorWheelsData || !state.flavorWheelsData[state.tipo]) return;
-
-    const FLAVOR_DATA = state.flavorWheelsData[state.tipo];
-    const l1_labels = Object.keys(FLAVOR_DATA);
-
-    // Determine categories to color based on selected explicit categories + subnotes
-    const effectiveCategories = getEffectiveSelectedCategories(FLAVOR_DATA);
-
-    // Colores para el primer nivel (categorías)
-    const l1_colors = l1_labels.map(label => effectiveCategories.includes(label) ? FLAVOR_DATA[label].color : '#E5E7EB');
-
-    // Colores para el segundo nivel (subnotas)
-    const subnoteToColor = {};
-    l1_labels.forEach(label => {
-        const color = FLAVOR_DATA[label].color;
-        FLAVOR_DATA[label].children.forEach(child => {
-            subnoteToColor[child.name] = color;
-        });
-    });
-
-    const l2_labels = state.wheelChart.data.labels || [];
-    const l2_colors = l2_labels.map(name => state.selectedSubnotes.includes(name) ? subnoteToColor[name] || '#E5E7EB' : '#E5E7EB');
-
-    state.wheelChart.data.datasets[0].backgroundColor = l2_colors;
-    state.wheelChart.data.datasets[1].backgroundColor = l1_colors;
-    state.wheelChart.update();
-}
-
-// Renderizar sliders de perfil
-function renderPerfilSliders() {
-    const container = document.getElementById('perfil-sliders');
-
-    if (!state.perfilesData || !state.perfilesData[state.tipo]) {
-        container.innerHTML = '<p>No hay atributos de perfil para este tipo</p>';
-        return;
-    }
-
-    const atributos = state.perfilesData[state.tipo];
-    let html = '';
-
-    atributos.forEach(attr => {
-        const value = state.perfilMin[attr.id] || 0;
-        html += `
-            <div class="mb-4">
-                <label class="block text-sm font-medium mb-2">${attr.label}</label>
-                <input type="range" min="0" max="10" step="0.5" value="${value}"
-                       class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-                       oninput="updatePerfilMin('${attr.id}', this.value)"
-                       onchange="fetchProducts()">
-                <div class="flex justify-between text-xs text-gray-300 mt-1">
-                    <span>0</span>
-                    <span id="perfil-${attr.id}-value">${value}</span>
-                    <span>10</span>
-                </div>
-            </div>
-        `;
-    });
-
-    container.innerHTML = html;
-}
-
-// Actualizar valor mínimo de perfil
-function updatePerfilMin(attrId, value) {
-    state.perfilMin[attrId] = parseFloat(value);
-    document.getElementById(`perfil-${attrId}-value`).textContent = value;
-    // Reset pagination on filter change
-    state.page = 1;
-    state.hasMore = true;
-}
-
-// Cargar más productos
-function loadMore() {
-    state.page++;
-    fetchProducts(state.page);
-}
-
-// Cargar productos desde API
-async function fetchProducts(page = 1) {
-    const effectiveCategories = getEffectiveSelectedCategories(state.flavorWheelsData?.[state.tipo] || {});
-
-    const params = new URLSearchParams({
-        tipo: state.tipo,
-        limit: 20,
-        offset: (page - 1) * 20,
-        ...(effectiveCategories.length > 0 && { categorias: effectiveCategories }),
-        ...(state.selectedSubnotes.length > 0 && { sabores: state.selectedSubnotes }),
-        ...Object.fromEntries(
-            Object.entries(state.perfilMin)
-                .filter(([_, v]) => v > 0)
-                .map(([k, v]) => [`perfil_min[${k}]`, v])
-        )
-    });
-
-    try {
-        const response = await fetch(`/api/public/marketplace/products?${params}`);
-        const data = await response.json();
-        if (page === 1) {
-            state.products = data.products || [];
-        } else {
-            state.products.push(...(data.products || []));
-        }
-        console.log(data);
-        state.total = data.total || 0;
-        state.hasMore = state.products.length < state.total;
-        renderProductCards();
-    } catch (error) {
-        console.error('Error fetching products:', error);
-        document.getElementById('products-container').innerHTML = '<p class="col-span-full text-center text-red-500">Error al cargar productos</p>';
-    }
-}
-
-// Renderizar tarjetas de productos
-function renderProductCards() {
-    const container = document.getElementById('products-container');
-
-    if (state.products.length === 0) {
-        container.className = 'text-center py-12';
-        container.innerHTML = '<p class="text-stone-600">No se encontraron productos con los filtros seleccionados</p>';
-        return;
-    }
-
-    container.className = 'product-grid';
-    const html = state.products.map(product => renderProductCard(product)).join('');
-    const loadMoreHtml = state.hasMore ? '<div class="col-span-full text-center mt-8"><button onclick="loadMore()" class="bg-amber-600 hover:bg-amber-700 text-white px-6 py-3 rounded-lg font-semibold">Cargar Más</button></div>' : '';
-    container.innerHTML = html + loadMoreHtml;
-
-    // Inicializar mini radares
-    state.products.forEach(product => {
-        const radarId = `mini-radar-${product.id}`;
-        if (product.perfil) {
-            ChartUtils.initializePerfilChart(radarId, product.perfil, state.tipo);
-        }
-    });
-}
-
-// Renderizar una tarjeta de producto
-function renderProductCard(p) {
-    const companySlug = p.empresa.slug || p.empresa.id;
-    const productLink = `/${companySlug}`;
-    console.log(p);
-    // Tags de sabor
-    const flavorTags = (p.sabores || []).slice(0, 3).map(s => `<span class="bg-amber-100 text-amber-800 text-xs px-2 py-1 rounded">${s.category || s.subnote}</span>`).join('');
-
-    // Premios
-    const premiosHtml = (p.premios || []).slice(0, 3).map(premio => {
-        const premioData = state.premiosData?.premios?.[state.tipo]?.find(pr => pr.nombre === premio.nombre);
-        if (premioData) {
-            return `<img src="${premioData.logo_url}" alt="${premio.nombre}" class="h-6 w-6" title="${premio.nombre}">`;
-        }
-        return '';
-    }).join('');
-
-    // Puntuación SCA
-    const scaBadge = p.puntaje_sca ? `<span class="bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded font-bold">SCA ${p.puntaje_sca}</span>` : '';
-
-    // Mini radar
-    const radarId = `mini-radar-${p.id}`;
-
-    const normalizeImageValue = (value) => {
-        if (!value) return null;
-        if (typeof value === 'string') {
-            const trimmed = value.trim();
-            // Si viene como JSON (p.ej. '["data:image/..."]' o '{"url":"..."}')
-            if ((trimmed.startsWith('[') && trimmed.endsWith(']')) || (trimmed.startsWith('{') && trimmed.endsWith('}'))) {
-                try {
-                    const parsed = JSON.parse(trimmed);
-                    return normalizeImageValue(parsed);
-                } catch (e) {
-                    // No es JSON válido, usar el string tal cual
-                }
-            }
-            return value;
-        }
-        if (Array.isArray(value) && value.length > 0) return normalizeImageValue(value[0]);
-        if (typeof value === 'object') return value.url || value.src || value.image || null;
-        return null;
+    // --- ESTADO ---
+    const state = {
+        tipo: 'cafe',
+        selectedFlavors: [],
+        perfilMin: {},
+        products: [],
+        flavorData: null,
+        premiosData: null
     };
 
-    // Preferimos usar el valor directo, luego el primer elemento de imagenes_json y finalmente una URL que sirve la imagen desde el backend.
-    const imageSrc = [
-        normalizeImageValue(p.imagen),
-        normalizeImageValue(p.imagenes_json),
-        `/api/public/products/${p.id}/image`
-    ].find(Boolean);
+    // --- DOM Elements ---
+    const tipoFiltrosContainer = document.getElementById('tipo-filtros');
+    const productsGrid = document.getElementById('products-grid');
+    const loadingIndicator = document.getElementById('loading-indicator');
+    const emptyState = document.getElementById('empty-state');
+    const resultsCount = document.getElementById('results-count');
+    const perfilSlidersContainer = document.getElementById('perfil-sliders');
+    const selectedFlavorsContainer = document.getElementById('selected-flavors');
+    const clearFiltersBtn = document.getElementById('clear-filters-btn');
 
-    return `
-        <div class="bg-white rounded-lg shadow-md overflow-hidden card-hover">
-            <div class="aspect-w-16 aspect-h-9 bg-gray-200">
-                ${imageSrc ? `<img src="${imageSrc}" alt="${p.nombre}" class="w-full h-48 object-cover">` : '<div class="w-full h-48 flex items-center justify-center text-gray-400"><i class="fas fa-image text-4xl"></i></div>'}
-            </div>
-            <div class="p-6">
-                <h3 class="text-xl font-bold text-stone-800 mb-2">${p.nombre}</h3>
-                <p class="text-stone-600 text-sm mb-3">${p.descripcion || 'Sin descripción'}</p>
+    // Mapeo inicial de atributos para el perfil
+    const perfilAtributos = {
+        cafe: ['fraganciaAroma', 'sabor', 'postgusto', 'acidez', 'cuerpo', 'dulzura', 'balance', 'limpieza', 'impresionGeneral'],
+        cacao: ['cacao', 'acidez', 'amargor', 'astringencia', 'frutaFresca', 'frutaMarron', 'vegetal', 'floral', 'madera', 'especia', 'nuez', 'caramelo']
+    };
 
+    async function init() {
+        showLoading(true);
+        try {
+            const [flavorRes, premiosRes] = await Promise.all([
+                fetch('/data/flavor-wheels.json').catch(() => ({ json: () => ({}) })),
+                fetch('/data/premios.json').catch(() => ({ json: () => ({}) }))
+            ]);
+
+            state.flavorData = await flavorRes.json();
+            state.premiosData = await premiosRes.json();
+
+            setupEventListeners();
+            renderPerfilSliders();
+            renderInteractiveWheel();
+            await fetchProducts();
+
+        } catch (error) {
+            console.error("Error al inicializar marketplace:", error);
+        } finally {
+            showLoading(false);
+        }
+    }
+
+    function setupEventListeners() {
+        tipoFiltrosContainer.addEventListener('click', (e) => {
+            const btn = e.target.closest('.filter-chip');
+            if (!btn) return;
+
+            tipoFiltrosContainer.querySelectorAll('.filter-chip').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+
+            state.tipo = btn.dataset.tipo;
+            state.selectedFlavors = []; // Reset sabores al cambiar tipo
+            state.perfilMin = {}; // Reset perfil
+
+            renderInteractiveWheel();
+            renderPerfilSliders();
+            fetchProducts();
+        });
+
+        clearFiltersBtn.addEventListener('click', () => {
+            state.selectedFlavors = [];
+            state.perfilMin = {};
+            renderInteractiveWheel();
+            renderPerfilSliders();
+            fetchProducts();
+        });
+
+        perfilSlidersContainer.addEventListener('input', (e) => {
+            if (e.target.tagName === 'INPUT' && e.target.type === 'range') {
+                const val = parseFloat(e.target.value);
+                const attr = e.target.dataset.attr;
+                e.target.nextElementSibling.textContent = val;
+
+                if (val > 0) {
+                    state.perfilMin[attr] = val;
+                } else {
+                    delete state.perfilMin[attr];
+                }
+            }
+        });
+
+        perfilSlidersContainer.addEventListener('change', (e) => {
+            if (e.target.tagName === 'INPUT' && e.target.type === 'range') {
+                fetchProducts(); // Hacemos fetch al soltar el slider
+            }
+        });
+    }
+
+    function renderPerfilSliders() {
+        perfilSlidersContainer.innerHTML = '';
+        if (state.tipo === 'miel' || state.tipo === 'todos') {
+            document.getElementById('perfil-container').classList.add('hidden');
+            return;
+        }
+
+        document.getElementById('perfil-container').classList.remove('hidden');
+
+        const attrs = perfilAtributos[state.tipo] || [];
+
+        perfilSlidersContainer.innerHTML = attrs.map(attr => {
+            const val = state.perfilMin[attr] || 0;
+            const label = attr.charAt(0).toUpperCase() + attr.slice(1).replace(/([A-Z])/g, ' $1').trim();
+            return `
                 <div class="mb-3">
-                    <canvas id="${radarId}" width="150" height="150" class="mx-auto"></canvas>
-                </div>
-
-                <div class="flex flex-wrap gap-1 mb-3">
-                    ${flavorTags}
-                </div>
-
-                <div class="flex items-center justify-between mb-3">
-                    <div class="flex items-center gap-2">
-                        ${p.empresa.logo ? `<img src="${p.empresa.logo}" alt="${p.empresa.nombre}" class="h-8 w-8 rounded-full object-cover">` : '<div class="h-8 w-8 bg-gray-200 rounded-full flex items-center justify-center"><i class="fas fa-building text-gray-400"></i></div>'}
-                        <span class="text-sm font-medium text-stone-700">${p.empresa.nombre}</span>
+                    <div class="flex justify-between items-center mb-1">
+                        <label class="text-xs font-medium text-stone-600">${label}</label>
+                        <span class="text-xs font-bold text-amber-800">${val}</span>
                     </div>
-                    ${scaBadge}
+                    <input type="range" min="0" max="10" step="0.5" value="${val}" data-attr="${attr}"
+                           class="w-full h-1 bg-stone-200 rounded-lg appearance-none cursor-pointer accent-amber-800">
                 </div>
+            `;
+        }).join('');
+    }
 
-                <div class="flex items-center justify-between mb-4">
-                    <div class="text-sm text-stone-500">
-                        ${p.proceso ? `<span class="mr-2">${p.proceso}</span>` : ''}
-                        ${p.nivel_tueste ? `<span>${p.nivel_tueste}</span>` : ''}
-                        ${p.variedad ? `<span class="block">${p.variedad}</span>` : ''}
+    function renderInteractiveWheel() {
+        const chartContainer = d3.select("#flavor-wheel-chart");
+        chartContainer.selectAll("*").remove();
+
+        const FLAVOR_DATA = state.flavorData ? state.flavorData[state.tipo] : null;
+
+        if (!FLAVOR_DATA) {
+            document.getElementById('rueda-container').classList.add('hidden');
+            renderSelectedFlavorsTags();
+            return;
+        }
+
+        document.getElementById('rueda-container').classList.remove('hidden');
+
+        const rootData = { name: "Root", children: [] };
+
+        Object.entries(FLAVOR_DATA).forEach(([catName, catData]) => {
+            const isCatSelected = state.selectedFlavors.includes(catName);
+
+            const catNode = {
+                name: catName,
+                color: (state.selectedFlavors.length === 0 || isCatSelected) ? catData.color : '#E5E7EB',
+                baseColor: catData.color,
+                children: []
+            };
+
+            const processChildren = (childrenArray, parentNode) => {
+                if (!childrenArray || childrenArray.length === 0) return;
+
+                childrenArray.forEach(child => {
+                    const isSelected = state.selectedFlavors.includes(child.name) || isCatSelected;
+
+                    const childNode = {
+                        name: child.name,
+                        color: (state.selectedFlavors.length === 0 || isSelected) ? catData.color : '#E5E7EB',
+                        baseColor: catData.color,
+                        children: []
+                    };
+
+                    if (child.children && child.children.length > 0) {
+                        processChildren(child.children, childNode);
+                    }
+                    parentNode.children.push(childNode);
+                });
+            };
+
+            processChildren(catData.children, catNode);
+            rootData.children.push(catNode);
+        });
+
+        const width = 280;
+        const radius = width / 6;
+
+        const root = d3.hierarchy(rootData)
+            .sum(d => d.children && d.children.length > 0 ? 0 : 1)
+            .sort((a, b) => b.value - a.value);
+
+        d3.partition().size([2 * Math.PI, root.height + 1])(root);
+
+        const arc = d3.arc()
+            .startAngle(d => d.x0)
+            .endAngle(d => d.x1)
+            .padAngle(d => Math.min((d.x1 - d.x0) / 2, 0.005))
+            .innerRadius(d => d.y0 * radius)
+            .outerRadius(d => Math.max(d.y0 * radius, d.y1 * radius - 1));
+
+        const svg = chartContainer.append("svg")
+            .attr("viewBox", [0, 0, width, width])
+            .style("width", "100%")
+            .style("height", "auto")
+            .append("g")
+            .attr("transform", `translate(${width / 2},${width / 2})`);
+
+        svg.selectAll("path")
+            .data(root.descendants().slice(1))
+            .join("path")
+            .attr("class", "arc")
+            .attr("fill", d => d.data.color)
+            .attr("stroke", "#fff")
+            .attr("stroke-width", "1px")
+            .attr("d", arc)
+            .style("cursor", "pointer")
+            .on("click", (event, d) => {
+                const name = d.data.name;
+                const idx = state.selectedFlavors.indexOf(name);
+                if (idx > -1) {
+                    state.selectedFlavors.splice(idx, 1);
+                } else {
+                    state.selectedFlavors.push(name);
+                }
+                renderInteractiveWheel();
+                fetchProducts();
+            });
+
+        svg.append("g")
+            .attr("pointer-events", "none")
+            .attr("text-anchor", "middle")
+            .selectAll("text")
+            .data(root.descendants().slice(1).filter(d => (d.x1 - d.x0) > 0.05))
+            .join("text")
+            .style("font-size", d => d.depth === 1 ? "11px" : "9px")
+            .style("font-weight", "600")
+            .style("font-family", "Arial, sans-serif")
+            .style("fill", d => {
+                if (d.data.color === '#E5E7EB') return '#6b7280';
+                return d.depth === 1 ? "white" : "#333";
+            })
+            .attr("transform", function (d) {
+                const x = (d.x0 + d.x1) / 2 * 180 / Math.PI;
+                const y = (d.y0 + d.y1) / 2 * radius;
+                return `rotate(${x - 90}) translate(${y}, 0) rotate(${x < 180 ? 0 : 180})`;
+            })
+            .attr("dy", "0.35em")
+            .text(d => d.data.name.length > 15 ? d.data.name.substring(0, 12) + "..." : d.data.name);
+
+        // Centro hueco
+        svg.append("circle").attr("r", radius - 2).attr("fill", "#fff");
+
+        renderSelectedFlavorsTags();
+    }
+
+    function renderSelectedFlavorsTags() {
+        if (state.selectedFlavors.length === 0) {
+            selectedFlavorsContainer.innerHTML = '';
+            return;
+        }
+
+        selectedFlavorsContainer.innerHTML = state.selectedFlavors.map(f => `
+            <span class="inline-flex items-center gap-1 px-2 py-1 bg-amber-100 text-amber-800 text-xs font-medium rounded-md">
+                ${f}
+                <button class="remove-flavor hover:text-amber-900" data-flavor="${f}">&times;</button>
+            </span>
+        `).join('');
+
+        selectedFlavorsContainer.querySelectorAll('.remove-flavor').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const flavor = e.target.dataset.flavor;
+                state.selectedFlavors = state.selectedFlavors.filter(f => f !== flavor);
+                renderInteractiveWheel();
+                fetchProducts();
+            });
+        });
+    }
+
+    async function fetchProducts() {
+        showLoading(true);
+        try {
+            const params = new URLSearchParams();
+            params.append('tipo', state.tipo);
+
+            state.selectedFlavors.forEach(f => params.append('sabores[]', f));
+
+            Object.entries(state.perfilMin).forEach(([key, val]) => {
+                params.append(`perfil_min[${key}]`, val);
+            });
+
+            const res = await fetch(`/api/public/marketplace/products?${params.toString()}`);
+            console.log(res);
+            if (!res.ok) throw new Error("Error fetching products");
+            const data = await res.json();
+
+            state.products = data.products;
+            resultsCount.textContent = data.total;
+            renderProductCards();
+
+        } catch (error) {
+            console.error(error);
+            emptyState.classList.remove('hidden');
+        } finally {
+            showLoading(false);
+        }
+    }
+
+    function renderProductCards() {
+        productsGrid.innerHTML = '';
+        if (state.products.length === 0) {
+            emptyState.classList.remove('hidden');
+            return;
+        }
+        emptyState.classList.add('hidden');
+
+        const html = state.products.map(p => {
+            const companySlug = p.empresa.slug || p.empresa.id;
+
+            // Badges principales
+            const procesBadge = p.proceso ? `<span class="bg-stone-100 px-2 py-1 rounded text-[10px] uppercase font-bold text-stone-600">${p.proceso}</span>` : '';
+            const variedadBadge = p.variedad ? `<span class="bg-amber-100 text-amber-800 px-2 py-1 rounded text-[10px] uppercase font-bold">${p.variedad}</span>` : '';
+            const tuesteBadge = p.nivel_tueste ? `<span class="bg-stone-800 text-stone-200 px-2 py-1 rounded text-[10px] uppercase font-bold">${p.nivel_tueste}</span>` : '';
+
+            // Etiquetas de sabor (Max 3)
+            let flavorBadges = '';
+            if (p.sabores && p.sabores.notas_json) {
+                const cats = [...new Set(p.sabores.notas_json.map(n => n.category))].slice(0, 3);
+                flavorBadges = cats.map(cat => {
+                    const color = state.flavorData && state.flavorData[state.tipo] && state.flavorData[state.tipo][cat] ? state.flavorData[state.tipo][cat].color : '#a8a29e';
+                    return `<span class="px-2 py-0.5 rounded-full text-[10px] text-white font-medium" style="background-color: ${color}">${cat}</span>`;
+                }).join('');
+            }
+
+            // Premios (Logos flotantes)
+            let premiosHtml = '';
+            if (p.premios && p.premios.length > 0) {
+                premiosHtml = `<div class="absolute top-2 right-2 flex flex-col gap-1 z-10">` +
+                    p.premios.map(prem => {
+                        const def = state.premiosData && state.premiosData[state.tipo] ? state.premiosData[state.tipo].find(dp => dp.nombre === prem.nombre) : null;
+                        const url = def ? def.logo_url : (prem.logo_url || '');
+                        if (!url) return '';
+                        return `<img src="${url}" alt="${prem.nombre}" class="w-8 h-8 object-contain drop-shadow" title="${prem.nombre}">`;
+                    }).join('') + `</div>`;
+            }
+
+            // Radar Chart Canvas
+            const canvasId = `radar-${p.id}`;
+
+            return `
+                <div class="product-card bg-white rounded-2xl overflow-hidden border border-stone-200 flex flex-col h-full relative group">
+                    ${premiosHtml}
+                    
+                    <div class="h-48 w-full bg-stone-100 relative overflow-hidden">
+                        ${p.imagen ? `<img src="${p.imagen}" loading="lazy" class="w-full h-full object-cover">` : `<div class="w-full h-full flex items-center justify-center text-stone-300"><i class="fas fa-image text-4xl"></i></div>`}
+                        <div class="absolute bottom-0 left-0 w-full p-3 bg-gradient-to-t from-stone-900/80 to-transparent">
+                            <h3 class="text-white font-bold text-lg leading-tight truncate">${p.nombre}</h3>
+                            <p class="text-stone-300 text-xs truncate">${p.empresa.nombre}</p>
+                        </div>
                     </div>
-                    <div class="flex gap-1">
-                        ${premiosHtml}
+                    
+                    <div class="p-4 flex-grow flex flex-col">
+                        <div class="flex flex-wrap gap-1 mb-3">
+                            ${variedadBadge}
+                            ${procesBadge}
+                            ${tuesteBadge}
+                        </div>
+                        
+                        <div class="flex flex-wrap gap-1 mb-4">
+                            ${flavorBadges}
+                        </div>
+
+                        <!-- Mini Radar Container -->
+                        <div class="w-full h-32 mt-auto mb-4 relative" style="height: 120px;">
+                           ${p.perfil ? `<canvas id="${canvasId}"></canvas>` : `<p class="text-xs text-stone-400 text-center italic mt-10">Sin perfil de taza</p>`}
+                        </div>
+                    </div>
+                    
+                    <div class="px-4 py-3 bg-stone-50 border-t flex justify-between items-center group-hover:bg-amber-50 transition-colors">
+                        ${p.puntaje_sca ? `
+                            <div class="flex items-center text-amber-700 font-bold text-lg">
+                                ${p.puntaje_sca} <span class="text-xs text-stone-500 font-normal ml-1">SCA</span>
+                            </div>
+                        ` : '<div></div>'}
+                        
+                        <a href="/origen-unico/${companySlug}" class="text-sm font-bold text-amber-800 hover:text-amber-900 flex items-center gap-1 px-3 py-1.5 rounded-lg bg-white border border-amber-200">
+                            Ver Productor <i class="fas fa-arrow-right text-[10px]"></i>
+                        </a>
                     </div>
                 </div>
+            `;
+        }).join('');
 
-                <a href="${productLink}" class="block w-full bg-amber-600 hover:bg-amber-700 text-white text-center py-2 px-4 rounded-lg font-semibold transition">
-                    Ver Detalle
-                </a>
-            </div>
-        </div>
-    `;
-}
+        productsGrid.innerHTML = html;
 
-// Inicializar cuando el DOM esté listo
-document.addEventListener('DOMContentLoaded', init);
+        // Inicializar los mini radares después del render
+        state.products.forEach(p => {
+            if (p.perfil) {
+                // Usamos la función global provista por chart-utils.js
+                // Solo le pasamos una versión reducida/limpia de los datos
+                if (typeof ChartUtils !== 'undefined' && ChartUtils.initializePerfilChart) {
+                    ChartUtils.initializePerfilChart(`radar-${p.id}`, p.perfil, state.tipo);
+
+                    // Ajustar opciones del radar mini (ocultar etiquetas en el pequeño)
+                    const inst = ChartUtils.instances[`radar-${p.id}`];
+                    if (inst) {
+                        inst.options.scales.r.pointLabels.display = false;
+                        inst.options.scales.r.ticks.display = false;
+                        inst.update();
+                    }
+                }
+            }
+        });
+    }
+
+    function showLoading(show) {
+        if (show) {
+            loadingIndicator.classList.remove('hidden');
+            productsGrid.classList.add('hidden');
+            emptyState.classList.add('hidden');
+        } else {
+            loadingIndicator.classList.add('hidden');
+            productsGrid.classList.remove('hidden');
+        }
+    }
+
+    init();
+});
