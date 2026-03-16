@@ -6,7 +6,7 @@ let productsCache = [];
 let nutritionalRecipes = [];
 let perfilesCache = [];
 let ruedasCache = [];
-let awardsConfig = {}; 
+let awardsConfig = {};
 
 document.addEventListener('DOMContentLoaded', () => {
     loadProducts();
@@ -36,8 +36,8 @@ async function loadNutritionalRecipes() {
         const recipes = await api('/api/nutricion/recetas');
         nutritionalRecipes = recipes;
         const select = document.getElementById('receta_nutricional');
-        if(select) {
-            select.innerHTML = '<option value="">-- Sin información nutricional --</option>' + 
+        if (select) {
+            select.innerHTML = '<option value="">-- Sin información nutricional --</option>' +
                 recipes.map(r => `<option value="${r.id}">${r.nombre}</option>`).join('');
         }
     } catch (e) { console.warn("Error cargando recetas nutricionales:", e); }
@@ -57,17 +57,17 @@ async function loadAwardsConfig() {
 function updateSensorySelects(type, selectedPerfil = null, selectedRueda = null) {
     const perfilWrapper = document.getElementById('perfil-wrapper');
     const ruedaWrapper = document.getElementById('rueda-wrapper');
-    
+
     // Normalizar tipo para filtrado (cafe/cacao)
     let filterType = type;
-    if (type !== 'cafe' && type !== 'cacao') filterType = null; 
+    if (type !== 'cafe' && type !== 'cacao') filterType = null;
 
     // 1. Manejo de Perfiles
     if (perfilWrapper) {
-        const filteredPerfiles = filterType 
+        const filteredPerfiles = filterType
             ? perfilesCache.filter(p => p.tipo === filterType)
             : perfilesCache;
-            
+
         if (filteredPerfiles.length === 0 && filterType) {
             perfilWrapper.innerHTML = `
                 <label class="block text-sm font-medium text-stone-700 mb-1">Perfil Sensorial (${type})</label>
@@ -98,12 +98,12 @@ function updateSensorySelects(type, selectedPerfil = null, selectedRueda = null)
 
     // 2. Manejo de Ruedas
     if (ruedaWrapper) {
-        const filteredRuedas = filterType 
+        const filteredRuedas = filterType
             ? ruedasCache.filter(r => r.tipo === filterType)
             : ruedasCache;
-            
+
         if (filteredRuedas.length === 0 && filterType) {
-             ruedaWrapper.innerHTML = `
+            ruedaWrapper.innerHTML = `
                 <label class="block text-sm font-medium text-stone-700 mb-1">Rueda de Sabor (${type})</label>
                 <div class="p-4 border-2 border-dashed border-purple-200 rounded-xl text-center bg-purple-50/50 hover:bg-purple-50 transition group">
                     <i class="fas fa-chart-pie text-purple-400 mb-1 text-lg group-hover:scale-110 transition-transform"></i>
@@ -115,17 +115,17 @@ function updateSensorySelects(type, selectedPerfil = null, selectedRueda = null)
                 <input type="hidden" name="rueda_id" id="rueda_id" value="">
              `;
         } else {
-             const options = filteredRuedas.map(r => `<option value="${r.id}">${r.nombre_rueda}</option>`).join('');
-             ruedaWrapper.innerHTML = `
+            const options = filteredRuedas.map(r => `<option value="${r.id}">${r.nombre_rueda}</option>`).join('');
+            ruedaWrapper.innerHTML = `
                 <label for="rueda_id" class="block text-sm font-medium text-stone-700 mb-1">Rueda de Sabor</label>
                 <select id="rueda_id" name="rueda_id" class="w-full p-3 border border-stone-300 rounded-xl bg-white focus:ring-2 focus:ring-amber-500 outline-none">
                     <option value="">-- Seleccionar Rueda --</option>
                     ${options}
                 </select>
              `;
-             if (selectedRueda && document.getElementById('rueda_id')) {
-                 document.getElementById('rueda_id').value = selectedRueda;
-             }
+            if (selectedRueda && document.getElementById('rueda_id')) {
+                document.getElementById('rueda_id').value = selectedRueda;
+            }
         }
     }
 }
@@ -140,7 +140,7 @@ const compressImage = (file) => {
             img.src = event.target.result;
             img.onload = () => {
                 const canvas = document.createElement('canvas');
-                const MAX_WIDTH = 1024; 
+                const MAX_WIDTH = 1024;
                 const MAX_HEIGHT = 1024;
                 let width = img.width;
                 let height = img.height;
@@ -150,7 +150,7 @@ const compressImage = (file) => {
                 } else {
                     if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; }
                 }
-                
+
                 canvas.width = width;
                 canvas.height = height;
                 const ctx = canvas.getContext('2d');
@@ -164,18 +164,18 @@ const compressImage = (file) => {
 };
 
 // --- EVENTOS ---
-document.getElementById('tipo_producto').addEventListener('change', function(e) {
+document.getElementById('tipo_producto').addEventListener('change', function (e) {
     const type = e.target.value;
     const section = document.getElementById('awards-section');
     const select = document.getElementById('award-select');
-    
+
     // 1. Actualizar Selectores Sensoriales
     updateSensorySelects(type);
 
     // 2. Lógica de Premios
     let jsonKey = type;
     if (type === 'cacao') jsonKey = 'chocolate';
-    
+
     if (jsonKey && awardsConfig[jsonKey]) {
         section.classList.remove('hidden');
         const premiosDisponibles = awardsConfig[jsonKey].map(p => p.nombre);
@@ -190,7 +190,7 @@ document.getElementById('tipo_producto').addEventListener('change', function(e) 
 });
 
 // Manejo de Imágenes
-document.getElementById('file-upload').addEventListener('change', async function(e) {
+document.getElementById('file-upload').addEventListener('change', async function (e) {
     const files = Array.from(e.target.files);
     if (currentImages.length + files.length > 3) {
         alert("Máximo 3 imágenes por producto.");
@@ -204,8 +204,8 @@ document.getElementById('file-upload').addEventListener('change', async function
 
     try {
         for (const file of files) {
-            if (file.size > 5 * 1024 * 1024) { 
-                alert(`La imagen ${file.name} pesa más de 5MB y será omitida.`);
+            if (file.size > 8 * 1024 * 1024) {
+                alert(`La imagen ${file.name} pesa más de 8MB y será omitida.`);
                 continue;
             }
             const compressedBase64 = await compressImage(file);
@@ -218,7 +218,7 @@ document.getElementById('file-upload').addEventListener('change', async function
     } finally {
         submitBtn.disabled = false;
         submitBtn.innerText = originalText;
-        e.target.value = ''; 
+        e.target.value = '';
     }
 });
 
@@ -244,11 +244,11 @@ window.removeImage = (index) => {
     renderImages();
 };
 
-document.getElementById('award-icon-input').addEventListener('change', async function(e) {
+document.getElementById('award-icon-input').addEventListener('change', async function (e) {
     const file = e.target.files[0];
     if (file) {
-            if (file.size > 2 * 1024 * 1024) { 
-            alert("El icono debe pesar menos de 2MB");
+        if (file.size > 5 * 1024 * 1024) {
+            alert("El icono debe pesar menos de 5MB");
             this.value = '';
             return;
         }
@@ -256,7 +256,7 @@ document.getElementById('award-icon-input').addEventListener('change', async fun
             const base64 = await compressImage(file);
             currentAwardIcon = base64;
             document.getElementById('award-icon-preview').src = base64;
-        } catch(err) {
+        } catch (err) {
             console.error(err);
             alert("Error procesando icono");
         }
@@ -266,7 +266,7 @@ document.getElementById('award-icon-input').addEventListener('change', async fun
 document.getElementById('add-award-btn').addEventListener('click', () => {
     const name = document.getElementById('award-select').value;
     const year = document.getElementById('award-year').value;
-    
+
     if (name && year) {
         let logoUrl = null;
         if (currentAwardIcon) {
@@ -279,7 +279,7 @@ document.getElementById('add-award-btn').addEventListener('click', () => {
                 if (awardData) logoUrl = awardData.logo_url;
             }
         }
-        currentAwards.push({ name, year, logo_url: logoUrl });
+        currentAwards.push({ name, year, nombre: name, anio: year, logo_url: logoUrl });
         renderAwards();
         document.getElementById('award-year').value = '';
         document.getElementById('award-icon-input').value = '';
@@ -296,7 +296,7 @@ function renderAwards() {
         <div class="flex justify-between items-center bg-stone-50 p-2 rounded-lg text-sm border border-stone-100">
             <span class="flex items-center gap-2">
                 ${a.logo_url ? `<img src="${a.logo_url}" class="w-6 h-6 object-contain" alt="">` : '<i class="fas fa-trophy text-amber-500"></i>'} 
-                ${a.name} (${a.year})
+                ${a.nombre || a.name} (${a.anio || a.year})
             </span>
             <button type="button" onclick="removeAward(${i})" class="text-red-400 hover:text-red-600">&times;</button>
         </div>
@@ -314,7 +314,7 @@ async function loadProducts() {
     try {
         const products = await api('/api/productos');
         productsCache = products;
-        
+
         if (products.length === 0) {
             grid.innerHTML = `
                 <div class="col-span-full text-center py-16 bg-white rounded-2xl shadow-sm border border-stone-100">
@@ -367,19 +367,19 @@ window.openProductModal = (id = null) => {
     form.reset();
     document.getElementById('prod-id').value = '';
     document.getElementById('modal-title').innerText = 'Nuevo Producto';
-    
+
     currentImages = [];
     currentAwards = [];
     currentAwardIcon = null;
     document.getElementById('award-icon-preview').src = 'https://placehold.co/100?text=+';
     document.getElementById('awards-section').classList.add('hidden');
     document.getElementById('is_published').checked = true;
-    
+
     // Resetear wrappers sensoriales
     const pW = document.getElementById('perfil-wrapper');
     const rW = document.getElementById('rueda-wrapper');
-    if(pW) pW.innerHTML = '<div class="p-3 bg-stone-50 text-stone-400 text-sm italic">Selecciona un tipo...</div>';
-    if(rW) rW.innerHTML = '<div class="p-3 bg-stone-50 text-stone-400 text-sm italic">Selecciona un tipo...</div>';
+    if (pW) pW.innerHTML = '<div class="p-3 bg-stone-50 text-stone-400 text-sm italic">Selecciona un tipo...</div>';
+    if (rW) rW.innerHTML = '<div class="p-3 bg-stone-50 text-stone-400 text-sm italic">Selecciona un tipo...</div>';
 
     if (id) {
         const p = productsCache.find(x => x.id === id);
@@ -392,12 +392,12 @@ window.openProductModal = (id = null) => {
             document.getElementById('ingredientes').value = p.ingredientes || '';
             document.getElementById('peso').value = p.peso || '';
             document.getElementById('is_published').checked = (p.is_published !== 0 && p.is_published !== false);
-            
+
             // CORRECCIÓN: Orden de ejecución
             // 1. Setear el tipo
             const tipoSelect = document.getElementById('tipo_producto');
             tipoSelect.value = p.tipo_producto || '';
-            
+
             // 2. Disparar el evento de cambio para que la UI se ajuste (premios, etc)
             // Esto llamará a updateSensorySelects(type) internamente y limpiará los selects
             tipoSelect.dispatchEvent(new Event('change'));
@@ -410,11 +410,11 @@ window.openProductModal = (id = null) => {
 
             currentImages = p.imagenes_json || [];
             currentAwards = p.premios_json || [];
-            
+
             document.getElementById('modal-title').innerText = 'Editar Producto';
         }
     }
-    
+
     renderImages();
     renderAwards();
     document.getElementById('product-modal').showModal();
@@ -423,11 +423,11 @@ window.openProductModal = (id = null) => {
 window.editProduct = (id) => openProductModal(id);
 
 window.deleteProduct = async (id) => {
-    if(!confirm("¿Eliminar este producto?")) return;
+    if (!confirm("¿Eliminar este producto?")) return;
     try {
         await api(`/api/productos/${id}`, { method: 'DELETE' });
         loadProducts();
-    } catch(e) { alert(e.message); }
+    } catch (e) { alert(e.message); }
 };
 
 async function api(url, options = {}) {
@@ -445,7 +445,7 @@ document.getElementById('product-form').addEventListener('submit', async (e) => 
     e.preventDefault();
     const id = document.getElementById('prod-id').value;
     const submitBtn = document.getElementById('save-product-btn');
-    
+
     submitBtn.disabled = true;
     submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
 
@@ -461,7 +461,7 @@ document.getElementById('product-form').addEventListener('submit', async (e) => 
         peso: document.getElementById('peso').value,
         tipo_producto: document.getElementById('tipo_producto').value,
         receta_nutricional_id: document.getElementById('receta_nutricional').value,
-        
+
         perfil_id: pfInput ? pfInput.value : null,
         rueda_id: rsInput ? rsInput.value : null,
 
@@ -473,7 +473,7 @@ document.getElementById('product-form').addEventListener('submit', async (e) => 
     try {
         if (id) await api(`/api/productos/${id}`, { method: 'PUT', body: JSON.stringify(data) });
         else await api('/api/productos', { method: 'POST', body: JSON.stringify(data) });
-        
+
         document.getElementById('product-modal').close();
         loadProducts();
     } catch (err) { alert("Error: " + err.message); }

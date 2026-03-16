@@ -410,10 +410,11 @@ document.addEventListener('DOMContentLoaded', () => {
             if (p.premios && p.premios.length > 0) {
                 premiosHtml = `<div class="absolute top-2 right-2 flex flex-col gap-1 z-10">` +
                     p.premios.map(prem => {
-                        const def = state.premiosData && state.premiosData[state.tipo] ? state.premiosData[state.tipo].find(dp => dp.nombre === prem.nombre) : null;
+                        const premNombre = prem.nombre || prem.name || '';
+                        const def = state.premiosData && state.premiosData[state.tipo] ? state.premiosData[state.tipo].find(dp => dp.nombre === premNombre) : null;
                         const url = def ? def.logo_url : (prem.logo_url || '');
                         if (!url) return '';
-                        return `<img src="${url}" alt="${prem.nombre}" class="w-8 h-8 object-contain drop-shadow" title="${prem.nombre}">`;
+                        return `<img src="${url}" alt="${premNombre}" class="w-8 h-8 object-contain drop-shadow" title="${premNombre}">`;
                     }).join('') + `</div>`;
             }
 
