@@ -355,7 +355,6 @@ document.addEventListener('DOMContentLoaded', () => {
             });
 
             const res = await fetch(`/api/public/marketplace/products?${params.toString()}`);
-            console.log(res);
             if (!res.ok) throw new Error("Error fetching products");
             const data = await res.json();
 
@@ -389,8 +388,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Descripción generada o base
             let desc = p.descripcion || '';
-            if (!desc && p.sabores && p.sabores.notas_json) {
-                const notes = p.sabores.notas_json.map(n => n.subnote || n.category).join(', ').toLowerCase();
+            if (!desc && p.sabores && Array.isArray(p.sabores)) {
+                const notes = p.sabores.map(n => n.subnote || n.category).filter(Boolean).join(', ').toLowerCase();
                 desc = notes ? `Notas de ${notes}.` : '';
             }
             if (!p.descripcion && p.puntaje_sca) {
@@ -399,20 +398,32 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Etiquetas de sabor (Max 3) - Usando tags pálidos
             let flavorBadges = '';
-            if (p.sabores && p.sabores.notas_json) {
-                const cats = [...new Set(p.sabores.notas_json.map(n => n.category))].slice(0, 3);
+            if (p.sabores && Array.isArray(p.sabores)) {
+                const cats = [...new Set(p.sabores.map(n => n.category).filter(Boolean))].slice(0, 3);
                 flavorBadges = cats.map(cat => {
                     return `<span class="px-2 py-1 bg-amber-50 text-amber-900 border border-amber-100 rounded text-[11px] font-medium">${cat}</span>`;
                 }).join('');
             }
 
+            // Premios (Logos flotantes)
+            let premiosHtml = '';
+            if (p.premios && p.premios.length > 0) {
+                premiosHtml = `<div class="absolute top-2 right-2 flex flex-col gap-1 z-10">` +
+                    p.premios.map(prem => {
+                        const def = state.premiosData && state.premiosData[state.tipo] ? state.premiosData[state.tipo].find(dp => dp.nombre === prem.nombre) : null;
+                        const url = def ? def.logo_url : (prem.logo_url || '');
+                        if (!url) return '';
+                        return `<img src="${url}" alt="${prem.nombre}" class="w-8 h-8 object-contain drop-shadow" title="${prem.nombre}">`;
+                    }).join('') + `</div>`;
+            }
+
             // Radar Chart Canvas
             const canvasId = `radar-${p.id}`;
-            console.log(p);
-
             return `
                 <div class="product-card bg-white rounded-2xl overflow-hidden border border-stone-100 shadow-sm flex flex-col h-full relative p-5">
                     
+                    ${premiosHtml}
+
                     <!-- Foto Producto -->
                     <div class="w-full aspect-[4/3] relative flex justify-center items-center overflow-hidden mb-4 rounded-xl">
                         ${p.imagen ? `<img src="${p.imagen}" loading="lazy" class="w-full h-full object-contain">` : `<div class="text-stone-300 bg-stone-50 w-full h-full flex justify-center items-center"><i class="fas fa-image text-4xl"></i></div>`}
