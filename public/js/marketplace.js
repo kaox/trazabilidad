@@ -235,7 +235,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         toggleFlavor(current.data.name, true);
                         current = current.parent;
                     }
-                    
+
                     // Si prendemos, prendemos también a los descendientes explícitos de este nodo pulsado
                     const turnOnDescendants = (node) => {
                         if (node.children) {
@@ -290,7 +290,7 @@ document.addEventListener('DOMContentLoaded', () => {
             .selectAll("text")
             .data(root.descendants().slice(1).filter(d => (d.x1 - d.x0) > 0.04))
             .join("text")
-            .style("font-size", d => d.depth === 1 ? "32px" : d.depth === 2 ? "24px" : "18px")
+            .style("font-size", d => d.depth === 1 ? "24px" : d.depth === 2 ? "20px" : "18px")
             .style("font-weight", "600")
             .style("font-family", "Arial, sans-serif")
             .style("fill", d => {
