@@ -172,26 +172,35 @@ document.addEventListener('DOMContentLoaded', () => {
             rootData.children.push(catNode);
         });
 
-        const width = 280;
-        const radius = width / 6;
+        const width = 800;
 
         const root = d3.hierarchy(rootData)
             .sum(d => d.children && d.children.length > 0 ? 0 : 1)
             .sort((a, b) => b.value - a.value);
 
-        d3.partition().size([2 * Math.PI, root.height + 1])(root);
+        const maxDepth = root.height + 1;
+        const maxPixelRadius = width / 2;
+        const centerRadius = maxPixelRadius * 0.15;
+
+        const getRadius = (y) => {
+            if (y === 0) return 0;
+            return centerRadius + (y - 1) * (maxPixelRadius - centerRadius) / (maxDepth - 1);
+        };
+
+        d3.partition().size([2 * Math.PI, maxDepth])(root);
 
         const arc = d3.arc()
             .startAngle(d => d.x0)
             .endAngle(d => d.x1)
             .padAngle(d => Math.min((d.x1 - d.x0) / 2, 0.005))
-            .innerRadius(d => d.y0 * radius)
-            .outerRadius(d => Math.max(d.y0 * radius, d.y1 * radius - 1));
+            .innerRadius(d => d.y0 === 0 ? 0 : getRadius(d.y0))
+            .outerRadius(d => Math.max(0, getRadius(d.y1) - 1));
 
         const svg = chartContainer.append("svg")
-            .attr("viewBox", [0, 0, width, width])
+            .attr("viewBox", [-40, -40, width + 80, width + 80])
             .style("width", "100%")
             .style("height", "auto")
+            .style("overflow", "visible")
             .append("g")
             .attr("transform", `translate(${width / 2},${width / 2})`);
 
@@ -205,13 +214,40 @@ document.addEventListener('DOMContentLoaded', () => {
             .attr("d", arc)
             .style("cursor", "pointer")
             .on("click", (event, d) => {
-                const name = d.data.name;
-                const idx = state.selectedFlavors.indexOf(name);
-                if (idx > -1) {
-                    state.selectedFlavors.splice(idx, 1);
+                const isTurningOn = !state.selectedFlavors.includes(d.data.name);
+
+                // Función helper para encender apagar del array de selectedFlavors
+                const toggleFlavor = (name, turnOn) => {
+                    const idx = state.selectedFlavors.indexOf(name);
+                    if (turnOn && idx === -1) {
+                        state.selectedFlavors.push(name);
+                    } else if (!turnOn && idx > -1) {
+                        state.selectedFlavors.splice(idx, 1);
+                    }
+                };
+
+                toggleFlavor(d.data.name, isTurningOn);
+
+                if (isTurningOn) {
+                    // Si prendemos, prendamos también a los ancestros (padres)
+                    let current = d.parent;
+                    while (current && current.depth > 0) {
+                        toggleFlavor(current.data.name, true);
+                        current = current.parent;
+                    }
                 } else {
-                    state.selectedFlavors.push(name);
+                    // Si apagamos, apagamos también a los descendientes (hijos)
+                    const turnOffDescendants = (node) => {
+                        if (node.children) {
+                            node.children.forEach(child => {
+                                toggleFlavor(child.data.name, false);
+                                turnOffDescendants(child);
+                            });
+                        }
+                    };
+                    turnOffDescendants(d);
                 }
+
                 renderInteractiveWheel();
                 fetchProducts();
             });
@@ -220,9 +256,9 @@ document.addEventListener('DOMContentLoaded', () => {
             .attr("pointer-events", "none")
             .attr("text-anchor", "middle")
             .selectAll("text")
-            .data(root.descendants().slice(1).filter(d => (d.x1 - d.x0) > 0.05))
+            .data(root.descendants().slice(1).filter(d => (d.x1 - d.x0) > 0.04))
             .join("text")
-            .style("font-size", d => d.depth === 1 ? "11px" : "9px")
+            .style("font-size", d => d.depth === 1 ? "32px" : d.depth === 2 ? "24px" : "18px")
             .style("font-weight", "600")
             .style("font-family", "Arial, sans-serif")
             .style("fill", d => {
@@ -231,14 +267,22 @@ document.addEventListener('DOMContentLoaded', () => {
             })
             .attr("transform", function (d) {
                 const x = (d.x0 + d.x1) / 2 * 180 / Math.PI;
-                const y = (d.y0 + d.y1) / 2 * radius;
+                const y = (getRadius(d.y0) + getRadius(d.y1)) / 2;
                 return `rotate(${x - 90}) translate(${y}, 0) rotate(${x < 180 ? 0 : 180})`;
             })
             .attr("dy", "0.35em")
-            .text(d => d.data.name.length > 15 ? d.data.name.substring(0, 12) + "..." : d.data.name);
+            .text(d => d.data.name.length > 18 ? d.data.name.substring(0, 15) + "..." : d.data.name);
 
         // Centro hueco
-        svg.append("circle").attr("r", radius - 2).attr("fill", "#fff");
+        svg.append("circle").attr("r", centerRadius - 2).attr("fill", "#fff");
+        // Texto central del tipo de producto
+        svg.append("text")
+            .attr("text-anchor", "middle")
+            .attr("font-weight", "bold")
+            .style("fill", "#333")
+            .style("font-size", "24px")
+            .attr("dy", "0.35em")
+            .text(state.tipo.toUpperCase());
 
         renderSelectedFlavorsTags();
     }

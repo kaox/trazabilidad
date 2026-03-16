@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
-    
+
     // --- ESTADO ---
     let state = {
         ruedas: [],
@@ -19,7 +19,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const interactiveWheelContainer = document.getElementById('interactive-wheel');
     const legendContainer = document.getElementById('chart-legend');
     const ruedaTypeSelector = document.getElementById('rueda-type-selector');
-    
+
     Chart.register(ChartDataLabels);
 
     async function init() {
@@ -30,8 +30,8 @@ document.addEventListener('DOMContentLoaded', () => {
         setupEventListeners();
         renderInteractiveWheel(); // Render inicial
         renderRuedas(); // Render inicial
-        
-        
+
+
         if (state.ruedas.filter(r => r.tipo === state.currentType).length > 0) {
             selectRueda(state.ruedas.filter(r => r.tipo === state.currentType)[0].id);
         } else {
@@ -72,7 +72,7 @@ document.addEventListener('DOMContentLoaded', () => {
         resetForm();
         renderInteractiveWheel();
         renderRuedas();
-        
+
         const firstRuedaOfType = state.ruedas.find(r => r.tipo === state.currentType);
         if (firstRuedaOfType) {
             selectRueda(firstRuedaOfType.id);
@@ -94,12 +94,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
             </div>
         `).join('');
-        
-        if(state.ruedas.length === 0) {
+
+        if (state.ruedas.length === 0) {
             listContainer.innerHTML = `<p class="text-stone-500 text-center">No hay ruedas de sabor para ${state.currentType}.</p>`;
         }
     }
-    
+
     function selectRueda(id) {
         state.selectedRuedaId = id;
         const rueda = state.ruedas.find(r => r.id === id);
@@ -111,20 +111,38 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function renderInteractiveWheel() {
         if (!state.flavorData) return;
-        
+
         const FLAVOR_DATA = state.flavorData[state.currentType];
 
+        // Función recursiva para renderizar notas de cualquier nivel
+        const renderNotes = (childrenArray, categoryName, categoryColor) => {
+            if (!childrenArray || childrenArray.length === 0) return '';
+
+            return childrenArray.map(note => {
+                let html = `
+                    <button type="button" class="flavor-tag bg-stone-200 text-stone-700 text-sm font-medium px-3 py-1 rounded-full m-1" 
+                            data-category="${categoryName}" data-note="${note.name}" data-color="${categoryColor}">
+                        <i class="fas ${note.icon || 'fa-circle-dot'} w-4"></i> ${note.name}
+                    </button>
+                `;
+                if (note.children && note.children.length > 0) {
+                    html += `<div class="ml-4 border-l-2 border-stone-200 pl-2 mt-1 mb-2">
+                                ${renderNotes(note.children, categoryName, categoryColor)}
+                             </div>`;
+                }
+                return html;
+            }).join('');
+        };
+
         interactiveWheelContainer.innerHTML = Object.entries(FLAVOR_DATA).map(([category, data]) => `
-            <div>
-                <h4 class="font-semibold text-stone-700" style="color: ${data.color}">
+            <div class="mb-4">
+                <h4 class="font-semibold text-stone-700 border-b pb-1 mb-2" style="color: ${data.color}">
                     <i class="fas ${data.icon} w-5"></i> ${category}
                 </h4>
-                <div class="flex flex-wrap gap-2 mt-2">
-                    ${data.children.map(note => `
-                        <button type="button" class="flavor-tag bg-stone-200 text-stone-700 text-sm font-medium px-3 py-1 rounded-full" data-category="${category}" data-note="${note.name}" data-color="${data.color}">
-                            <i class="fas ${note.icon} w-4"></i> ${note.name}
-                        </button>
-                    `).join('')}
+                <div class="flex flex-col">
+                    <div class="flex flex-wrap">
+                        ${renderNotes(data.children, category, data.color)}
+                    </div>
                 </div>
             </div>
         `).join('');
@@ -139,7 +157,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const chartContainer = d3.select("#flavor-wheel-chart");
         chartContainer.selectAll("*").remove();
 
-        if(chartTitle) {
+        if (chartTitle) {
             chartTitle.textContent = title;
         }
 
@@ -147,7 +165,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Construir jerarquía para D3
         const rootData = { name: "Root", children: [] };
-        
+
         // selectedCategories nos ayuda para el custom legend
         const selectedCategories = {};
 
@@ -170,11 +188,11 @@ document.addEventListener('DOMContentLoaded', () => {
             // Función recursiva para anidar children
             const processChildren = (childrenArray, parentNode) => {
                 if (!childrenArray || childrenArray.length === 0) return;
-                
+
                 childrenArray.forEach(child => {
                     // Verificar si esta nota específica está en notas_json
                     const isSelected = notes.some(n => n.category === catName && n.subnote === child.name);
-                    
+
                     if (isSelected && selectedCategories[catName] && !selectedCategories[catName].children.includes(child.name)) {
                         selectedCategories[catName].children.push(child.name);
                     }
@@ -190,7 +208,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (child.children && child.children.length > 0) {
                         processChildren(child.children, childNode);
                     }
-                    
+
                     parentNode.children.push(childNode);
                 });
             };
@@ -199,26 +217,36 @@ document.addEventListener('DOMContentLoaded', () => {
             rootData.children.push(catNode);
         });
 
-        const width = 450;
-        const radius = width / 6;
+        const width = 800;
 
         const root = d3.hierarchy(rootData)
-            .sum(d => d.children && d.children.length > 0 ? 0 : 1) // Las hojas valen 1
+            .sum(d => d.children && d.children.length > 0 ? 0 : 1)
             .sort((a, b) => b.value - a.value);
 
-        d3.partition().size([2 * Math.PI, root.height + 1])(root);
+        // Calcular el radio para que entre exactamente en el centro independientemente de la profundidad
+        const maxDepth = root.height + 1;
+        const maxPixelRadius = width / 2;
+        const centerRadius = maxPixelRadius * 0.15; // 20% del espacio para el centro (antes era mayor)
+
+        const getRadius = (y) => {
+            if (y === 0) return 0;
+            return centerRadius + (y - 1) * (maxPixelRadius - centerRadius) / (maxDepth - 1);
+        };
+
+        d3.partition().size([2 * Math.PI, maxDepth])(root);
 
         const arc = d3.arc()
             .startAngle(d => d.x0)
             .endAngle(d => d.x1)
             .padAngle(d => Math.min((d.x1 - d.x0) / 2, 0.005))
-            .innerRadius(d => d.y0 * radius)
-            .outerRadius(d => Math.max(d.y0 * radius, d.y1 * radius - 1));
+            .innerRadius(d => d.y0 === 0 ? 0 : getRadius(d.y0))
+            .outerRadius(d => Math.max(0, getRadius(d.y1) - 1));
 
         const svg = chartContainer.append("svg")
-            .attr("viewBox", [0, 0, width, width])
+            .attr("viewBox", [-40, -40, width + 80, width + 80])
             .style("width", "100%")
             .style("height", "auto")
+            .style("overflow", "visible")
             .append("g")
             .attr("transform", `translate(${width / 2},${width / 2})`);
 
@@ -257,9 +285,9 @@ document.addEventListener('DOMContentLoaded', () => {
             .attr("pointer-events", "none")
             .attr("text-anchor", "middle")
             .selectAll("text")
-            .data(root.descendants().slice(1).filter(d => (d.x1 - d.x0) > 0.05))
+            .data(root.descendants().slice(1).filter(d => (d.x1 - d.x0) > 0.04))
             .join("text")
-            .style("font-size", d => d.depth === 1 ? "11px" : "9px")
+            .style("font-size", d => d.depth === 1 ? "13px" : "12px")
             .style("font-weight", "600")
             .style("font-family", "Arial, sans-serif")
             .style("fill", d => {
@@ -268,66 +296,120 @@ document.addEventListener('DOMContentLoaded', () => {
             })
             .attr("transform", function (d) {
                 const x = (d.x0 + d.x1) / 2 * 180 / Math.PI;
-                const y = (d.y0 + d.y1) / 2 * radius;
+                const y = (getRadius(d.y0) + getRadius(d.y1)) / 2;
                 return `rotate(${x - 90}) translate(${y}, 0) rotate(${x < 180 ? 0 : 180})`;
             })
             .attr("dy", "0.35em")
-            .text(d => d.data.name.length > 15 ? d.data.name.substring(0,12) + "..." : d.data.name);
+            .text(d => d.data.name.length > 18 ? d.data.name.substring(0, 15) + "..." : d.data.name);
 
         // Centro
-        svg.append("circle").attr("r", radius - 2).attr("fill", "#fff");
+        svg.append("circle").attr("r", centerRadius - 2).attr("fill", "#fff");
         svg.append("text")
             .attr("text-anchor", "middle")
             .attr("font-weight", "bold")
             .style("fill", "#333")
-            .style("font-size", "14px")
+            .style("font-size", "24px")
             .attr("dy", "0.35em")
             .text(state.currentType.toUpperCase());
 
         renderCustomLegend(selectedCategories);
     }
-    
+
     function renderCustomLegend(selectedCategories) {
-        if(Object.keys(selectedCategories).length === 0) {
+        if (Object.keys(selectedCategories).length === 0) {
             legendContainer.innerHTML = `<p class="text-stone-500 text-center">Ninguna nota seleccionada.</p>`;
             return;
         }
 
         const FLAVOR_DATA = state.flavorData[state.currentType];
+
+        // Buscamos un nodo y su icono recursivamente en FLAVOR_DATA
+        const findNoteIcon = (childrenArray, noteName) => {
+            if (!childrenArray) return 'fa-circle-dot';
+            for (const child of childrenArray) {
+                if (child.name === noteName) return child.icon || 'fa-circle-dot';
+                if (child.children) {
+                    const found = findNoteIcon(child.children, noteName);
+                    if (found !== 'fa-circle-dot') return found;
+                }
+            }
+            return 'fa-circle-dot';
+        };
+
         const legendHtml = Object.entries(selectedCategories).map(([category, data]) => `
             <div class="mb-3">
                 <h4 class="font-semibold text-sm flex items-center gap-2">
                     <span class="w-3 h-3 rounded-full" style="background-color: ${data.color}"></span>
-                    <i class="fas ${FLAVOR_DATA[category].icon} w-4"></i>
+                    <i class="fas ${FLAVOR_DATA[category]?.icon || 'fa-circle'} w-4"></i>
                     ${category}
                 </h4>
                 <ul class="list-disc list-inside text-stone-600 pl-5 text-sm mt-1 space-y-1">
                     ${data.children.map(note => {
-                        const noteIcon = FLAVOR_DATA[category].children.find(c => c.name === note)?.icon || 'fa-circle-dot';
-                        return `<li><i class="fas ${noteIcon} w-4 text-stone-500 mr-1"></i>${note}</li>`;
-                    }).join('')}
+            const noteIcon = FLAVOR_DATA[category] ? findNoteIcon(FLAVOR_DATA[category].children, note) : 'fa-circle-dot';
+            return `<li><i class="fas ${noteIcon} w-4 text-stone-500 mr-1"></i>${note}</li>`;
+        }).join('')}
                 </ul>
             </div>
         `).join('');
-        
+
         legendContainer.innerHTML = `<div class="grid grid-cols-2 gap-x-4">${legendHtml}</div>`;
     }
-    
+
     function handleWheelClick(e) {
         const tag = e.target.closest('.flavor-tag');
         if (!tag) return;
-        tag.classList.toggle('active');
-        if (tag.classList.contains('active')) {
-            tag.style.backgroundColor = tag.dataset.color;
-            tag.style.borderColor = tag.dataset.color;
-            tag.classList.remove('bg-stone-200', 'text-stone-700');
-            tag.classList.add('text-white');
+
+        const isTurningOn = !tag.classList.contains('active');
+        const categoryName = tag.dataset.category;
+        const noteName = tag.dataset.note;
+
+        // Helper para hacer toggle visual de un botón botón específico
+        const setTagState = (btn, state) => {
+            if (state) {
+                btn.classList.add('active');
+                btn.style.backgroundColor = btn.dataset.color;
+                btn.style.borderColor = btn.dataset.color;
+                btn.classList.remove('bg-stone-200', 'text-stone-700');
+                btn.classList.add('text-white');
+            } else {
+                btn.classList.remove('active');
+                btn.style.backgroundColor = '';
+                btn.style.borderColor = 'transparent';
+                btn.classList.add('bg-stone-200', 'text-stone-700');
+                btn.classList.remove('text-white');
+            }
+        };
+
+        // Activarlo a él mismo
+        setTagState(tag, isTurningOn);
+
+        // Si lo encendemos, debemos encender todos sus padres hasta la categoría
+        if (isTurningOn) {
+            // Buscamos sus padres analizando los contenedores DOM en niveles ascendentes
+            let parentContainer = tag.parentElement;
+            while (parentContainer && parentContainer.classList.contains('pl-2')) {
+                // El contenedor padre tiene al hermano anterior (el div) o algo. 
+                // Mejor: iterar hacia arriba buscando el botón previo al div collapse.
+                const parentDiv = parentContainer.parentElement;
+                if (parentDiv && parentDiv.previousElementSibling && parentDiv.previousElementSibling.classList.contains('flavor-tag')) {
+                    setTagState(parentDiv.previousElementSibling, true);
+                }
+                parentContainer = parentDiv;
+            }
+
+            // También encender la categoría raíz si hay un botón que lo represente (en este diseño, la categoría a veces no es botón, pero si lo fuera se enciende)
+            const rootCatBtn = interactiveWheelContainer.querySelector(`.flavor-tag[data-note="${categoryName}"]`);
+            if (rootCatBtn) setTagState(rootCatBtn, true);
+
         } else {
-            tag.style.backgroundColor = '';
-            tag.style.borderColor = 'transparent';
-            tag.classList.add('bg-stone-200', 'text-stone-700');
-            tag.classList.remove('text-white');
+            // Si lo apagamos, apagamos todos sus hijos
+            const nextDiv = tag.nextElementSibling;
+            if (nextDiv && nextDiv.classList.contains('ml-4')) {
+                const childTags = nextDiv.querySelectorAll('.flavor-tag');
+                childTags.forEach(childBtn => setTagState(childBtn, false));
+            }
         }
+
         updateChartFromForm();
     }
 
@@ -379,7 +461,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!card) return;
 
         const id = parseInt(card.dataset.id, 10);
-        
+
         if (e.target.closest('.delete-btn')) {
             e.stopPropagation();
             if (confirm('¿Seguro que quieres eliminar esta rueda de sabor?')) {
@@ -397,13 +479,13 @@ document.addEventListener('DOMContentLoaded', () => {
             selectRueda(id);
         }
     }
-    
+
     function populateFormForEdit(id) {
         const rueda = state.ruedas.find(r => r.id === id);
         if (!rueda) return;
 
         resetForm();
-        
+
         // Asegurarse que el tipo es correcto ANTES de renderizar
         state.currentType = rueda.tipo;
         ruedaTypeSelector.value = rueda.tipo;
@@ -411,7 +493,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         editIdInput.value = id;
         form.nombre_rueda.value = rueda.nombre_rueda;
-        
+
         interactiveWheelContainer.querySelectorAll('.flavor-tag').forEach(tag => {
             const isSelected = rueda.notas_json.some(note => note.category === tag.dataset.category && note.subnote === tag.dataset.note);
             if (isSelected) {
@@ -422,7 +504,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 tag.classList.add('text-white');
             }
         });
-        
+
         updateChart(rueda);
         formTitle.textContent = 'Editar Rueda';
         submitButton.textContent = 'Actualizar';
@@ -434,7 +516,7 @@ document.addEventListener('DOMContentLoaded', () => {
         editIdInput.value = '';
         // No resetear el type selector, mantener el actual
         ruedaTypeSelector.value = state.currentType;
-        
+
         interactiveWheelContainer.querySelectorAll('.flavor-tag.active').forEach(tag => {
             tag.classList.remove('active', 'text-white');
             tag.classList.add('bg-stone-200', 'text-stone-700');
@@ -444,9 +526,9 @@ document.addEventListener('DOMContentLoaded', () => {
         formTitle.textContent = 'Crear Nueva Rueda';
         submitButton.textContent = 'Guardar';
         cancelEditBtn.classList.add('hidden');
-        
+
         const firstRuedaOfType = state.ruedas.find(r => r.tipo === state.currentType);
-        if(firstRuedaOfType) {
+        if (firstRuedaOfType) {
             selectRueda(firstRuedaOfType.id);
         } else {
             updateChart(null);
