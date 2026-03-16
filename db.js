@@ -3104,8 +3104,8 @@ const getMarketplaceProducts = async (req, res) => {
                 perf.tipo as perfil_tipo,
                 rueda.notas_json as sabores_json,
                 rueda.tipo as sabores_tipo,
-                u.empresa as company_name,
-                u.company_type as company_type,
+                cp.name as company_name,
+                cp.company_type as company_type,
                 COALESCE(cp.logo_url, u.company_logo) as company_logo
             FROM productos p
             JOIN users u ON p.user_id = u.id

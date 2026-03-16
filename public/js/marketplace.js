@@ -290,12 +290,12 @@ document.addEventListener('DOMContentLoaded', () => {
             .selectAll("text")
             .data(root.descendants().slice(1).filter(d => (d.x1 - d.x0) > 0.04))
             .join("text")
-            .style("font-size", d => d.depth === 1 ? "24px" : d.depth === 2 ? "20px" : "18px")
+            .style("font-size", d => d.depth === 1 ? "24px" : d.depth === 2 ? "22px" : "20px")
             .style("font-weight", "600")
             .style("font-family", "Arial, sans-serif")
             .style("fill", d => {
                 if (d.data.color === '#E5E7EB') return '#6b7280';
-                return d.depth === 1 ? "white" : "#333";
+                return d.depth === 1 || d.depth === 2 || d.depth === 3 ? "#E5E7EB" : "#333";
             })
             .attr("transform", function (d) {
                 const x = (d.x0 + d.x1) / 2 * 180 / Math.PI;
@@ -382,76 +382,77 @@ document.addEventListener('DOMContentLoaded', () => {
         const html = state.products.map(p => {
             const companySlug = p.empresa.slug || p.empresa.id;
 
-            // Badges principales
-            const procesBadge = p.proceso ? `<span class="bg-stone-100 px-2 py-1 rounded text-[10px] uppercase font-bold text-stone-600">${p.proceso}</span>` : '';
-            const variedadBadge = p.variedad ? `<span class="bg-amber-100 text-amber-800 px-2 py-1 rounded text-[10px] uppercase font-bold">${p.variedad}</span>` : '';
-            const tuesteBadge = p.nivel_tueste ? `<span class="bg-stone-800 text-stone-200 px-2 py-1 rounded text-[10px] uppercase font-bold">${p.nivel_tueste}</span>` : '';
+            // Variedad y Proceso
+            const variedadText = p.variedad ? p.variedad : '';
+            const procesoText = p.proceso ? p.proceso : '';
+            const pesoText = p.presentacion ? ` [${p.presentacion}]` : '';
 
-            // Etiquetas de sabor (Max 3)
+            // Descripción generada o base
+            let desc = p.descripcion || '';
+            if (!desc && p.sabores && p.sabores.notas_json) {
+                const notes = p.sabores.notas_json.map(n => n.subnote || n.category).join(', ').toLowerCase();
+                desc = notes ? `Notas de ${notes}.` : '';
+            }
+            if (!p.descripcion && p.puntaje_sca) {
+                desc += ` ${p.puntaje_sca} puntos`;
+            }
+
+            // Etiquetas de sabor (Max 3) - Usando tags pálidos
             let flavorBadges = '';
             if (p.sabores && p.sabores.notas_json) {
                 const cats = [...new Set(p.sabores.notas_json.map(n => n.category))].slice(0, 3);
                 flavorBadges = cats.map(cat => {
-                    const color = state.flavorData && state.flavorData[state.tipo] && state.flavorData[state.tipo][cat] ? state.flavorData[state.tipo][cat].color : '#a8a29e';
-                    return `<span class="px-2 py-0.5 rounded-full text-[10px] text-white font-medium" style="background-color: ${color}">${cat}</span>`;
+                    return `<span class="px-2 py-1 bg-amber-50 text-amber-900 border border-amber-100 rounded text-[11px] font-medium">${cat}</span>`;
                 }).join('');
-            }
-
-            // Premios (Logos flotantes)
-            let premiosHtml = '';
-            if (p.premios && p.premios.length > 0) {
-                premiosHtml = `<div class="absolute top-2 right-2 flex flex-col gap-1 z-10">` +
-                    p.premios.map(prem => {
-                        const def = state.premiosData && state.premiosData[state.tipo] ? state.premiosData[state.tipo].find(dp => dp.nombre === prem.nombre) : null;
-                        const url = def ? def.logo_url : (prem.logo_url || '');
-                        if (!url) return '';
-                        return `<img src="${url}" alt="${prem.nombre}" class="w-8 h-8 object-contain drop-shadow" title="${prem.nombre}">`;
-                    }).join('') + `</div>`;
             }
 
             // Radar Chart Canvas
             const canvasId = `radar-${p.id}`;
+            console.log(p);
 
             return `
-                <div class="product-card bg-white rounded-2xl overflow-hidden border border-stone-200 flex flex-col h-full relative group">
-                    ${premiosHtml}
+                <div class="product-card bg-white rounded-2xl overflow-hidden border border-stone-100 shadow-sm flex flex-col h-full relative p-5">
                     
-                    <div class="h-48 w-full bg-stone-100 relative overflow-hidden">
-                        ${p.imagen ? `<img src="${p.imagen}" loading="lazy" class="w-full h-full object-cover">` : `<div class="w-full h-full flex items-center justify-center text-stone-300"><i class="fas fa-image text-4xl"></i></div>`}
-                        <div class="absolute bottom-0 left-0 w-full p-3 bg-gradient-to-t from-stone-900/80 to-transparent">
-                            <h3 class="text-white font-bold text-lg leading-tight truncate">${p.nombre}</h3>
-                            <p class="text-stone-300 text-xs truncate">${p.empresa.nombre}</p>
-                        </div>
+                    <!-- Foto Producto -->
+                    <div class="w-full aspect-[4/3] relative flex justify-center items-center overflow-hidden mb-4 rounded-xl">
+                        ${p.imagen ? `<img src="${p.imagen}" loading="lazy" class="w-full h-full object-contain">` : `<div class="text-stone-300 bg-stone-50 w-full h-full flex justify-center items-center"><i class="fas fa-image text-4xl"></i></div>`}
                     </div>
                     
-                    <div class="p-4 flex-grow flex flex-col">
-                        <div class="flex flex-wrap gap-1 mb-3">
-                            ${variedadBadge}
-                            ${procesBadge}
-                            ${tuesteBadge}
-                        </div>
-                        
-                        <div class="flex flex-wrap gap-1 mb-4">
-                            ${flavorBadges}
-                        </div>
+                    <!-- Nombre y Peso -->
+                    <h3 class="font-bold text-xl text-stone-900 leading-tight mb-1">${p.nombre}${pesoText}</h3>
+                    
+                    <!-- Variedad y Proceso -->
+                    ${(variedadText || procesoText) ? `<p class="text-xs text-stone-500 font-medium mb-3 uppercase tracking-wide">${variedadText} ${variedadText && procesoText ? '&bull;' : ''} ${procesoText}</p>` : ''}
 
-                        <!-- Mini Radar Container -->
-                        <div class="w-full h-32 mt-auto mb-4 relative" style="height: 120px;">
-                           ${p.perfil ? `<canvas id="${canvasId}"></canvas>` : `<p class="text-xs text-stone-400 text-center italic mt-10">Sin perfil de taza</p>`}
+                    <!-- Descripción -->
+                    <p class="text-stone-600 text-sm mb-4 leading-relaxed line-clamp-3">
+                        ${desc}
+                    </p>
+
+                    <!-- Grafico de Perfil Sensorial -->
+                    <div class="w-full h-48 mb-4 relative flex justify-center items-center">
+                        ${p.perfil ? `<canvas id="${canvasId}"></canvas>` : `<p class="text-xs text-stone-400 italic">Sin perfil de taza</p>`}
+                    </div>
+
+                    <!-- Atributos de la rueda de Sabor -->
+                    <div class="flex flex-wrap gap-2 mb-6">
+                        ${flavorBadges}
+                    </div>
+
+                    <div class="mt-auto"></div>
+
+                    <!-- Logo y Nombre de Empresa -->
+                    <div class="flex items-center gap-3 mb-5 pt-4 border-t border-stone-100">
+                        <div class="w-8 h-8 rounded-full bg-stone-100 border border-stone-200 flex items-center justify-center overflow-hidden shrink-0">
+                            ${p.empresa.logo ? `<img src="${p.empresa.logo}" class="w-full h-full object-cover">` : `<img src="/img/default-company.png" onerror="this.outerHTML='<i class=\\'fas fa-store text-stone-400 text-xs\\'></i>'" class="w-full h-full object-cover">`}
                         </div>
+                        <span class="font-bold text-stone-700 text-sm truncate">${p.empresa.nombre}</span>
                     </div>
-                    
-                    <div class="px-4 py-3 bg-stone-50 border-t flex justify-between items-center group-hover:bg-amber-50 transition-colors">
-                        ${p.puntaje_sca ? `
-                            <div class="flex items-center text-amber-700 font-bold text-lg">
-                                ${p.puntaje_sca} <span class="text-xs text-stone-500 font-normal ml-1">SCA</span>
-                            </div>
-                        ` : '<div></div>'}
-                        
-                        <a href="/origen-unico/${companySlug}" class="text-sm font-bold text-amber-800 hover:text-amber-900 flex items-center gap-1 px-3 py-1.5 rounded-lg bg-white border border-amber-200">
-                            Ver Productor <i class="fas fa-arrow-right text-[10px]"></i>
-                        </a>
-                    </div>
+
+                    <!-- Boton Ver Detalle -->
+                    <a href="/origen-unico/${companySlug}" class="w-full text-center bg-amber-600 hover:bg-amber-700 text-white font-bold py-2.5 rounded-lg transition-colors shadow-sm">
+                        Ver Detalle
+                    </a>
                 </div>
             `;
         }).join('');
@@ -461,15 +462,16 @@ document.addEventListener('DOMContentLoaded', () => {
         // Inicializar los mini radares después del render
         state.products.forEach(p => {
             if (p.perfil) {
-                // Usamos la función global provista por chart-utils.js
-                // Solo le pasamos una versión reducida/limpia de los datos
                 if (typeof ChartUtils !== 'undefined' && ChartUtils.initializePerfilChart) {
                     ChartUtils.initializePerfilChart(`radar-${p.id}`, p.perfil, state.tipo);
 
-                    // Ajustar opciones del radar mini (ocultar etiquetas en el pequeño)
+                    // Ajustar opciones del radar mini
                     const inst = ChartUtils.instances[`radar-${p.id}`];
                     if (inst) {
-                        inst.options.scales.r.pointLabels.display = false;
+                        // En el nuevo diseño, SÍ queremos mostrar los labels (atributos) del gráfico
+                        inst.options.scales.r.pointLabels.display = true;
+                        inst.options.scales.r.pointLabels.font = { size: 9 };
+                        // Ocultamos los números internos
                         inst.options.scales.r.ticks.display = false;
                         inst.update();
                     }
