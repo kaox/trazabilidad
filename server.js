@@ -175,9 +175,6 @@ const buildJsonLd = ({ user, entity, products, pageUrl }) => {
         }
     }
 
-    console.log(user);
-    console.log(entity);
-
     const phone = user.celular ? String(user.celular).replace(/\D/g, '') : null;
 
     const jsonLd = {
@@ -411,7 +408,7 @@ app.get('/origen-unico/:slug', async (req, res) => {
             }
             if (company) {
                 const title = `${company.empresa} - Origen Único Verificado`;
-                const description = `Conoce la trazabilidad y origen de ${company.empresa} en Ruru Lab.`;
+                const description = `Conoce el origen de ${company.empresa} - ${company.provincia}, ${company.departamento}, ${company.pais} - en Ruru Lab.`;
 
                 const protocol = req.headers['x-forwarded-proto'] || req.protocol;
                 const host = req.get('host');

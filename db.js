@@ -1038,15 +1038,13 @@ const finalizeBatch = async (req, res) => {
         if (rows.length === 0) return res.status(404).json({ error: 'Lote no encontrado' });
 
         const rootBatch = rows.find(r => !r.parent_id);
-
         const ownerId = rootBatch.user_id;
-
         const [templateInfo, allStages, ownerInfo, acopioData, productoInfo] = await Promise.all([
             get('SELECT nombre_producto FROM plantillas_proceso WHERE id = ?', [rootBatch.plantilla_id]),
             all('SELECT id, nombre_etapa, descripcion, orden, campos_json, fase FROM etapas_plantilla WHERE plantilla_id = ? ORDER BY orden', [rootBatch.plantilla_id]),
             get('SELECT empresa, company_logo, subscription_tier FROM users WHERE id = ?', [rootBatch.user_id]),
             rootBatch.acquisition_id ? get('SELECT * FROM acquisitions WHERE id = ?', [rootBatch.acquisition_id]) : null,
-            targetBatch.producto_id ? get('SELECT * FROM productos WHERE id = ?', [targetBatch.producto_id]) : null
+            rootBatch.producto_id ? get('SELECT * FROM productos WHERE id = ?', [rootBatch.producto_id]) : null
         ]);
 
         // CORRECCIÓN: Obtener procesadoras para guardar en el snapshot
@@ -3035,15 +3033,28 @@ const getPublicCompaniesDataInternal = async () => {
     try {
         // 1. Obtener empresas verificadas (tabla users)
         const users = await all(`
-            SELECT user_id as id, name as empresa, logo_url as company_logo 
-            FROM company_profiles 
-            WHERE name IS NOT NULL AND name != ''
+            SELECT 
+                cp.user_id AS id, 
+                cp.name AS empresa, 
+                cp.logo_url AS company_logo,
+                COALESCE(f.provincia, p.provincia) AS provincia,
+                COALESCE(f.departamento, p.departamento) AS departamento,
+                COALESCE(f.pais, p.pais) AS pais
+            FROM 
+                company_profiles cp
+            LEFT JOIN 
+                fincas f ON cp.company_id = f.id AND cp.company_type = 'finca'
+            LEFT JOIN 
+                procesadoras p ON cp.company_id = p.id AND cp.company_type = 'procesadora'
+            WHERE 
+                cp.name IS NOT NULL 
+                AND cp.name != '';
         `);
 
         // 2. Obtener empresas sugeridas (tabla suggested_companies)
         // Mapeamos los campos para que coincidan con la estructura de 'users'
         const suggestions = await all(`
-            SELECT id, name as empresa, logo as company_logo 
+            SELECT id, name as empresa, logo as company_logo, provincia, departamento, pais
             FROM suggested_companies
         `);
 
