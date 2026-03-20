@@ -3,6 +3,7 @@ const SuggestionModel = require('../models/admin-suggestions-model');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
+const { put } = require('@vercel/blob');
 const { safeJSONParse } = require('../utils/helpers');
 const { OAuth2Client } = require('google-auth-library');
 
@@ -35,6 +36,20 @@ const deleteSuggestion = async (req, res) => {
 const updateSuggestion = async (req, res) => {
     const { id } = req.params;
     try {
+        if (req.body.logo && req.body.logo.startsWith('data:image/')) {
+            const matches = req.body.logo.match(/^data:image\/([a-zA-Z0-9]+);base64,(.+)$/);
+            if (matches && matches.length === 3) {
+                let extension = matches[1];
+                if (extension === 'jpeg') extension = 'jpg';
+                
+                const buffer = Buffer.from(matches[2], 'base64');
+                const filename = `suggested-logos/company-${id}-${Date.now()}.${extension}`;
+
+                const blob = await put(filename, buffer, { access: 'public' });
+                req.body.logo = blob.url;
+            }
+        }
+
         await SuggestionModel.updateById(id, req.body);
         res.status(200).json({ message: 'Sugerencia actualizada correctamente' });
     } catch (err) {
