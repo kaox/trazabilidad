@@ -1,5 +1,6 @@
 const ProductoModel = require('../models/productoModel');
 const crypto = require('crypto');
+const { put } = require('@vercel/blob');
 // Ajusta la ruta a donde tengas tus helpers
 const { safeJSONParse } = require('../utils/helpers');
 
@@ -45,6 +46,36 @@ const createProducto = async (req, res) => {
     const perfilId = (perfil_id && perfil_id !== "") ? perfil_id : null;
     const ruedaId = (rueda_id && rueda_id !== "") ? rueda_id : null;
 
+    // ----------------------------------------------------
+    // INTEGRACIÓN VERCEL BLOB STORE (Imágenes de producto)
+    // ----------------------------------------------------
+    let procesadasImagenes = [];
+    if (imagenes_json && Array.isArray(imagenes_json)) {
+        for (let i = 0; i < imagenes_json.length; i++) {
+            let img = imagenes_json[i];
+            if (typeof img === 'string' && img.startsWith('data:image/')) {
+                try {
+                    const matches = img.match(/^data:image\/([a-zA-Z0-9]+);base64,(.+)$/);
+                    if (matches && matches.length === 3) {
+                        let extension = matches[1];
+                        if (extension === 'jpeg') extension = 'jpg';
+                        const buffer = Buffer.from(matches[2], 'base64');
+                        const filename = `productos/user-${userId}-${Date.now()}-${i}.${extension}`;
+                        const blob = await put(filename, buffer, { access: 'public' });
+                        procesadasImagenes.push(blob.url);
+                    } else {
+                        procesadasImagenes.push(img);
+                    }
+                } catch (err) {
+                    console.error("Error subiendo imagen de producto a Vercel Blob:", err);
+                    procesadasImagenes.push(img);
+                }
+            } else {
+                procesadasImagenes.push(img);
+            }
+        }
+    }
+
     try {
         // Preparamos el objeto para el modelo (JSONs convertidos a String aquí)
         await ProductoModel.create({
@@ -54,7 +85,7 @@ const createProducto = async (req, res) => {
             descripcion,
             gtin: finalGtin,
             is_formal_gtin: is_formal_gtin || false,
-            imagenes_json: JSON.stringify(imagenes_json || []),
+            imagenes_json: JSON.stringify(procesadasImagenes),
             ingredientes,
             tipo_producto,
             peso,
@@ -92,12 +123,42 @@ const updateProducto = async (req, res) => {
     const perfilId = (perfil_id && perfil_id !== "") ? perfil_id : null;
     const ruedaId = (rueda_id && rueda_id !== "") ? rueda_id : null;
 
+    // ----------------------------------------------------
+    // INTEGRACIÓN VERCEL BLOB STORE (Imágenes de producto)
+    // ----------------------------------------------------
+    let procesadasImagenes = [];
+    if (imagenes_json && Array.isArray(imagenes_json)) {
+        for (let i = 0; i < imagenes_json.length; i++) {
+            let img = imagenes_json[i];
+            if (typeof img === 'string' && img.startsWith('data:image/')) {
+                try {
+                    const matches = img.match(/^data:image\/([a-zA-Z0-9]+);base64,(.+)$/);
+                    if (matches && matches.length === 3) {
+                        let extension = matches[1];
+                        if (extension === 'jpeg') extension = 'jpg';
+                        const buffer = Buffer.from(matches[2], 'base64');
+                        const filename = `productos/user-${userId}-${Date.now()}-${i}.${extension}`;
+                        const blob = await put(filename, buffer, { access: 'public' });
+                        procesadasImagenes.push(blob.url);
+                    } else {
+                        procesadasImagenes.push(img);
+                    }
+                } catch (err) {
+                    console.error("Error subiendo imagen de producto a Vercel Blob (update):", err);
+                    procesadasImagenes.push(img);
+                }
+            } else {
+                procesadasImagenes.push(img);
+            }
+        }
+    }
+
     try {
         await ProductoModel.update(id, userId, {
             nombre,
             descripcion,
             gtin,
-            imagenes_json: JSON.stringify(imagenes_json || []),
+            imagenes_json: JSON.stringify(procesadasImagenes),
             ingredientes,
             tipo_producto,
             peso,
