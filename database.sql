@@ -10,8 +10,6 @@ DROP TABLE IF EXISTS recetas_chocolate CASCADE;
 DROP TABLE IF EXISTS blends CASCADE;
 DROP TABLE IF EXISTS ruedas_sabores CASCADE;
 DROP TABLE IF EXISTS perfiles CASCADE;
-DROP TABLE IF EXISTS perfiles_cacao CASCADE;
-DROP TABLE IF EXISTS perfiles_cafe CASCADE;
 DROP TABLE IF EXISTS lotes CASCADE; -- Lotes depende de productos, plantillas y etapas
 DROP TABLE IF EXISTS productos CASCADE; -- Nueva tabla
 DROP TABLE IF EXISTS etapas_plantilla CASCADE;
@@ -160,31 +158,6 @@ CREATE TABLE IF NOT EXISTS company_profiles (
     CONSTRAINT uq_user_company_name UNIQUE (user_id, name)
 );
 
--- 3.2 LOCALES FÍSICOS (tiendas, cafeterías, chocolaterías, laboratorios)
--- Puntos de venta o atención al público asociados a una marca.
-CREATE TABLE IF NOT EXISTS locales (
-    id TEXT PRIMARY KEY,
-    brand_id TEXT NOT NULL,
-    user_id INTEGER NOT NULL,
-    nombre TEXT NOT NULL,
-    tipo TEXT DEFAULT 'cafeteria',     -- 'cafeteria', 'chocolateria', 'tienda', 'laboratorio'
-    pais TEXT,
-    departamento TEXT,
-    provincia TEXT,
-    distrito TEXT,
-    direccion TEXT,
-    coordenadas JSONB,
-    telefono TEXT,
-    horario TEXT,
-    imagenes_json JSONB DEFAULT '[]',
-    historia TEXT,
-    is_published BOOLEAN DEFAULT TRUE,
-    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT fk_local_brand FOREIGN KEY (brand_id) REFERENCES brands(id) ON DELETE CASCADE,
-    CONSTRAINT fk_local_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-);
-
 -- 4. CONFIGURACIÓN DE PROCESOS (PLANTILLAS)
 CREATE TABLE IF NOT EXISTS plantillas_proceso (
     id SERIAL PRIMARY KEY,
@@ -243,6 +216,26 @@ CREATE TABLE IF NOT EXISTS ingredientes_catalogo (
     UNIQUE(codigo_externo)
 );
 
+CREATE TABLE IF NOT EXISTS perfiles (
+    id SERIAL PRIMARY KEY, 
+    user_id INTEGER NOT NULL, 
+    nombre TEXT NOT NULL, 
+    tipo TEXT NOT NULL, 
+    perfil_data JSONB NOT NULL, 
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP, 
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS ruedas_sabores (
+    id SERIAL PRIMARY KEY, 
+    user_id INTEGER NOT NULL, 
+    nombre_rueda TEXT NOT NULL, 
+    tipo TEXT NOT NULL, 
+    notas_json JSONB NOT NULL, 
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP, 
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
 -- 9. CATÁLOGO COMERCIAL (SKUs)
 CREATE TABLE IF NOT EXISTS productos (
     id TEXT PRIMARY KEY, -- UUID
@@ -267,6 +260,23 @@ CREATE TABLE IF NOT EXISTS productos (
     FOREIGN KEY (perfil_id) REFERENCES perfiles(id) ON DELETE SET NULL,
     FOREIGN KEY (rueda_id) REFERENCES ruedas_sabores(id) ON DELETE SET NULL,
     UNIQUE(user_id, gtin)
+);
+
+CREATE TABLE IF NOT EXISTS units_of_measure (
+    id SERIAL PRIMARY KEY,
+    code TEXT NOT NULL UNIQUE,
+    name TEXT,
+    type TEXT NOT NULL, -- 'MASA', 'VOLUMEN', 'UNIDAD'
+    base_factor REAL DEFAULT 1.0, -- Factor para convertir a la unidad base (KG para masa, L para volumen)
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS currencies (
+    id SERIAL PRIMARY KEY,
+    code TEXT NOT NULL UNIQUE,
+    name TEXT NOT NULL,
+    symbol TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- 10. MÓDULO DE ACOPIO (MATERIA PRIMA)
@@ -386,28 +396,6 @@ CREATE TABLE IF NOT EXISTS traceability_registry (
     FOREIGN KEY (user_id) REFERENCES users(id)
 );
 
--- 13. TABLAS COMPLEMENTARIAS (CALIDAD Y COSTOS)
-
-CREATE TABLE IF NOT EXISTS perfiles (
-    id SERIAL PRIMARY KEY, 
-    user_id INTEGER NOT NULL, 
-    nombre TEXT NOT NULL, 
-    tipo TEXT NOT NULL, 
-    perfil_data JSONB NOT NULL, 
-    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP, 
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-);
-
-CREATE TABLE IF NOT EXISTS ruedas_sabores (
-    id SERIAL PRIMARY KEY, 
-    user_id INTEGER NOT NULL, 
-    nombre_rueda TEXT NOT NULL, 
-    tipo TEXT NOT NULL, 
-    notas_json JSONB NOT NULL, 
-    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP, 
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-);
-
 CREATE TABLE IF NOT EXISTS blends (
     id TEXT PRIMARY KEY, 
     user_id INTEGER NOT NULL, 
@@ -468,18 +456,6 @@ CREATE TABLE IF NOT EXISTS lote_costs (
     FOREIGN KEY (batch_id) REFERENCES batches(id) ON DELETE CASCADE
 );
 
--- -----------------------------------------------------
--- Tabla: units_of_measure
--- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS units_of_measure (
-    id SERIAL PRIMARY KEY,
-    code TEXT NOT NULL UNIQUE,
-    name TEXT,
-    type TEXT NOT NULL, -- 'MASA', 'VOLUMEN', 'UNIDAD'
-    base_factor REAL DEFAULT 1.0, -- Factor para convertir a la unidad base (KG para masa, L para volumen)
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
 -- Carga inicial: Unidades de Medida
 INSERT INTO units_of_measure (code, name, type, base_factor) VALUES
     ('KG', 'Kilogramo', 'MASA', 1.0),
@@ -492,17 +468,6 @@ INSERT INTO units_of_measure (code, name, type, base_factor) VALUES
     ('GAL', 'Galón (US)', 'VOLUMEN', 3.78541),
     ('Un', 'Unidad', 'UNIDAD', 1.0)
 ON CONFLICT (code) DO NOTHING;
-
--- -----------------------------------------------------
--- Tabla: currencies
--- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS currencies (
-    id SERIAL PRIMARY KEY,
-    code TEXT NOT NULL UNIQUE,
-    name TEXT NOT NULL,
-    symbol TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
 
 -- Carga inicial: Monedas
 INSERT INTO currencies (code, name, symbol) VALUES

@@ -4,6 +4,7 @@
  */
 const CompanyProfile = require('../models/CompanyProfile');
 const { get } = require('../config/db.js'); // Importamos 'get' temporalmente para el fallback
+const { put } = require('@vercel/blob');
 
 const companyProfileController = {
     /**
@@ -66,6 +67,34 @@ const companyProfileController = {
             }
             if (!profileData.company_id || profileData.company_id.trim() === '') {
                 return res.status(400).json({ error: "Debe seleccionar una entidad vinculada válida." });
+            }
+
+            // ----------------------------------------------------
+            // INTEGRACIÓN VERCEL BLOB STORE
+            // Convertimos la imagen base64 entrante a un archivo alojado.
+            // ----------------------------------------------------
+            if (profileData.logo_url && profileData.logo_url.startsWith('data:image/')) {
+                try {
+                    const matches = profileData.logo_url.match(/^data:image\/([a-zA-Z0-9]+);base64,(.+)$/);
+                    if (matches && matches.length === 3) {
+                        let extension = matches[1];
+                        if (extension === 'jpeg') extension = 'jpg';
+                        
+                        const buffer = Buffer.from(matches[2], 'base64');
+                        const filename = `company-logos/user-${userId}-${Date.now()}.${extension}`;
+
+                        // La subida requiere process.env.BLOB_READ_WRITE_TOKEN en el entorno
+                        const blob = await put(filename, buffer, {
+                            access: 'public'
+                        });
+
+                        // Reemplazar la cadena enorme por la URL definitiva publicable.
+                        profileData.logo_url = blob.url;
+                    }
+                } catch (err) {
+                    console.error("Error subiendo el logo a Vercel Blob:", err);
+                    return res.status(500).json({ error: "No se pudo procesar la imagen del logo en Vercel."});
+                }
             }
 
             // Ejecutamos el Upsert en el modelo
