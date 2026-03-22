@@ -1,5 +1,11 @@
 const db = require('../config/db');
 
+// Obtener un producto especifico
+const getByIdAndUserId = async (id, userId) => {
+    const sql = `SELECT * FROM productos WHERE id = ? AND user_id = ? AND deleted_at IS NULL`;
+    return await db.get(sql, [id, userId]);
+};
+
 // Obtener productos activos de un usuario
 const getAllByUserId = async (userId) => {
     const sql = `
@@ -77,4 +83,4 @@ const hardDelete = async (id, userId) => {
     );
 };
 
-module.exports = { getAllByUserId, create, update, checkUsageInBatches, softDelete, hardDelete };
+module.exports = { getByIdAndUserId, getAllByUserId, create, update, checkUsageInBatches, softDelete, hardDelete };

@@ -1,6 +1,7 @@
 const ProductoModel = require('../models/productoModel');
 const crypto = require('crypto');
-const { put } = require('@vercel/blob');
+// Importar nuestra librería de Storage agnóstica
+const { processImagesArray, deleteImagesArray } = require('../utils/storage');
 // Ajusta la ruta a donde tengas tus helpers
 const { safeJSONParse } = require('../utils/helpers');
 
@@ -46,35 +47,8 @@ const createProducto = async (req, res) => {
     const perfilId = (perfil_id && perfil_id !== "") ? perfil_id : null;
     const ruedaId = (rueda_id && rueda_id !== "") ? rueda_id : null;
 
-    // ----------------------------------------------------
-    // INTEGRACIÓN VERCEL BLOB STORE (Imágenes de producto)
-    // ----------------------------------------------------
-    let procesadasImagenes = [];
-    if (imagenes_json && Array.isArray(imagenes_json)) {
-        for (let i = 0; i < imagenes_json.length; i++) {
-            let img = imagenes_json[i];
-            if (typeof img === 'string' && img.startsWith('data:image/')) {
-                try {
-                    const matches = img.match(/^data:image\/([a-zA-Z0-9]+);base64,(.+)$/);
-                    if (matches && matches.length === 3) {
-                        let extension = matches[1];
-                        if (extension === 'jpeg') extension = 'jpg';
-                        const buffer = Buffer.from(matches[2], 'base64');
-                        const filename = `productos/user-${userId}-${Date.now()}-${i}.${extension}`;
-                        const blob = await put(filename, buffer, { access: 'public' });
-                        procesadasImagenes.push(blob.url);
-                    } else {
-                        procesadasImagenes.push(img);
-                    }
-                } catch (err) {
-                    console.error("Error subiendo imagen de producto a Vercel Blob:", err);
-                    procesadasImagenes.push(img);
-                }
-            } else {
-                procesadasImagenes.push(img);
-            }
-        }
-    }
+    const provider = process.env.STORAGE_PROVIDER || 'supabase';
+    const procesadasImagenes = await processImagesArray(imagenes_json, 'productos', userId, provider);
 
     try {
         // Preparamos el objeto para el modelo (JSONs convertidos a String aquí)
@@ -123,37 +97,21 @@ const updateProducto = async (req, res) => {
     const perfilId = (perfil_id && perfil_id !== "") ? perfil_id : null;
     const ruedaId = (rueda_id && rueda_id !== "") ? rueda_id : null;
 
-    // ----------------------------------------------------
-    // INTEGRACIÓN VERCEL BLOB STORE (Imágenes de producto)
-    // ----------------------------------------------------
-    let procesadasImagenes = [];
-    if (imagenes_json && Array.isArray(imagenes_json)) {
-        for (let i = 0; i < imagenes_json.length; i++) {
-            let img = imagenes_json[i];
-            if (typeof img === 'string' && img.startsWith('data:image/')) {
-                try {
-                    const matches = img.match(/^data:image\/([a-zA-Z0-9]+);base64,(.+)$/);
-                    if (matches && matches.length === 3) {
-                        let extension = matches[1];
-                        if (extension === 'jpeg') extension = 'jpg';
-                        const buffer = Buffer.from(matches[2], 'base64');
-                        const filename = `productos/user-${userId}-${Date.now()}-${i}.${extension}`;
-                        const blob = await put(filename, buffer, { access: 'public' });
-                        procesadasImagenes.push(blob.url);
-                    } else {
-                        procesadasImagenes.push(img);
-                    }
-                } catch (err) {
-                    console.error("Error subiendo imagen de producto a Vercel Blob (update):", err);
-                    procesadasImagenes.push(img);
-                }
-            } else {
-                procesadasImagenes.push(img);
-            }
-        }
-    }
+    // Definimos el provider (podría venir de env)
+    const provider = process.env.STORAGE_PROVIDER || 'supabase';
+    
+    // Procesamiento de imágenes
+    const procesadasImagenes = await processImagesArray(imagenes_json, 'productos', userId, provider);
 
     try {
+        const oldProduct = await ProductoModel.getByIdAndUserId(id, userId);
+        const oldImages = oldProduct && oldProduct.imagenes_json ? safeJSONParse(oldProduct.imagenes_json || '[]') : [];
+        const deletedImages = oldImages.filter(oldImg => !procesadasImagenes.includes(oldImg));
+        
+        if (deletedImages.length > 0) {
+            await deleteImagesArray(deletedImages, provider);
+        }
+
         await ProductoModel.update(id, userId, {
             nombre,
             descripcion,
@@ -184,9 +142,9 @@ const deleteProducto = async (req, res) => {
     const { id } = req.params;
 
     try {
-        // 1. Verificar uso en lotes de producción (batches)
         // Delegamos la consulta SQL al modelo
         const usageCheck = await ProductoModel.checkUsageInBatches(id);
+        const product = await ProductoModel.getByIdAndUserId(id, userId);
 
         if (usageCheck) {
             // CASO A: Tiene historial -> Soft Delete
@@ -204,6 +162,15 @@ const deleteProducto = async (req, res) => {
             // Validamos si realmente se borró algo (por si el ID no era de este usuario)
             if (result.changes === 0) {
                 return res.status(404).json({ error: "Producto no encontrado." });
+            }
+
+            // Eliminar imágenes de Storage si existen
+            if (product && product.imagenes_json) {
+                const images = safeJSONParse(product.imagenes_json || '[]');
+                if (images.length > 0) {
+                    const provider = process.env.STORAGE_PROVIDER || 'supabase';
+                    await deleteImagesArray(images, provider);
+                }
             }
 
             // Retornamos 204 No Content (éxito sin cuerpo)

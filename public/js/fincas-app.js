@@ -1,5 +1,7 @@
+import { compressImage } from './file-utils.js';
+
 // 1. Definir initMap globalmente para Google Maps Callback
-window.initMap = function() {
+window.initMap = function () {
     // Se sobrescribirá dentro de DOMContentLoaded si se necesita
 };
 
@@ -29,7 +31,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const productorFotoPreview = document.getElementById('productor-foto-preview');
     const fotoProductorHiddenInput = document.getElementById('foto_productor');
     const validateDeforestationBtn = document.getElementById('validate-deforestation-btn');
-    
+
     // Elementos del Modal de Análisis
     const analysisModal = document.getElementById('analysisModal');
     const analysisLoading = document.getElementById('analysis-loading');
@@ -42,7 +44,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let allCertifications = [];
     let currentFincaCertifications = [];
     let currentImages = [];
-    
+
     // Mapa Google
     let map;
     let drawingManager;
@@ -57,22 +59,22 @@ document.addEventListener('DOMContentLoaded', () => {
         if (typeof google !== 'undefined' && typeof google.maps !== 'undefined') {
             initMap();
         }
-        
+
         await Promise.all([loadCountries(), loadCertifications(), loadPremios(), loadFincas()]);
-        
+
         setupEventListeners();
     }
 
     // --- GOOGLE MAPS ---
     function initMap() {
         if (map) return; // Evitar reinicializar
-        
+
         const mapContainer = document.getElementById('map');
         if (!mapContainer || typeof google === 'undefined') return;
 
         try {
             const defaultLoc = { lat: -9.19, lng: -75.015 }; // Centro Perú
-            
+
             map = new google.maps.Map(mapContainer, {
                 zoom: 5,
                 center: defaultLoc,
@@ -97,24 +99,24 @@ document.addEventListener('DOMContentLoaded', () => {
                     strokeColor: '#854d0e',
                     strokeWeight: 2,
                     editable: true,
-                    draggable: false 
+                    draggable: false
                 }
             });
             drawingManager.setMap(map);
 
             // Evento: Polígono completado
-            google.maps.event.addListener(drawingManager, 'overlaycomplete', function(event) {
+            google.maps.event.addListener(drawingManager, 'overlaycomplete', function (event) {
                 // Borrar polígono anterior si existe (solo 1 por finca)
                 if (currentPolygon) {
                     currentPolygon.setMap(null);
                 }
-                
+
                 // Desactivar modo dibujo para evitar múltiples polígonos
                 drawingManager.setDrawingMode(null);
 
                 currentPolygon = event.overlay;
                 updateCoordenadasInput();
-                
+
                 // --- NUEVO: Autocompletar datos basados en el polígono ---
                 autoPopulateFieldsFromPolygon(currentPolygon);
 
@@ -129,7 +131,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
             });
 
-        } catch(e) {
+        } catch (e) {
             console.error("Error inicializando Google Maps:", e);
         }
     }
@@ -139,7 +141,7 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('coordenadas').value = '';
             return;
         }
-        
+
         const path = currentPolygon.getPath();
         const coords = [];
         for (let i = 0; i < path.getLength(); i++) {
@@ -160,7 +162,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (google.maps.geometry && google.maps.geometry.spherical) {
                 const areaM2 = google.maps.geometry.spherical.computeArea(polygon.getPath());
                 const areaHa = (areaM2 / 10000).toFixed(2); // Convertir m2 a Hectáreas
-                
+
                 const superficieInput = document.getElementById('superficie');
                 if (superficieInput) {
                     superficieInput.value = areaHa;
@@ -181,7 +183,7 @@ document.addEventListener('DOMContentLoaded', () => {
         let lngSum = 0;
         const path = polygon.getPath();
         const len = path.getLength();
-        
+
         for (let i = 0; i < len; i++) {
             latSum += path.getAt(i).lat();
             lngSum += path.getAt(i).lng();
@@ -193,7 +195,7 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const elevRes = await fetch(`https://api.open-meteo.com/v1/elevation?latitude=${centerLat}&longitude=${centerLng}`);
             const elevData = await elevRes.json();
-            
+
             if (elevData.elevation && elevData.elevation.length > 0) {
                 const alturaInput = document.getElementById('altura');
                 if (alturaInput) alturaInput.value = Math.round(elevData.elevation[0]);
@@ -209,7 +211,7 @@ document.addEventListener('DOMContentLoaded', () => {
         geocoder.geocode({ location: { lat: centerLat, lng: centerLng } }, (results, status) => {
             if (status === "OK" && results[0]) {
                 const components = results[0].address_components;
-                
+
                 let pais = '';
                 let region = '';   // Departamento (administrative_area_level_1)
                 let provincia = ''; // Provincia (administrative_area_level_2)
@@ -222,7 +224,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (type === "administrative_area_level_2") provincia = component.long_name;
                     if (type === "locality" || type === "administrative_area_level_3") {
                         // Priorizar locality si existe, sino nivel 3
-                        if(!distrito || type === "locality") distrito = component.long_name;
+                        if (!distrito || type === "locality") distrito = component.long_name;
                     }
                 }
 
@@ -230,7 +232,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (document.getElementById('departamento')) document.getElementById('departamento').value = region;
                 if (document.getElementById('provincia')) document.getElementById('provincia').value = provincia;
                 if (document.getElementById('distrito')) document.getElementById('distrito').value = distrito;
-                
+
                 // Actualizar Select de País
                 const paisSelect = document.getElementById('pais');
                 if (pais && paisSelect) {
@@ -253,16 +255,16 @@ document.addEventListener('DOMContentLoaded', () => {
             currentPolygon.setMap(null);
             currentPolygon = null;
         }
-        
+
         if (!coordsJson || !map) return;
 
         try {
             // Esperar array de arrays: [[lat, lng], ...]
             const coordsArray = typeof coordsJson === 'string' ? JSON.parse(coordsJson) : coordsJson;
-            
+
             if (Array.isArray(coordsArray) && coordsArray.length > 0) {
                 const paths = coordsArray.map(p => ({ lat: p[0], lng: p[1] }));
-                
+
                 currentPolygon = new google.maps.Polygon({
                     paths: paths,
                     fillColor: '#854d0e',
@@ -277,7 +279,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const bounds = new google.maps.LatLngBounds();
                 paths.forEach(p => bounds.extend(p));
                 map.fitBounds(bounds);
-                
+
                 // Listeners de edición
                 currentPolygon.getPath().addListener('set_at', () => {
                     updateCoordenadasInput();
@@ -289,10 +291,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     // Recalcular solo área al insertar nuevos vértices
                     autoPopulateFieldsFromPolygon(currentPolygon, true);
                 });
-                
+
                 // Switch a modo edición (no dibujo)
-                if(drawingManager) drawingManager.setDrawingMode(null);
-                
+                if (drawingManager) drawingManager.setDrawingMode(null);
+
                 updateCoordenadasInput();
             }
         } catch (e) {
@@ -304,7 +306,7 @@ document.addEventListener('DOMContentLoaded', () => {
     async function searchLocation() {
         const query = searchInput.value;
         if (!query) return;
-        
+
         // Usar Nominatim para ahorrar costos o Google Geocoding si prefieres
         try {
             const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`);
@@ -317,7 +319,7 @@ document.addEventListener('DOMContentLoaded', () => {
             } else {
                 alert('Ubicación no encontrada.');
             }
-        } catch(e) { console.error(e); }
+        } catch (e) { console.error(e); }
     }
 
     function locateUser() {
@@ -360,22 +362,22 @@ document.addEventListener('DOMContentLoaded', () => {
     async function handleDeforestationValidation() {
         const coordsValue = document.getElementById('coordenadas').value;
         if (!coordsValue) { alert("Dibuja el polígono primero."); return; }
-        
+
         let polygonCoords;
         try {
             // Google Maps coords vienen como [[lat, lng],...]
             // GeoJSON necesita [[lng, lat],...]
             const raw = JSON.parse(coordsValue);
-            polygonCoords = raw.map(p => [p[1], p[0]]); 
+            polygonCoords = raw.map(p => [p[1], p[0]]);
             // Cerrar el anillo
             if (polygonCoords.length > 0) {
-                 const first = polygonCoords[0];
-                 const last = polygonCoords[polygonCoords.length - 1];
-                 if (first[0] !== last[0] || first[1] !== last[1]) {
-                     polygonCoords.push(first);
-                 }
+                const first = polygonCoords[0];
+                const last = polygonCoords[polygonCoords.length - 1];
+                if (first[0] !== last[0] || first[1] !== last[1]) {
+                    polygonCoords.push(first);
+                }
             }
-        } catch(e) { return; }
+        } catch (e) { return; }
 
         analysisModal.classList.remove('hidden');
         analysisLoading.classList.remove('hidden');
@@ -384,7 +386,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Textos para GEE
         const loadingText = analysisLoading.querySelector('p');
-        if(loadingText) loadingText.textContent = "Conectando con Google Earth Engine (Dataset Hansen/UMD)...";
+        if (loadingText) loadingText.textContent = "Conectando con Google Earth Engine (Dataset Hansen/UMD)...";
 
         try {
             const response = await api('/api/validate-deforestation', {
@@ -397,10 +399,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (response.compliant) {
                 analysisSuccess.classList.remove('hidden');
-                
+
                 const successText = analysisSuccess.querySelector('p');
                 const lossPercent = response.loss_percentage !== undefined ? response.loss_percentage.toFixed(4) : "0.0000";
-                if(successText) successText.textContent = `Cobertura arbórea estable. Pérdida detectada: ${lossPercent}% (Umbral EUDR < 0.1%).`;
+                if (successText) successText.textContent = `Cobertura arbórea estable. Pérdida detectada: ${lossPercent}% (Umbral EUDR < 0.1%).`;
 
                 const eudrCert = {
                     id: 9999,
@@ -446,7 +448,7 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error("Error cargando países:", error);
         }
     }
-    
+
     async function loadCertifications() {
         try {
             const data = await fetch('/data/certifications.json').then(res => res.json());
@@ -456,7 +458,7 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error("Error cargando certificaciones:", error);
         }
     }
-    
+
     async function loadFincas() {
         try {
             const fincas = await api('/api/fincas');
@@ -466,10 +468,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function renderFincas(fincas) {
         const countBadge = document.getElementById('finca-count');
-        if(countBadge) countBadge.textContent = fincas.length;
+        if (countBadge) countBadge.textContent = fincas.length;
 
-        fincasList.innerHTML = fincas.length === 0 ? 
-            '<div class="text-center py-8 text-stone-400 bg-stone-50 rounded-xl border-2 border-dashed border-stone-200"><i class="fas fa-seedling text-3xl mb-2"></i><p>No hay fincas registradas.</p></div>' : 
+        fincasList.innerHTML = fincas.length === 0 ?
+            '<div class="text-center py-8 text-stone-400 bg-stone-50 rounded-xl border-2 border-dashed border-stone-200"><i class="fas fa-seedling text-3xl mb-2"></i><p>No hay fincas registradas.</p></div>' :
             fincas.map(finca => `
             <div class="bg-white p-4 rounded-xl border border-stone-200 shadow-sm hover:shadow-md transition group">
                 <div class="flex justify-between items-start mb-3">
@@ -507,7 +509,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('provincia').value = '';
         document.getElementById('distrito').value = '';
         document.getElementById('ciudad').value = '';
-        if(form.video_link) form.video_link.value = '';
+        if (form.video_link) form.video_link.value = '';
         currentImages = [];
         currentFincaCertifications = [];
         currentFincaPremios = [];
@@ -516,7 +518,7 @@ document.addEventListener('DOMContentLoaded', () => {
         renderImagePreviews();
         renderAddedCertifications();
         renderAddedPremios();
-        
+
         // Reset Map
         if (currentPolygon) { currentPolygon.setMap(null); currentPolygon = null; }
         if (drawingManager) drawingManager.setDrawingMode(google.maps.drawing.OverlayType.POLYGON);
@@ -534,8 +536,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const fincas = await api('/api/fincas');
             const finca = fincas.find(f => f.id === id);
             if (!finca) return;
-            
-            resetForm(); 
+
+            resetForm();
 
             form.propietario.value = finca.propietario || '';
             form.dni_ruc.value = finca.dni_ruc || '';
@@ -545,7 +547,7 @@ document.addEventListener('DOMContentLoaded', () => {
             form.provincia.value = finca.provincia || '';
             form.distrito.value = finca.distrito || '';
             form.ciudad.value = finca.ciudad || ''; // Legacy/Referencia
-            if(form.video_link) form.video_link.value = finca.video_link || '';
+            if (form.video_link) form.video_link.value = finca.video_link || '';
 
             form.altura.value = finca.altura || '';
             form.superficie.value = finca.superficie || '';
@@ -564,8 +566,8 @@ document.addEventListener('DOMContentLoaded', () => {
             renderImagePreviews();
             renderAddedCertifications();
             renderAddedPremios();
-            
-            if (finca.coordenadas) { 
+
+            if (finca.coordenadas) {
                 setMapData(finca.coordenadas);
             }
             formTitle.textContent = `Editando: ${finca.nombre_finca}`;
@@ -619,7 +621,7 @@ document.addEventListener('DOMContentLoaded', () => {
             premioYearInput.value = '';
         }
     }
-    
+
     function handlePremioAction(e) {
         if (e.target.classList.contains('delete-premio-btn')) {
             const premioId = parseInt(e.target.dataset.id, 10);
@@ -643,7 +645,7 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>
         `).join('');
     }
-    
+
     // --- Manejo Galería de Fotos ---
     async function handleImageUpload(e) {
         const files = Array.from(e.target.files);
@@ -651,7 +653,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (currentImages.length + files.length > 5) {
             alert('Límite excedido: Solo se permiten un máximo de 5 fotos por finca.');
-            e.target.value = ''; 
+            e.target.value = '';
             return;
         }
 
@@ -666,7 +668,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const fileSizeMB = file.size / (1024 * 1024);
                 if (fileSizeMB > 5) {
                     alert(`La imagen "${file.name}" pesa ${fileSizeMB.toFixed(2)}MB. El límite es 5MB y será omitida.`);
-                    continue; 
+                    continue;
                 }
 
                 const compressedBase64 = await compressImage(file);
@@ -680,7 +682,7 @@ document.addEventListener('DOMContentLoaded', () => {
             submitButton.textContent = originalText;
             submitButton.disabled = false;
             submitButton.classList.remove('opacity-50', 'cursor-not-allowed');
-            e.target.value = ''; 
+            e.target.value = '';
         }
     }
 
@@ -700,7 +702,7 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>
         `).join('');
     }
-    
+
     function handleAddCertification() {
         const certId = parseInt(certSelect.value, 10);
         const expiryDate = certExpiryInput.value;
@@ -709,7 +711,7 @@ document.addEventListener('DOMContentLoaded', () => {
             alert('Por favor, selecciona una certificación y su fecha de vencimiento.');
             return;
         }
-        
+
         if (currentFincaCertifications.some(c => c.id === certId)) {
             alert('Esta certificación ya ha sido añadida.');
             return;
@@ -723,7 +725,7 @@ document.addEventListener('DOMContentLoaded', () => {
             certExpiryInput.value = '';
         }
     }
-    
+
     function handleCertificationAction(e) {
         if (e.target.classList.contains('delete-cert-btn')) {
             const certId = parseInt(e.target.dataset.id, 10);
@@ -758,7 +760,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function handleFormSubmit(e) {
         e.preventDefault();
-        
+
         const originalText = submitButton.textContent;
         submitButton.disabled = true;
         submitButton.textContent = 'Guardando...';
@@ -767,15 +769,15 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const formData = new FormData(form);
             const fincaData = Object.fromEntries(formData.entries());
-            
+
             fincaData.imagenes_json = currentImages;
             fincaData.certificaciones_json = currentFincaCertifications;
             fincaData.premios_json = currentFincaPremios;
-            
+
             if (fincaData.coordenadas) {
                 try {
                     fincaData.coordenadas = JSON.parse(fincaData.coordenadas);
-                } catch(e) {
+                } catch (e) {
                     fincaData.coordenadas = null;
                 }
             } else {
@@ -791,24 +793,24 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             const editId = editIdInput.value;
-            
+
             if (editId) {
-                await api(`/api/fincas/${editId}`, { 
-                    method: 'PUT', 
-                    body: payloadString 
+                await api(`/api/fincas/${editId}`, {
+                    method: 'PUT',
+                    body: payloadString
                 });
             } else {
-                await api('/api/fincas', { 
-                    method: 'POST', 
-                    body: payloadString 
+                await api('/api/fincas', {
+                    method: 'POST',
+                    body: payloadString
                 });
             }
-            
+
             alert('¡Finca guardada exitosamente!');
             resetForm();
             await loadFincas();
 
-        } catch (error) { 
+        } catch (error) {
             console.error("Error al guardar:", error);
             alert('No se pudo guardar: ' + error.message);
         } finally {
@@ -825,7 +827,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (editBtn) {
             populateFormForEdit(editBtn.dataset.id);
         }
-        
+
         if (deleteBtn) {
             const id = deleteBtn.dataset.id;
             if (confirm('¿Seguro que quieres eliminar esta finca?')) {
@@ -834,71 +836,34 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    const compressImage = (file) => {
-        return new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.readAsDataURL(file);
-            reader.onload = (event) => {
-                const img = new Image();
-                img.src = event.target.result;
-                img.onload = () => {
-                    const canvas = document.createElement('canvas');
-                    const MAX_WIDTH = 1024;
-                    const MAX_HEIGHT = 1024;
-                    let width = img.width;
-                    let height = img.height;
-
-                    if (width > height) {
-                        if (width > MAX_WIDTH) {
-                            height *= MAX_WIDTH / width;
-                            width = MAX_WIDTH;
-                        }
-                    } else {
-                        if (height > MAX_HEIGHT) {
-                            width *= MAX_HEIGHT / height;
-                            height = MAX_HEIGHT;
-                        }
-                    }
-                    canvas.width = width;
-                    canvas.height = height;
-                    const ctx = canvas.getContext('2d');
-                    ctx.drawImage(img, 0, 0, width, height);
-                    resolve(canvas.toDataURL('image/jpeg', 0.7));
-                };
-                img.onerror = (err) => reject(err);
-            };
-            reader.onerror = (err) => reject(err);
-        });
-    };
-
     // Helper API
     async function api(url, options = {}) {
-        options.credentials = 'include'; 
+        options.credentials = 'include';
         options.headers = {
             ...options.headers,
             'Content-Type': 'application/json'
         };
-        
+
         const response = await fetch(url, options);
         if (response.status === 204) return null;
-        
+
         if (!response.ok) {
             const errorData = await response.json().catch(() => ({}));
             throw new Error(errorData.error || `Error ${response.status}: ${response.statusText}`);
         }
-        
+
         return response.json();
     }
 
-    window.shareFincaLink = async function(id, nombre) {
+    window.shareFincaLink = async function (id, nombre) {
         try {
             // 1. Obtener Token
             const res = await api(`/api/fincas/${id}/share-token`, { method: 'POST' });
             const token = res.token;
-            
+
             // 2. Construir URL
             const url = `${window.location.origin}/registro-productor?t=${token}`;
-            
+
             // 3. Crear mensaje para WhatsApp
             const mensaje = `Hola! Por favor completa la información de la finca "${nombre}" en este enlace seguro: ${url}`;
             const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(mensaje)}`;
@@ -910,13 +875,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 window.open(whatsappUrl, '_blank');
             }
             */
-           
-           // Mejor UX: Copiar al portapapeles y avisar
-           navigator.clipboard.writeText(mensaje).then(() => {
-               if(confirm(`Enlace copiado al portapapeles.\n\n¿Quieres abrir WhatsApp para enviarlo?`)) {
-                   window.open(whatsappUrl, '_blank');
-               }
-           });
+
+            // Mejor UX: Copiar al portapapeles y avisar
+            navigator.clipboard.writeText(mensaje).then(() => {
+                if (confirm(`Enlace copiado al portapapeles.\n\n¿Quieres abrir WhatsApp para enviarlo?`)) {
+                    window.open(whatsappUrl, '_blank');
+                }
+            });
 
         } catch (e) {
             alert("Error generando enlace: " + e.message);

@@ -1,4 +1,6 @@
-window.initMap = function() {
+import { compressImage } from './file-utils.js';
+
+window.initMap = function () {
     // Se sobrescribirá dentro de DOMContentLoaded
 };
 
@@ -40,8 +42,8 @@ document.addEventListener('DOMContentLoaded', () => {
     btnCloseForm.addEventListener('click', () => toggleView(false));
     btnCancel.addEventListener('click', () => toggleView(false));
 
-    
-    
+
+
     // Inputs del formulario
     const rucInput = document.getElementById('ruc');
     const searchRucBtn = document.getElementById('search-ruc-btn');
@@ -65,12 +67,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const certExpiryInput = document.getElementById('certification-expiry');
     const addCertBtn = document.getElementById('add-certification-btn');
     const certsListContainer = document.getElementById('certifications-list');
-    
+
     const premioSelect = document.getElementById('premio-select');
     const premioYearInput = document.getElementById('premio-year');
     const addPremioBtn = document.getElementById('add-premio-btn');
     const premiosListContainer = document.getElementById('premios-list');
-    
+
     const fotosInput = document.getElementById('fotos');
     const fotosPreviewContainer = document.getElementById('fotos-preview-container');
 
@@ -80,7 +82,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentPremios = [];
     let allPremios = [];
     let allCertifications = [];
-    
+
     // Mapa Google (procesadora principal)
     let map;
     let marker;
@@ -118,18 +120,18 @@ document.addEventListener('DOMContentLoaded', () => {
     async function init() {
         // Exponer initMap globalmente para el callback de Google
         window.initMap = initMap;
-        
+
         setupEventListeners();
 
         if (typeof google !== 'undefined' && typeof google.maps !== 'undefined') {
             initMap();
         }
-        
+
         // Cargar datos
         try {
             await Promise.all([
-                loadCertificationsData().catch(e => console.error("Error certs:", e)), 
-                loadPremiosData().catch(e => console.error("Error premios:", e)), 
+                loadCertificationsData().catch(e => console.error("Error certs:", e)),
+                loadPremiosData().catch(e => console.error("Error premios:", e)),
                 loadProcesadoras().catch(e => console.error("Error procesadoras:", e))
             ]);
         } catch (error) {
@@ -142,7 +144,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (map) return;
         const mapContainer = document.getElementById('map');
         if (!mapContainer || typeof google === 'undefined') return;
-        
+
         try {
             const defaultLoc = { lat: -9.189967, lng: -75.015152 }; // Centro de Perú
             map = new google.maps.Map(mapContainer, {
@@ -166,13 +168,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 autocomplete.addListener("place_changed", () => {
                     const place = autocomplete.getPlace();
                     if (!place.geometry || !place.geometry.location) return;
-                    
+
                     map.setCenter(place.geometry.location);
                     map.setZoom(17);
-                    
+
                     // SEGURIDAD: Verificar que marker exista antes de moverlo
                     if (marker) marker.setPosition(place.geometry.location);
-                    
+
                     updateCoordinatesInput(place.geometry.location, 'coordenadas');
                     fillAddressFields(place, "");
                 });
@@ -194,7 +196,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     reverseGeocode(e.latLng, "", "location-search");
                 });
             }
-        } catch(e) {
+        } catch (e) {
             console.error("Error inicializando Google Maps:", e);
         }
     }
@@ -203,7 +205,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (mapSucursal) return;
         const mapContainer = document.getElementById('map-sucursal');
         if (!mapContainer || typeof google === 'undefined') return;
-        
+
         try {
             const defaultLoc = { lat: -9.189967, lng: -75.015152 };
             mapSucursal = new google.maps.Map(mapContainer, {
@@ -227,13 +229,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 autocompleteSuc.addListener("place_changed", () => {
                     const place = autocompleteSuc.getPlace();
                     if (!place.geometry || !place.geometry.location) return;
-                    
+
                     mapSucursal.setCenter(place.geometry.location);
                     mapSucursal.setZoom(17);
-                    
+
                     // SEGURIDAD: Verificar que markerSucursal exista
                     if (markerSucursal) markerSucursal.setPosition(place.geometry.location);
-                    
+
                     updateCoordinatesInput(place.geometry.location, 'suc-coordenadas');
                     fillAddressFields(place, "suc-");
                 });
@@ -255,7 +257,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     reverseGeocode(e.latLng, "suc-", "suc-location-search");
                 });
             }
-        } catch(e) {
+        } catch (e) {
             console.error("Error inicializando mapa sucursal:", e);
         }
     }
@@ -289,7 +291,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (types.includes('administrative_area_level_2')) addressData.provincia = component.long_name;
                 if (types.includes('locality') || types.includes('administrative_area_level_3')) {
                     addressData.ciudad = component.long_name;
-                    if(!addressData.distrito) addressData.distrito = component.long_name;
+                    if (!addressData.distrito) addressData.distrito = component.long_name;
                 }
                 if (types.includes('sublocality') || types.includes('sublocality_level_1')) {
                     addressData.distrito = component.long_name;
@@ -300,7 +302,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         //console.log(addressData.direccion);
         if (!addressData.direccion && place.name && !place.name.includes(addressData.provincia)) {
-            addressData.direccion = place.name; 
+            addressData.direccion = place.name;
         }
 
         const fields = ['pais', 'departamento', 'provincia', 'ciudad', 'distrito', 'direccion'];
@@ -318,16 +320,16 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function setupEventListeners() {
-        if(form) form.addEventListener('submit', handleFormSubmit);
-        if(cancelEditBtn) cancelEditBtn.addEventListener('click', resetForm);
-        if(procesadorasList) procesadorasList.addEventListener('click', handleListClick);
-        
-        if(fotosInput) fotosInput.addEventListener('change', handleImageUpload);
-        if(addCertBtn) addCertBtn.addEventListener('click', handleAddCertification);
-        if(certsListContainer) certsListContainer.addEventListener('click', handleCertificationAction);
-        if(addPremioBtn) addPremioBtn.addEventListener('click', handleAddPremio);
-        if(premiosListContainer) premiosListContainer.addEventListener('click', handlePremioAction);
-        if(fotosPreviewContainer) fotosPreviewContainer.addEventListener('click', handleImageDelete);
+        if (form) form.addEventListener('submit', handleFormSubmit);
+        if (cancelEditBtn) cancelEditBtn.addEventListener('click', resetForm);
+        if (procesadorasList) procesadorasList.addEventListener('click', handleListClick);
+
+        if (fotosInput) fotosInput.addEventListener('change', handleImageUpload);
+        if (addCertBtn) addCertBtn.addEventListener('click', handleAddCertification);
+        if (certsListContainer) certsListContainer.addEventListener('click', handleCertificationAction);
+        if (addPremioBtn) addPremioBtn.addEventListener('click', handleAddPremio);
+        if (premiosListContainer) premiosListContainer.addEventListener('click', handlePremioAction);
+        if (fotosPreviewContainer) fotosPreviewContainer.addEventListener('click', handleImageDelete);
 
         if (searchRucBtn) searchRucBtn.addEventListener('click', handleSearchRuc);
 
@@ -356,7 +358,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 departamentoInput.value = response.departamento || '';
                 provinciaInput.value = response.provincia || '';
                 distritoInput.value = response.distrito || '';
-                
+
                 razonSocialInput.classList.remove('field-updated');
                 void razonSocialInput.offsetWidth;
                 razonSocialInput.classList.add('field-updated');
@@ -375,7 +377,7 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const data = await api('/api/procesadoras');
             renderList(data);
-        } catch(e) { console.error(e); }
+        } catch (e) { console.error(e); }
     }
 
     const TIPO_LABELS = {
@@ -391,8 +393,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function renderList(list) {
         if (!procesadorasList) return;
-        procesadorasList.innerHTML = list.length === 0 ? 
-            '<p class="text-stone-500 text-center py-4">No hay procesadoras registradas.</p>' : 
+        procesadorasList.innerHTML = list.length === 0 ?
+            '<p class="text-stone-500 text-center py-4">No hay procesadoras registradas.</p>' :
             list.map(p => {
                 const pid = p.id || p._id; // Soporte robusto si el backend devuelve _id
                 const tipoLabel = p.tipo ? TIPO_LABELS[p.tipo] || p.tipo : null;
@@ -424,7 +426,7 @@ document.addEventListener('DOMContentLoaded', () => {
         e.preventDefault();
         const submitBtn = form.querySelector('button[type="submit"]');
         const originalText = submitBtn ? submitBtn.innerText : 'Guardar';
-        if(submitBtn) {
+        if (submitBtn) {
             submitBtn.disabled = true;
             submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
         }
@@ -434,14 +436,14 @@ document.addEventListener('DOMContentLoaded', () => {
         data.imagenes_json = currentImages;
         data.certificaciones_json = currentCertifications;
         data.premios_json = currentPremios;
-        
+
         if (!data.coordenadas || data.coordenadas.trim() === "") {
-             data.coordenadas = null;
+            data.coordenadas = null;
         } else {
-             try { JSON.parse(data.coordenadas); } catch(e) { data.coordenadas = null; }
+            try { JSON.parse(data.coordenadas); } catch (e) { data.coordenadas = null; }
         }
-        if(data.numero_trabajadores === "") delete data.numero_trabajadores;
-        if(!data.tipo) data.tipo = null;
+        if (data.numero_trabajadores === "") delete data.numero_trabajadores;
+        if (!data.tipo) data.tipo = null;
 
         const editId = editIdInput.value;
         try {
@@ -456,7 +458,7 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error("Error al guardar:", error);
             alert('Error al guardar: ' + error.message);
         } finally {
-            if(submitBtn) {
+            if (submitBtn) {
                 submitBtn.disabled = false;
                 submitBtn.innerText = originalText;
             }
@@ -466,7 +468,7 @@ document.addEventListener('DOMContentLoaded', () => {
     async function handleListClick(e) {
         const btn = e.target.closest('button');
         if (!btn) return;
-        
+
         const id = btn.dataset.id;
         if (!id || id === "undefined" || id === "null") {
             console.error("El botón no tiene un ID válido asociado:", btn.dataset);
@@ -503,17 +505,17 @@ document.addEventListener('DOMContentLoaded', () => {
             editIdInput.value = item.id || item._id;
             formTitle.textContent = "Editar Procesadora";
             cancelEditBtn.classList.remove('hidden');
-            
+
             const submitBtn = form.querySelector('button[type="submit"]');
-            if(submitBtn) submitBtn.innerHTML = '<i class="fas fa-save"></i> Actualizar';
+            if (submitBtn) submitBtn.innerHTML = '<i class="fas fa-save"></i> Actualizar';
 
             // Llenar inputs
-            ['ruc', 'razon_social', 'nombre_comercial', 'tipo', 'direccion', 'telefono', 
-             'numero_trabajadores', 'ciudad', 'pais', 'departamento', 'provincia', 
-             'distrito', 'historia', 'video_link'].forEach(field => {
-                const el = document.getElementById(field);
-                if (el) el.value = item[field] || '';
-            });
+            ['ruc', 'razon_social', 'nombre_comercial', 'tipo', 'direccion', 'telefono',
+                'numero_trabajadores', 'ciudad', 'pais', 'departamento', 'provincia',
+                'distrito', 'historia', 'video_link'].forEach(field => {
+                    const el = document.getElementById(field);
+                    if (el) el.value = item[field] || '';
+                });
 
             currentImages = item.imagenes_json || [];
             currentCertifications = item.certificaciones_json || [];
@@ -539,7 +541,7 @@ document.addEventListener('DOMContentLoaded', () => {
             loadSucursales();
 
             form.scrollIntoView({ behavior: 'smooth' });
-        } catch(e) { console.error("Error populando form:", e); }
+        } catch (e) { console.error("Error populando form:", e); }
     }
 
     function resetForm() {
@@ -548,11 +550,11 @@ document.addEventListener('DOMContentLoaded', () => {
         currentImages = [];
         currentCertifications = [];
         currentPremios = [];
-        
+
         // Reset Map Principal sin destruir el marker
         if (map) {
-            map.setCenter({ lat: -9.189967, lng: -75.015152 }); 
-            map.setZoom(5); 
+            map.setCenter({ lat: -9.189967, lng: -75.015152 });
+            map.setZoom(5);
         }
         if (marker) marker.setPosition(null); // Oculta el pinche, NO destruye la variable
 
@@ -564,9 +566,9 @@ document.addEventListener('DOMContentLoaded', () => {
         renderAddedCertifications();
         renderAddedPremios();
         formTitle.textContent = "Nueva Procesadora";
-        
+
         const submitBtn = form.querySelector('button[type="submit"]');
-        if(submitBtn) submitBtn.innerHTML = '<i class="fas fa-save"></i> Guardar Procesadora';
+        if (submitBtn) submitBtn.innerHTML = '<i class="fas fa-save"></i> Guardar Procesadora';
         cancelEditBtn.classList.add('hidden');
 
         hideSucursalesSection();
@@ -584,7 +586,7 @@ document.addEventListener('DOMContentLoaded', () => {
         hideSucursalForm();
         await loadSucursales();
         sucursalesSection.scrollIntoView({ behavior: 'smooth' });
-        
+
         // Highlight active
         const list = await api('/api/procesadoras').catch(() => []);
         renderList(list);
@@ -601,7 +603,7 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const data = await api(`/api/procesadoras/${currentProcesadoraId}/sucursales`);
             renderSucursalesList(data);
-        } catch(e) {
+        } catch (e) {
             console.error(e);
             sucursalesList.innerHTML = '<p class="text-red-500 text-sm">Error al cargar sucursales.</p>';
         }
@@ -696,19 +698,19 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!currentProcesadoraId || currentProcesadoraId === "undefined" || currentProcesadoraId === "null") {
             console.error("No se puede guardar: currentProcesadoraId es inválido:", currentProcesadoraId);
             alert("Error crítico: No se ha detectado a qué procesadora pertenece esta sucursal. Por favor, selecciona la procesadora de la lista nuevamente.");
-            return; 
+            return;
         }
 
         const submitBtn = sucursalForm.querySelector('button[type="submit"]');
         const originalText = submitBtn ? submitBtn.innerText : 'Guardar Sucursal';
-        if (submitBtn) { 
-            submitBtn.disabled = true; 
-            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...'; 
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
         }
 
         let coordsValue = null;
         if (sucCoordenadas.value) {
-            try { coordsValue = JSON.parse(sucCoordenadas.value); } catch(e) {}
+            try { coordsValue = JSON.parse(sucCoordenadas.value); } catch (e) { }
         }
 
         const data = {
@@ -744,7 +746,7 @@ document.addEventListener('DOMContentLoaded', () => {
     async function handleSucursalListClick(e) {
         const btn = e.target.closest('button');
         if (!btn || !currentProcesadoraId) return;
-        
+
         const id = btn.dataset.id;
         if (!id || id === "undefined" || id === "null") {
             alert("Error: No se pudo identificar la sucursal seleccionada.");
@@ -762,27 +764,27 @@ document.addEventListener('DOMContentLoaded', () => {
                 const list = await api(`/api/procesadoras/${currentProcesadoraId}/sucursales`);
                 const suc = list.find(s => String(s.id || s._id) === String(id)); // Búsqueda estricta corregida
                 if (suc) showSucursalForm(suc);
-            } catch(e) { console.error(e); }
+            } catch (e) { console.error(e); }
         }
     }
 
     // --- Helpers de Carga de Datos ---
     async function loadCertificationsData() {
         const res = await fetch('/data/certifications.json');
-        if(!res.ok) throw new Error("Error loading certifications");
+        if (!res.ok) throw new Error("Error loading certifications");
         const data = await res.json();
         allCertifications = data.certifications;
-        if(certSelect) certSelect.innerHTML = `<option value="">Seleccionar...</option>` + allCertifications.map(c => `<option value="${c.id}">${c.nombre}</option>`).join('');
+        if (certSelect) certSelect.innerHTML = `<option value="">Seleccionar...</option>` + allCertifications.map(c => `<option value="${c.id}">${c.nombre}</option>`).join('');
     }
-    
+
     async function loadPremiosData() {
         const res = await fetch('/data/premios.json');
-        if(!res.ok) throw new Error("Error loading premios");
+        if (!res.ok) throw new Error("Error loading premios");
         const data = await res.json();
         allPremios = data.premios;
         const flatPremios = [...(allPremios.chocolate || []), ...(allPremios.cafe || []), ...(allPremios.miel || [])];
         const uniquePremios = [...new Map(flatPremios.map(item => [item['nombre'], item])).values()];
-        if(premioSelect) premioSelect.innerHTML = `<option value="">Seleccionar...</option>` + uniquePremios.map(p => `<option value="${p.nombre}">${p.nombre}</option>`).join('');
+        if (premioSelect) premioSelect.innerHTML = `<option value="">Seleccionar...</option>` + uniquePremios.map(p => `<option value="${p.nombre}">${p.nombre}</option>`).join('');
     }
 
     // --- Manejadores de Multimedia y Arrays ---
@@ -810,8 +812,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function renderImages() {
-        if(!fotosPreviewContainer) return;
-        fotosPreviewContainer.innerHTML = currentImages.map((img, i) => 
+        if (!fotosPreviewContainer) return;
+        fotosPreviewContainer.innerHTML = currentImages.map((img, i) =>
             `<div class="relative group">
                 <img src="${img}" class="w-full h-24 object-cover rounded-lg">
                 <button type="button" data-index="${i}" class="delete-img-btn absolute top-1 right-1 bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition shadow-md">&times;</button>
@@ -839,8 +841,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function renderAddedCertifications() {
-        if(!certsListContainer) return;
-        certsListContainer.innerHTML = currentCertifications.map((c, i) => 
+        if (!certsListContainer) return;
+        certsListContainer.innerHTML = currentCertifications.map((c, i) =>
             `<div class="flex justify-between items-center bg-stone-100 p-2 px-3 rounded-lg mb-2 text-sm">
                 <span><i class="fas fa-certificate text-amber-600 mr-2"></i>${c.nombre} ${c.expiry ? `(Vence: ${c.expiry})` : ''}</span>
                 <button type="button" class="delete-cert-btn text-red-500 hover:bg-red-100 rounded-full w-6 h-6 flex items-center justify-center transition" data-index="${i}">&times;</button>
@@ -868,44 +870,14 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function renderAddedPremios() {
-        if(!premiosListContainer) return;
-        premiosListContainer.innerHTML = currentPremios.map((p, i) => 
+        if (!premiosListContainer) return;
+        premiosListContainer.innerHTML = currentPremios.map((p, i) =>
             `<div class="flex justify-between items-center bg-stone-100 p-2 px-3 rounded-lg mb-2 text-sm">
                 <span><i class="fas fa-award text-amber-600 mr-2"></i>${p.nombre} (${p.year})</span>
                 <button type="button" class="delete-premio-btn text-red-500 hover:bg-red-100 rounded-full w-6 h-6 flex items-center justify-center transition" data-index="${i}">&times;</button>
              </div>`
         ).join('');
     }
-
-    const compressImage = (file) => {
-        return new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.readAsDataURL(file);
-            reader.onload = (event) => {
-                const img = new Image();
-                img.src = event.target.result;
-                img.onload = () => {
-                    const canvas = document.createElement('canvas');
-                    const MAX_WIDTH = 1024;
-                    const MAX_HEIGHT = 1024;
-                    let width = img.width;
-                    let height = img.height;
-                    if (width > height) {
-                        if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; }
-                    } else {
-                        if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; }
-                    }
-                    canvas.width = width;
-                    canvas.height = height;
-                    const ctx = canvas.getContext('2d');
-                    ctx.drawImage(img, 0, 0, width, height);
-                    resolve(canvas.toDataURL('image/jpeg', 0.7));
-                };
-                img.onerror = (err) => reject(err);
-            };
-            reader.onerror = (err) => reject(err);
-        });
-    };
 
     // API Helper
     async function api(url, options = {}) {
