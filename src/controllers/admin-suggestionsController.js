@@ -3,7 +3,7 @@ const SuggestionModel = require('../models/admin-suggestions-model');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
-const { put } = require('@vercel/blob');
+const { processImagesArray, deleteImagesArray } = require('../utils/storage');
 const { safeJSONParse } = require('../utils/helpers');
 const { OAuth2Client } = require('google-auth-library');
 
@@ -26,6 +26,14 @@ const getAdminSuggestions = async (req, res) => {
 const deleteSuggestion = async (req, res) => {
     const { id } = req.params;
     try {
+        // Obtenemos la sugerencia antes de borrar para limpiar el logo
+        const allSuggestions = await SuggestionModel.getAll();
+        const suggestion = allSuggestions.find(s => s.id == id);
+        if (suggestion && suggestion.logo && suggestion.logo.startsWith('http')) {
+            const provider = 'vercel';
+            await deleteImagesArray([suggestion.logo], provider);
+        }
+
         await SuggestionModel.deleteById(id);
         res.status(204).send();
     } catch (err) {
@@ -37,16 +45,18 @@ const updateSuggestion = async (req, res) => {
     const { id } = req.params;
     try {
         if (req.body.logo && req.body.logo.startsWith('data:image/')) {
-            const matches = req.body.logo.match(/^data:image\/([a-zA-Z0-9]+);base64,(.+)$/);
-            if (matches && matches.length === 3) {
-                let extension = matches[1];
-                if (extension === 'jpeg') extension = 'jpg';
-                
-                const buffer = Buffer.from(matches[2], 'base64');
-                const filename = `suggested-logos/company-${id}-${Date.now()}.${extension}`;
+            const provider = 'vercel';
+            const uploadResult = await processImagesArray([req.body.logo], 'suggested-logos', `admin-${id}`, provider);
 
-                const blob = await put(filename, buffer, { access: 'public' });
-                req.body.logo = blob.url;
+            if (uploadResult && uploadResult.length > 0) {
+                req.body.logo = uploadResult[0];
+
+                // Borramos el logo antiguo si existía
+                const allSuggestions = await SuggestionModel.getAll();
+                const oldSuggestion = allSuggestions.find(s => s.id == id);
+                if (oldSuggestion && oldSuggestion.logo && oldSuggestion.logo !== req.body.logo && oldSuggestion.logo.startsWith('http')) {
+                    await deleteImagesArray([oldSuggestion.logo], provider);
+                }
             }
         }
 
@@ -65,11 +75,11 @@ const generateMagicLink = async (req, res) => {
     try {
         const token = crypto.randomUUID();
         await SuggestionModel.setMagicToken(id, token);
-        
+
         const protocol = req.headers['x-forwarded-proto'] || req.protocol;
         const host = req.get('host');
         const link = `${protocol}://${host}/magic-login/${token}`;
-        
+
         res.json({ link });
     } catch (err) {
         console.error("Error generando magic link:", err);
@@ -82,11 +92,11 @@ const handleMagicLogin = async (req, res) => {
     const { token } = req.params;
     try {
         const suggestion = await SuggestionModel.findByMagicToken(token);
-        
+
         if (!suggestion) {
             return res.status(404).send('<h1>Enlace inválido o expirado</h1><p>Solicita uno nuevo al administrador.</p>');
         }
-        
+
         // Redirigimos al onboarding pasando el token en la URL para que el frontend lo use
         res.redirect(`/onboarding.html?magic_token=${token}`);
     } catch (err) {
@@ -146,15 +156,15 @@ const completeMagicRegistration = async (req, res) => {
             });
             const payload = ticket.getPayload();
             const { email } = payload;
-            
+
             // Si no envió usuario manual, generamos uno del email
             if (!finalUsername) {
                 finalUsername = email.split('@')[0];
             }
-            
+
             // Generar password aleatorio fuerte (el usuario usará Google para entrar)
             finalPasswordHash = await bcrypt.hash(crypto.randomUUID(), 10);
-            
+
             // Aseguramos que el correo venga de Google si no venía en formData
             if (!formData.correo) formData.correo = email;
 
@@ -170,7 +180,7 @@ const completeMagicRegistration = async (req, res) => {
             password: finalPasswordHash,
             nombre: formData.nombre || '',
             apellido: formData.apellido || '',
-            empresa: formData.empresa, 
+            empresa: formData.empresa,
             type: formData.company_type,
             companyId: suggestion.id,
             logo: formData.company_logo || suggestion.logo,
@@ -184,12 +194,12 @@ const completeMagicRegistration = async (req, res) => {
 
         const tokenPayload = { id: newUser.id, username: newUser.usuario, role: newUser.role };
         const jwtToken = jwt.sign(tokenPayload, process.env.JWT_SECRET || 'supersecretkey', { expiresIn: '24h' });
-        
-        res.cookie('token', jwtToken, { 
-            httpOnly: true, 
-            secure: process.env.NODE_ENV === 'production', 
-            sameSite: 'lax', 
-            path: '/' 
+
+        res.cookie('token', jwtToken, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'lax',
+            path: '/'
         });
 
         res.json({ success: true, redirect: '/app/dashboard', token: jwtToken });
@@ -221,11 +231,11 @@ const registerAndClaimPublic = async (req, res) => {
         // Voy a asumir que puedes agregar getById al modelo o que usamos una query directa si se permite aquí, 
         // pero lo más limpio es usar el modelo. Si no existe, lo simulo con filter sobre getAll (ineficiente pero funcional para MVP)
         // O mejor, uso la lógica de buscar por magic token pero ignorando el token... no.
-        
+
         // **IMPORTANTE**: Necesitas asegurar que `SuggestionModel.findById` exista. 
         // Si no, añádela. Aquí asumo que existe o se añade.
         // Si no puedes añadirla ahora, usa una query directa si tienes acceso a `db`.
-        
+
         // Workaround temporal si no existe getById:
         const allSuggestions = await SuggestionModel.getAll();
         const suggestion = allSuggestions.find(s => s.id === claim_id);
@@ -261,7 +271,7 @@ async function registerUserAndClaim(suggestion, google_token, usuario, password,
         });
         const payload = ticket.getPayload();
         const { email } = payload;
-        
+
         if (!finalUsername) {
             finalUsername = email.split('@')[0];
         }
@@ -277,7 +287,7 @@ async function registerUserAndClaim(suggestion, google_token, usuario, password,
         password: finalPasswordHash,
         nombre: formData.nombre || '',
         apellido: formData.apellido || '',
-        empresa: formData.empresa, 
+        empresa: formData.empresa,
         type: formData.company_type,
         companyId: suggestion.id,
         logo: formData.company_logo || suggestion.logo,
@@ -291,18 +301,18 @@ async function registerUserAndClaim(suggestion, google_token, usuario, password,
 
     const tokenPayload = { id: newUser.id, username: newUser.usuario, role: newUser.role };
     const jwtToken = jwt.sign(tokenPayload, process.env.JWT_SECRET || 'supersecretkey', { expiresIn: '24h' });
-    
-    res.cookie('token', jwtToken, { 
-        httpOnly: true, 
-        secure: process.env.NODE_ENV === 'production', 
-        sameSite: 'lax', 
-        path: '/' 
+
+    res.cookie('token', jwtToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        path: '/'
     });
 
     res.json({ success: true, redirect: '/app/dashboard', token: jwtToken });
 }
 
-module.exports = { 
+module.exports = {
     getAdminSuggestions,
     deleteSuggestion,
     updateSuggestion,
