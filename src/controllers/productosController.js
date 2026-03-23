@@ -4,7 +4,9 @@ const crypto = require('crypto');
 const { processImagesArray, deleteImagesArray } = require('../utils/storage');
 // Ajusta la ruta a donde tengas tus helpers
 const { safeJSONParse } = require('../utils/helpers');
+
 const provider = 'vercel';
+
 const getProductos = async (req, res) => {
     const userId = req.user.id;
     try {
@@ -177,4 +179,143 @@ const deleteProducto = async (req, res) => {
     }
 };
 
-module.exports = { getProductos, createProducto, updateProducto, deleteProducto };
+const getPublicProducts = async (req, res) => {
+    const { userId } = req.params;
+    
+    try {
+        // Llamamos al modelo pasándole solo el dato que necesita
+        const rows = await ProductoModel.getPublicProductsWithImmutable(userId);
+        
+        // Transformamos los strings JSON de la BD a objetos JS para el frontend
+        const products = rows.map(p => ({
+            ...p,
+            imagenes_json: safeJSONParse(p.imagenes_json || '[]')
+        }));
+        
+        res.status(200).json(products);
+    } catch (err) {
+        console.error("Error getPublicProducts:", err);
+        res.status(500).json({ error: err.message });
+    }
+};
+
+const normalizeImage = (data) => {
+    if (!data) return null;
+    if (typeof data === 'string') {
+        const trimmed = data.trim();
+        if ((trimmed.startsWith('[') && trimmed.endsWith(']')) || (trimmed.startsWith('{') && trimmed.endsWith('}'))) {
+            try {
+                const parsed = JSON.parse(trimmed);
+                return normalizeImage(parsed);
+            } catch (e) {}
+        }
+        return data;
+    }
+    if (Array.isArray(data)) {
+        return data.length > 0 ? normalizeImage(data[0]) : null;
+    }
+    if (typeof data === 'object') {
+        return data.url || data.src || data.image || null;
+    }
+    return null;
+};
+
+const getMarketplaceProducts = async (req, res) => {
+    try {
+        const { tipo, categorias, sabores, premios: premiosFiltro, limit = 20, offset = 0 } = req.query;
+        const perfilMin = req.query.perfil_min || {};
+
+        // 1. Delegamos al Modelo la tarea de traer los datos (Data Access)
+        const rows = await ProductoModel.getMarketplaceBaseProducts(tipo);
+
+        // 2. Lógica de negocio: Formateo y Normalización
+        let products = rows.map(row => {
+            const saboresData = safeJSONParse(row.sabores_json);
+            const perfilData = safeJSONParse(row.perfil_data);
+            const premiosData = safeJSONParse(row.product_premios_json);
+            const imagenesDataRaw = safeJSONParse(row.product_imagenes_json || '[]');
+
+            const imagen = normalizeImage(imagenesDataRaw);
+            const imagenesData = Array.isArray(imagenesDataRaw) ? imagenesDataRaw : (imagenesDataRaw ? [imagenesDataRaw] : []);
+
+            return {
+                id: row.product_id,
+                nombre: row.product_name,
+                descripcion: row.product_descripcion,
+                tipo: row.product_tipo,
+                presentacion: row.presentacion,
+                variedad: row.product_variedad,
+                proceso: row.product_proceso,
+                nivel_tueste: row.product_nivel_tueste,
+                puntaje_sca: row.product_puntaje_sca,
+                imagen,
+                imagenes_json: imagenesData,
+                sabores: saboresData,
+                perfil: perfilData,
+                premios: Array.isArray(premiosData) ? premiosData : [],
+                empresa: {
+                    id: row.company_id,
+                    nombre: row.company_name,
+                    tipo: row.company_type,
+                    slug: row.company_slug, // Nota: row.company_slug no está en el SELECT de tu query actual, revísalo
+                    logo: row.company_logo,
+                    pais: row.company_pais  // Nota: row.company_pais tampoco está en el SELECT actual
+                }
+            };
+        });
+
+        // 3. Lógica de negocio: Filtros en memoria
+        if (categorias) {
+            const selectedCategories = Array.isArray(categorias) ? categorias : [categorias];
+            if (selectedCategories.length > 0) {
+                products = products.filter(p => p.sabores && Array.isArray(p.sabores) && 
+                    selectedCategories.some(cat => p.sabores.some(n => n.category && n.category.toLowerCase() === cat.toLowerCase()))
+                );
+            }
+        }
+
+        if (sabores) {
+            const selectedSubnotes = Array.isArray(sabores) ? sabores : [sabores];
+            if (selectedSubnotes.length > 0) {
+                products = products.filter(p => p.sabores && Array.isArray(p.sabores) && 
+                    selectedSubnotes.some(sub => p.sabores.some(n => n.subnote && n.subnote.toLowerCase() === sub.toLowerCase()))
+                );
+            }
+        }
+
+        const perfilKeys = Object.keys(perfilMin);
+        if (perfilKeys.length > 0) {
+            products = products.filter(p => {
+                if (!p.perfil) return false;
+                return perfilKeys.every(attr => {
+                    const minVal = parseFloat(perfilMin[attr]);
+                    const productVal = parseFloat(p.perfil[attr]);
+                    if (isNaN(minVal) || minVal <= 0) return true;
+                    if (isNaN(productVal)) return false;
+                    return productVal >= minVal;
+                });
+            });
+        }
+
+        if (premiosFiltro) {
+            const premiosArray = Array.isArray(premiosFiltro) ? premiosFiltro : [premiosFiltro];
+            if (premiosArray.length > 0) {
+                products = products.filter(p => p.premios && p.premios.length > 0 && 
+                    premiosArray.some(prem => p.premios.some(pp => pp.nombre && pp.nombre.toLowerCase().includes(prem.toLowerCase())))
+                );
+            }
+        }
+
+        // 4. Paginación en memoria
+        const total = products.length;
+        const paginatedProducts = products.slice(parseInt(offset), parseInt(offset) + parseInt(limit));
+
+        // 5. Respuesta HTTP
+        res.json({ total, products: paginatedProducts });
+    } catch (err) {
+        console.error("Error getMarketplaceProducts:", err);
+        res.status(500).json({ error: err.message });
+    }
+};
+
+module.exports = { getProductos, createProducto, updateProducto, deleteProducto, getPublicProducts, getMarketplaceProducts };

@@ -2250,70 +2250,6 @@ const getPublicCompaniesWithImmutable = async (req, res) => {
     }
 };
 
-// 2. Listar Productos de una Empresa que tienen trazabilidad inmutable
-const getPublicProductsWithImmutable = async (req, res) => {
-    const { userId } = req.params;
-    try {
-        const sql = `
-            WITH RECURSIVE BatchLineage AS (
-                -- 1. Ancla: Empezamos desde los lotes certificados
-                SELECT 
-                    b.id as target_batch_id, 
-                    b.parent_id, 
-                    b.producto_id,
-                    tr.id as registry_id
-                FROM batches b
-                JOIN traceability_registry tr ON CAST(b.id AS TEXT) = CAST(tr.batch_id AS TEXT)
-                
-                UNION ALL
-                
-                -- 2. Recursión: Vamos subiendo hacia los padres buscando datos
-                SELECT 
-                    bl.target_batch_id, 
-                    parent.parent_id, 
-                    parent.producto_id,
-                    bl.registry_id
-                FROM batches parent
-                JOIN BatchLineage bl ON CAST(bl.parent_id AS TEXT) = CAST(parent.id AS TEXT)
-            ),
-            ResolvedProducts AS (
-                -- 3. Consolidación
-                SELECT 
-                    target_batch_id,
-                    registry_id,
-                    MAX(producto_id) as producto_id
-                FROM BatchLineage
-                WHERE producto_id IS NOT NULL AND producto_id != ''
-                GROUP BY target_batch_id, registry_id
-            )
-            -- 4. Consulta Final: Solo productos ACTIVOS y PUBLICADOS
-            SELECT DISTINCT 
-                p.id, 
-                p.nombre, 
-                p.descripcion, 
-                p.imagenes_json, 
-                p.tipo_producto,
-                COUNT(rp.registry_id) as lotes_count
-            FROM productos p
-            JOIN ResolvedProducts rp ON CAST(p.id AS TEXT) = CAST(rp.producto_id AS TEXT)
-            WHERE CAST(p.user_id AS TEXT) = ? 
-              AND (p.is_published IS TRUE OR p.is_published IS NULL) -- Compatibilidad con registros viejos
-              AND p.deleted_at IS NULL
-            GROUP BY p.id, p.nombre, p.descripcion, p.imagenes_json, p.tipo_producto
-            ORDER BY p.nombre ASC
-        `;
-        const rows = await all(sql, [String(userId)]);
-        const products = rows.map(p => ({
-            ...p,
-            imagenes_json: safeJSONParse(p.imagenes_json || '[]')
-        }));
-        res.status(200).json(products);
-    } catch (err) {
-        console.error("Error getPublicProductsWithImmutable:", err);
-        res.status(500).json({ error: err.message });
-    }
-};
-
 // 3. Listar Lotes Inmutables de un Producto específico
 const getPublicBatchesForProduct = async (req, res) => {
     const { productId } = req.params;
@@ -2865,179 +2801,6 @@ const claimSuggestion = async (req, res) => {
     }
 };
 
-const getMarketplaceProducts = async (req, res) => {
-    try {
-        const { tipo, categorias, sabores, premios: premiosFiltro, limit = 20, offset = 0 } = req.query;
-        // perfil_min puede venir como perfil_min[acidez]=7 etc.
-        const perfilMin = req.query.perfil_min || {};
-
-        // Construir query base para productos con su empresa
-        let sql = `
-            SELECT
-                p.id as product_id,
-                p.user_id as company_id,
-                p.nombre as product_name,
-                p.imagen_url as product_imagen,
-                p.descripcion as product_descripcion,
-                p.peso as presentacion,
-                p.tipo_producto as product_tipo,
-                p.variedad as product_variedad,
-                p.proceso as product_proceso,
-                p.nivel_tueste as product_nivel_tueste,
-                p.puntaje_sca as product_puntaje_sca,
-                p.premios_json as product_premios_json,
-                p.imagenes_json as product_imagenes_json,
-                perf.perfil_data as perfil_data,
-                perf.tipo as perfil_tipo,
-                rueda.notas_json as sabores_json,
-                rueda.tipo as sabores_tipo,
-                cp.name as company_name,
-                cp.company_type as company_type,
-                COALESCE(cp.logo_url, u.company_logo) as company_logo
-            FROM productos p
-            JOIN users u ON p.user_id = u.id
-            LEFT JOIN company_profiles cp ON u.id = cp.user_id
-            LEFT JOIN perfiles perf ON p.perfil_id = perf.id
-            LEFT JOIN ruedas_sabores rueda ON p.rueda_id = rueda.id
-            WHERE p.is_published IS TRUE AND p.deleted_at IS NULL
-        `;
-        const params = [];
-
-        // Filtro 1: Tipo de producto
-        if (tipo && tipo !== 'todos') {
-            sql += ` AND LOWER(p.tipo_producto) = LOWER(?)`;
-            params.push(tipo);
-        }
-
-        const rows = await all(sql, params);
-
-        // Post-filtrado en memoria (para sabores y perfil)
-        let products = rows.map(row => {
-            const saboresData = safeJSONParse(row.sabores_json);
-            const perfilData = safeJSONParse(row.perfil_data);
-            const premiosData = safeJSONParse(row.product_premios_json);
-            const imagenesDataRaw = safeJSONParse(row.product_imagenes_json || '[]');
-
-            const normalizeImage = (data) => {
-                if (!data) return null;
-                if (typeof data === 'string') {
-                    const trimmed = data.trim();
-                    // Si es un JSON válido, parsear y volver a normalizar
-                    if ((trimmed.startsWith('[') && trimmed.endsWith(']')) || (trimmed.startsWith('{') && trimmed.endsWith('}'))) {
-                        try {
-                            const parsed = JSON.parse(trimmed);
-                            return normalizeImage(parsed);
-                        } catch (e) {
-                            // No es JSON, usar como string normal
-                        }
-                    }
-                    return data;
-                }
-                if (Array.isArray(data)) {
-                    return data.length > 0 ? normalizeImage(data[0]) : null;
-                }
-                if (typeof data === 'object') {
-                    return data.url || data.src || data.image || null;
-                }
-                return null;
-            };
-
-            const imagen = normalizeImage(imagenesDataRaw);
-            const imagenesData = Array.isArray(imagenesDataRaw) ? imagenesDataRaw : (imagenesDataRaw ? [imagenesDataRaw] : []);
-
-            return {
-                id: row.product_id,
-                nombre: row.product_name,
-                descripcion: row.product_descripcion,
-                tipo: row.product_tipo,
-                presentacion: row.presentacion,
-                variedad: row.product_variedad,
-                proceso: row.product_proceso,
-                nivel_tueste: row.product_nivel_tueste,
-                puntaje_sca: row.product_puntaje_sca,
-                imagen,
-                imagenes_json: imagenesData,
-                sabores: saboresData,
-                perfil: perfilData,
-                premios: Array.isArray(premiosData) ? premiosData : [],
-                empresa: {
-                    id: row.company_id,
-                    nombre: row.company_name,
-                    tipo: row.company_type,
-                    slug: row.company_slug,
-                    logo: row.company_logo,
-                    pais: row.company_pais
-                }
-            };
-        });
-
-        // Filtro 2: Categorías de sabores (nivel 1)
-        if (categorias) {
-            const selectedCategories = Array.isArray(categorias) ? categorias : [categorias];
-            if (selectedCategories.length > 0) {
-                products = products.filter(p => {
-                    if (!p.sabores || !Array.isArray(p.sabores)) return false;
-                    return selectedCategories.some(cat =>
-                        p.sabores.some(n => n.category && n.category.toLowerCase() === cat.toLowerCase())
-                    );
-                });
-            }
-        }
-
-        // Filtro adicional: Subnotas/Sabores (nivel 2)
-        if (sabores) {
-            const selectedSubnotes = Array.isArray(sabores) ? sabores : [sabores];
-            if (selectedSubnotes.length > 0) {
-                products = products.filter(p => {
-                    if (!p.sabores || !Array.isArray(p.sabores)) return false;
-                    return selectedSubnotes.some(sub =>
-                        p.sabores.some(n => n.subnote && n.subnote.toLowerCase() === sub.toLowerCase())
-                    );
-                });
-            }
-        }
-
-        // Filtro 3: Perfil mínimo
-        const perfilKeys = Object.keys(perfilMin);
-        if (perfilKeys.length > 0) {
-            products = products.filter(p => {
-                if (!p.perfil) return false;
-                return perfilKeys.every(attr => {
-                    const minVal = parseFloat(perfilMin[attr]);
-                    const productVal = parseFloat(p.perfil[attr]);
-                    if (isNaN(minVal) || minVal <= 0) return true; // Sin filtro
-                    if (isNaN(productVal)) return false;
-                    return productVal >= minVal;
-                });
-            });
-        }
-
-        // Filtro 4: Premios
-        if (premiosFiltro) {
-            const premiosArray = Array.isArray(premiosFiltro) ? premiosFiltro : [premiosFiltro];
-            if (premiosArray.length > 0) {
-                products = products.filter(p => {
-                    if (!p.premios || p.premios.length === 0) return false;
-                    return premiosArray.some(prem =>
-                        p.premios.some(pp =>
-                            pp.nombre && pp.nombre.toLowerCase().includes(prem.toLowerCase())
-                        )
-                    );
-                });
-            }
-        }
-
-        // Aplicar paginación
-        const total = products.length;
-        const paginatedProducts = products.slice(parseInt(offset), parseInt(offset) + parseInt(limit));
-
-        res.json({ total, products: paginatedProducts });
-    } catch (err) {
-        console.error("Error getMarketplaceProducts:", err);
-        res.status(500).json({ error: err.message });
-    }
-};
-
 const serveCompanyLogo = async (req, res) => {
     const { id } = req.params;
     try {
@@ -3111,13 +2874,12 @@ module.exports = {
     addIngredienteReceta, updateIngredientePeso, deleteIngrediente,
     getRecetasNutricionales, createRecetaNutricional, deleteRecetaNutricional, updateRecetaNutricional,
     searchUSDA, getUSDADetails,
-    getPublicCompaniesWithImmutable, getPublicProductsWithImmutable, getPublicBatchesForProduct,
+    getPublicCompaniesWithImmutable, getPublicBatchesForProduct,
     getCurrencies, getUnits,
     getCompanyLandingData,
     trackAnalyticsEvent,
     getPublicCompaniesDataInternal,
     getCompanyLandingDataInternal,
     createSuggestion, getSuggestionById, claimSuggestion,
-    serveCompanyLogo,
-    getMarketplaceProducts
+    serveCompanyLogo
 };

@@ -83,4 +83,98 @@ const hardDelete = async (id, userId) => {
     );
 };
 
-module.exports = { getByIdAndUserId, getAllByUserId, create, update, checkUsageInBatches, softDelete, hardDelete };
+// Listar Productos de una Empresa con/sin trazabilidad inmutable
+const getPublicProductsWithImmutable = async (userId) => {
+    const sql = `
+        WITH RECURSIVE BatchLineage AS (
+            -- 1. Ancla: Empezamos desde los lotes certificados
+            SELECT 
+                b.id as target_batch_id, 
+                b.parent_id, 
+                b.producto_id,
+                tr.id as registry_id
+            FROM batches b
+            JOIN traceability_registry tr ON CAST(b.id AS TEXT) = CAST(tr.batch_id AS TEXT)
+            
+            UNION ALL
+            
+            -- 2. Recursión: Vamos subiendo hacia los padres buscando datos
+            SELECT 
+                bl.target_batch_id, 
+                parent.parent_id, 
+                parent.producto_id,
+                bl.registry_id
+            FROM batches parent
+            JOIN BatchLineage bl ON CAST(bl.parent_id AS TEXT) = CAST(parent.id AS TEXT)
+        ),
+        ResolvedProducts AS (
+            -- 3. Consolidación
+            SELECT 
+                target_batch_id,
+                registry_id,
+                MAX(producto_id) as producto_id
+            FROM BatchLineage
+            WHERE producto_id IS NOT NULL AND producto_id != ''
+            GROUP BY target_batch_id, registry_id
+        )
+        -- 4. Consulta Final: Solo productos ACTIVOS y PUBLICADOS
+        SELECT DISTINCT 
+            p.id, 
+            p.nombre, 
+            p.descripcion, 
+            p.imagenes_json, 
+            p.tipo_producto,
+            COUNT(rp.registry_id) as lotes_count
+        FROM productos p
+        JOIN ResolvedProducts rp ON CAST(p.id AS TEXT) = CAST(rp.producto_id AS TEXT)
+        WHERE CAST(p.user_id AS TEXT) = ? 
+          AND (p.is_published IS TRUE OR p.is_published IS NULL)
+          AND p.deleted_at IS NULL
+        GROUP BY p.id, p.nombre, p.descripcion, p.imagenes_json, p.tipo_producto
+        ORDER BY p.nombre ASC
+    `;
+    
+    return await db.all(sql, [String(userId)]);
+};
+
+const getMarketplaceBaseProducts = async (tipo) => {
+    let sql = `
+        SELECT
+            p.id as product_id,
+            p.user_id as company_id,
+            p.nombre as product_name,
+            p.imagen_url as product_imagen,
+            p.descripcion as product_descripcion,
+            p.peso as presentacion,
+            p.tipo_producto as product_tipo,
+            p.variedad as product_variedad,
+            p.proceso as product_proceso,
+            p.nivel_tueste as product_nivel_tueste,
+            p.puntaje_sca as product_puntaje_sca,
+            p.premios_json as product_premios_json,
+            p.imagenes_json as product_imagenes_json,
+            perf.perfil_data as perfil_data,
+            perf.tipo as perfil_tipo,
+            rueda.notas_json as sabores_json,
+            rueda.tipo as sabores_tipo,
+            cp.name as company_name,
+            cp.company_type as company_type,
+            COALESCE(cp.logo_url, u.company_logo) as company_logo
+        FROM productos p
+        JOIN users u ON p.user_id = u.id
+        LEFT JOIN company_profiles cp ON u.id = cp.user_id
+        LEFT JOIN perfiles perf ON p.perfil_id = perf.id
+        LEFT JOIN ruedas_sabores rueda ON p.rueda_id = rueda.id
+        WHERE p.is_published IS TRUE AND p.deleted_at IS NULL
+    `;
+    const params = [];
+
+    if (tipo && tipo !== 'todos') {
+        sql += ` AND LOWER(p.tipo_producto) = LOWER(?)`;
+        params.push(tipo);
+    }
+
+    return await db.all(sql, params);
+};
+
+module.exports = { getByIdAndUserId, getAllByUserId, create, update, checkUsageInBatches, softDelete, hardDelete, getPublicProductsWithImmutable, getMarketplaceBaseProducts };

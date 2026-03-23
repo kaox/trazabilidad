@@ -499,10 +499,10 @@ app.get('/sitemap-origen-unico.xml', async (req, res) => {
 });
 
 app.get('/api/public/companies', db.getPublicCompaniesWithImmutable);
-app.get('/api/public/companies/:userId/products', db.getPublicProductsWithImmutable);
+app.get('/api/public/companies/:userId/products', productosController.getPublicProducts);
 app.get('/api/public/products/:productId/batches', db.getPublicBatchesForProduct);
 app.get('/api/public/companies/:userId/landing', db.getCompanyLandingData);
-app.get('/api/public/marketplace/products', db.getMarketplaceProducts);
+app.get('/api/public/marketplace/products', productosController.getMarketplaceProducts);
 
 // 8. RUTAS PROTEGIDAS (VISTAS APP)
 //app.get('/app/dashboard', authenticatePage, checkSubscription('profesional'), (req, res) => res.sendFile(path.join(__dirname, 'views', 'dashboard.html')));
