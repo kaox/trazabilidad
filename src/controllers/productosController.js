@@ -4,7 +4,7 @@ const crypto = require('crypto');
 const { processImagesArray, deleteImagesArray } = require('../utils/storage');
 // Ajusta la ruta a donde tengas tus helpers
 const { safeJSONParse } = require('../utils/helpers');
-
+const provider = 'vercel';
 const getProductos = async (req, res) => {
     const userId = req.user.id;
     try {
@@ -47,7 +47,6 @@ const createProducto = async (req, res) => {
     const perfilId = (perfil_id && perfil_id !== "") ? perfil_id : null;
     const ruedaId = (rueda_id && rueda_id !== "") ? rueda_id : null;
 
-    const provider = process.env.STORAGE_PROVIDER || 'supabase';
     const procesadasImagenes = await processImagesArray(imagenes_json, 'productos', userId, provider);
 
     try {
@@ -97,11 +96,8 @@ const updateProducto = async (req, res) => {
     const perfilId = (perfil_id && perfil_id !== "") ? perfil_id : null;
     const ruedaId = (rueda_id && rueda_id !== "") ? rueda_id : null;
 
-    // Definimos el provider (podría venir de env)
-    const provider = process.env.STORAGE_PROVIDER || 'supabase';
-
     // Procesamiento de imágenes
-    const procesadasImagenes = await processImagesArray(imagenes_json, 'productos', userId, 'vercel');
+    const procesadasImagenes = await processImagesArray(imagenes_json, 'productos', userId, provider);
 
     try {
         const oldProduct = await ProductoModel.getByIdAndUserId(id, userId);
@@ -168,7 +164,6 @@ const deleteProducto = async (req, res) => {
             if (product && product.imagenes_json) {
                 const images = safeJSONParse(product.imagenes_json || '[]');
                 if (images.length > 0) {
-                    const provider = process.env.STORAGE_PROVIDER || 'supabase';
                     await deleteImagesArray(images, provider);
                 }
             }
