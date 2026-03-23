@@ -99,15 +99,15 @@ const updateProducto = async (req, res) => {
 
     // Definimos el provider (podría venir de env)
     const provider = process.env.STORAGE_PROVIDER || 'supabase';
-    
+
     // Procesamiento de imágenes
-    const procesadasImagenes = await processImagesArray(imagenes_json, 'productos', userId, provider);
+    const procesadasImagenes = await processImagesArray(imagenes_json, 'productos', userId, 'vercel');
 
     try {
         const oldProduct = await ProductoModel.getByIdAndUserId(id, userId);
         const oldImages = oldProduct && oldProduct.imagenes_json ? safeJSONParse(oldProduct.imagenes_json || '[]') : [];
         const deletedImages = oldImages.filter(oldImg => !procesadasImagenes.includes(oldImg));
-        
+
         if (deletedImages.length > 0) {
             await deleteImagesArray(deletedImages, provider);
         }
