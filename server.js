@@ -16,6 +16,7 @@ const PORT = process.env.PORT || 3000;
 const suggestionsController = require('./src/controllers/admin-suggestionsController');
 const productosController = require('./src/controllers/productosController');
 const companyProfileController = require('./src/controllers/companyProfileController');
+const fincasController = require('./src/controllers/fincasController');
 
 const RESERVED_SUBDOMAINS = ['www', 'app', 'api', 'admin', 'localhost', 'rurulab', 'mail', 'smtp'];
 
@@ -545,10 +546,10 @@ app.get('/partials/:partialName', (req, res) => {
 
 // 9. RUTAS DE API PROTEGIDAS
 // Fincas & Deforestación
-app.get('/api/fincas', authenticateApi, db.getFincas);
-app.post('/api/fincas', authenticateApi, db.createFinca);
-app.put('/api/fincas/:id', authenticateApi, db.updateFinca);
-app.delete('/api/fincas/:id', authenticateApi, db.deleteFinca);
+app.get('/api/fincas', authenticateApi, fincasController.getFincas);
+app.post('/api/fincas', authenticateApi, fincasController.createFinca);
+app.put('/api/fincas/:id', authenticateApi, fincasController.updateFinca);
+app.delete('/api/fincas/:id', authenticateApi, fincasController.deleteFinca);
 app.post('/api/validate-deforestation', authenticateApi, db.validateDeforestation);
 
 // Productos, Procesadoras, Perfiles, Ruedas
@@ -672,9 +673,9 @@ app.get('/api/proxy/usda/search', authenticateApi, db.searchUSDA);
 app.get('/api/proxy/usda/food/:fdcId', authenticateApi, db.getUSDADetails);
 
 // 11. RUTAS DE COMPARTICIÓN Y SUGERENCIAS
-app.post('/api/fincas/:id/share-token', authenticateApi, db.generateFincaToken);
-app.get('/api/public/fincas/:token', db.getFincaByToken);
-app.put('/api/public/fincas/:token', db.updateFincaByToken);
+app.post('/api/fincas/:id/share-token', authenticateApi, fincasController.generateFincaToken);
+app.get('/api/public/fincas/:token', fincasController.getFincaByToken);
+app.put('/api/public/fincas/:token', fincasController.updateFincaByToken);
 app.put('/api/public/suggestions/:id/claim', authenticateApi, db.claimSuggestion);
 
 // 12. INICIO DEL SERVIDOR
