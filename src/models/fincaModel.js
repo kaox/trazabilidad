@@ -1,5 +1,9 @@
 const db = require('../config/db');
 
+const getById = async (id) => {
+    return await db.get('SELECT * FROM fincas WHERE id = ?', [id]);
+};
+
 const getAllByUserId = async (userId) => {
     return await db.all('SELECT * FROM fincas WHERE user_id = ? ORDER BY nombre_finca', [userId]);
 };
@@ -46,6 +50,7 @@ const updateByToken = async (fincaId, data) => {
 };
 
 module.exports = {
+    getById,
     getAllByUserId,
     create,
     update,

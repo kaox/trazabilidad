@@ -1,5 +1,9 @@
 const db = require('../config/db');
 
+const getById = async (id) => {
+    return await db.get('SELECT * FROM procesadoras WHERE id = ?', [id]);
+};
+
 const getAllByUserId = async (userId) => {
     return await db.all('SELECT * FROM procesadoras WHERE user_id = ? ORDER BY nombre_comercial', [userId]);
 };
@@ -40,6 +44,7 @@ const deleteById = async (id, userId) => {
 module.exports = {
     getAllByUserId,
     getByIdAndUserId,
+    getById,
     create,
     update,
     deleteById

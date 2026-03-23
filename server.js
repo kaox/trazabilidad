@@ -18,6 +18,9 @@ const productosController = require('./src/controllers/productosController');
 const companyProfileController = require('./src/controllers/companyProfileController');
 const fincasController = require('./src/controllers/fincasController');
 const procesadorasController = require('./src/controllers/procesadorasController');
+const empresasController = require('./src/controllers/empresasController');
+const landingsController = require('./src/controllers/landingsController');
+
 
 const RESERVED_SUBDOMAINS = ['www', 'app', 'api', 'admin', 'localhost', 'rurulab', 'mail', 'smtp'];
 
@@ -498,10 +501,10 @@ app.get('/sitemap-origen-unico.xml', async (req, res) => {
     }
 });
 
-app.get('/api/public/companies', db.getPublicCompaniesWithImmutable);
+app.get('/api/public/companies', empresasController.getPublicCompaniesWithImmutable);
 app.get('/api/public/companies/:userId/products', productosController.getPublicProducts);
 app.get('/api/public/products/:productId/batches', db.getPublicBatchesForProduct);
-app.get('/api/public/companies/:userId/landing', db.getCompanyLandingData);
+app.get('/api/public/companies/:userId/landing', landingsController.getCompanyLandingData);
 app.get('/api/public/marketplace/products', productosController.getMarketplaceProducts);
 
 // 8. RUTAS PROTEGIDAS (VISTAS APP)

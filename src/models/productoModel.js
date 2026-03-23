@@ -177,4 +177,31 @@ const getMarketplaceBaseProducts = async (tipo) => {
     return await db.all(sql, params);
 };
 
-module.exports = { getByIdAndUserId, getAllByUserId, create, update, checkUsageInBatches, softDelete, hardDelete, getPublicProductsWithImmutable, getMarketplaceBaseProducts };
+const getPublicProductsWithProfilesByUserId = async (userId) => {
+    const sql = `
+        SELECT 
+            p.id, p.nombre, p.descripcion, p.imagenes_json, p.tipo_producto, p.premios_json, p.peso,
+            perf.perfil_data, 
+            rueda.notas_json, rueda.nombre_rueda
+        FROM productos p
+        LEFT JOIN perfiles perf ON p.perfil_id = perf.id
+        LEFT JOIN ruedas_sabores rueda ON p.rueda_id = rueda.id
+        WHERE p.user_id = ? 
+          AND p.deleted_at IS NULL
+          AND (p.is_published IS TRUE OR p.is_published IS NULL)
+        ORDER BY p.nombre ASC
+    `;
+    return await db.all(sql, [userId]);
+};
+
+module.exports = { 
+    getByIdAndUserId,
+     getAllByUserId, 
+     create, update, 
+     checkUsageInBatches, 
+     softDelete, 
+     hardDelete, 
+     getPublicProductsWithImmutable, 
+     getMarketplaceBaseProducts,
+    getPublicProductsWithProfilesByUserId
+};
