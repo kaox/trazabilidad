@@ -17,6 +17,7 @@ const suggestionsController = require('./src/controllers/admin-suggestionsContro
 const productosController = require('./src/controllers/productosController');
 const companyProfileController = require('./src/controllers/companyProfileController');
 const fincasController = require('./src/controllers/fincasController');
+const procesadorasController = require('./src/controllers/procesadorasController');
 
 const RESERVED_SUBDOMAINS = ['www', 'app', 'api', 'admin', 'localhost', 'rurulab', 'mail', 'smtp'];
 
@@ -557,10 +558,10 @@ app.get('/api/productos', authenticateApi, productosController.getProductos);
 app.post('/api/productos', authenticateApi, productosController.createProducto);
 app.put('/api/productos/:id', authenticateApi, productosController.updateProducto);
 app.delete('/api/productos/:id', authenticateApi, productosController.deleteProducto);
-app.get('/api/procesadoras', authenticateApi, db.getProcesadoras);
-app.post('/api/procesadoras', authenticateApi, db.createProcesadora);
-app.put('/api/procesadoras/:id', authenticateApi, db.updateProcesadora);
-app.delete('/api/procesadoras/:id', authenticateApi, db.deleteProcesadora);
+app.get('/api/procesadoras', authenticateApi, procesadorasController.getProcesadoras);
+app.post('/api/procesadoras', authenticateApi, procesadorasController.createProcesadora);
+app.put('/api/procesadoras/:id', authenticateApi, procesadorasController.updateProcesadora);
+app.delete('/api/procesadoras/:id', authenticateApi, procesadorasController.deleteProcesadora);
 // Sucursales de Procesadora
 app.get('/api/procesadoras/:procesadoraId/sucursales', authenticateApi, db.getSucursales);
 app.post('/api/procesadoras/:procesadoraId/sucursales', authenticateApi, db.createSucursal);
