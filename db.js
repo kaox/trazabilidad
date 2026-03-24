@@ -542,113 +542,6 @@ const deleteStage = async (req, res) => {
     } catch (err) { res.status(500).json({ error: err.message }); }
 };
 
-const finalizeBatch = async (req, res) => {
-    const { id } = req.params; const userId = req.user.id;
-    const targetBatch = await checkBatchOwnership(id, userId);
-    if (!targetBatch) return res.status(403).json({ error: "Sin permiso." });
-    if (targetBatch.is_locked) return res.status(409).json({ error: "Ya finalizado." });
-
-    try {
-        const rows = await all(`WITH RECURSIVE trace AS (SELECT * FROM batches WHERE id = ? UNION ALL SELECT b.* FROM batches b INNER JOIN trace t ON b.id = t.parent_id) SELECT * FROM trace;`, [id]);
-        if (rows.length === 0) return res.status(404).json({ error: 'Lote no encontrado' });
-
-        const rootBatch = rows.find(r => !r.parent_id);
-        const ownerId = rootBatch.user_id;
-        const [templateInfo, allStages, ownerInfo, acopioData, productoInfo] = await Promise.all([
-            get('SELECT nombre_producto FROM plantillas_proceso WHERE id = ?', [rootBatch.plantilla_id]),
-            all('SELECT id, nombre_etapa, descripcion, orden, campos_json, fase FROM etapas_plantilla WHERE plantilla_id = ? ORDER BY orden', [rootBatch.plantilla_id]),
-            get('SELECT empresa, company_logo, subscription_tier FROM users WHERE id = ?', [rootBatch.user_id]),
-            rootBatch.acquisition_id ? get('SELECT * FROM acquisitions WHERE id = ?', [rootBatch.acquisition_id]) : null,
-            rootBatch.producto_id ? get('SELECT * FROM productos WHERE id = ?', [rootBatch.producto_id]) : null
-        ]);
-
-        // CORRECCIÓN: Obtener procesadoras para guardar en el snapshot
-        const procesadorasList = await all('SELECT * FROM procesadoras WHERE user_id = ?', [ownerId]);
-        const procesadorasData = procesadorasList.map(p => ({
-            ...p,
-            coordenadas: safeJSONParse(p.coordenadas || 'null'),
-            imagenes_json: safeJSONParse(p.imagenes_json || '[]'),
-            premios_json: safeJSONParse(p.premios_json || '[]'),
-            certificaciones_json: safeJSONParse(p.certificaciones_json || '[]')
-        }));
-
-        const historySnapshot = { productName: templateInfo.nombre_producto, ownerInfo, stages: [], fincaData: null, procesadorasData: procesadorasData, acopioData: acopioData ? { ...acopioData, data_adicional: safeJSONParse(acopioData.data_adicional) } : null, productoFinal: null, nutritionalData: null, perfilSensorialData: null, ruedaSaborData: null, maridajesRecomendados: {}, generatedAt: new Date().toISOString() };
-
-        if (productoInfo) {
-            historySnapshot.productoFinal = { ...productoInfo, imagenes_json: safeJSONParse(productoInfo.imagenes_json), premios_json: safeJSONParse(productoInfo.premios_json) };
-            if (productoInfo.receta_nutricional_id) {
-                const receta = await get('SELECT * FROM recetas_nutricionales WHERE id = ?', [productoInfo.receta_nutricional_id]);
-                if (receta) { const ing = await all('SELECT * FROM ingredientes_receta WHERE receta_id = ?', [receta.id]); historySnapshot.nutritionalData = { ...receta, ingredientes: ing.map(i => ({ ...i, nutrientes_base_json: safeJSONParse(i.nutrientes_base_json) })) }; }
-            }
-        }
-
-        // --- DESGLOSE ACOPIO ---
-        if (historySnapshot.acopioData) {
-            const ad = historySnapshot.acopioData.data_adicional || {};
-            const imgs = safeJSONParse(acopioData.imagenes_json || '{}'); // Cargar mapa de imágenes
-
-            if (acopioData.finca_origen) {
-                const finca = await get('SELECT * FROM fincas WHERE nombre_finca = ? AND user_id = ?', [acopioData.finca_origen, userId]);
-                if (finca) historySnapshot.fincaData = { ...finca, coordenadas: safeJSONParse(finca.coordenadas), imagenes_json: safeJSONParse(finca.imagenes_json), certificaciones_json: safeJSONParse(finca.certificaciones_json), premios_json: safeJSONParse(finca.premios_json) };
-            }
-            const acopioStagesDef = allStages.filter(s => s.fase === 'acopio' || (s.orden <= 3 && s.nombre_etapa.match(/(cosecha|ferment|secado)/i)));
-            acopioStagesDef.forEach(stageDef => {
-                const suffix = `__${stageDef.orden}`;
-                let stageData = {}; let dataFound = false;
-
-                // Datos
-                Object.keys(ad).forEach(key => { if (key.endsWith(suffix)) { stageData[key.split('__')[0]] = ad[key]; dataFound = true; } });
-                const fields = safeJSONParse(stageDef.campos_json);
-                [...(fields.entradas || []), ...(fields.variables || []), ...(fields.salidas || [])].map(f => f.name).forEach(fname => { if (!stageData[fname] && ad[fname]) { stageData[fname] = ad[fname]; dataFound = true; } });
-
-                // Imágenes (Cruce con sufijo)
-                Object.keys(imgs).forEach(key => {
-                    if (key.endsWith(suffix)) {
-                        stageData['imageUrl'] = { value: imgs[key], visible: true, nombre: 'Foto' };
-                        dataFound = true;
-                    }
-                });
-
-                if (dataFound) {
-                    historySnapshot.stages.push({
-                        id: `${acopioData.id}_S${stageDef.orden}`,
-                        nombre_etapa: stageDef.nombre_etapa,
-                        descripcion: stageDef.descripcion,
-                        campos_json: fields,
-                        data: stageData,
-                        blockchain_hash: null,
-                        is_locked: true,
-                        timestamp: acopioData.fecha_acopio
-                    });
-                }
-            });
-        }
-
-        // ... (Recuperar Perfil Sensorial y Rueda - Lógica igual) ...
-        let perfilId = null, ruedaId = null; const rootData = safeJSONParse(rootBatch.data); if (rootData.target_profile_id?.value) perfilId = rootData.target_profile_id.value; if (rootData.target_wheel_id?.value) ruedaId = rootData.target_wheel_id.value; if (!perfilId || !ruedaId) { for (const row of rows) { const rd = safeJSONParse(row.data); if (!perfilId && rd.tipoPerfil?.value) perfilId = rd.tipoPerfil.value; if (!ruedaId && rd.tipoRuedaSabor?.value) ruedaId = rd.tipoRuedaSabor.value; } }
-        if (perfilId) { let perfil = await get('SELECT * FROM perfiles WHERE id = ?', [perfilId]); if (!perfil && isNaN(perfilId)) perfil = await get('SELECT * FROM perfiles WHERE nombre = ? AND user_id = ?', [perfilId, userId]); if (perfil) { historySnapshot.perfilSensorialData = safeJSONParse(perfil.perfil_data); if (perfil.tipo === 'cacao') { const allCafes = await all("SELECT * FROM perfiles WHERE tipo = 'cafe' AND user_id = ?", [userId]); const recCafe = allCafes.map(cafe => ({ producto: { ...cafe, perfil_data: safeJSONParse(cafe.perfil_data) }, puntuacion: calcularMaridajeCacaoCafe(historySnapshot.perfilSensorialData, safeJSONParse(cafe.perfil_data)) })).sort((a, b) => b.puntuacion - a.puntuacion).slice(0, 3); historySnapshot.maridajesRecomendados = { cafe: recCafe }; } } }
-        if (ruedaId) { const rueda = await get('SELECT * FROM ruedas_sabores WHERE id = ?', [ruedaId]); if (rueda) historySnapshot.ruedaSaborData = { ...rueda, notas_json: safeJSONParse(rueda.notas_json) }; }
-
-        rows.sort((a, b) => { const sA = allStages.find(s => s.id === a.etapa_id)?.orden || 0; const sB = allStages.find(s => s.id === b.etapa_id)?.orden || 0; return sA - sB; }).forEach(row => {
-            const sInfo = allStages.find(s => s.id === row.etapa_id);
-            if (sInfo) historySnapshot.stages.push({ id: row.id, nombre_etapa: sInfo.nombre_etapa, descripcion: sInfo.descripcion, campos_json: safeJSONParse(sInfo.campos_json), data: safeJSONParse(row.data), blockchain_hash: row.blockchain_hash, is_locked: row.is_locked, timestamp: row.created_at });
-        });
-
-        const dataToHash = { id, snapshot: historySnapshot, salt: crypto.randomBytes(16).toString('hex') };
-        const hash = crypto.createHash('sha256').update(JSON.stringify(dataToHash)).digest('hex');
-        historySnapshot.blockchain_hash = hash;
-
-        await run(`INSERT INTO traceability_registry (id, batch_id, user_id, nombre_producto, gtin, fecha_finalizacion, snapshot_data, blockchain_hash) VALUES (?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT(id) DO UPDATE SET snapshot_data = excluded.snapshot_data, blockchain_hash = excluded.blockchain_hash`,
-            [id, id, userId, templateInfo.nombre_producto, historySnapshot.productoFinal?.gtin, new Date().toISOString(), JSON.stringify(historySnapshot), hash]);
-
-        await run('UPDATE batches SET blockchain_hash = ?, is_locked = TRUE WHERE id = ?', [hash, id]);
-        let curr = targetBatch.parent_id;
-        while (curr) { await run('UPDATE batches SET is_locked = TRUE WHERE id = ?', [curr]); const p = await get('SELECT parent_id FROM batches WHERE id = ?', [curr]); curr = p ? p.parent_id : null; }
-
-        res.status(200).json({ message: "Certificado exitosamente.", hash });
-    } catch (err) { res.status(500).json({ error: err.message }); }
-};
-
 const getTrazabilidad = async (req, res) => {
     const { id } = req.params;
     try {
@@ -2155,7 +2048,6 @@ module.exports = {
     getTemplates, createTemplate, updateTemplate, deleteTemplate,
     getSystemTemplates, cloneTemplate, // <-- NUEVAS FUNCIONES EXPORTADAS
     getStagesForTemplate, createStage, updateStage, deleteStage,
-    finalizeBatch,
     getTrazabilidad, getBatchMetadata, serveProductImage,
     getUserProfile, updateUserProfile, updateUserPassword,
     getRuedasSabores, createRuedaSabores, updateRuedaSabores, deleteRuedaSabores,
