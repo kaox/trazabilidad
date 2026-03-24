@@ -1,5 +1,9 @@
 const db = require('../config/db');
 
+const getById = async (id) => {
+    return await db.get('SELECT * FROM acquisitions WHERE id = ?', [id]);
+};
+
 // Obtener todos los acopios de un usuario con sus unidades y monedas
 const getAllByUserId = async (userId) => {
     const sql = `
@@ -74,6 +78,7 @@ const update = async (id, userId, data) => {
 };
 
 module.exports = {
+    getById,
     getAllByUserId,
     create,
     checkUsageInBatches,

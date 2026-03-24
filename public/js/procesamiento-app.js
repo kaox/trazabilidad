@@ -1291,16 +1291,30 @@ document.addEventListener('DOMContentLoaded', () => {
     function setupFormListeners() {
         const fileInputs = modalContent.querySelectorAll('input[type="file"]');
         fileInputs.forEach(input => {
-            input.addEventListener('change', e => {
+            input.addEventListener('change', async (e) => {
                 const file = e.target.files[0];
                 const fieldName = e.target.name; 
                 const container = e.target.closest('div').parentElement; 
                 const fileNameSpan = container.querySelector('.file-name-display');
                 const previewImg = container.querySelector('.file-preview-img');
-                if(file) {
-                    const reader = new FileReader();
-                    reader.onload = () => { imagesMap[fieldName] = reader.result; previewImg.src = reader.result; previewImg.classList.remove('hidden'); };
-                    reader.readAsDataURL(file);
+                if (file) {
+                    try {
+                        const compressFn = window.compressImage;
+                        const dataUrl = compressFn
+                            ? await compressFn(file, { maxWidth: 1200, maxHeight: 1200, quality: 0.75 })
+                            : await new Promise((res, rej) => {
+                                const r = new FileReader();
+                                r.onload = () => res(r.result);
+                                r.onerror = rej;
+                                r.readAsDataURL(file);
+                              });
+                        imagesMap[fieldName] = dataUrl;
+                        previewImg.src = dataUrl;
+                        previewImg.classList.remove('hidden');
+                        if (fileNameSpan) fileNameSpan.textContent = file.name;
+                    } catch (err) {
+                        console.error('Error comprimiendo imagen:', err);
+                    }
                 }
             });
         });

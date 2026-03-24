@@ -1,8 +1,37 @@
 const BatchModel = require('../models/batchModel');
 const { safeJSONParse, toCamelCase } = require('../utils/helpers');
+const { uploadImageBase64 } = require('../utils/storage');
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
+
+const BATCH_IMAGE_PROVIDER = 'supabase';
+
+/**
+ * Recorre el objeto data de un lote y sube cualquier imagen en base64 a Supabase.
+ * Reemplaza el valor base64 por la URL pública resultante.
+ * @param {object} dataObj - El objeto data del lote
+ * @param {number|string} userId - ID del usuario
+ * @returns {Promise<object>} - El mismo objeto data con URLs en lugar de base64
+ */
+const uploadBatchImages = async (dataObj, userId) => {
+    if (!dataObj || typeof dataObj !== 'object') return dataObj;
+    const processedData = { ...dataObj };
+    for (const key of Object.keys(processedData)) {
+        const entry = processedData[key];
+        if (entry && typeof entry === 'object' && entry.value && typeof entry.value === 'string' && entry.value.startsWith('data:image/')) {
+            try {
+                const filename = `batches/user-${userId}-${Date.now()}-${key}`;
+                const url = await uploadImageBase64(entry.value, filename, BATCH_IMAGE_PROVIDER);
+                processedData[key] = { ...entry, value: url };
+            } catch (err) {
+                console.error(`Error subiendo imagen del lote [campo: ${key}]:`, err.message);
+                // Mantenemos el original si falla
+            }
+        }
+    }
+    return processedData;
+};
 
 // NOTA: Asegúrate de importar estas funciones desde sus respectivos archivos/servicios
 // const { ensureTemplateAndStageExists, syncBatchOutputs } = require('../services/tuServicioDePlantillas');
@@ -199,6 +228,9 @@ const createBatch = async (req, res) => {
             await BatchModel.updateAcquisitionStatus(acquisition_id, userId, 'procesado');
         }
 
+        // Subir imágenes base64 a Supabase antes de persistir
+        data = await uploadBatchImages(data, userId);
+
         // Delegar inserción al modelo según tenga padre o no
         if (!parent_id) {
             await BatchModel.createAsRoot({
@@ -244,6 +276,12 @@ const updateBatch = async (req, res) => {
         if (!targetBatch) return res.status(404).json({ error: "Lote no encontrado" });
         if (targetBatch.is_locked) return res.status(409).json({ error: "Lote bloqueado." });
 
+        // Obtener userId para el path de imagen (ancestría si es lote hijo)
+        const batchUserId = targetBatch.user_id || req.user?.id;
+
+        // Subir imágenes base64 a Supabase antes de persistir
+        data = await uploadBatchImages(data, batchUserId);
+
         let finalProductId = undefined;
         if (producto_id !== undefined) finalProductId = producto_id === "" ? null : producto_id;
         else if (data && data.productoFinal?.value) finalProductId = data.productoFinal.value;
@@ -272,7 +310,17 @@ const deleteBatch = async (req, res) => {
         const targetBatch = await checkBatchOwnership(id, req.user.id);
         if (!targetBatch) return res.status(403).json({ error: "Sin permiso." });
         if (targetBatch.is_locked) return res.status(409).json({ error: "Lote bloqueado." });
-        
+
+        // Eliminar imágenes del lote de Supabase antes de borrar el registro
+        const { deleteImageByUrl } = require('../utils/storage');
+        const batchData = safeJSONParse(targetBatch.data || '{}');
+        for (const key of Object.keys(batchData)) {
+            const entry = batchData[key];
+            if (entry && typeof entry === 'object' && typeof entry.value === 'string' && entry.value.startsWith('https://')) {
+                await deleteImageByUrl(entry.value, BATCH_IMAGE_PROVIDER);
+            }
+        }
+
         await BatchModel.deleteById(id);
         res.status(204).send(); 
     } catch (err) { 
