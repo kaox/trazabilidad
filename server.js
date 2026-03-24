@@ -21,6 +21,7 @@ const procesadorasController = require('./src/controllers/procesadorasController
 const empresasController = require('./src/controllers/empresasController');
 const landingsController = require('./src/controllers/landingsController');
 const acquisitionsController = require('./src/controllers/acquisitionsController');
+const batchesController = require('./src/controllers/batchesController');
 
 const RESERVED_SUBDOMAINS = ['www', 'app', 'api', 'admin', 'localhost', 'rurulab', 'mail', 'smtp'];
 
@@ -592,12 +593,12 @@ app.put('/api/templates/stages/:stageId', authenticateApi, db.updateStage);
 app.delete('/api/templates/stages/:stageId', authenticateApi, db.deleteStage);
 
 // Lotes & Acopio
-app.get('/api/batches/tree', authenticateApi, db.getBatchesTree);
-app.post('/api/batches', authenticateApi, db.createBatch);
-app.put('/api/batches/:id', authenticateApi, db.updateBatch);
-app.delete('/api/batches/:id', authenticateApi, db.deleteBatch);
-app.post('/api/batches/:id/finalize', authenticateApi, db.finalizeBatch);
-app.get('/api/batches/immutable', authenticateApi, db.getImmutableBatches);
+app.get('/api/batches/tree', authenticateApi, batchesController.getBatchesTree);
+app.post('/api/batches', authenticateApi, batchesController.createBatch);
+app.put('/api/batches/:id', authenticateApi, batchesController.updateBatch);
+app.delete('/api/batches/:id', authenticateApi, batchesController.deleteBatch);
+app.post('/api/batches/:id/finalize', authenticateApi, batchesController.finalizeBatch);
+app.get('/api/batches/immutable', authenticateApi, batchesController.getImmutableBatches);
 app.get('/api/acquisitions', authenticateApi, acquisitionsController.getAcquisitions);
 app.post('/api/acquisitions', authenticateApi, acquisitionsController.createAcquisition);
 app.delete('/api/acquisitions/:id', authenticateApi, acquisitionsController.deleteAcquisition);

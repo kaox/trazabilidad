@@ -43,9 +43,18 @@ const toCamelCase = (str) => {
         .replace(/\s+/g, '');
 };
 
+const calcularMaridajeCacaoCafe = (cacao, cafe) => {
+    const pInt = 1 - (Math.abs((cacao.perfil_data.cacao || 0) - (cafe.perfil_data.sabor || 0)) / 10);
+    const pAcid = 1 - (Math.abs((cacao.perfil_data.acidez || 0) - (cafe.perfil_data.acidez || 0)) / 10);
+    const pDulz = 1 - (Math.abs((cacao.perfil_data.caramelo || 0) - (cafe.perfil_data.dulzura || 0)) / 10);
+    const pComp = 1 - (Math.abs(((cacao.perfil_data.amargor || 0) + (cacao.perfil_data.madera || 0)) / 2 - ((cafe.perfil_data.cuerpo || 0) + (cafe.perfil_data.postgusto || 0)) / 2) / 10);
+    return ((pInt * 0.4) + (((pAcid + pDulz + pComp) / 3) * 0.6)) * 100;
+}
+
 module.exports = {
     safeJSONParse,
     sanitizeNumber,
     createSlug,
-    toCamelCase
+    toCamelCase,
+    calcularMaridajeCacaoCafe
 };
