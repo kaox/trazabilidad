@@ -194,14 +194,27 @@ const getPublicProductsWithProfilesByUserId = async (userId) => {
     return await db.all(sql, [userId]);
 };
 
+const getBasicPublicProductsByUserId = async (userId) => {
+    const sql = `
+        SELECT p.id, p.nombre, p.descripcion, p.imagenes_json, p.tipo_producto,
+               p.variedad, p.proceso, p.nivel_tueste, p.puntaje_sca
+        FROM productos p
+        WHERE p.user_id = ? AND p.deleted_at IS NULL
+          AND (p.is_published IS TRUE OR p.is_published IS NULL)
+        ORDER BY p.nombre ASC
+    `;
+    return await db.all(sql, [userId]);
+};
+
 module.exports = { 
     getByIdAndUserId,
-     getAllByUserId, 
-     create, update, 
-     checkUsageInBatches, 
-     softDelete, 
-     hardDelete, 
-     getPublicProductsWithImmutable, 
-     getMarketplaceBaseProducts,
-    getPublicProductsWithProfilesByUserId
+    getAllByUserId, 
+    create, update, 
+    checkUsageInBatches, 
+    softDelete, 
+    hardDelete, 
+    getPublicProductsWithImmutable, 
+    getMarketplaceBaseProducts,
+    getPublicProductsWithProfilesByUserId,
+    getBasicPublicProductsByUserId
 };

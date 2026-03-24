@@ -137,4 +137,81 @@ const getCompanyLandingData = async (req, res) => {
     }
 };
 
-module.exports = { getCompanyLandingData };
+const getCompanyLandingDataInternal = async (userId) => {
+    try {
+        const isSuggested = String(userId).startsWith('SUG-');
+
+        if (isSuggested) {
+            const suggestion = await EmpresaModel.getSuggestedById(userId);
+            if (!suggestion) return null;
+            return {
+                user: {
+                    id: suggestion.id, name: suggestion.name, logo: suggestion.logo,
+                    type: suggestion.type, is_suggested: true, celular: null,
+                    instagram: suggestion.social_instagram, facebook: suggestion.social_facebook
+                },
+                entity: {
+                    nombre_finca: suggestion.type === 'finca' ? suggestion.name : null,
+                    nombre_comercial: suggestion.type === 'procesadora' ? suggestion.name : null,
+                    pais: suggestion.pais, departamento: suggestion.departamento,
+                    provincia: suggestion.provincia, distrito: suggestion.distrito,
+                    coordenadas: safeJSONParse(suggestion.coordenadas),
+                    imagenes: [], certificaciones: [], premios: [], historia: null,
+                    social_instagram: suggestion.social_instagram, social_facebook: suggestion.social_facebook
+                },
+                products: []
+            };
+        }
+
+        const userRow = await EmpresaModel.getVerifiedProfileByUserId(userId);
+        if (!userRow) return null;
+
+        const companyData = {
+            id: userId,
+            name: userRow.cp_name || userRow.u_empresa,
+            type: userRow.cp_type || userRow.u_type,
+            logo: userRow.logo_url || userRow.u_logo,
+            cover: userRow.cover_image_url || null,
+            history: userRow.history_text || '',
+            celular: userRow.contact_phone || userRow.u_phone || '',
+            email: userRow.contact_email || userRow.u_email || '',
+            instagram: userRow.cp_ig || userRow.u_ig || '',
+            facebook: userRow.cp_fb || userRow.u_fb || '',
+            is_suggested: false
+        };
+
+        const actualCompanyId = userRow.cp_company_id || userRow.u_company_id;
+
+        let entityPromise = Promise.resolve({});
+        if (companyData.type === 'finca' && actualCompanyId) {
+            entityPromise = EmpresaModel.getFincaById(actualCompanyId);
+        } else if (companyData.type === 'procesadora' && actualCompanyId) {
+            entityPromise = EmpresaModel.getProcesadoraById(actualCompanyId);
+        }
+
+        // Usamos el nuevo método del modelo de productos
+        const productsPromise = ProductoModel.getBasicPublicProductsByUserId(userId);
+
+        const [entityData, products] = await Promise.all([entityPromise, productsPromise]);
+
+        if (entityData && entityData.id) {
+            entityData.imagenes = safeJSONParse(entityData.imagenes_json || '[]');
+            entityData.certificaciones = safeJSONParse(entityData.certificaciones_json || '[]');
+            entityData.premios = safeJSONParse(entityData.premios_json || '[]');
+            entityData.coordenadas = safeJSONParse(entityData.coordenadas || 'null');
+        }
+
+        const productsFormatted = products.map(p => ({
+            ...p,
+            imagenes: safeJSONParse(p.imagenes_json || '[]')
+        }));
+
+        return { user: companyData, entity: entityData || {}, products: productsFormatted };
+
+    } catch (e) {
+        console.error('Error getCompanyLandingDataInternal:', e);
+        return null;
+    }
+};
+
+module.exports = { getCompanyLandingData, getCompanyLandingDataInternal };

@@ -71,9 +71,53 @@ const getProcesadoraById = async (id) => {
     return await db.get('SELECT * FROM procesadoras WHERE id = ?', [id]);
 };
 
+// 7. (NUEVO) Obtener lista básica de todas las empresas (Verificadas + Sugeridas) para uso interno
+const getPublicCompaniesDataInternal = async () => {
+    const sql = `
+        SELECT 
+            cp.user_id AS id, 
+            cp.name AS empresa, 
+            cp.logo_url AS company_logo,
+            COALESCE(f.provincia, p.provincia) AS provincia,
+            COALESCE(f.departamento, p.departamento) AS departamento,
+            COALESCE(f.pais, p.pais) AS pais
+        FROM 
+            company_profiles cp
+        LEFT JOIN 
+            fincas f ON cp.company_id = f.id AND cp.company_type = 'finca'
+        LEFT JOIN 
+            procesadoras p ON cp.company_id = p.id AND cp.company_type = 'procesadora'
+        WHERE 
+            cp.name IS NOT NULL 
+            AND cp.name != ''
+
+        UNION ALL
+
+        SELECT 
+            id, 
+            name as empresa, 
+            logo as company_logo, 
+            provincia, 
+            departamento, 
+            pais
+        FROM 
+            suggested_companies
+    `;
+
+    try {
+        return await db.all(sql);
+    } catch (err) {
+        console.error("Error interno fetching companies:", err);
+        return []; // Mantenemos tu fallback de devolver un array vacío en caso de error
+    }
+};
+
 module.exports = {
     getVerifiedCompaniesWithImmutable,
     getSuggestedCompanies,
     getSuggestedById,
-    getVerifiedProfileByUserId
+    getVerifiedProfileByUserId,
+    getFincaById,
+    getProcesadoraById,
+    getPublicCompaniesDataInternal
 };

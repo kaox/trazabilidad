@@ -13,6 +13,8 @@ const gs1Resolver = require('./gs1-resolver');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+const EmpresaModel = require('./src/models/empresaModel');
+
 const suggestionsController = require('./src/controllers/admin-suggestionsController');
 const productosController = require('./src/controllers/productosController');
 const companyProfileController = require('./src/controllers/companyProfileController');
@@ -49,7 +51,7 @@ app.use(async (req, res, next) => {
         console.log(`🔍 Detectado subdominio: ${subdomain}`);
 
         // Obtener todas las empresas (Idealmente crear una función db.findCompanyBySlug para optimizar)
-        const companies = await db.getPublicCompaniesDataInternal();
+        const companies = await EmpresaModel.getPublicCompaniesDataInternal();
 
         // Buscar empresa cuyo slug coincida con el subdominio
         const company = companies.find(c => createSlug(c.empresa) === subdomain);
@@ -84,7 +86,7 @@ app.use(async (req, res, next) => {
             try {
                 const protocol = req.headers['x-forwarded-proto'] || req.protocol;
                 const host = req.get('host');
-                const landingData = await db.getCompanyLandingDataInternal(company.id);
+                const landingData = await landingsController.getCompanyLandingDataInternal(company.id);
                 if (landingData) {
                     jsonLdTag = buildJsonLd({
                         ...landingData,
@@ -393,7 +395,7 @@ app.get('/origen-unico/:slug', async (req, res) => {
     fs.readFile(filePath, 'utf8', async (err, htmlData) => {
         if (err) return res.status(500).send('Error interno');
         try {
-            const companies = await db.getPublicCompaniesDataInternal();
+            const companies = await EmpresaModel.getPublicCompaniesDataInternal();
 
             // --- NUEVA LÓGICA DE BÚSQUEDA HÍBRIDA ---
             let company = null;
@@ -432,7 +434,7 @@ app.get('/origen-unico/:slug', async (req, res) => {
                 let jsonLdTag = '';
                 try {
                     const pageUrl = `${protocol}://${host}${req.originalUrl}`;
-                    const landingData = await db.getCompanyLandingDataInternal(company.id);
+                    const landingData = await landingsController.getCompanyLandingDataInternal(company.id);
                     if (landingData) {
                         jsonLdTag = buildJsonLd({ ...landingData, pageUrl });
                     }
@@ -464,7 +466,7 @@ app.get('/sitemap-origen-unico.xml', async (req, res) => {
     try {
         // 1. Obtener todas las empresas (Verificadas y Sugeridas)
         // Reutilizamos la función que ya creaste en db.js
-        const companies = await db.getPublicCompaniesDataInternal();
+        const companies = await EmpresaModel.getPublicCompaniesDataInternal();
 
         // 2. Configurar el inicio del XML
         let sitemap = '<?xml version="1.0" encoding="UTF-8"?>\n';
@@ -504,7 +506,7 @@ app.get('/sitemap-origen-unico.xml', async (req, res) => {
 
 app.get('/api/public/companies', empresasController.getPublicCompaniesWithImmutable);
 app.get('/api/public/companies/:userId/products', productosController.getPublicProducts);
-app.get('/api/public/products/:productId/batches', db.getPublicBatchesForProduct);
+app.get('/api/public/products/:productId/batches', db.getPublicBatchesForProduct);//TODO Validar si se usa, sino borrar
 app.get('/api/public/companies/:userId/landing', landingsController.getCompanyLandingData);
 app.get('/api/public/marketplace/products', productosController.getMarketplaceProducts);
 
