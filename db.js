@@ -584,114 +584,6 @@ const generateUniqueLoteId = async (prefix) => {
     return id;
 };
 
-// --- ACOPIOS (NUEVO MÓDULO) ---
-
-const getAcquisitions = async (req, res) => {
-    const userId = req.user.id;
-    try {
-        // Hacemos JOIN para traer el código de la unidad (KG, LB) y el símbolo de moneda ($, S/)
-        // Esto evita tener que guardar esos textos manualmente
-        const sql = `
-            SELECT a.*, 
-                   u.code as unit_code, 
-                   c.code as currency_code, c.symbol as currency_symbol
-            FROM acquisitions a
-            LEFT JOIN units_of_measure u ON a.unit_id = u.id
-            LEFT JOIN currencies c ON a.currency_id = c.id
-            WHERE a.user_id = ? AND a.deleted_at IS NULL 
-            ORDER BY a.created_at DESC
-        `;
-        const rows = await all(sql, [userId]);
-
-        const result = rows.map(r => ({
-            ...r,
-            imagenes_json: safeJSONParse(r.imagenes_json || '[]'),
-            data_adicional: safeJSONParse(r.data_adicional || '{}'),
-            // Inyectamos valores legibles para el frontend si existen los joins, sino fallbacks
-            display_unit: r.unit_code || 'KG',
-            display_currency: r.currency_symbol || '$'
-        }));
-        res.status(200).json(result);
-    } catch (err) { res.status(500).json({ error: err.message }); }
-};
-
-const createAcquisition = async (req, res) => {
-    const userId = req.user.id;
-    const {
-        nombre_producto, tipo_acopio, subtipo, fecha_acopio,
-        peso_kg, precio_unitario, // Valores normalizados
-        original_quantity, original_price, unit_id, currency_id, // Nuevos campos vinculados
-        finca_origen, observaciones, imagenes_json, data_adicional
-    } = req.body;
-
-    const randomPart = Math.random().toString(36).substring(2, 6).toUpperCase();
-    const id = `ACP-${randomPart}`;
-
-    try {
-        await run(
-            `INSERT INTO acquisitions (
-                id, user_id, nombre_producto, tipo_acopio, subtipo, fecha_acopio, 
-                peso_kg, precio_unitario, 
-                original_quantity, original_price, unit_id, currency_id,
-                finca_origen, observaciones, imagenes_json, data_adicional
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-            [
-                id, userId, nombre_producto, tipo_acopio, subtipo, fecha_acopio,
-                peso_kg, precio_unitario,
-                original_quantity, original_price, unit_id, currency_id,
-                finca_origen, observaciones, JSON.stringify(imagenes_json), JSON.stringify(data_adicional)
-            ]
-        );
-        res.status(201).json({ message: "Acopio registrado", id });
-    } catch (err) { res.status(500).json({ error: err.message }); }
-};
-
-const deleteAcquisition = async (req, res) => {
-    const userId = req.user.id;
-    const { id } = req.params;
-
-    try {
-        // 1. Verificar si el acopio ya fue usado en algún lote de producción
-        const usageCheck = await get('SELECT id FROM batches WHERE acquisition_id = ? LIMIT 1', [id]);
-
-        if (usageCheck) {
-            // CASO A: Tiene historial -> Eliminación Lógica (Soft Delete)
-            await run('UPDATE acquisitions SET deleted_at = CURRENT_TIMESTAMP WHERE id = ? AND user_id = ?', [id, userId]);
-            res.status(200).json({
-                message: "El acopio tiene procesos vinculados. Se ha archivado (eliminación lógica) para mantener la trazabilidad.",
-                type: 'soft'
-            });
-        } else {
-            // CASO B: No tiene historial -> Eliminación Física (Hard Delete)
-            const result = await run('DELETE FROM acquisitions WHERE id = ? AND user_id = ?', [id, userId]);
-            if (result.changes === 0) return res.status(404).json({ error: "Acopio no encontrado." });
-            res.status(204).send(); // No content
-        }
-    } catch (err) {
-        console.error("Error deleteAcquisition:", err);
-        res.status(500).json({ error: err.message });
-    }
-};
-
-const updateAcquisition = async (req, res) => {
-    const userId = req.user.id;
-    const { id } = req.params;
-    const { nombre_producto, tipo_acopio, subtipo, fecha_acopio, peso_kg, precio_unitario, finca_origen, observaciones, imagenes_json, data_adicional } = req.body;
-
-    try {
-        const result = await run(
-            'UPDATE acquisitions SET nombre_producto = ?, tipo_acopio = ?, subtipo = ?, fecha_acopio = ?, peso_kg = ?, precio_unitario = ?, finca_origen = ?, observaciones = ?, imagenes_json = ?, data_adicional = ? WHERE id = ? AND user_id = ?',
-            [nombre_producto, tipo_acopio, subtipo, fecha_acopio, peso_kg, precio_unitario, finca_origen, observaciones, JSON.stringify(imagenes_json), JSON.stringify(data_adicional), id, userId]
-        );
-
-        if (result.changes === 0) return res.status(404).json({ error: "Acopio no encontrado o sin permisos." });
-
-        res.status(200).json({ message: "Acopio actualizado correctamente" });
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-};
-
 const createBatch = async (req, res) => {
     const userId = req.user.id;
     // Agregamos input_quantity al destructuring
@@ -2557,7 +2449,6 @@ module.exports = {
     getTemplates, createTemplate, updateTemplate, deleteTemplate,
     getSystemTemplates, cloneTemplate, // <-- NUEVAS FUNCIONES EXPORTADAS
     getStagesForTemplate, createStage, updateStage, deleteStage,
-    getAcquisitions, createAcquisition, deleteAcquisition, updateAcquisition,
     getBatchesTree, createBatch, updateBatch, deleteBatch, finalizeBatch, syncBatchOutputs,
     getTrazabilidad, getImmutableBatches, getBatchMetadata, serveProductImage,
     getUserProfile, updateUserProfile, updateUserPassword,

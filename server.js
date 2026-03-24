@@ -20,7 +20,7 @@ const fincasController = require('./src/controllers/fincasController');
 const procesadorasController = require('./src/controllers/procesadorasController');
 const empresasController = require('./src/controllers/empresasController');
 const landingsController = require('./src/controllers/landingsController');
-
+const acquisitionsController = require('./src/controllers/acquisitionsController');
 
 const RESERVED_SUBDOMAINS = ['www', 'app', 'api', 'admin', 'localhost', 'rurulab', 'mail', 'smtp'];
 
@@ -598,10 +598,10 @@ app.put('/api/batches/:id', authenticateApi, db.updateBatch);
 app.delete('/api/batches/:id', authenticateApi, db.deleteBatch);
 app.post('/api/batches/:id/finalize', authenticateApi, db.finalizeBatch);
 app.get('/api/batches/immutable', authenticateApi, db.getImmutableBatches);
-app.get('/api/acquisitions', authenticateApi, db.getAcquisitions);
-app.post('/api/acquisitions', authenticateApi, db.createAcquisition);
-app.delete('/api/acquisitions/:id', authenticateApi, db.deleteAcquisition);
-app.put('/api/acquisitions/:id', authenticateApi, db.updateAcquisition);
+app.get('/api/acquisitions', authenticateApi, acquisitionsController.getAcquisitions);
+app.post('/api/acquisitions', authenticateApi, acquisitionsController.createAcquisition);
+app.delete('/api/acquisitions/:id', authenticateApi, acquisitionsController.deleteAcquisition);
+app.put('/api/acquisitions/:id', authenticateApi, acquisitionsController.updateAcquisition);
 
 // Perfil de Usuario & Config
 app.get('/api/user/profile', authenticateApi, db.getUserProfile);
