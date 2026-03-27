@@ -27,7 +27,6 @@ const ChartUtils = {
      * @param {string} tipoProducto - 'cafe' o 'cacao' (u otro)
      */
     initializePerfilChart: function (canvasId, perfilData, tipoProducto = '') {
-        console.log("Inicializando Radar para:", canvasId, "con datos:", perfilData, "y tipo:", tipoProducto);
         const chartCanvas = document.getElementById(canvasId);
         if (!chartCanvas || !perfilData) return;
 

@@ -53,7 +53,8 @@ const updateProcesadora = async (req, res) => {
         const oldProcesadora = await ProcesadoraModel.getByIdAndUserId(id, userId);
         if (!oldProcesadora) return res.status(404).json({ error: "Procesadora no encontrada o no tienes permiso." });
 
-        const oldImages = oldProcesadora.imagenes_json ? safeJSONParse(oldProcesadora.imagenes_json || '[]') : [];
+        let oldImages = oldProcesadora.imagenes_json ? safeJSONParse(oldProcesadora.imagenes_json || '[]') : [];
+        if (!Array.isArray(oldImages)) oldImages = [];
         const deletedImages = oldImages.filter(oldImg => !procesadasImagenes.includes(oldImg));
 
         if (deletedImages.length > 0) {
@@ -78,7 +79,8 @@ const deleteProcesadora = async (req, res) => {
         const oldProcesadora = await ProcesadoraModel.getByIdAndUserId(id, userId);
         if (!oldProcesadora) return res.status(404).json({ error: "Procesadora no encontrada o no tienes permiso." });
 
-        const oldImages = oldProcesadora.imagenes_json ? safeJSONParse(oldProcesadora.imagenes_json) : [];
+        let oldImages = oldProcesadora.imagenes_json ? safeJSONParse(oldProcesadora.imagenes_json) : [];
+        if (!Array.isArray(oldImages)) oldImages = [];
         if (oldImages.length > 0) {
             await deleteImagesArray(oldImages, provider);
         }

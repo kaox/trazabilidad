@@ -114,7 +114,8 @@ const updateProducto = async (req, res) => {
 
     try {
         const oldProduct = await ProductoModel.getByIdAndUserId(id, userId);
-        const oldImages = oldProduct && oldProduct.imagenes_json ? safeJSONParse(oldProduct.imagenes_json || '[]') : [];
+        let oldImages = oldProduct && oldProduct.imagenes_json ? safeJSONParse(oldProduct.imagenes_json || '[]') : [];
+        if (!Array.isArray(oldImages)) oldImages = [];
         const deletedImages = oldImages.filter(oldImg => !procesadasImagenes.includes(oldImg));
 
         if (deletedImages.length > 0) {
@@ -276,6 +277,17 @@ const getMarketplaceProducts = async (req, res) => {
                 sabores: saboresData,
                 perfil: perfilData,
                 premios: Array.isArray(premiosData) ? premiosData : [],
+                precio: row.product_precio,
+                moneda: row.currency_symbol,
+                unidad: row.unit_code,
+                finca: row.finca_nombre ? {
+                    nombre: row.finca_nombre,
+                    pais: row.finca_pais,
+                    departamento: row.finca_departamento,
+                    provincia: row.finca_provincia,
+                    distrito: row.finca_distrito,
+                    altura: row.finca_altura
+                } : null,
                 empresa: {
                     id: row.company_id,
                     nombre: row.company_name,

@@ -24,7 +24,7 @@ const getAllByUserId = async (userId) => {
 };
 
 // Crear un nuevo producto
-const create = async (id, userId, data) => {
+const create = async (data) => {
     const sql = `
         INSERT INTO productos (
             user_id, nombre, descripcion, gtin, is_formal_gtin, imagenes_json,
@@ -39,12 +39,12 @@ const create = async (id, userId, data) => {
     `;
 
     const params = [
-        userId, data.nombre, data.descripcion, data.gtin, data.is_formal_gtin, data.imagenes_json,
+        data.user_id, data.nombre, data.descripcion, data.gtin, data.is_formal_gtin, data.imagenes_json,
         data.ingredientes, data.tipo_producto, data.peso, data.premios_json,
         data.receta_nutricional_id, data.is_published, data.perfil_id, data.rueda_id,
         data.atributos_dinamicos ? JSON.stringify(data.atributos_dinamicos) : '{}',
         data.unit_id, data.precio, data.currency_id, data.finca_id,
-        id
+        data.id
     ];
     return await db.run(sql, params);
 };
@@ -165,6 +165,11 @@ const getMarketplaceBaseProducts = async (tipo) => {
             c.symbol as currency_symbol,
             u_measure.code as unit_code,
             f.nombre_finca as finca_nombre,
+            f.pais as finca_pais,
+            f.departamento as finca_departamento,
+            f.provincia as finca_provincia,
+            f.distrito as finca_distrito,
+            f.altura as finca_altura,
             perf.perfil_data as perfil_data,
             perf.tipo as perfil_tipo,
             rueda.notas_json as sabores_json,

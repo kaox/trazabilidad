@@ -381,10 +381,54 @@ document.addEventListener('DOMContentLoaded', () => {
         const html = state.products.map(p => {
             const companySlug = p.empresa.slug || p.empresa.id;
 
-            // Variedad y Proceso
-            const variedadText = p.variedad ? p.variedad : '';
-            const procesoText = p.proceso ? p.proceso : '';
-            const pesoText = p.presentacion ? ` [${p.presentacion}]` : '';
+            // Precio y Presentación
+            let precioHtml = '';
+            if (p.precio) {
+                const currency = p.moneda || 'S/';
+                const unit = p.presentacion + ' ' + p.unidad || 'Unid';
+                precioHtml = `
+                    <div class="flex items-baseline gap-1 mt-1 mb-2">
+                        <span class="text-xl font-bold text-stone-900">${currency} ${Number(p.precio).toFixed(2)}</span>
+                        ${unit ? `<span class="text-xs text-stone-500 font-medium tracking-wide">[${unit.toUpperCase()}]</span>` : ''}
+                    </div>
+                `;
+            } else if (p.presentacion) {
+                precioHtml = `<p class="text-xs font-semibold text-stone-500 mb-2 mt-1 py-1 px-2 bg-stone-100 rounded inline-block uppercase tracking-wider">${p.presentacion}</p>`;
+            }
+
+            // Detalles Específicos (Café vs Cacao)
+            let detallesHtml = '';
+            if (p.tipo === 'cafe') {
+                const variedadText = p.variedad ? p.variedad : '';
+                const procesoText = p.proceso ? p.proceso : '';
+                if (variedadText || procesoText) {
+                    detallesHtml = `<p class="text-xs text-stone-500 font-medium mb-3 uppercase tracking-wide">${variedadText} ${variedadText && procesoText ? '&bull;' : ''} ${procesoText}</p>`;
+                }
+            } else if (p.tipo === 'cacao') {
+                const grupoText = p.grupo_genetico ? p.grupo_genetico : '';
+                const porcText = p.porcentaje_cacao ? `${p.porcentaje_cacao}%` : '';
+                if (grupoText || porcText) {
+                    detallesHtml = `<p class="text-xs text-stone-500 font-medium mb-3 uppercase tracking-wide">${grupoText} ${grupoText && porcText ? '&bull;' : ''} ${porcText}</p>`;
+                }
+            }
+
+            // Finca Origen
+            let fincaHtml = '';
+            if (p.finca) {
+                const parts = [p.finca.provincia, p.finca.departamento, p.finca.pais].filter(Boolean);
+                const location = parts.length > 0 ? parts.join(', ') : '';
+                const altText = p.finca.altura ? `${p.finca.altura} m.s.n.m.` : '';
+                fincaHtml = `
+                    <div class="flex items-start gap-2 mb-3 text-xs text-stone-600 bg-stone-50 p-2.5 rounded border border-stone-100 mt-2">
+                        <i class="fas fa-mountain text-stone-400 mt-0.5"></i>
+                        <div>
+                            <p class="font-bold text-stone-700">${p.finca.nombre}</p>
+                            ${location ? `<p>${location}</p>` : ''}
+                            ${altText ? `<p class="text-stone-500 font-medium mt-0.5">${altText}</p>` : ''}
+                        </div>
+                    </div>
+                `;
+            }
 
             // Descripción generada o base
             let desc = p.descripcion || '';
@@ -431,10 +475,16 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>
                     
                     <!-- Nombre y Peso -->
-                    <h3 class="font-bold text-xl text-stone-900 leading-tight mb-1">${p.nombre}${pesoText}</h3>
+                    <h3 class="font-bold text-xl text-stone-900 leading-tight">${p.nombre}</h3>
                     
-                    <!-- Variedad y Proceso -->
-                    ${(variedadText || procesoText) ? `<p class="text-xs text-stone-500 font-medium mb-3 uppercase tracking-wide">${variedadText} ${variedadText && procesoText ? '&bull;' : ''} ${procesoText}</p>` : ''}
+                    <!-- Precio y Tamaño -->
+                    ${precioHtml}
+                    
+                    <!-- Finca Info -->
+                    ${fincaHtml}
+                    
+                    <!-- Detalles Específicos -->
+                    ${detallesHtml}
 
                     <!-- Descripción -->
                     <p class="text-stone-600 text-sm mb-4 leading-relaxed line-clamp-3">
@@ -475,7 +525,7 @@ document.addEventListener('DOMContentLoaded', () => {
         state.products.forEach(p => {
             if (p.perfil) {
                 if (typeof ChartUtils !== 'undefined' && ChartUtils.initializePerfilChart) {
-                    ChartUtils.initializePerfilChart(`radar-${p.id}`, p.perfil, state.tipo);
+                    ChartUtils.initializePerfilChart(`radar-${p.id}`, p.perfil, p.tipo);
 
                     // Ajustar opciones del radar mini
                     const inst = ChartUtils.instances[`radar-${p.id}`];

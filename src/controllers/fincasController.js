@@ -83,7 +83,8 @@ const updateFinca = async (req, res) => {
 
     try {
         const oldFinca = await FincaModel.getByIdAndUserId(id, userId);
-        const oldImages = oldFinca && oldFinca.imagenes_json ? safeJSONParse(oldFinca.imagenes_json || '[]') : [];
+        let oldImages = oldFinca && oldFinca.imagenes_json ? safeJSONParse(oldFinca.imagenes_json || '[]') : [];
+        if (!Array.isArray(oldImages)) oldImages = [];
         const deletedImages = oldImages.filter(oldImg => !procesadasImagenes.includes(oldImg));
 
         if (deletedImages.length > 0) {
@@ -119,7 +120,8 @@ const deleteFinca = async (req, res) => {
         const oldFinca = await FincaModel.getByIdAndUserId(id, userId);
         if (!oldFinca) return res.status(404).json({ error: "Finca no encontrada o no tienes permiso." });
 
-        const oldImages = oldFinca.imagenes_json ? safeJSONParse(oldFinca.imagenes_json) : [];
+        let oldImages = oldFinca.imagenes_json ? safeJSONParse(oldFinca.imagenes_json) : [];
+        if (!Array.isArray(oldImages)) oldImages = [];
         if (oldImages.length > 0) {
             await deleteImagesArray(oldImages, provider);
         }
