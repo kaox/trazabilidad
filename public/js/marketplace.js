@@ -486,11 +486,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     <!-- Detalles Específicos -->
                     ${detallesHtml}
 
-                    <!-- Descripción -->
-                    <p class="text-stone-600 text-sm mb-4 leading-relaxed line-clamp-3">
-                        ${desc}
-                    </p>
-
                     <!-- Grafico de Perfil Sensorial -->
                     <div class="w-full h-48 mb-4 relative flex justify-center items-center">
                         ${p.perfil ? `<canvas id="${canvasId}"></canvas>` : `<p class="text-xs text-stone-400 italic">Sin perfil de taza</p>`}
