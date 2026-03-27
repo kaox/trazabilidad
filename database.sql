@@ -242,14 +242,15 @@ CREATE TABLE IF NOT EXISTS productos (
     user_id INTEGER NOT NULL,
     nombre TEXT NOT NULL,
     descripcion TEXT,
-    tipo_producto TEXT, -- 'cacao', 'cafe', etc.
-    peso TEXT,
-    gtin TEXT, -- Código de barras global (GS1)
-    is_formal_gtin BOOLEAN DEFAULT FALSE,
-    imagen_url TEXT, -- Legacy
+    tipo_producto TEXT CHECK(tipo_producto IN ('cafe', 'cacao', 'miel', 'otro')),
+    atributos_dinamicos JSON DEFAULT '{}', -- Datos variables (variedad, proceso, % cacao, etc.)
     imagenes_json JSONB DEFAULT '[]', -- Array de URLs
     ingredientes TEXT,
     premios_json JSONB DEFAULT '[]',
+    unit_id INTEGER,
+    precio NUMERIC,
+    currency_id INTEGER,
+    finca_id TEXT,
     receta_nutricional_id TEXT, -- Vinculación con Módulo Nutrición
     perfil_id INTEGER, -- Vinculación con Perfiles de Cata
     rueda_id INTEGER, -- Vinculación con Ruedas de Sabores

@@ -15,6 +15,7 @@ const getProductos = async (req, res) => {
         // Transformamos los strings JSON de la BD a objetos JS para el frontend
         const productos = rows.map(p => ({
             ...p,
+            atributos_dinamicos: safeJSONParse(p.atributos_dinamicos || '{}'),
             imagenes_json: safeJSONParse(p.imagenes_json || '[]'),
             premios_json: safeJSONParse(p.premios_json || '[]')
         }));
@@ -70,16 +71,18 @@ const createProducto = async (req, res) => {
             is_published: published,
             perfil_id: perfilId,
             rueda_id: ruedaId,
-            variedad: variedad,
-            proceso: proceso,
-            nivel_tueste: nivel_tueste,
-            puntaje_sca: puntaje_sca,
+            atributos_dinamicos: {
+                variedad,
+                proceso,
+                nivel_tueste,
+                puntaje_sca: puntaje_sca ? parseFloat(puntaje_sca) : null,
+                grupo_genetico,
+                porcentaje_cacao: porcentaje_cacao ? parseFloat(porcentaje_cacao) : null
+            },
             unit_id: (unit_id && unit_id !== "") ? unit_id : null,
             precio: (precio && precio !== "") ? precio : null,
             currency_id: (currency_id && currency_id !== "") ? currency_id : null,
-            finca_id: (finca_id && finca_id !== "") ? finca_id : null,
-            grupo_genetico: grupo_genetico,
-            porcentaje_cacao: (porcentaje_cacao && porcentaje_cacao !== "") ? porcentaje_cacao : null
+            finca_id: (finca_id && finca_id !== "") ? finca_id : null
         });
 
         res.status(201).json({ message: "Producto creado", id });
@@ -131,16 +134,18 @@ const updateProducto = async (req, res) => {
             is_published,
             perfil_id: perfilId,
             rueda_id: ruedaId,
-            variedad: variedad,
-            proceso: proceso,
-            nivel_tueste: nivel_tueste,
-            puntaje_sca: puntaje_sca,
+            atributos_dinamicos: {
+                variedad,
+                proceso,
+                nivel_tueste,
+                puntaje_sca: puntaje_sca ? parseFloat(puntaje_sca) : null,
+                grupo_genetico,
+                porcentaje_cacao: porcentaje_cacao ? parseFloat(porcentaje_cacao) : null
+            },
             unit_id: (unit_id && unit_id !== "") ? unit_id : null,
             precio: (precio && precio !== "") ? precio : null,
             currency_id: (currency_id && currency_id !== "") ? currency_id : null,
-            finca_id: (finca_id && finca_id !== "") ? finca_id : null,
-            grupo_genetico: grupo_genetico,
-            porcentaje_cacao: (porcentaje_cacao && porcentaje_cacao !== "") ? porcentaje_cacao : null
+            finca_id: (finca_id && finca_id !== "") ? finca_id : null
         });
 
         res.status(200).json({ message: "Producto actualizado" });
@@ -203,6 +208,7 @@ const getPublicProducts = async (req, res) => {
         // Transformamos los strings JSON de la BD a objetos JS para el frontend
         const products = rows.map(p => ({
             ...p,
+            atributos_dinamicos: safeJSONParse(p.atributos_dinamicos || '{}'),
             imagenes_json: safeJSONParse(p.imagenes_json || '[]')
         }));
         
@@ -244,6 +250,7 @@ const getMarketplaceProducts = async (req, res) => {
 
         // 2. Lógica de negocio: Formateo y Normalización
         let products = rows.map(row => {
+            const atributosData = safeJSONParse(row.atributos_dinamicos || '{}');
             const saboresData = safeJSONParse(row.sabores_json);
             const perfilData = safeJSONParse(row.perfil_data);
             const premiosData = safeJSONParse(row.product_premios_json);
@@ -258,10 +265,12 @@ const getMarketplaceProducts = async (req, res) => {
                 descripcion: row.product_descripcion,
                 tipo: row.product_tipo,
                 presentacion: row.presentacion,
-                variedad: row.product_variedad,
-                proceso: row.product_proceso,
-                nivel_tueste: row.product_nivel_tueste,
-                puntaje_sca: row.product_puntaje_sca,
+                variedad: atributosData.variedad,
+                proceso: atributosData.proceso,
+                nivel_tueste: atributosData.nivel_tueste,
+                puntaje_sca: atributosData.puntaje_sca,
+                grupo_genetico: atributosData.grupo_genetico,
+                porcentaje_cacao: atributosData.porcentaje_cacao,
                 imagen,
                 imagenes_json: imagenesData,
                 sabores: saboresData,

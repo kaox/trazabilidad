@@ -432,13 +432,17 @@ window.openProductModal = (id = null) => {
             document.getElementById('is_formal').checked = !!p.is_formal_gtin;
             document.getElementById('descripcion').value = p.descripcion || '';
             document.getElementById('ingredientes').value = p.ingredientes || '';
+            document.getElementById('tipo_producto').value = p.tipo_producto || '';
+            
+            const attr = p.atributos_dinamicos || {};
+            document.getElementById('variedad').value = attr.variedad || '';
+            document.getElementById('proceso').value = attr.proceso || '';
+            document.getElementById('nivel_tueste').value = attr.nivel_tueste || '';
+            document.getElementById('puntaje_sca').value = attr.puntaje_sca || '';
+            document.getElementById('grupo_genetico').value = attr.grupo_genetico || '';
+            document.getElementById('porcentaje_cacao').value = attr.porcentaje_cacao || '';
+            
             document.getElementById('peso').value = p.peso || '';
-            document.getElementById('variedad').value = p.variedad || '';
-            document.getElementById('proceso').value = p.proceso || '';
-            document.getElementById('nivel_tueste').value = p.nivel_tueste || '';
-            document.getElementById('puntaje_sca').value = p.puntaje_sca || '';
-            document.getElementById('grupo_genetico').value = p.grupo_genetico || '';
-            document.getElementById('porcentaje_cacao').value = p.porcentaje_cacao || '';
             document.getElementById('unit_id').value = p.unit_id || '';
             document.getElementById('precio').value = p.product_precio || p.precio || '';
             document.getElementById('currency_id').value = p.currency_id || '';

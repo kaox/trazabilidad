@@ -24,39 +24,40 @@ const getAllByUserId = async (userId) => {
 };
 
 // Crear un nuevo producto
-const create = async (data) => {
+const create = async (id, userId, data) => {
     const sql = `
         INSERT INTO productos (
-            id, user_id, nombre, descripcion, gtin, is_formal_gtin, 
-            imagenes_json, ingredientes, tipo_producto, peso, premios_json, 
+            user_id, nombre, descripcion, gtin, is_formal_gtin, imagenes_json,
+            ingredientes, tipo_producto, peso, premios_json,
             receta_nutricional_id, is_published, perfil_id, rueda_id,
-            variedad, proceso, nivel_tueste, puntaje_sca,
-            unit_id, precio, currency_id, finca_id, grupo_genetico, porcentaje_cacao
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            atributos_dinamicos,
+            unit_id, precio, currency_id, finca_id,
+            id
+        ) VALUES (
+            ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+        )
     `;
 
-    // El orden de los parámetros debe coincidir con la query
     const params = [
-        data.id, data.user_id, data.nombre, data.descripcion, data.gtin, data.is_formal_gtin,
-        data.imagenes_json, data.ingredientes, data.tipo_producto, data.peso, data.premios_json,
+        userId, data.nombre, data.descripcion, data.gtin, data.is_formal_gtin, data.imagenes_json,
+        data.ingredientes, data.tipo_producto, data.peso, data.premios_json,
         data.receta_nutricional_id, data.is_published, data.perfil_id, data.rueda_id,
-        data.variedad, data.proceso, data.nivel_tueste, data.puntaje_sca,
-        data.unit_id, data.precio, data.currency_id, data.finca_id, data.grupo_genetico, data.porcentaje_cacao
+        data.atributos_dinamicos ? JSON.stringify(data.atributos_dinamicos) : '{}',
+        data.unit_id, data.precio, data.currency_id, data.finca_id,
+        id
     ];
-
     return await db.run(sql, params);
 };
 
 // Actualizar producto
 const update = async (id, userId, data) => {
     const sql = `
-        UPDATE productos SET 
-            nombre = ?, descripcion = ?, gtin = ?, imagenes_json = ?, 
-            ingredientes = ?, tipo_producto = ?, peso = ?, premios_json = ?, 
+        UPDATE productos 
+        SET nombre = ?, descripcion = ?, gtin = ?, imagenes_json = ?,
+            ingredientes = ?, tipo_producto = ?, peso = ?, premios_json = ?,
             receta_nutricional_id = ?, is_published = ?, perfil_id = ?, rueda_id = ?,
-            variedad = ?, proceso = ?, nivel_tueste = ?, puntaje_sca = ?,
-            unit_id = ?, precio = ?, currency_id = ?, finca_id = ?, 
-            grupo_genetico = ?, porcentaje_cacao = ?
+            atributos_dinamicos = ?,
+            unit_id = ?, precio = ?, currency_id = ?, finca_id = ?
         WHERE id = ? AND user_id = ?
     `;
 
@@ -64,9 +65,8 @@ const update = async (id, userId, data) => {
         data.nombre, data.descripcion, data.gtin, data.imagenes_json,
         data.ingredientes, data.tipo_producto, data.peso, data.premios_json,
         data.receta_nutricional_id, data.is_published, data.perfil_id, data.rueda_id,
-        data.variedad, data.proceso, data.nivel_tueste, data.puntaje_sca,
+        data.atributos_dinamicos ? JSON.stringify(data.atributos_dinamicos) : '{}',
         data.unit_id, data.precio, data.currency_id, data.finca_id,
-        data.grupo_genetico, data.porcentaje_cacao,
         id, userId
     ];
 
@@ -158,10 +158,7 @@ const getMarketplaceBaseProducts = async (tipo) => {
             p.descripcion as product_descripcion,
             p.peso as presentacion,
             p.tipo_producto as product_tipo,
-            p.variedad as product_variedad,
-            p.proceso as product_proceso,
-            p.nivel_tueste as product_nivel_tueste,
-            p.puntaje_sca as product_puntaje_sca,
+            p.atributos_dinamicos,
             p.premios_json as product_premios_json,
             p.imagenes_json as product_imagenes_json,
             p.precio as product_precio,
@@ -215,7 +212,7 @@ const getPublicProductsWithProfilesByUserId = async (userId) => {
 const getBasicPublicProductsByUserId = async (userId) => {
     const sql = `
         SELECT p.id, p.nombre, p.descripcion, p.imagenes_json, p.tipo_producto,
-               p.variedad, p.proceso, p.nivel_tueste, p.puntaje_sca
+               p.atributos_dinamicos
         FROM productos p
         WHERE p.user_id = ? AND p.deleted_at IS NULL
           AND (p.is_published IS TRUE OR p.is_published IS NULL)
