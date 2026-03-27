@@ -9,9 +9,14 @@ const getByIdAndUserId = async (id, userId) => {
 // Obtener productos activos de un usuario
 const getAllByUserId = async (userId) => {
     const sql = `
-        SELECT p.*, r.nombre as receta_nutricional_nombre 
+        SELECT p.*, r.nombre as receta_nutricional_nombre,
+               u.code as unit_code, c.symbol as currency_symbol,
+               f.nombre_finca as finca_nombre
         FROM productos p
         LEFT JOIN recetas_nutricionales r ON p.receta_nutricional_id = r.id
+        LEFT JOIN units_of_measure u ON p.unit_id = u.id
+        LEFT JOIN currencies c ON p.currency_id = c.id
+        LEFT JOIN fincas f ON p.finca_id = f.id
         WHERE p.user_id = ? AND p.deleted_at IS NULL
         ORDER BY p.created_at DESC
     `;
@@ -25,8 +30,9 @@ const create = async (data) => {
             id, user_id, nombre, descripcion, gtin, is_formal_gtin, 
             imagenes_json, ingredientes, tipo_producto, peso, premios_json, 
             receta_nutricional_id, is_published, perfil_id, rueda_id,
-            variedad, proceso, nivel_tueste, puntaje_sca
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            variedad, proceso, nivel_tueste, puntaje_sca,
+            unit_id, precio, currency_id, finca_id, grupo_genetico, porcentaje_cacao
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
 
     // El orden de los parámetros debe coincidir con la query
@@ -34,7 +40,8 @@ const create = async (data) => {
         data.id, data.user_id, data.nombre, data.descripcion, data.gtin, data.is_formal_gtin,
         data.imagenes_json, data.ingredientes, data.tipo_producto, data.peso, data.premios_json,
         data.receta_nutricional_id, data.is_published, data.perfil_id, data.rueda_id,
-        data.variedad, data.proceso, data.nivel_tueste, data.puntaje_sca
+        data.variedad, data.proceso, data.nivel_tueste, data.puntaje_sca,
+        data.unit_id, data.precio, data.currency_id, data.finca_id, data.grupo_genetico, data.porcentaje_cacao
     ];
 
     return await db.run(sql, params);
@@ -47,7 +54,9 @@ const update = async (id, userId, data) => {
             nombre = ?, descripcion = ?, gtin = ?, imagenes_json = ?, 
             ingredientes = ?, tipo_producto = ?, peso = ?, premios_json = ?, 
             receta_nutricional_id = ?, is_published = ?, perfil_id = ?, rueda_id = ?,
-            variedad = ?, proceso = ?, nivel_tueste = ?, puntaje_sca = ?
+            variedad = ?, proceso = ?, nivel_tueste = ?, puntaje_sca = ?,
+            unit_id = ?, precio = ?, currency_id = ?, finca_id = ?, 
+            grupo_genetico = ?, porcentaje_cacao = ?
         WHERE id = ? AND user_id = ?
     `;
 
@@ -56,6 +65,8 @@ const update = async (id, userId, data) => {
         data.ingredientes, data.tipo_producto, data.peso, data.premios_json,
         data.receta_nutricional_id, data.is_published, data.perfil_id, data.rueda_id,
         data.variedad, data.proceso, data.nivel_tueste, data.puntaje_sca,
+        data.unit_id, data.precio, data.currency_id, data.finca_id,
+        data.grupo_genetico, data.porcentaje_cacao,
         id, userId
     ];
 
@@ -133,7 +144,7 @@ const getPublicProductsWithImmutable = async (userId) => {
         GROUP BY p.id, p.nombre, p.descripcion, p.imagenes_json, p.tipo_producto
         ORDER BY p.nombre ASC
     `;
-    
+
     return await db.all(sql, [String(userId)]);
 };
 
@@ -153,6 +164,10 @@ const getMarketplaceBaseProducts = async (tipo) => {
             p.puntaje_sca as product_puntaje_sca,
             p.premios_json as product_premios_json,
             p.imagenes_json as product_imagenes_json,
+            p.precio as product_precio,
+            c.symbol as currency_symbol,
+            u_measure.code as unit_code,
+            f.nombre_finca as finca_nombre,
             perf.perfil_data as perfil_data,
             perf.tipo as perfil_tipo,
             rueda.notas_json as sabores_json,
@@ -162,6 +177,9 @@ const getMarketplaceBaseProducts = async (tipo) => {
             COALESCE(cp.logo_url, u.company_logo) as company_logo
         FROM productos p
         JOIN users u ON p.user_id = u.id
+        LEFT JOIN currencies c ON p.currency_id = c.id
+        LEFT JOIN units_of_measure u_measure ON p.unit_id = u_measure.id
+        LEFT JOIN fincas f ON p.finca_id = f.id
         LEFT JOIN company_profiles cp ON u.id = cp.user_id
         LEFT JOIN perfiles perf ON p.perfil_id = perf.id
         LEFT JOIN ruedas_sabores rueda ON p.rueda_id = rueda.id
@@ -206,14 +224,14 @@ const getBasicPublicProductsByUserId = async (userId) => {
     return await db.all(sql, [userId]);
 };
 
-module.exports = { 
+module.exports = {
     getByIdAndUserId,
-    getAllByUserId, 
-    create, update, 
-    checkUsageInBatches, 
-    softDelete, 
-    hardDelete, 
-    getPublicProductsWithImmutable, 
+    getAllByUserId,
+    create, update,
+    checkUsageInBatches,
+    softDelete,
+    hardDelete,
+    getPublicProductsWithImmutable,
     getMarketplaceBaseProducts,
     getPublicProductsWithProfilesByUserId,
     getBasicPublicProductsByUserId

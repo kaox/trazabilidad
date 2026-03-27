@@ -31,7 +31,8 @@ const createProducto = async (req, res) => {
     const {
         nombre, descripcion, gtin, is_formal_gtin, imagenes_json,
         ingredientes, tipo_producto, peso, premios_json,
-        receta_nutricional_id, is_published, perfil_id, rueda_id, variedad, proceso, nivel_tueste, puntaje_sca
+        receta_nutricional_id, is_published, perfil_id, rueda_id, variedad, proceso, nivel_tueste, puntaje_sca,
+        unit_id, precio, currency_id, finca_id, grupo_genetico, porcentaje_cacao
     } = req.body;
 
     // 1. Generar ID
@@ -72,7 +73,13 @@ const createProducto = async (req, res) => {
             variedad: variedad,
             proceso: proceso,
             nivel_tueste: nivel_tueste,
-            puntaje_sca: puntaje_sca
+            puntaje_sca: puntaje_sca,
+            unit_id: (unit_id && unit_id !== "") ? unit_id : null,
+            precio: (precio && precio !== "") ? precio : null,
+            currency_id: (currency_id && currency_id !== "") ? currency_id : null,
+            finca_id: (finca_id && finca_id !== "") ? finca_id : null,
+            grupo_genetico: grupo_genetico,
+            porcentaje_cacao: (porcentaje_cacao && porcentaje_cacao !== "") ? porcentaje_cacao : null
         });
 
         res.status(201).json({ message: "Producto creado", id });
@@ -90,7 +97,8 @@ const updateProducto = async (req, res) => {
     const {
         nombre, descripcion, gtin, imagenes_json, ingredientes,
         tipo_producto, peso, premios_json, receta_nutricional_id, is_published,
-        perfil_id, rueda_id, variedad, proceso, nivel_tueste, puntaje_sca
+        perfil_id, rueda_id, variedad, proceso, nivel_tueste, puntaje_sca,
+        unit_id, precio, currency_id, finca_id, grupo_genetico, porcentaje_cacao
     } = req.body;
 
     // Sanitización
@@ -126,7 +134,13 @@ const updateProducto = async (req, res) => {
             variedad: variedad,
             proceso: proceso,
             nivel_tueste: nivel_tueste,
-            puntaje_sca: puntaje_sca
+            puntaje_sca: puntaje_sca,
+            unit_id: (unit_id && unit_id !== "") ? unit_id : null,
+            precio: (precio && precio !== "") ? precio : null,
+            currency_id: (currency_id && currency_id !== "") ? currency_id : null,
+            finca_id: (finca_id && finca_id !== "") ? finca_id : null,
+            grupo_genetico: grupo_genetico,
+            porcentaje_cacao: (porcentaje_cacao && porcentaje_cacao !== "") ? porcentaje_cacao : null
         });
 
         res.status(200).json({ message: "Producto actualizado" });

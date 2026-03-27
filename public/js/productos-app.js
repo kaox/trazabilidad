@@ -9,6 +9,9 @@ let nutritionalRecipes = [];
 let perfilesCache = [];
 let ruedasCache = [];
 let awardsConfig = {};
+let fincasCache = [];
+let unitsCache = [];
+let currenciesCache = [];
 
 document.addEventListener('DOMContentLoaded', () => {
     loadProducts();
@@ -16,7 +19,43 @@ document.addEventListener('DOMContentLoaded', () => {
     loadNutritionalRecipes();
     loadPerfiles();
     loadRuedas();
+    loadRelations();
 });
+
+// --- CARGA DE RELACIONES ESTÁTICAS ---
+async function loadRelations() {
+    try {
+        const [fincasRes, unitsRes, currenciesRes] = await Promise.all([
+            api('/api/fincas'),
+            api('/api/config/units'),
+            api('/api/config/currencies')
+        ]);
+        fincasCache = fincasRes;
+        unitsCache = unitsRes;
+        currenciesCache = currenciesRes;
+
+        const fincaSelect = document.getElementById('finca_id');
+        if (fincaSelect) {
+            fincaSelect.innerHTML = '<option value="">-- Sin Finca Asociada --</option>' +
+                fincasCache.map(f => `<option value="${f.id}">${f.nombre_finca}</option>`).join('');
+        }
+
+        const unitSelect = document.getElementById('unit_id');
+        if (unitSelect) {
+            unitSelect.innerHTML = '<option value="">...</option>' +
+                unitsCache.map(u => `<option value="${u.id}">${u.code}</option>`).join('');
+        }
+
+        const currencySelect = document.getElementById('currency_id');
+        if (currencySelect) {
+            currencySelect.innerHTML = '<option value="">...</option>' +
+                currenciesCache.map(c => `<option value="${c.id}">${c.code}</option>`).join('');
+        }
+
+    } catch (error) {
+        console.warn("Error cargando relaciones secundarias:", error);
+    }
+}
 
 // --- CARGA DE DATOS MAESTROS ---
 async function loadPerfiles() {
@@ -137,6 +176,25 @@ document.getElementById('tipo_producto').addEventListener('change', function (e)
     const type = e.target.value;
     const section = document.getElementById('awards-section');
     const select = document.getElementById('award-select');
+
+    // UI Dinámica para Café / Cacao
+    const dynamicSection = document.getElementById('dynamic-fields-section');
+    const cafeFields = document.getElementById('cafe-fields');
+    const cacaoFields = document.getElementById('cacao-fields');
+
+    if (type === 'cafe') {
+        dynamicSection.classList.remove('hidden');
+        cafeFields.classList.remove('hidden');
+        cacaoFields.classList.add('hidden');
+    } else if (type === 'cacao') {
+        dynamicSection.classList.remove('hidden');
+        cafeFields.classList.add('hidden');
+        cacaoFields.classList.remove('hidden');
+    } else {
+        dynamicSection.classList.add('hidden');
+        cafeFields.classList.add('hidden');
+        cacaoFields.classList.add('hidden');
+    }
 
     // 1. Actualizar Selectores Sensoriales
     updateSensorySelects(type);
@@ -310,7 +368,11 @@ async function loadProducts() {
                     </div>
                     <div class="flex-grow min-w-0">
                         <h3 class="font-bold text-lg text-amber-900 leading-tight truncate" title="${p.nombre}">${p.nombre}</h3>
-                        <p class="text-xs text-stone-500 mt-1">${p.peso || 'Peso N/A'}</p>
+                        <p class="text-xs text-stone-500 mt-1">
+                            ${p.peso ? `${p.peso} ${p.unit_code || ''}` : 'Peso N/A'}
+                            ${p.product_precio ? ` | ${p.currency_symbol || ''}${p.product_precio}` : ''}
+                        </p>
+                        ${p.finca_nombre ? `<p class="text-xs text-green-700 mt-1"><i class="fas fa-leaf"></i> ${p.finca_nombre}</p>` : ''}
                         <span class="text-[10px] font-mono bg-stone-100 px-2 py-1 rounded text-stone-500 mt-2 inline-block border border-stone-200"><i class="fas fa-barcode mr-1"></i> ${p.gtin || 'Pendiente'}</span>
                     </div>
                 </div>
@@ -340,6 +402,13 @@ window.openProductModal = (id = null) => {
     document.getElementById('proceso').value = '';
     document.getElementById('nivel_tueste').value = '';
     document.getElementById('puntaje_sca').value = '';
+    document.getElementById('grupo_genetico').value = '';
+    document.getElementById('porcentaje_cacao').value = '';
+    document.getElementById('peso').value = '';
+    document.getElementById('unit_id').value = '';
+    document.getElementById('precio').value = '';
+    document.getElementById('currency_id').value = '';
+    document.getElementById('finca_id').value = '';
 
     currentImages = [];
     currentAwards = [];
@@ -368,6 +437,12 @@ window.openProductModal = (id = null) => {
             document.getElementById('proceso').value = p.proceso || '';
             document.getElementById('nivel_tueste').value = p.nivel_tueste || '';
             document.getElementById('puntaje_sca').value = p.puntaje_sca || '';
+            document.getElementById('grupo_genetico').value = p.grupo_genetico || '';
+            document.getElementById('porcentaje_cacao').value = p.porcentaje_cacao || '';
+            document.getElementById('unit_id').value = p.unit_id || '';
+            document.getElementById('precio').value = p.product_precio || p.precio || '';
+            document.getElementById('currency_id').value = p.currency_id || '';
+            document.getElementById('finca_id').value = p.finca_id || '';
             document.getElementById('is_published').checked = (p.is_published !== 0 && p.is_published !== false);
 
             // CORRECCIÓN: Orden de ejecución
@@ -440,8 +515,15 @@ document.getElementById('product-form').addEventListener('submit', async (e) => 
         proceso: document.getElementById('proceso').value,
         nivel_tueste: document.getElementById('nivel_tueste').value,
         puntaje_sca: document.getElementById('puntaje_sca').value ? parseFloat(document.getElementById('puntaje_sca').value) : null,
+        grupo_genetico: document.getElementById('grupo_genetico').value,
+        porcentaje_cacao: document.getElementById('porcentaje_cacao').value ? parseFloat(document.getElementById('porcentaje_cacao').value) : null,
         tipo_producto: document.getElementById('tipo_producto').value,
         receta_nutricional_id: document.getElementById('receta_nutricional').value,
+
+        unit_id: document.getElementById('unit_id').value,
+        precio: document.getElementById('precio').value ? parseFloat(document.getElementById('precio').value) : null,
+        currency_id: document.getElementById('currency_id').value,
+        finca_id: document.getElementById('finca_id').value,
 
         perfil_id: pfInput ? pfInput.value : null,
         rueda_id: rsInput ? rsInput.value : null,
