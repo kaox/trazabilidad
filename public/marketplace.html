@@ -41,10 +41,96 @@
         
         .product-card {
             transition: transform 0.2s, box-shadow 0.2s;
+            border-color: #f3f4f6; /* stone-100 */
         }
         .product-card:hover {
             transform: translateY(-4px);
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
+        }
+
+        /* Badges */
+        .type-badge {
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            background: white;
+            padding: 4px 10px;
+            border-radius: 8px;
+            font-size: 11px;
+            font-weight: 700;
+            color: #444;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            z-index: 20;
+        }
+        .score-badge {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            background: #f59e0b; /* amber-500 */
+            padding: 4px 10px;
+            border-radius: 8px;
+            font-size: 11px;
+            font-weight: 700;
+            color: white;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            z-index: 20;
+        }
+
+        /* Sensory Bars */
+        .sensory-row { margin-bottom: 8px; }
+        .sensory-label { font-size: 11px; color: #6b7280; margin-bottom: 2px; font-weight: 500; }
+        .sensory-bar-bg { height: 6px; background: #f3f4f6; border-radius: 3px; overflow: hidden; width: 100%; position: relative; }
+        .sensory-bar-fill { height: 100%; border-radius: 3px; }
+        
+        /* Bar Colors */
+        .bar-acidez { background: #84cc16; } /* lime-500 */
+        .bar-cuerpo { background: #92400e; } /* amber-900 */
+        .bar-sabor { background: #d97706; } /* amber-600 */
+        .bar-dulzura { background: #f97316; } /* orange-500 */
+        .bar-cacao { background: #451a03; } /* brown-900 */
+        .bar-amargor { background: #1e1b4b; } /* indigo-950 */
+
+        /* Tooltip Radar */
+        .radar-tooltip {
+            position: relative;
+            cursor: pointer;
+        }
+        .radar-tooltip .tooltip-content {
+            visibility: hidden;
+            width: 240px;
+            height: 240px;
+            background-color: white;
+            border: 1px solid #e5e7eb;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            border-radius: 12px;
+            padding: 12px;
+            position: absolute;
+            z-index: 50;
+            bottom: 125%;
+            left: 50%;
+            margin-left: -120px;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+        .radar-tooltip:hover .tooltip-content {
+            visibility: visible;
+            opacity: 1;
+        }
+        .radar-tooltip .tooltip-content::after {
+            content: "";
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            margin-left: -5px;
+            border-width: 5px;
+            border-style: solid;
+            border-color: white transparent transparent transparent;
         }
     </style>
 </head>

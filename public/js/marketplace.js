@@ -381,19 +381,31 @@ document.addEventListener('DOMContentLoaded', () => {
         const html = state.products.map(p => {
             const companySlug = p.empresa.slug || p.empresa.id;
 
+            // Badge de Tipo
+            let typeBadge = '';
+            if (p.tipo === 'cafe') {
+                typeBadge = `<div class="type-badge"><i class="fas fa-mug-hot text-amber-900"></i> Café</div>`;
+            } else if (p.tipo === 'cacao') {
+                typeBadge = `<div class="type-badge"><i class="fas fa-cookie-bite text-amber-900"></i> Chocolate</div>`;
+            }
+
+            // Badge de Puntos
+            let scoreBadge = '';
+            if (p.puntaje_sca) {
+                scoreBadge = `<div class="score-badge"><i class="fas fa-star"></i> ${p.puntaje_sca} pts</div>`;
+            }
+
             // Precio y Presentación
             let precioHtml = '';
             if (p.precio) {
                 const currency = p.moneda || 'S/';
-                const unit = p.presentacion + ' ' + p.unidad || 'Unid';
+                const unit = p.presentacion + ' ' + (p.unidad || 'g');
                 precioHtml = `
                     <div class="flex items-baseline gap-1 mt-1 mb-2">
                         <span class="text-xl font-bold text-stone-900">${currency} ${Number(p.precio).toFixed(2)}</span>
-                        ${unit ? `<span class="text-xs text-stone-500 font-medium tracking-wide">[${unit.toUpperCase()}]</span>` : ''}
+                        ${unit ? `<span class="text-[10px] text-stone-400 font-bold uppercase tracking-wider ml-1">${unit}</span>` : ''}
                     </div>
                 `;
-            } else if (p.presentacion) {
-                precioHtml = `<p class="text-xs font-semibold text-stone-500 mb-2 mt-1 py-1 px-2 bg-stone-100 rounded inline-block uppercase tracking-wider">${p.presentacion}</p>`;
             }
 
             // Detalles Específicos (Café vs Cacao)
@@ -402,57 +414,76 @@ document.addEventListener('DOMContentLoaded', () => {
                 const variedadText = p.variedad ? p.variedad : '';
                 const procesoText = p.proceso ? p.proceso : '';
                 if (variedadText || procesoText) {
-                    detallesHtml = `<p class="text-xs text-stone-500 font-medium mb-3 uppercase tracking-wide">${variedadText} ${variedadText && procesoText ? '&bull;' : ''} ${procesoText}</p>`;
-                }
-            } else if (p.tipo === 'cacao') {
-                const grupoText = p.grupo_genetico ? p.grupo_genetico : '';
-                const porcText = p.porcentaje_cacao ? `${p.porcentaje_cacao}%` : '';
-                if (grupoText || porcText) {
-                    detallesHtml = `<p class="text-xs text-stone-500 font-medium mb-3 uppercase tracking-wide">${grupoText} ${grupoText && porcText ? '&bull;' : ''} ${porcText}</p>`;
+                    detallesHtml = `<p class="text-[10px] text-stone-500 font-bold mb-3 uppercase tracking-widest">${variedadText} ${variedadText && procesoText ? '&bull;' : ''} ${procesoText}</p>`;
                 }
             }
 
             // Finca Origen
             let fincaHtml = '';
             if (p.finca) {
-                const parts = [p.finca.provincia, p.finca.departamento, p.finca.pais].filter(Boolean);
-                const location = parts.length > 0 ? parts.join(', ') : '';
-                const altText = p.finca.altura ? `${p.finca.altura} m.s.n.m.` : '';
+                const location = [p.finca.provincia, p.finca.departamento].filter(Boolean).join(', ');
                 fincaHtml = `
-                    <div class="flex items-start gap-2 mb-3 text-xs text-stone-600 bg-stone-50 p-2.5 rounded border border-stone-100 mt-2">
-                        <i class="fas fa-mountain text-stone-400 mt-0.5"></i>
+                    <div class="flex items-start gap-2 mb-4 text-xs text-stone-600 bg-stone-50/50 p-2.5 rounded-lg border border-stone-100/50">
+                        <i class="fas fa-map-marker-alt text-amber-700/50 mt-0.5"></i>
                         <div>
-                            <p class="font-bold text-stone-700">${p.finca.nombre}</p>
-                            ${location ? `<p>${location}</p>` : ''}
-                            ${altText ? `<p class="text-stone-500 font-medium mt-0.5">${altText}</p>` : ''}
+                            <p class="font-bold text-stone-800 text-[11px] leading-tight">${p.finca.nombre}</p>
+                            ${location ? `<p class="text-[10px] text-stone-500 mt-0.5">${location}, Perú</p>` : ''}
                         </div>
                     </div>
                 `;
             }
 
-            // Descripción generada o base
-            let desc = p.descripcion || '';
-            if (!desc && p.sabores && Array.isArray(p.sabores)) {
-                const notes = p.sabores.map(n => n.subnote || n.category).filter(Boolean).join(', ').toLowerCase();
-                desc = notes ? `Notas de ${notes}.` : '';
-            }
-            if (!p.descripcion && p.puntaje_sca) {
-                desc += ` ${p.puntaje_sca} puntos`;
+            // Perfil Sensorial (Barras)
+            let sensoryBarsHtml = '';
+            if (p.perfil) {
+                const attrs = p.tipo === 'cafe' 
+                    ? [['Sabor', 'sabor', 'bar-sabor'], ['Acidez', 'acidez', 'bar-acidez'], ['Cuerpo', 'cuerpo', 'bar-cuerpo']]
+                    : [['Cacao', 'cacao', 'bar-cacao'], ['Acidez', 'acidez', 'bar-acidez'], ['Amargor', 'amargor', 'bar-amargor']];
+
+                sensoryBarsHtml = `
+                    <div class="mb-5">
+                        <div class="flex items-center justify-between mb-3">
+                            <h4 class="text-[10px] font-bold text-stone-400 uppercase tracking-widest">Perfil en Taza</h4>
+                            <div class="radar-tooltip">
+                                <i class="fas fa-info-circle text-stone-300 hover:text-amber-600 transition-colors"></i>
+                                <div class="tooltip-content">
+                                    <canvas id="radar-${p.id}"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="space-y-3">
+                            ${attrs.map(([label, key, colorClass]) => {
+                                const val = p.perfil[key] || 0;
+                                const percent = (val / 10) * 100;
+                                return `
+                                    <div class="sensory-row">
+                                        <div class="flex justify-between items-center mb-1">
+                                            <span class="sensory-label">${label}</span>
+                                        </div>
+                                        <div class="sensory-bar-bg">
+                                            <div class="sensory-bar-fill ${colorClass}" style="width: ${percent}%"></div>
+                                        </div>
+                                    </div>
+                                `;
+                            }).join('')}
+                        </div>
+                    </div>
+                `;
             }
 
-            // Etiquetas de sabor (Max 3) - Usando tags pálidos
+            // Etiquetas de sabor (Max 3)
             let flavorBadges = '';
             if (p.sabores && Array.isArray(p.sabores)) {
                 const cats = [...new Set(p.sabores.map(n => n.category).filter(Boolean))].slice(0, 3);
                 flavorBadges = cats.map(cat => {
-                    return `<span class="px-2 py-1 bg-amber-50 text-amber-900 border border-amber-100 rounded text-[11px] font-medium">${cat}</span>`;
+                    return `<span class="px-2 py-0.5 bg-stone-100 text-stone-600 rounded-md text-[10px] font-bold uppercase tracking-wider">${cat}</span>`;
                 }).join('');
             }
 
-            // Premios (Logos flotantes)
+            // Premios
             let premiosHtml = '';
             if (p.premios && p.premios.length > 0) {
-                premiosHtml = `<div class="absolute top-2 right-2 flex flex-col gap-1 z-10">` +
+                premiosHtml = `<div class="absolute top-12 right-12 flex flex-col gap-1 z-10">` +
                     p.premios.map(prem => {
                         const premNombre = prem.nombre || prem.name || '';
                         const def = state.premiosData && state.premiosData[state.tipo] ? state.premiosData[state.tipo].find(dp => dp.nombre === premNombre) : null;
@@ -462,53 +493,50 @@ document.addEventListener('DOMContentLoaded', () => {
                     }).join('') + `</div>`;
             }
 
-            // Radar Chart Canvas
-            const canvasId = `radar-${p.id}`;
             return `
-                <div class="product-card bg-white rounded-2xl overflow-hidden border border-stone-100 shadow-sm flex flex-col h-full relative p-5">
+                <div class="product-card bg-white rounded-3xl overflow-hidden border border-stone-100 shadow-sm flex flex-col h-full relative p-5">
                     
+                    ${typeBadge}
+                    ${scoreBadge}
                     ${premiosHtml}
 
                     <!-- Foto Producto -->
-                    <div class="w-full aspect-[4/3] relative flex justify-center items-center overflow-hidden mb-4 rounded-xl">
-                        ${p.imagen ? `<img src="${p.imagen}" loading="lazy" class="w-full h-full object-contain">` : `<div class="text-stone-300 bg-stone-50 w-full h-full flex justify-center items-center"><i class="fas fa-image text-4xl"></i></div>`}
+                    <div class="w-full aspect-[4/3] relative flex justify-center items-center overflow-hidden mb-6 rounded-2xl bg-stone-50">
+                        ${p.imagen ? `<img src="${p.imagen}" loading="lazy" class="w-full h-full object-cover">` : `<div class="text-stone-300 w-full h-full flex justify-center items-center"><i class="fas fa-image text-4xl"></i></div>`}
                     </div>
                     
-                    <!-- Nombre y Peso -->
-                    <h3 class="font-bold text-xl text-stone-900 leading-tight">${p.nombre}</h3>
+                    <!-- Nombre -->
+                    <h3 class="font-bold text-lg text-stone-900 leading-tight mb-1">${p.nombre}</h3>
                     
-                    <!-- Precio y Tamaño -->
+                    <!-- Precio y Detalles -->
                     ${precioHtml}
+                    ${detallesHtml}
                     
                     <!-- Finca Info -->
                     ${fincaHtml}
                     
-                    <!-- Detalles Específicos -->
-                    ${detallesHtml}
+                    <!-- Perfil Sensorial -->
+                    ${sensoryBarsHtml}
 
-                    <!-- Grafico de Perfil Sensorial -->
-                    <div class="w-full h-48 mb-4 relative flex justify-center items-center">
-                        ${p.perfil ? `<canvas id="${canvasId}"></canvas>` : `<p class="text-xs text-stone-400 italic">Sin perfil de taza</p>`}
-                    </div>
-
-                    <!-- Atributos de la rueda de Sabor -->
-                    <div class="flex flex-wrap gap-2 mb-6">
+                    <!-- Tags de Sabor -->
+                    <div class="flex flex-wrap gap-1.5 mb-6">
                         ${flavorBadges}
                     </div>
 
                     <div class="mt-auto"></div>
 
-                    <!-- Logo y Nombre de Empresa -->
-                    <div class="flex items-center gap-3 mb-5 pt-4 border-t border-stone-100">
-                        <div class="w-8 h-8 rounded-full bg-stone-100 border border-stone-200 flex items-center justify-center overflow-hidden shrink-0">
-                            ${p.empresa.logo ? `<img src="${p.empresa.logo}" class="w-full h-full object-cover">` : `<img src="/img/default-company.png" onerror="this.outerHTML='<i class=\\'fas fa-store text-stone-400 text-xs\\'></i>'" class="w-full h-full object-cover">`}
+                    <!-- Empresa -->
+                    <div class="flex items-center gap-2.5 pt-4 border-t border-stone-100">
+                        <div class="w-7 h-7 rounded-full bg-stone-100 border border-stone-200 flex items-center justify-center overflow-hidden shrink-0">
+                            ${p.empresa.logo ? `<img src="${p.empresa.logo}" class="w-full h-full object-cover">` : `<i class="fas fa-store text-stone-400 text-[10px]"></i>`}
                         </div>
-                        <span class="font-bold text-stone-700 text-sm truncate">${p.empresa.nombre}</span>
+                        <span class="font-bold text-stone-500 text-[11px] truncate uppercase tracking-wider">${p.empresa.nombre}</span>
                     </div>
 
-                    <!-- Boton Ver Detalle -->
-                    <a href="/origen-unico/${companySlug}" class="w-full text-center bg-amber-600 hover:bg-amber-700 text-white font-bold py-2.5 rounded-lg transition-colors shadow-sm">
-                        Ver Detalle
+                    <!-- Boton Ver Detalle (Si quieres un botón similar al de la imagen) -->
+                    <a href="/origen-unico/${companySlug}" class="mt-4 w-full text-center bg-[#92400e] hover:bg-amber-900 text-white font-bold py-3 rounded-2xl transition-all shadow-lg shadow-amber-900/10 flex items-center justify-center gap-2">
+                        <i class="fas fa-shopping-bag text-sm"></i>
+                        Ver Detalles
                     </a>
                 </div>
             `;
