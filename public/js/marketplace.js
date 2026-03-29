@@ -494,7 +494,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             return `
-                <div class="product-card bg-white rounded-3xl overflow-hidden border border-stone-100 shadow-sm flex flex-col h-full relative p-5">
+                <div class="product-card bg-white rounded-3xl border border-stone-100 shadow-sm flex flex-col h-full relative p-5">
                     
                     ${typeBadge}
                     ${scoreBadge}

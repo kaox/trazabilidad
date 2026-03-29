@@ -103,34 +103,30 @@
         }
         .radar-tooltip .tooltip-content {
             visibility: hidden;
-            width: 240px;
-            height: 240px;
+            width: 280px;
+            height: 280px;
             background-color: white;
             border: 1px solid #e5e7eb;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-            border-radius: 12px;
-            padding: 12px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+            border-radius: 16px;
+            padding: 16px;
             position: absolute;
-            z-index: 50;
-            bottom: 125%;
-            left: 50%;
-            margin-left: -120px;
+            z-index: 100;
+            bottom: 30px;
+            right: 0;
             opacity: 0;
-            transition: opacity 0.2s;
+            transition: all 0.2s ease-out;
+            transform: translateY(10px);
+            pointer-events: none;
         }
         .radar-tooltip:hover .tooltip-content {
             visibility: visible;
             opacity: 1;
+            transform: translateY(0);
         }
-        .radar-tooltip .tooltip-content::after {
-            content: "";
-            position: absolute;
-            top: 100%;
-            left: 50%;
-            margin-left: -5px;
-            border-width: 5px;
-            border-style: solid;
-            border-color: white transparent transparent transparent;
+        /* Eliminamos el after (triangulito) para simplificar y evitar problemas de clipping */
+        .product-card:hover {
+            z-index: 40;
         }
     </style>
 </head>
