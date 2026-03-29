@@ -69,15 +69,20 @@
 
                     <!-- SECCIÓN: Información Básica -->
                     <div class="bg-stone-50 p-5 rounded-2xl border border-stone-200">
-                        <h3 class="font-bold text-stone-800 mb-4 border-b border-stone-200 pb-2"><i class="fas fa-box text-amber-600 mr-2"></i>Información Básica</h3>
+                        <h3 class="font-bold text-stone-800 mb-4 border-b border-stone-200 pb-2"><i
+                                class="fas fa-box text-amber-600 mr-2"></i>Información Básica</h3>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div class="md:col-span-2">
                                 <label class="block text-sm font-medium text-stone-700 mb-1">Nombre Comercial *</label>
-                                <input type="text" id="nombre" name="nombre" class="w-full p-3 border border-stone-300 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none" placeholder="Ej: Café de Altura Tostado Medio" required>
+                                <input type="text" id="nombre" name="nombre"
+                                    class="w-full p-3 border border-stone-300 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none"
+                                    placeholder="Ej: Café de Altura Tostado Medio" required>
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-stone-700 mb-1">Tipo de Producto *</label>
-                                <select id="tipo_producto" class="w-full p-3 border border-stone-300 rounded-xl bg-white focus:ring-2 focus:ring-amber-500 outline-none" required>
+                                <select id="tipo_producto"
+                                    class="w-full p-3 border border-stone-300 rounded-xl bg-white focus:ring-2 focus:ring-amber-500 outline-none"
+                                    required>
                                     <option value="">Seleccionar...</option>
                                     <option value="cafe">Café</option>
                                     <option value="cacao">Cacao / Chocolate</option>
@@ -86,36 +91,81 @@
                                 </select>
                             </div>
                             <div>
-                                <label class="block text-sm font-medium text-stone-700 mb-1">Finca Origen (Trazabilidad)</label>
-                                <select id="finca_id" class="w-full p-3 border border-stone-300 rounded-xl bg-white focus:ring-2 focus:ring-amber-500 outline-none">
+                                <label class="block text-sm font-medium text-stone-700 mb-1">Finca Origen
+                                    (Trazabilidad)</label>
+                                <select id="finca_id"
+                                    class="w-full p-3 border border-stone-300 rounded-xl bg-white focus:ring-2 focus:ring-amber-500 outline-none">
                                     <option value="">-- Sin Finca Asociada --</option>
                                 </select>
-                                <p class="text-[10px] text-stone-500 mt-1">Sincroniza la información de tu finca en el catálogo público.</p>
+                                <p class="text-[10px] text-stone-500 mt-1">Sincroniza la información de tu finca en el
+                                    catálogo público.</p>
                             </div>
                         </div>
                     </div>
 
                     <!-- SECCIÓN: CAMPOS DINÁMICOS POR TIPO DE PRODUCTO -->
                     <div id="dynamic-fields-section" class="bg-stone-50 p-5 rounded-2xl border border-stone-200 hidden">
-                        <h3 class="font-bold text-stone-800 mb-4 border-b border-stone-200 pb-2"><i class="fas fa-leaf text-green-600 mr-2"></i>Detalles Específicos</h3>
-                        
+                        <h3 class="font-bold text-stone-800 mb-4 border-b border-stone-200 pb-2"><i
+                                class="fas fa-leaf text-green-600 mr-2"></i>Detalles Específicos</h3>
+
                         <!-- Contenedor Café -->
                         <div id="cafe-fields" class="grid grid-cols-1 md:grid-cols-2 gap-4 hidden">
                             <div>
                                 <label class="block text-sm font-medium text-stone-700 mb-1">Variedad Botánica</label>
-                                <input type="text" id="variedad" class="w-full p-3 border border-stone-300 rounded-xl" placeholder="Ej: Caturra, Typica, Gesha">
+                                <input type="text" id="variedad" class="w-full p-3 border border-stone-300 rounded-xl"
+                                    placeholder="Ej: Caturra, Typica, Gesha">
                             </div>
                             <div>
-                                <label class="block text-sm font-medium text-stone-700 mb-1">Proceso de Beneficio</label>
-                                <input type="text" id="proceso" class="w-full p-3 border border-stone-300 rounded-xl" placeholder="Ej: Lavado, Natural, Honey">
+                                <label for="proceso" class="block text-sm font-medium text-stone-700 mb-1">Proceso de
+                                    Beneficio</label>
+                                <select id="proceso" name="proceso"
+                                    class="w-full p-3 border border-stone-300 rounded-xl bg-white text-stone-700 focus:outline-none focus:border-stone-500 focus:ring-1 focus:ring-stone-500 cursor-pointer">
+                                    <option value="" disabled selected>Selecciona un proceso...</option>
+
+                                    <optgroup label="Tradicionales">
+                                        <option value="lavado">Lavado (Washed)</option>
+                                        <option value="natural">Natural (Seco)</option>
+                                        <option value="semi_lavado">Semi-Lavado</option>
+                                    </optgroup>
+
+                                    <optgroup label="Honey">
+                                        <option value="honey">Honey (General)</option>
+                                        <option value="honey_amarillo">Honey Amarillo</option>
+                                        <option value="honey_rojo">Honey Rojo</option>
+                                        <option value="honey_negro">Honey Negro</option>
+                                    </optgroup>
+
+                                    <optgroup label="Experimentales / Modernos">
+                                        <option value="anaerobico">Fermentación Anaeróbica</option>
+                                        <option value="maceracion_carbonica">Maceración Carbónica</option>
+                                        <option value="choque_termico">Choque Térmico</option>
+                                    </optgroup>
+
+                                    <optgroup label="Otros">
+                                        <option value="descafeinado">Descafeinado</option>
+                                        <option value="blend">Blend de procesos</option>
+                                    </optgroup>
+                                </select>
                             </div>
                             <div>
-                                <label class="block text-sm font-medium text-stone-700 mb-1">Nivel de Tueste</label>
-                                <input type="text" id="nivel_tueste" class="w-full p-3 border border-stone-300 rounded-xl" placeholder="Ej: Medio, Oscuro">
+                                <label for="nivel_tueste" class="block text-sm font-medium text-stone-700 mb-1">Nivel de
+                                    Tueste</label>
+                                <select id="nivel_tueste" name="nivel_tueste"
+                                    class="w-full p-3 border border-stone-300 rounded-xl bg-white text-stone-700 focus:outline-none focus:border-stone-500 focus:ring-1 focus:ring-stone-500 cursor-pointer">
+                                    <option value="" disabled selected>Selecciona un nivel de tueste...</option>
+
+                                    <option value="claro">Claro (Light)</option>
+                                    <option value="medio_claro">Medio-Claro</option>
+                                    <option value="medio">Medio (Medium)</option>
+                                    <option value="medio_oscuro">Medio-Oscuro</option>
+                                    <option value="oscuro">Oscuro (Dark)</option>
+                                    <option value="omnitueste">Omnitueste (Ideal para filtro y espresso)</option>
+                                </select>
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-stone-700 mb-1">Puntaje SCA</label>
-                                <input type="number" step="0.25" id="puntaje_sca" class="w-full p-3 border border-stone-300 rounded-xl" placeholder="Ej: 86.5">
+                                <input type="number" step="0.25" id="puntaje_sca"
+                                    class="w-full p-3 border border-stone-300 rounded-xl" placeholder="Ej: 86.5">
                             </div>
                         </div>
 
@@ -123,12 +173,16 @@
                         <div id="cacao-fields" class="grid grid-cols-1 md:grid-cols-2 gap-4 hidden">
                             <div>
                                 <label class="block text-sm font-medium text-stone-700 mb-1">Grupo Genético</label>
-                                <input type="text" id="grupo_genetico" class="w-full p-3 border border-stone-300 rounded-xl" placeholder="Ej: Trinitario, Forastero, Criollo">
+                                <input type="text" id="grupo_genetico"
+                                    class="w-full p-3 border border-stone-300 rounded-xl"
+                                    placeholder="Ej: Trinitario, Forastero, Criollo">
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-stone-700 mb-1">% Mínimo de Cacao</label>
                                 <div class="relative">
-                                    <input type="number" step="0.1" id="porcentaje_cacao" class="w-full p-3 border border-stone-300 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none" placeholder="Ej: 70">
+                                    <input type="number" step="0.1" id="porcentaje_cacao"
+                                        class="w-full p-3 border border-stone-300 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none"
+                                        placeholder="Ej: 70">
                                     <span class="absolute right-4 top-3 text-stone-500">%</span>
                                 </div>
                             </div>
@@ -137,44 +191,57 @@
 
                     <!-- SECCIÓN: Atributos Sensoriales y Nutricionales -->
                     <div class="bg-stone-50 p-5 rounded-2xl border border-stone-200">
-                        <h3 class="font-bold text-stone-800 mb-4 border-b border-stone-200 pb-2"><i class="fas fa-flask text-purple-600 mr-2"></i>Perfil Sensorial y Nutricional</h3>
-                        
+                        <h3 class="font-bold text-stone-800 mb-4 border-b border-stone-200 pb-2"><i
+                                class="fas fa-flask text-purple-600 mr-2"></i>Perfil Sensorial y Nutricional</h3>
+
                         <div id="sensory-section" class="mb-4">
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <!-- Wrapper para Perfil Sensorial (Radar) -->
                                 <div id="perfil-wrapper">
                                     <!-- Se llena dinámicamente -->
-                                    <label class="block text-sm font-medium text-stone-400 mb-1">Perfil Sensorial</label>
-                                    <div class="p-3 bg-white rounded-xl border border-stone-200 text-sm text-stone-400 italic">Selecciona un tipo de producto primero</div>
+                                    <label class="block text-sm font-medium text-stone-400 mb-1">Perfil
+                                        Sensorial</label>
+                                    <div
+                                        class="p-3 bg-white rounded-xl border border-stone-200 text-sm text-stone-400 italic">
+                                        Selecciona un tipo de producto primero</div>
                                 </div>
                                 <!-- Wrapper para Rueda de Sabores -->
                                 <div id="rueda-wrapper">
                                     <!-- Se llena dinámicamente -->
                                     <label class="block text-sm font-medium text-stone-400 mb-1">Rueda de Sabor</label>
-                                    <div class="p-3 bg-white rounded-xl border border-stone-200 text-sm text-stone-400 italic">Selecciona un tipo de producto primero</div>
+                                    <div
+                                        class="p-3 bg-white rounded-xl border border-stone-200 text-sm text-stone-400 italic">
+                                        Selecciona un tipo de producto primero</div>
                                 </div>
                             </div>
                         </div>
 
                         <div class="bg-white p-4 rounded-xl border border-stone-200">
                             <label class="block text-sm font-bold text-stone-800 mb-2">Información Nutricional</label>
-                            <select id="receta_nutricional" class="w-full p-3 border border-stone-300 rounded-xl bg-stone-50 focus:ring-2 focus:ring-amber-500 outline-none">
+                            <select id="receta_nutricional"
+                                class="w-full p-3 border border-stone-300 rounded-xl bg-stone-50 focus:ring-2 focus:ring-amber-500 outline-none">
                                 <option value="">-- Sin información nutricional --</option>
                             </select>
-                            <p class="text-[10px] text-stone-500 mt-1">Vincula una receta creada en la Calculadora Nutricional para generar la etiqueta.</p>
+                            <p class="text-[10px] text-stone-500 mt-1">Vincula una receta creada en la Calculadora
+                                Nutricional para generar la etiqueta.</p>
                         </div>
                     </div>
 
                     <!-- SECCIÓN: Presentación y Venta -->
                     <div class="bg-stone-50 p-5 rounded-2xl border border-stone-200">
-                        <h3 class="font-bold text-stone-800 mb-4 border-b border-stone-200 pb-2"><i class="fas fa-tag text-sky-600 mr-2"></i>Presentación y Venta</h3>
-                        
+                        <h3 class="font-bold text-stone-800 mb-4 border-b border-stone-200 pb-2"><i
+                                class="fas fa-tag text-sky-600 mr-2"></i>Presentación y Venta</h3>
+
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                             <div>
-                                <label class="block text-sm font-medium text-stone-700 mb-1">Peso / Presentación Neta</label>
+                                <label class="block text-sm font-medium text-stone-700 mb-1">Peso / Presentación
+                                    Neta</label>
                                 <div class="flex gap-2">
-                                    <input type="number" step="0.01" id="peso" class="w-full p-3 border border-stone-300 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none" placeholder="Ej: 250">
-                                    <select id="unit_id" class="w-24 p-3 border border-stone-300 rounded-xl bg-white focus:ring-2 focus:ring-amber-500 outline-none">
+                                    <input type="number" step="0.01" id="peso"
+                                        class="w-full p-3 border border-stone-300 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none"
+                                        placeholder="Ej: 250">
+                                    <select id="unit_id"
+                                        class="w-24 p-3 border border-stone-300 rounded-xl bg-white focus:ring-2 focus:ring-amber-500 outline-none">
                                         <option value="">...</option>
                                     </select>
                                 </div>
@@ -182,78 +249,103 @@
                             <div>
                                 <label class="block text-sm font-medium text-stone-700 mb-1">Precio</label>
                                 <div class="flex gap-2">
-                                    <select id="currency_id" class="w-24 p-3 border border-stone-300 rounded-xl bg-white focus:ring-2 focus:ring-amber-500 outline-none">
+                                    <select id="currency_id"
+                                        class="w-24 p-3 border border-stone-300 rounded-xl bg-white focus:ring-2 focus:ring-amber-500 outline-none">
                                         <option value="">...</option>
                                     </select>
-                                    <input type="number" step="0.01" id="precio" class="w-full p-3 border border-stone-300 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none" placeholder="Ej: 15.50">
+                                    <input type="number" step="0.01" id="precio"
+                                        class="w-full p-3 border border-stone-300 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none"
+                                        placeholder="Ej: 15.50">
                                 </div>
                             </div>
                         </div>
 
                         <div class="bg-white p-4 rounded-xl border border-stone-200 mb-4">
                             <div class="flex justify-between items-start mb-2">
-                                <label class="block text-sm font-bold text-stone-700">Código de Barras (GTIN/EAN)</label>
+                                <label class="block text-sm font-bold text-stone-700">Código de Barras
+                                    (GTIN/EAN)</label>
                                 <div class="flex items-center">
                                     <input type="checkbox" id="is_formal" class="h-4 w-4 text-amber-600 rounded">
-                                    <label for="is_formal" class="ml-2 text-xs text-stone-600">Es código oficial GS1</label>
+                                    <label for="is_formal" class="ml-2 text-xs text-stone-600">Es código oficial
+                                        GS1</label>
                                 </div>
                             </div>
-                            <input type="text" id="gtin" class="w-full p-3 border border-stone-300 rounded-xl font-mono text-stone-600 bg-stone-50" placeholder="Dejar vacío para generar uno interno automáticamente">
+                            <input type="text" id="gtin"
+                                class="w-full p-3 border border-stone-300 rounded-xl font-mono text-stone-600 bg-stone-50"
+                                placeholder="Dejar vacío para generar uno interno automáticamente">
                         </div>
 
                         <div class="bg-white p-4 rounded-xl border border-stone-200 flex items-center justify-between">
                             <div>
                                 <span class="font-bold text-stone-800 text-sm block">Visible en Catálogo</span>
-                                <span class="text-xs text-stone-500">Si desactivas esto, el producto no aparecerá en tu perfil público.</span>
+                                <span class="text-xs text-stone-500">Si desactivas esto, el producto no aparecerá en tu
+                                    perfil público.</span>
                             </div>
-                            <div class="relative inline-block w-12 mr-2 align-middle select-none transition duration-200 ease-in">
-                                <input type="checkbox" name="is_published" id="is_published" class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer border-stone-300" />
-                                <label for="is_published" class="toggle-label block overflow-hidden h-6 rounded-full bg-stone-300 cursor-pointer"></label>
+                            <div
+                                class="relative inline-block w-12 mr-2 align-middle select-none transition duration-200 ease-in">
+                                <input type="checkbox" name="is_published" id="is_published"
+                                    class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer border-stone-300" />
+                                <label for="is_published"
+                                    class="toggle-label block overflow-hidden h-6 rounded-full bg-stone-300 cursor-pointer"></label>
                             </div>
                         </div>
                     </div>
 
                     <!-- SECCIÓN: Marketing y Media -->
                     <div class="bg-stone-50 p-5 rounded-2xl border border-stone-200">
-                        <h3 class="font-bold text-stone-800 mb-4 border-b border-stone-200 pb-2"><i class="fas fa-image text-pink-500 mr-2"></i>Marketing y Contenido</h3>
-                        
+                        <h3 class="font-bold text-stone-800 mb-4 border-b border-stone-200 pb-2"><i
+                                class="fas fa-image text-pink-500 mr-2"></i>Marketing y Contenido</h3>
+
                         <div class="mb-4">
-                            <label class="block text-sm font-medium text-stone-700 mb-2">Galería de Imágenes (Máx 3, < 5MB c/u)</label>
-                            <div class="grid grid-cols-3 gap-4" id="image-upload-container">
-                                <div class="border-2 border-dashed border-stone-300 rounded-xl h-24 flex items-center justify-center cursor-pointer hover:bg-stone-50 transition bg-white"
-                                    onclick="document.getElementById('file-upload').click()">
-                                    <div class="text-center text-stone-400">
-                                        <i class="fas fa-plus mb-1"></i><br><span class="text-xs">Subir</span>
+                            <label class="block text-sm font-medium text-stone-700 mb-2">Galería de Imágenes (Máx 3, <
+                                    5MB c/u)</label>
+                                    <div class="grid grid-cols-3 gap-4" id="image-upload-container">
+                                        <div class="border-2 border-dashed border-stone-300 rounded-xl h-24 flex items-center justify-center cursor-pointer hover:bg-stone-50 transition bg-white"
+                                            onclick="document.getElementById('file-upload').click()">
+                                            <div class="text-center text-stone-400">
+                                                <i class="fas fa-plus mb-1"></i><br><span class="text-xs">Subir</span>
+                                            </div>
+                                        </div>
                                     </div>
-                                </div>
-                            </div>
-                            <input type="file" id="file-upload" class="hidden" accept="image/*" multiple>
-                            <p class="text-[10px] text-stone-400 mt-1">Las imágenes se optimizarán automáticamente al subir.</p>
+                                    <input type="file" id="file-upload" class="hidden" accept="image/*" multiple>
+                                    <p class="text-[10px] text-stone-400 mt-1">Las imágenes se optimizarán
+                                        automáticamente al subir.</p>
                         </div>
 
                         <div class="mb-4">
-                            <label class="block text-sm font-medium text-stone-700 mb-1">Descripción de Marketing</label>
-                            <textarea id="descripcion" rows="3" class="w-full p-3 border border-stone-300 rounded-xl" placeholder="La historia que quieres contar en el empaque..."></textarea>
+                            <label class="block text-sm font-medium text-stone-700 mb-1">Descripción de
+                                Marketing</label>
+                            <textarea id="descripcion" rows="3" class="w-full p-3 border border-stone-300 rounded-xl"
+                                placeholder="La historia que quieres contar en el empaque..."></textarea>
                         </div>
 
                         <div class="mb-4">
                             <label class="block text-sm font-medium text-stone-700 mb-1">Ingredientes</label>
-                            <textarea id="ingredientes" rows="2" class="w-full p-3 border border-stone-300 rounded-xl" placeholder="Ej: Cacao, Azúcar de caña, Manteca de cacao..."></textarea>
+                            <textarea id="ingredientes" rows="2" class="w-full p-3 border border-stone-300 rounded-xl"
+                                placeholder="Ej: Cacao, Azúcar de caña, Manteca de cacao..."></textarea>
                         </div>
 
                         <div id="awards-section" class="hidden pt-4 border-t border-stone-200">
                             <label class="block text-sm font-bold text-stone-800 mb-2">Premios y Reconocimientos</label>
                             <div class="flex flex-col gap-2 mb-3">
                                 <div class="flex gap-2 items-center">
-                                    <div class="relative w-10 h-10 flex-shrink-0 group cursor-pointer" title="Subir icono del premio" onclick="document.getElementById('award-icon-input').click()">
-                                        <img id="award-icon-preview" src="https://placehold.co/100?text=+" class="w-full h-full object-cover rounded-lg border border-stone-300 hover:border-amber-500 transition bg-white">
+                                    <div class="relative w-10 h-10 flex-shrink-0 group cursor-pointer"
+                                        title="Subir icono del premio"
+                                        onclick="document.getElementById('award-icon-input').click()">
+                                        <img id="award-icon-preview" src="https://placehold.co/100?text=+"
+                                            class="w-full h-full object-cover rounded-lg border border-stone-300 hover:border-amber-500 transition bg-white">
                                         <input type="file" id="award-icon-input" class="hidden" accept="image/*">
                                     </div>
-                                    <select id="award-select" class="flex-grow p-2 border border-stone-300 rounded-lg text-sm h-10 bg-white"></select>
-                                    <input type="number" id="award-year" placeholder="Año" class="w-20 p-2 border border-stone-300 rounded-lg text-sm h-10">
-                                    <button type="button" id="add-award-btn" class="bg-amber-100 text-amber-800 px-3 h-10 rounded-lg hover:bg-amber-200"><i class="fas fa-plus"></i></button>
+                                    <select id="award-select"
+                                        class="flex-grow p-2 border border-stone-300 rounded-lg text-sm h-10 bg-white"></select>
+                                    <input type="number" id="award-year" placeholder="Año"
+                                        class="w-20 p-2 border border-stone-300 rounded-lg text-sm h-10">
+                                    <button type="button" id="add-award-btn"
+                                        class="bg-amber-100 text-amber-800 px-3 h-10 rounded-lg hover:bg-amber-200"><i
+                                            class="fas fa-plus"></i></button>
                                 </div>
-                                <p class="text-[10px] text-stone-400 pl-1">Opcional: Toca el cuadro "+" para subir el logo del premio si no aparece en la lista.</p>
+                                <p class="text-[10px] text-stone-400 pl-1">Opcional: Toca el cuadro "+" para subir el
+                                    logo del premio si no aparece en la lista.</p>
                             </div>
                             <div id="awards-list" class="space-y-2"></div>
                         </div>
