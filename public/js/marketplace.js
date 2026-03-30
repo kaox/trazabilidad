@@ -386,7 +386,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (p.tipo === 'cafe') {
                 typeBadge = `<div class="type-badge"><i class="fas fa-mug-hot text-amber-900"></i> Café</div>`;
             } else if (p.tipo === 'cacao') {
-                typeBadge = `<div class="type-badge"><i class="fas fa-cookie-bite text-amber-900"></i> Chocolate</div>`;
+                typeBadge = `<div class="type-badge"><i class="fas fa-cookie-bite text-amber-900"></i> Cacao</div>`;
             }
 
             // Badge de Puntos
@@ -408,14 +408,24 @@ document.addEventListener('DOMContentLoaded', () => {
                 `;
             }
 
-            // Detalles Específicos (Café vs Cacao)
+            // Detalles Específicos (Café vs Cacao) con Iconos
             let detallesHtml = '';
+            const specIcons = [];
             if (p.tipo === 'cafe') {
-                const variedadText = p.variedad ? p.variedad : '';
-                const procesoText = p.proceso ? p.proceso : '';
-                if (variedadText || procesoText) {
-                    detallesHtml = `<p class="text-[10px] text-stone-500 font-bold mb-3 uppercase tracking-widest">${variedadText} ${variedadText && procesoText ? '&bull;' : ''} ${procesoText}</p>`;
-                }
+                if (p.variedad) specIcons.push(`<span><i class="fas fa-leaf text-amber-700/60 mr-1"></i> ${p.variedad}</span>`);
+                if (p.proceso) specIcons.push(`<span><i class="fas fa-sync-alt text-amber-700/60 mr-1"></i> ${p.proceso}</span>`);
+                if (p.nivel_tueste) specIcons.push(`<span><i class="fas fa-fire text-amber-700/60 mr-1"></i> ${p.nivel_tueste}</span>`);
+            } else if (p.tipo === 'cacao') {
+                if (p.grupo_genetico) specIcons.push(`<span><i class="fas fa-dna text-amber-700/60 mr-1"></i> ${p.grupo_genetico}</span>`);
+                if (p.porcentaje_cacao) specIcons.push(`<span><i class="fas fa-percentage text-amber-700/60 mr-1"></i> ${p.porcentaje_cacao}% Cacao</span>`);
+            }
+
+            if (specIcons.length > 0) {
+                detallesHtml = `
+                    <div class="flex flex-wrap gap-x-4 gap-y-1.5 text-[10px] text-stone-500 font-bold mb-4 uppercase tracking-widest border-b border-stone-50 pb-3">
+                        ${specIcons.join('')}
+                    </div>
+                `;
             }
 
             // Finca Origen
@@ -423,11 +433,12 @@ document.addEventListener('DOMContentLoaded', () => {
             if (p.finca) {
                 const location = [p.finca.provincia, p.finca.departamento].filter(Boolean).join(', ');
                 fincaHtml = `
-                    <div class="flex items-start gap-2 mb-4 text-xs text-stone-600 bg-stone-50/50 p-2.5 rounded-lg border border-stone-100/50">
-                        <i class="fas fa-map-marker-alt text-amber-700/50 mt-0.5"></i>
+                    <div class="flex items-start gap-2 mb-4 text-xs text-stone-600 bg-stone-50 p-2.5 rounded-xl border border-stone-100">
+                        <i class="fas fa-map-marker-alt text-amber-800/40 mt-1"></i>
                         <div>
                             <p class="font-bold text-stone-800 text-[11px] leading-tight">${p.finca.nombre}</p>
-                            ${location ? `<p class="text-[10px] text-stone-500 mt-0.5">${location}, Perú</p>` : ''}
+                            ${location ? `<p class="text-[10px] text-stone-400 mt-0.5">${location}, Perú</p>` : ''}
+                            ${p.finca.altura ? `<p class="text-[10px] text-amber-700 font-bold mt-1.5 flex items-center gap-1"><i class="fas fa-mountain text-[9px] opacity-70"></i> ${p.finca.altura} msnm</p>` : ''}
                         </div>
                     </div>
                 `;
@@ -436,7 +447,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // Perfil Sensorial (Barras)
             let sensoryBarsHtml = '';
             if (p.perfil) {
-                const attrs = p.tipo === 'cafe' 
+                const attrs = p.tipo === 'cafe'
                     ? [['Sabor', 'sabor', 'bar-sabor'], ['Acidez', 'acidez', 'bar-acidez'], ['Cuerpo', 'cuerpo', 'bar-cuerpo']]
                     : [['Cacao', 'cacao', 'bar-cacao'], ['Acidez', 'acidez', 'bar-acidez'], ['Amargor', 'amargor', 'bar-amargor']];
 
@@ -453,9 +464,9 @@ document.addEventListener('DOMContentLoaded', () => {
                         </div>
                         <div class="space-y-3">
                             ${attrs.map(([label, key, colorClass]) => {
-                                const val = p.perfil[key] || 0;
-                                const percent = (val / 10) * 100;
-                                return `
+                    const val = p.perfil[key] || 0;
+                    const percent = (val / 10) * 100;
+                    return `
                                     <div class="sensory-row">
                                         <div class="flex justify-between items-center mb-1">
                                             <span class="sensory-label">${label}</span>
@@ -465,7 +476,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                         </div>
                                     </div>
                                 `;
-                            }).join('')}
+                }).join('')}
                         </div>
                     </div>
                 `;
