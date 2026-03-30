@@ -250,7 +250,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function setMapData(coordsJson) {
-        // Limpiar mapa
+        // Limpiar mapa previo
         if (currentPolygon) {
             currentPolygon.setMap(null);
             currentPolygon = null;
@@ -259,11 +259,29 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!coordsJson || !map) return;
 
         try {
-            // Esperar array de arrays: [[lat, lng], ...]
-            const coordsArray = typeof coordsJson === 'string' ? JSON.parse(coordsJson) : coordsJson;
+            let coordsArray = typeof coordsJson === 'string' ? JSON.parse(coordsJson) : coordsJson;
+            
+            // Soporte para GeoJSON (Polygon con coordinates: [[[lng, lat], ...]])
+            if (coordsArray && coordsArray.type === 'Polygon' && Array.isArray(coordsArray.coordinates)) {
+                coordsArray = coordsArray.coordinates[0];
+            }
 
             if (Array.isArray(coordsArray) && coordsArray.length > 0) {
-                const paths = coordsArray.map(p => ({ lat: p[0], lng: p[1] }));
+                // Convertir cualquier formato soportado a [{lat, lng}, ...]
+                const paths = coordsArray.map(p => {
+                    if (Array.isArray(p)) {
+                        // GeoJSON usa [lng, lat], pero este sistema usa [lat, lng]
+                        return { lat: Number(p[0]), lng: Number(p[1]) };
+                    } else if (p && typeof p === 'object' && p.lat !== undefined) {
+                        return { lat: Number(p.lat), lng: Number(p.lng) };
+                    }
+                    return null;
+                }).filter(p => p !== null && !isNaN(p.lat) && !isNaN(p.lng));
+
+                if (paths.length === 0) {
+                    console.warn("No se pudieron extraer coordenadas válidas para el polígono.");
+                    return;
+                }
 
                 currentPolygon = new google.maps.Polygon({
                     paths: paths,
@@ -275,26 +293,22 @@ document.addEventListener('DOMContentLoaded', () => {
                     map: map
                 });
 
-                // Centrar mapa
+                // Centrar mapa en el polígono
                 const bounds = new google.maps.LatLngBounds();
                 paths.forEach(p => bounds.extend(p));
                 map.fitBounds(bounds);
 
-                // Listeners de edición
+                // Listeners de edición para actualizar el input oculto y superficie
                 currentPolygon.getPath().addListener('set_at', () => {
                     updateCoordenadasInput();
-                    // Recalcular solo área al editar vértices existentes
                     autoPopulateFieldsFromPolygon(currentPolygon, true);
                 });
                 currentPolygon.getPath().addListener('insert_at', () => {
                     updateCoordenadasInput();
-                    // Recalcular solo área al insertar nuevos vértices
                     autoPopulateFieldsFromPolygon(currentPolygon, true);
                 });
 
-                // Switch a modo edición (no dibujo)
                 if (drawingManager) drawingManager.setDrawingMode(null);
-
                 updateCoordenadasInput();
             }
         } catch (e) {
@@ -535,34 +549,44 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const fincas = await api('/api/fincas');
             const finca = fincas.find(f => f.id === id);
-            if (!finca) return;
+            if (!finca) {
+                console.error("Finca no encontrada:", id);
+                return;
+            }
 
             resetForm();
 
-            form.propietario.value = finca.propietario || '';
-            form.dni_ruc.value = finca.dni_ruc || '';
-            form.nombre_finca.value = finca.nombre_finca || '';
-            form.pais.value = finca.pais || '';
-            form.departamento.value = finca.departamento || '';
-            form.provincia.value = finca.provincia || '';
-            form.distrito.value = finca.distrito || '';
-            form.ciudad.value = finca.ciudad || ''; // Legacy/Referencia
-            if (form.video_link) form.video_link.value = finca.video_link || '';
+            // Usar elementos del formulario por ID o por Name para mayor seguridad
+            document.getElementById('propietario').value = finca.propietario || '';
+            document.getElementById('dni_ruc').value = finca.dni_ruc || '';
+            document.getElementById('nombre_finca').value = finca.nombre_finca || '';
+            document.getElementById('pais').value = finca.pais || 'Perú';
+            document.getElementById('departamento').value = finca.departamento || '';
+            document.getElementById('provincia').value = finca.provincia || '';
+            document.getElementById('distrito').value = finca.distrito || '';
+            document.getElementById('ciudad').value = finca.ciudad || '';
+            
+            if (document.getElementById('video_link')) {
+                document.getElementById('video_link').value = finca.video_link || '';
+            }
 
-            form.altura.value = finca.altura || '';
-            form.superficie.value = finca.superficie || '';
-            form.telefono.value = finca.telefono || '';
-            form.numero_trabajadores.value = finca.numero_trabajadores || '';
-            form.historia.value = finca.historia || '';
-            form.coordenadas.value = JSON.stringify(finca.coordenadas);
+            document.getElementById('altura').value = finca.altura || '';
+            document.getElementById('superficie').value = finca.superficie || '';
+            document.getElementById('telefono').value = finca.telefono || '';
+            document.getElementById('numero_trabajadores').value = finca.numero_trabajadores || '';
+            document.getElementById('historia').value = finca.historia || '';
+            
+            const coordsStr = finca.coordenadas ? (typeof finca.coordenadas === 'string' ? finca.coordenadas : JSON.stringify(finca.coordenadas)) : '';
+            document.getElementById('coordenadas').value = coordsStr;
             editIdInput.value = finca.id;
 
             productorFotoPreview.src = finca.foto_productor || 'https://placehold.co/100x100/e0e0e0/757575?text=Productor';
             fotoProductorHiddenInput.value = finca.foto_productor || '';
 
-            currentImages = finca.imagenes_json || [];
-            currentFincaCertifications = finca.certificaciones_json || [];
-            currentFincaPremios = finca.premios_json || [];
+            currentImages = Array.isArray(finca.imagenes_json) ? finca.imagenes_json : [];
+            currentFincaCertifications = Array.isArray(finca.certificaciones_json) ? finca.certificaciones_json : [];
+            currentFincaPremios = Array.isArray(finca.premios_json) ? finca.premios_json : [];
+            
             renderImagePreviews();
             renderAddedCertifications();
             renderAddedPremios();
@@ -570,12 +594,17 @@ document.addEventListener('DOMContentLoaded', () => {
             if (finca.coordenadas) {
                 setMapData(finca.coordenadas);
             }
+            
             formTitle.textContent = `Editando: ${finca.nombre_finca}`;
             submitButton.textContent = 'Actualizar Finca';
             submitButton.className = 'bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 rounded-xl shadow-md';
             cancelEditBtn.classList.remove('hidden');
+            
             window.scrollTo({ top: 0, behavior: 'smooth' });
-        } catch (error) { alert('Error al cargar datos para editar.'); }
+        } catch (error) { 
+            console.error("Error en populateFormForEdit:", error);
+            alert('Error al cargar datos para editar.'); 
+        }
     }
 
     async function handleProductorFotoUpload(e) {
