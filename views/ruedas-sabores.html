@@ -49,50 +49,68 @@
             <p class="text-stone-600">Crea y gestiona los perfiles sensoriales de tus productos basados en la rueda de la SCA.</p>
         </header>
 
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <!-- Columna de Lista y Gráfico -->
-            <div class="bg-white p-6 rounded-2xl shadow-lg">
-                <h2 class="text-2xl font-display text-amber-900 border-b pb-2 mb-6">Mis Ruedas de Sabor</h2>
-                <div class="mb-4">
-                        <label for="rueda-type-selector" class="block text-sm font-medium text-stone-700 mb-1">Tipo de Rueda</o_labelf>
-                        <select id="rueda-type-selector" class="w-full p-3 border border-stone-300 rounded-xl bg-white">
-                            <option value="cafe">Café (SCA)</option>
-                            <option value="cacao">Cacao (CoEx)</option>
-                            <option value="miel">Miel (UC Davis)</option>
-                        </select>
-                    </div>
-                <div id="ruedas-list" class="space-y-2 mb-6"></div>
-                <div class="pt-6 border-t">
-                    <h2 id="chart-title" class="text-2xl font-display text-amber-900 mb-4 text-center">Visualización del Perfil</h2>
-                    <div id="chart-container" class="w-full relative flex justify-center mt-6">
-                        <div id="flavor-wheel-chart" class="w-full"></div>
-                        <div id="flavor-wheel-info" class="hidden absolute top-4 left-4 bg-white/95 backdrop-blur-sm p-3 rounded-xl shadow-lg border-l-4 min-w-[150px] z-10 pointer-events-none transition-all duration-200">
-                            <h3 id="flavor-wheel-info-title" class="m-0 text-stone-800 text-lg font-bold">Sabor</h3>
-                            <p id="flavor-wheel-info-path" class="m-0 mt-1 text-stone-500 text-xs">Categoría</p>
-                        </div>
-                    </div>
-                    <div id="chart-legend" class="w-full mt-8 border-t pt-6 bg-stone-50/50 rounded-xl p-4">
-                        <!-- La leyenda se generará aquí -->
-                    </div>
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Columna de Lista (Menor ancho) -->
+            <div class="lg:col-span-1 bg-white p-6 rounded-2xl shadow-lg h-fit">
+                <div class="flex justify-between items-center border-b pb-2 mb-6">
+                    <h2 class="text-2xl font-display text-amber-900">Mis Ruedas de Sabor</h2>
+                    <button id="new-rueda-btn" class="bg-amber-100 hover:bg-amber-200 text-amber-800 text-xs font-bold py-2 px-3 rounded-xl transition-all flex items-center gap-2">
+                        <i class="fas fa-plus"></i> Nuevo
+                    </button>
+                </div>
+                <div class="mb-6">
+                    <label for="rueda-type-selector" class="block text-sm font-medium text-stone-700 mb-1">Tipo de Rueda</label>
+                    <select id="rueda-type-selector" class="w-full p-3 border border-stone-300 rounded-xl bg-white focus:ring-2 focus:ring-amber-500 outline-none">
+                        <option value="cafe">Café (SCA)</option>
+                        <option value="cacao">Cacao (CoEx)</option>
+                        <option value="miel">Miel (UC Davis)</option>
+                    </select>
+                </div>
+                <div id="ruedas-list" class="space-y-3 overflow-y-auto max-h-[60vh] pr-2">
+                    <!-- Lista de ruedas -->
                 </div>
             </div>
             
-            <!-- Columna de Creación / Edición -->
-            <div class="bg-white p-6 rounded-2xl shadow-lg">
-                 <form id="rueda-form">
+            <!-- Columna de Creación / Edición (Mayor ancho) -->
+            <div class="lg:col-span-2 bg-white p-8 rounded-2xl shadow-lg">
+                 <form id="rueda-form" class="space-y-6">
                     <input type="hidden" id="edit-id">
-                    <h2 id="form-title" class="text-2xl font-display text-amber-900 border-b pb-2 mb-4">Crear Nueva Rueda</h2>
+                    <h2 id="form-title" class="text-3xl font-display text-amber-900 border-b pb-3">Crear Nueva Rueda</h2>
                     
-                    <div class="mb-4">
-                        <label for="nombre_rueda" class="block text-sm font-medium text-stone-700 mb-1">Nombre del Perfil</label>
-                        <input type="text" id="nombre_rueda" name="nombre_rueda" placeholder="Ej: Geisha Lavado Lote #3" class="w-full p-3 border rounded-xl" required>
+                    <div class="space-y-8">
+                        <!-- Nombre (Full Width) -->
+                        <div>
+                            <label for="nombre_rueda" class="block text-sm font-bold text-stone-700 mb-2 uppercase tracking-wider">Nombre del Perfil</label>
+                            <input type="text" id="nombre_rueda" name="nombre_rueda" placeholder="Ej: Geisha Lavado Lote #3" class="w-full p-4 border border-stone-300 rounded-2xl focus:ring-2 focus:ring-amber-800 outline-none text-lg" required>
+                        </div>
+                        
+                        <!-- Rueda (Full Width) -->
+                        <div id="chart-wrapper" class="relative bg-stone-50 rounded-3xl p-4 md:p-8">
+                            <div id="chart-container" class="w-full relative flex justify-center">
+                                <div id="flavor-wheel-chart" class="w-full max-w-[650px] cursor-pointer"></div>
+                                
+                                <!-- Tooltip flotante -->
+                                <div id="flavor-wheel-info" class="hidden absolute top-0 left-0 bg-white/95 backdrop-blur-sm p-4 rounded-2xl shadow-xl border-l-4 min-w-[180px] z-50 pointer-events-none transition-all duration-200">
+                                    <h3 id="flavor-wheel-info-title" class="m-0 text-stone-800 text-xl font-bold">Sabor</h3>
+                                    <p id="flavor-wheel-info-path" class="m-0 mt-1 text-stone-500 text-sm">Categoría</p>
+                                </div>
+                            </div>
+                            <p class="text-center text-stone-400 text-xs mt-4">Haz clic en los segmentos para activar/desactivar notas</p>
+                        </div>
+
+                        <!-- Leyenda (Full Width) -->
+                        <div id="chart-legend-wrapper">
+                            <label class="block text-sm font-bold text-stone-700 mb-4 uppercase tracking-wider">Atributos Seleccionados</label>
+                            <div id="chart-legend" class="w-full border-t pt-6 bg-stone-50/50 rounded-2xl p-6 min-h-[150px]">
+                                <!-- La leyenda se generará aquí -->
+                                <p class="text-stone-400 text-center italic text-sm mt-4">Selecciona notas en la rueda para construir tu perfil.</p>
+                            </div>
+                        </div>
                     </div>
-                    <div id="interactive-wheel" class="space-y-4 max-h-[60vh] overflow-y-auto p-2 border-t pt-4">
-                        <!-- Rueda de sabores interactiva se genera aquí -->
-                    </div>
-                    <div class="pt-6 mt-4 border-t flex justify-end gap-4">
-                        <button type="button" id="cancel-edit-btn" class="bg-stone-500 hover:bg-stone-600 text-white font-bold py-2 px-6 rounded-xl hidden">Cancelar</button>
-                        <button type="submit" class="bg-amber-800 hover:bg-amber-900 text-white font-bold py-3 px-8 rounded-xl">Guardar</button>
+
+                    <div class="pt-8 border-t flex justify-end gap-5">
+                        <button type="button" id="cancel-edit-btn" class="bg-stone-200 hover:bg-stone-300 text-stone-700 font-bold py-3 px-8 rounded-2xl hidden transition-colors">Cancelar</button>
+                        <button type="submit" class="bg-amber-800 hover:bg-amber-900 text-white font-bold py-4 px-12 rounded-2xl shadow-lg shadow-amber-900/20 transition-all hover:-translate-y-1">Guardar Perfil</button>
                     </div>
                  </form>
             </div>

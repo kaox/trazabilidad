@@ -4,7 +4,9 @@ document.addEventListener('DOMContentLoaded', () => {
     let state = {
         ruedas: [],
         selectedRuedaId: null,
-        currentType: 'cafe' // 'cafe' o 'cacao'
+        currentType: 'cafe', // 'cafe', 'cacao', 'miel'
+        flavorData: null,
+        selectedNotes: [] // Array de {category, subnote}
     };
     let charts = {};
 
@@ -15,10 +17,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const submitButton = form.querySelector('button[type="submit"]');
     const cancelEditBtn = document.getElementById('cancel-edit-btn');
     const formTitle = document.getElementById('form-title');
-    const chartTitle = document.getElementById('chart-title');
-    const interactiveWheelContainer = document.getElementById('interactive-wheel');
     const legendContainer = document.getElementById('chart-legend');
     const ruedaTypeSelector = document.getElementById('rueda-type-selector');
+    const newRuedaBtn = document.getElementById('new-rueda-btn');
 
     Chart.register(ChartDataLabels);
 
@@ -28,7 +29,6 @@ document.addEventListener('DOMContentLoaded', () => {
             loadFlavorData() // Cargar datos externos
         ]);
         setupEventListeners();
-        renderInteractiveWheel(); // Render inicial
         renderRuedas(); // Render inicial
 
 
@@ -42,8 +42,16 @@ document.addEventListener('DOMContentLoaded', () => {
     function setupEventListeners() {
         form.addEventListener('submit', handleFormSubmit);
         listContainer.addEventListener('click', handleListClick);
-        cancelEditBtn.addEventListener('click', resetForm);
-        interactiveWheelContainer.addEventListener('click', handleWheelClick);
+        cancelEditBtn.addEventListener('click', () => {
+            state.selectedRuedaId = null;
+            resetForm();
+        });
+        if (newRuedaBtn) {
+            newRuedaBtn.addEventListener('click', () => {
+                state.selectedRuedaId = null;
+                resetForm();
+            });
+        }
         ruedaTypeSelector.addEventListener('change', handleTypeChange);
     }
 
@@ -70,7 +78,6 @@ document.addEventListener('DOMContentLoaded', () => {
         state.currentType = ruedaTypeSelector.value;
         state.selectedRuedaId = null;
         resetForm();
-        renderInteractiveWheel();
         renderRuedas();
 
         const firstRuedaOfType = state.ruedas.find(r => r.tipo === state.currentType);
@@ -104,74 +111,30 @@ document.addEventListener('DOMContentLoaded', () => {
         state.selectedRuedaId = id;
         const rueda = state.ruedas.find(r => r.id === id);
         if (rueda) {
-            updateChart(rueda);
+            state.selectedNotes = [...rueda.notas_json];
+            updateChart();
             renderRuedas();
         }
     }
 
-    function renderInteractiveWheel() {
-        if (!state.flavorData) return;
+    // Ya no usamos renderInteractiveWheel con botones de texto.
+    // La rueda D3 es ahora la interfaz de selección.
 
-        const FLAVOR_DATA = state.flavorData[state.currentType];
-
-        // Función recursiva para renderizar notas de cualquier nivel
-        const renderNotes = (childrenArray, categoryName, categoryColor) => {
-            if (!childrenArray || childrenArray.length === 0) return '';
-
-            return childrenArray.map(note => {
-                let html = `
-                    <button type="button" class="flavor-tag bg-stone-200 text-stone-700 text-sm font-medium px-3 py-1 rounded-full m-1" 
-                            data-category="${categoryName}" data-note="${note.name}" data-color="${categoryColor}">
-                        <i class="fas ${note.icon || 'fa-circle-dot'} w-4"></i> ${note.name}
-                    </button>
-                `;
-                if (note.children && note.children.length > 0) {
-                    html += `<div class="ml-4 border-l-2 border-stone-200 pl-2 mt-1 mb-2">
-                                ${renderNotes(note.children, categoryName, categoryColor)}
-                             </div>`;
-                }
-                return html;
-            }).join('');
-        };
-
-        interactiveWheelContainer.innerHTML = Object.entries(FLAVOR_DATA).map(([category, data]) => `
-            <div class="mb-4">
-                <h4 class="font-semibold text-stone-700 border-b pb-1 mb-2" style="color: ${data.color}">
-                    <i class="fas ${data.icon} w-5"></i> ${category}
-                </h4>
-                <div class="flex flex-col">
-                    <div class="flex flex-wrap">
-                        ${renderNotes(data.children, category, data.color)}
-                    </div>
-                </div>
-            </div>
-        `).join('');
-    }
-
-    function updateChart(rueda) {
-        const title = rueda ? rueda.nombre_rueda : 'Selecciona o crea un perfil';
-        const notes = rueda ? rueda.notas_json : [];
+    function updateChart() {
+        const notes = state.selectedNotes;
         const FLAVOR_DATA = state.flavorData ? state.flavorData[state.currentType] : {};
 
         // Limpiar contenedor D3
         const chartContainer = d3.select("#flavor-wheel-chart");
         chartContainer.selectAll("*").remove();
 
-        if (chartTitle) {
-            chartTitle.textContent = title;
-        }
-
         if (!FLAVOR_DATA || Object.keys(FLAVOR_DATA).length === 0) return;
 
         // Construir jerarquía para D3
         const rootData = { name: "Root", children: [] };
-
-        // selectedCategories nos ayuda para el custom legend
         const selectedCategories = {};
 
-        // Recorrer FLAVOR_DATA y transponer en formato jerárquico
         Object.entries(FLAVOR_DATA).forEach(([catName, catData]) => {
-            // Verificar si alguna subnota de esta categoría está seleccionada
             const isCatSelected = notes.some(n => n.category === catName);
             if (isCatSelected) {
                 selectedCategories[catName] = { color: catData.color, children: [] };
@@ -179,27 +142,28 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const catNode = {
                 name: catName,
-                color: isCatSelected ? catData.color : '#E5E7EB',
+                category: catName,
+                color: isCatSelected ? catData.color : '#F3F4F6',
+                active: isCatSelected,
                 baseColor: catData.color,
                 children: [],
                 icon: catData.icon
             };
 
-            // Función recursiva para anidar children
             const processChildren = (childrenArray, parentNode) => {
                 if (!childrenArray || childrenArray.length === 0) return;
 
                 childrenArray.forEach(child => {
-                    // Verificar si esta nota específica está en notas_json
                     const isSelected = notes.some(n => n.category === catName && n.subnote === child.name);
-
                     if (isSelected && selectedCategories[catName] && !selectedCategories[catName].children.includes(child.name)) {
                         selectedCategories[catName].children.push(child.name);
                     }
 
                     const childNode = {
                         name: child.name,
-                        color: isSelected ? catData.color : '#E5E7EB',
+                        category: catName,
+                        color: isSelected ? catData.color : '#F3F4F6',
+                        active: isSelected,
                         baseColor: catData.color,
                         children: [],
                         icon: child.icon
@@ -208,7 +172,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (child.children && child.children.length > 0) {
                         processChildren(child.children, childNode);
                     }
-
                     parentNode.children.push(childNode);
                 });
             };
@@ -218,15 +181,13 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         const width = 800;
-
         const root = d3.hierarchy(rootData)
             .sum(d => d.children && d.children.length > 0 ? 0 : 1)
             .sort((a, b) => b.value - a.value);
 
-        // Calcular el radio para que entre exactamente en el centro independientemente de la profundidad
         const maxDepth = root.height + 1;
         const maxPixelRadius = width / 2;
-        const centerRadius = maxPixelRadius * 0.15; // 20% del espacio para el centro (antes era mayor)
+        const centerRadius = maxPixelRadius * 0.25;
 
         const getRadius = (y) => {
             if (y === 0) return 0;
@@ -250,32 +211,59 @@ document.addEventListener('DOMContentLoaded', () => {
             .append("g")
             .attr("transform", `translate(${width / 2},${width / 2})`);
 
-        // Arcos
+        // Arcos Interactivos
         const arcs = svg.selectAll("path")
             .data(root.descendants().slice(1))
             .join("path")
             .attr("class", "arc")
             .attr("fill", d => d.data.color)
             .attr("stroke", "#fff")
-            .attr("stroke-width", "1.5px")
+            .attr("stroke-width", "2px")
             .attr("d", arc)
             .style("cursor", "pointer")
-            .style("transition", "opacity 0.2s, filter 0.2s")
-            .on("mouseenter", (event, d) => {
-                d3.selectAll(".arc").style("opacity", 0.3);
-                const ancestors = d.ancestors();
-                d3.selectAll(".arc").filter(node => ancestors.includes(node)).style("opacity", 1);
+            .style("transition", "all 0.2s ease")
+            .on("click", (event, d) => {
+                const noteName = d.data.name;
+                const categoryName = d.data.category;
+                const isActive = d.data.active;
 
+                if (!isActive) {
+                    // ACTIVAR: él y todos sus ancestros
+                    const ancestors = d.ancestors().slice(0, -1); // Excluir Root
+                    ancestors.forEach(node => {
+                        const exists = state.selectedNotes.some(n => n.category === node.data.category && n.subnote === node.data.name);
+                        if (!exists) {
+                            state.selectedNotes.push({ category: node.data.category, subnote: node.data.name });
+                        }
+                    });
+                } else {
+                    // DESACTIVAR: él y todos sus descendientes
+                    const descendants = d.descendants();
+                    const descendantNames = descendants.map(node => node.data.name);
+                    state.selectedNotes = state.selectedNotes.filter(n => 
+                        !(n.category === categoryName && descendantNames.includes(n.subnote))
+                    );
+                }
+
+                updateChart();
+            })
+            .on("mouseenter", (event, d) => {
+                d3.select(event.currentTarget).style("filter", "brightness(0.9)");
                 const info = document.getElementById("flavor-wheel-info");
                 if (info) {
                     document.getElementById("flavor-wheel-info-title").innerText = d.data.name;
                     document.getElementById("flavor-wheel-info-path").innerText = d.ancestors().reverse().slice(1).map(a => a.data.name).join(" > ");
                     info.style.display = "block";
+                    
+                    // Posicionar cerca del mouse pero dentro del contenedor
+                    const [mx, my] = d3.pointer(event, chartContainer.node());
+                    info.style.left = `${mx + 20}px`;
+                    info.style.top = `${my + 20}px`;
                     info.style.borderLeftColor = d.data.baseColor;
                 }
             })
-            .on("mouseleave", () => {
-                d3.selectAll(".arc").style("opacity", 1);
+            .on("mouseleave", (event) => {
+                d3.select(event.currentTarget).style("filter", "none");
                 const info = document.getElementById("flavor-wheel-info");
                 if (info) info.style.display = "none";
             });
@@ -287,28 +275,26 @@ document.addEventListener('DOMContentLoaded', () => {
             .selectAll("text")
             .data(root.descendants().slice(1).filter(d => (d.x1 - d.x0) > 0.04))
             .join("text")
-            .style("font-size", d => d.depth === 1 ? "16px" : "14px")
-            .style("font-weight", "600")
-            .style("font-family", "Arial, sans-serif")
-            .style("fill", d => {
-                if (d.data.color === '#E5E7EB') return '#6b7280'; // Gris para nodos inactivos
-                return d.depth === 1 ? "white" : "#333";
-            })
+            .style("font-size", d => d.depth === 1 ? "18px" : "14px")
+            .style("font-weight", "700")
+            .style("font-family", "'Inter', sans-serif")
+            .style("fill", d => d.data.active ? (d.depth === 1 ? "white" : "#333") : "#9ca3af")
             .attr("transform", function (d) {
                 const x = (d.x0 + d.x1) / 2 * 180 / Math.PI;
                 const y = (getRadius(d.y0) + getRadius(d.y1)) / 2;
                 return `rotate(${x - 90}) translate(${y}, 0) rotate(${x < 180 ? 0 : 180})`;
             })
             .attr("dy", "0.35em")
-            .text(d => d.data.name.length > 18 ? d.data.name.substring(0, 15) + "..." : d.data.name);
+            .text(d => d.data.name.length > 20 ? d.data.name.substring(0, 17) + "..." : d.data.name);
 
-        // Centro
-        svg.append("circle").attr("r", centerRadius - 2).attr("fill", "#fff");
+        // Centro con Texto
+        svg.append("circle").attr("r", centerRadius - 4).attr("fill", "#fff").attr("stroke", "#f3f4f6").attr("stroke-width", "2");
         svg.append("text")
             .attr("text-anchor", "middle")
-            .attr("font-weight", "bold")
-            .style("fill", "#333")
-            .style("font-size", "24px")
+            .attr("font-weight", "800")
+            .style("fill", "#78350f")
+            .style("font-family", "'Playfair Display', serif")
+            .style("font-size", "32px")
             .attr("dy", "0.35em")
             .text(state.currentType.toUpperCase());
 
@@ -317,13 +303,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function renderCustomLegend(selectedCategories) {
         if (Object.keys(selectedCategories).length === 0) {
-            legendContainer.innerHTML = `<p class="text-stone-500 text-center">Ninguna nota seleccionada.</p>`;
+            legendContainer.innerHTML = `<p class="text-stone-400 text-center italic text-sm mt-8">Selecciona notas en la rueda para construir tu perfil.</p>`;
             return;
         }
 
         const FLAVOR_DATA = state.flavorData[state.currentType];
 
-        // Buscamos un nodo y su icono recursivamente en FLAVOR_DATA
         const findNoteIcon = (childrenArray, noteName) => {
             if (!childrenArray) return 'fa-circle-dot';
             for (const child of childrenArray) {
@@ -337,129 +322,43 @@ document.addEventListener('DOMContentLoaded', () => {
         };
 
         const legendHtml = Object.entries(selectedCategories).map(([category, data]) => `
-            <div class="mb-3">
-                <h4 class="font-semibold text-sm flex items-center gap-2">
-                    <span class="w-3 h-3 rounded-full" style="background-color: ${data.color}"></span>
-                    <i class="fas ${FLAVOR_DATA[category]?.icon || 'fa-circle'} w-4"></i>
+            <div class="mb-5 bg-white p-4 rounded-2xl border border-stone-100 shadow-sm">
+                <h4 class="font-bold text-stone-800 flex items-center gap-3 mb-3">
+                    <span class="w-4 h-4 rounded-full shadow-inner" style="background-color: ${data.color}"></span>
+                    <i class="fas ${FLAVOR_DATA[category]?.icon || 'fa-circle'} text-stone-400"></i>
                     ${category}
                 </h4>
-                <ul class="list-disc list-inside text-stone-600 pl-5 text-sm mt-1 space-y-1">
-                    ${data.children.map(note => {
-            const noteIcon = FLAVOR_DATA[category] ? findNoteIcon(FLAVOR_DATA[category].children, note) : 'fa-circle-dot';
-            return `<li><i class="fas ${noteIcon} w-4 text-stone-500 mr-1"></i>${note}</li>`;
-        }).join('')}
+                <ul class="grid grid-cols-1 gap-2 pl-7">
+                    ${data.children.filter(n => n !== category).map(note => {
+                        const noteIcon = FLAVOR_DATA[category] ? findNoteIcon(FLAVOR_DATA[category].children, note) : 'fa-circle-dot';
+                        return `
+                            <li class="group flex items-center gap-2 text-stone-600 text-sm">
+                                <i class="fas ${noteIcon} text-stone-300 group-hover:text-stone-500 transition-colors"></i>
+                                <span>${note}</span>
+                            </li>
+                        `;
+                    }).join('')}
                 </ul>
             </div>
         `).join('');
 
-        legendContainer.innerHTML = `<div class="grid grid-cols-2 gap-x-4">${legendHtml}</div>`;
-    }
-
-    function handleWheelClick(e) {
-        const tag = e.target.closest('.flavor-tag');
-        if (!tag) return;
-
-        const isTurningOn = !tag.classList.contains('active');
-        const categoryName = tag.dataset.category;
-        const noteName = tag.dataset.note;
-
-        // Helper para hacer toggle visual de un botón botón específico
-        const setTagState = (btn, state) => {
-            if (state) {
-                btn.classList.add('active');
-                btn.style.backgroundColor = btn.dataset.color;
-                btn.style.borderColor = btn.dataset.color;
-                btn.classList.remove('bg-stone-200', 'text-stone-700');
-                btn.classList.add('text-white');
-            } else {
-                btn.classList.remove('active');
-                btn.style.backgroundColor = '';
-                btn.style.borderColor = 'transparent';
-                btn.classList.add('bg-stone-200', 'text-stone-700');
-                btn.classList.remove('text-white');
-            }
-        };
-
-        // Activarlo a él mismo
-        setTagState(tag, isTurningOn);
-
-        // Si lo encendemos, debemos encender todos sus padres hasta la categoría
-        if (isTurningOn) {
-            // Buscamos sus padres analizando los contenedores DOM en niveles ascendentes
-            let parentContainer = tag.parentElement;
-            while (parentContainer && parentContainer.classList.contains('pl-2')) {
-                // El contenedor padre tiene al hermano anterior (el div) o algo. 
-                // Mejor: iterar hacia arriba buscando el botón previo al div collapse.
-                const parentDiv = parentContainer.parentElement;
-                if (parentDiv && parentDiv.previousElementSibling && parentDiv.previousElementSibling.classList.contains('flavor-tag')) {
-                    setTagState(parentDiv.previousElementSibling, true);
-                }
-                parentContainer = parentDiv;
-            }
-
-            // También encender la categoría raíz si hay un botón que lo represente (en este diseño, la categoría a veces no es botón, pero si lo fuera se enciende)
-            const rootCatBtn = interactiveWheelContainer.querySelector(`.flavor-tag[data-note="${categoryName}"]`);
-            if (rootCatBtn) setTagState(rootCatBtn, true);
-
-        } else {
-            // Si lo apagamos, apagamos todos sus hijos
-            const nextDiv = tag.nextElementSibling;
-            if (nextDiv && nextDiv.classList.contains('ml-4')) {
-                const childTags = nextDiv.querySelectorAll('.flavor-tag');
-                childTags.forEach(childBtn => setTagState(childBtn, false));
-            }
-            
-            // Revisar padres jerárquicos para apagarlos SOLO SI no les quedan otros hijos encendidos
-            let parentContainer = tag.parentElement;
-            while (parentContainer && parentContainer.classList.contains('pl-2')) {
-                // Comprobamos si este contenedor tiene algún botón que siga encendido
-                const hasActiveChildren = parentContainer.querySelector('.flavor-tag.active');
-                
-                if (hasActiveChildren) {
-                    // Si hay algún otro hijo encendido, detenemos la propagación (los padres se quedan encendidos)
-                    break;
-                }
-                
-                // Si no hay hijos encendidos en este nivel, apagamos al padre
-                if (parentContainer.previousElementSibling && parentContainer.previousElementSibling.classList.contains('flavor-tag')) {
-                    setTagState(parentContainer.previousElementSibling, false);
-                }
-                
-                // Subir al siguiente nivel
-                parentContainer = parentContainer.parentElement;
-            }
-        }
-
-        updateChartFromForm();
-    }
-
-    function updateChartFromForm() {
-        const selectedTags = interactiveWheelContainer.querySelectorAll('.flavor-tag.active');
-        const notes = Array.from(selectedTags).map(tag => ({
-            category: tag.dataset.category,
-            subnote: tag.dataset.note
-        }));
-        updateChart({ nombre_rueda: form.nombre_rueda.value || 'Nueva Rueda', notas_json: notes });
+        legendContainer.innerHTML = `<div class="grid grid-cols-1 md:grid-cols-2 gap-4">${legendHtml}</div>`;
     }
 
     async function handleFormSubmit(e) {
         e.preventDefault();
         const nombre_rueda = form.nombre_rueda.value.trim();
-        const activeTags = interactiveWheelContainer.querySelectorAll('.flavor-tag.active');
-        const notas_json = Array.from(activeTags).map(tag => ({
-            category: tag.dataset.category,
-            subnote: tag.dataset.note
-        }));
+        const notas_json = state.selectedNotes;
 
         if (!nombre_rueda || notas_json.length === 0) {
-            alert("Por favor, asigna un nombre y al menos una nota de sabor.");
+            alert("Por favor, asigna un nombre y selecciona al menos una nota en la rueda.");
             return;
         }
 
         const data = {
             nombre_rueda,
             notas_json,
-            tipo: state.currentType // <-- AÑADIR TIPO
+            tipo: state.currentType
         };
 
         const editId = editIdInput.value;
@@ -469,6 +368,7 @@ document.addEventListener('DOMContentLoaded', () => {
             } else {
                 await api('/api/ruedas-sabores', { method: 'POST', body: JSON.stringify(data) });
             }
+            state.selectedRuedaId = null;
             resetForm();
             await loadRuedas();
         } catch (error) {
@@ -506,53 +406,36 @@ document.addEventListener('DOMContentLoaded', () => {
 
         resetForm();
 
-        // Asegurarse que el tipo es correcto ANTES de renderizar
         state.currentType = rueda.tipo;
         ruedaTypeSelector.value = rueda.tipo;
-        renderInteractiveWheel(); // Re-renderizar la rueda correcta
 
         editIdInput.value = id;
         form.nombre_rueda.value = rueda.nombre_rueda;
+        state.selectedNotes = [...rueda.notas_json];
 
-        interactiveWheelContainer.querySelectorAll('.flavor-tag').forEach(tag => {
-            const isSelected = rueda.notas_json.some(note => note.category === tag.dataset.category && note.subnote === tag.dataset.note);
-            if (isSelected) {
-                tag.classList.add('active');
-                tag.style.backgroundColor = tag.dataset.color;
-                tag.style.borderColor = tag.dataset.color;
-                tag.classList.remove('bg-stone-200', 'text-stone-700');
-                tag.classList.add('text-white');
-            }
-        });
-
-        updateChart(rueda);
+        updateChart();
         formTitle.textContent = 'Editar Rueda';
-        submitButton.textContent = 'Actualizar';
+        submitButton.textContent = 'Actualizar Perfil';
         cancelEditBtn.classList.remove('hidden');
     }
 
     function resetForm() {
         form.reset();
         editIdInput.value = '';
-        // No resetear el type selector, mantener el actual
         ruedaTypeSelector.value = state.currentType;
+        state.selectedNotes = [];
 
-        interactiveWheelContainer.querySelectorAll('.flavor-tag.active').forEach(tag => {
-            tag.classList.remove('active', 'text-white');
-            tag.classList.add('bg-stone-200', 'text-stone-700');
-            tag.style.backgroundColor = '';
-            tag.style.borderColor = 'transparent';
-        });
-        formTitle.textContent = 'Crear Nueva Rueda';
-        submitButton.textContent = 'Guardar';
-        cancelEditBtn.classList.add('hidden');
-
-        const firstRuedaOfType = state.ruedas.find(r => r.tipo === state.currentType);
-        if (firstRuedaOfType) {
-            selectRueda(firstRuedaOfType.id);
-        } else {
-            updateChart(null);
+        if (state.selectedRuedaId) {
+            const rueda = state.ruedas.find(r => r.id === state.selectedRuedaId);
+            if (rueda) {
+                state.selectedNotes = [...rueda.notas_json];
+            }
         }
+
+        updateChart();
+        formTitle.textContent = 'Crear Nueva Rueda';
+        submitButton.textContent = 'Guardar Perfil';
+        cancelEditBtn.classList.add('hidden');
     }
 
     init();
