@@ -78,7 +78,10 @@ document.addEventListener('DOMContentLoaded', () => {
             if (e.target.tagName === 'INPUT' && e.target.type === 'range') {
                 const val = parseFloat(e.target.value);
                 const attr = e.target.dataset.attr;
-                e.target.nextElementSibling.textContent = val;
+                const spanElement = e.target.closest('.mb-3')?.querySelector('span.text-amber-800');
+                if (spanElement) {
+                    spanElement.textContent = val;
+                }
 
                 if (val > 0) {
                     state.perfilMin[attr] = val;
