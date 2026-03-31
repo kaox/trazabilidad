@@ -150,6 +150,11 @@ const getPublicProductsWithImmutable = async (userId) => {
 
 const getMarketplaceBaseProducts = async (tipo) => {
     let sql = `
+        WITH TracedProducts AS (
+            SELECT DISTINCT CAST(b.producto_id AS TEXT) as producto_id
+            FROM batches b
+            JOIN traceability_registry tr ON CAST(b.id AS TEXT) = CAST(tr.batch_id AS TEXT)
+        )
         SELECT
             p.id as product_id,
             p.user_id as company_id,
@@ -176,7 +181,8 @@ const getMarketplaceBaseProducts = async (tipo) => {
             rueda.tipo as sabores_tipo,
             cp.name as company_name,
             cp.company_type as company_type,
-            COALESCE(cp.logo_url, u.company_logo) as company_logo
+            COALESCE(cp.logo_url, u.company_logo) as company_logo,
+            CASE WHEN tp.producto_id IS NOT NULL THEN 1 ELSE 0 END as has_traceability
         FROM productos p
         JOIN users u ON p.user_id = u.id
         LEFT JOIN currencies c ON p.currency_id = c.id
@@ -185,6 +191,7 @@ const getMarketplaceBaseProducts = async (tipo) => {
         LEFT JOIN company_profiles cp ON u.id = cp.user_id
         LEFT JOIN perfiles perf ON p.perfil_id = perf.id
         LEFT JOIN ruedas_sabores rueda ON p.rueda_id = rueda.id
+        LEFT JOIN TracedProducts tp ON CAST(p.id AS TEXT) = tp.producto_id
         WHERE p.is_published IS TRUE AND p.deleted_at IS NULL
     `;
     const params = [];

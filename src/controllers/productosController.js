@@ -280,6 +280,7 @@ const getMarketplaceProducts = async (req, res) => {
                 precio: row.product_precio,
                 moneda: row.currency_symbol,
                 unidad: row.unit_code,
+                lotes: row.has_traceability ? [{ registry_id: 1 }] : [], // Si tiene trazabilidad, retorna un array con al menos un elemento
                 finca: row.finca_nombre ? {
                     nombre: row.finca_nombre,
                     pais: row.finca_pais,

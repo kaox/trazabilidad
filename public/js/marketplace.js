@@ -398,6 +398,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 scoreBadge = `<div class="score-badge"><i class="fas fa-star"></i> ${p.puntaje_sca} pts</div>`;
             }
 
+            // Badge de Trazabilidad Blockchain
+            let trazabilidadBadge = '';
+            let borderTrazabilidad = '';
+            if (p.lotes && p.lotes.length > 0) {
+                trazabilidadBadge = `<div class="absolute top-3 right-3 bg-emerald-100 border border-emerald-300 rounded-full px-2.5 py-1 z-10">
+                    <span class="text-emerald-700 font-bold text-[10px] uppercase tracking-wider flex items-center gap-1">
+                        <i class="fas fa-shield-alt text-emerald-600"></i> Trazable
+                    </span>
+                </div>`;
+                borderTrazabilidad = 'border-emerald-300 border-2';
+            }
+
             // Precio y Presentación
             let precioHtml = '';
             if (p.precio) {
@@ -508,11 +520,12 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             return `
-                <div class="product-card bg-white rounded-3xl border border-stone-100 shadow-sm flex flex-col h-full relative p-5">
+                <div class="product-card bg-white rounded-3xl border border-stone-100 shadow-sm flex flex-col h-full relative p-5 ${borderTrazabilidad}">
                     
                     ${typeBadge}
                     ${scoreBadge}
                     ${premiosHtml}
+                    ${trazabilidadBadge}
 
                     <!-- Foto Producto -->
                     <div class="w-full aspect-[4/3] relative flex justify-center items-center overflow-hidden mb-6 rounded-2xl bg-stone-50">
