@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rueda de Sabores de Café SCA</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --bg-color: #fcfaf8;
+            --text-color: #2d241e;
+            --card-bg: #ffffff;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .header {
+            text-align: center;
+            padding: 2rem;
+        }
+
+        .container {
+            position: relative;
+            width: 100%;
+            max-width: 1000px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #chart {
+            cursor: pointer;
+        }
+
+        /* Estilos de los arcos */
+        .arc {
+            stroke: #fff;
+            stroke-width: 1.5px;
+            transition: opacity 0.2s, filter 0.2s;
+        }
+
+        .arc:hover {
+            filter: brightness(1.1);
+        }
+
+        .label {
+            font-size: 10px;
+            font-weight: 600;
+            pointer-events: none;
+            fill: #333;
+            text-transform: uppercase;
+        }
+
+        /* Tooltip personalizado */
+        .info-panel {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: var(--card-bg);
+            padding: 15px 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            border-left: 5px solid #6f4e37;
+            min-width: 200px;
+            display: none;
+        }
+
+        .info-panel h3 {
+            margin: 0;
+            color: #6f4e37;
+            font-size: 1.2rem;
+        }
+
+        .info-panel p {
+            margin: 5px 0 0;
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+
+        .center-circle {
+            fill: #fff;
+        }
+
+        .center-text {
+            text-anchor: middle;
+            font-weight: bold;
+            fill: #6f4e37;
+            font-size: 14px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="header">
+        <h1>Rueda de Sabores SCA</h1>
+        <p>Explora el perfil sensorial del café de especialidad</p>
+    </div>
+
+    <div class="container">
+        <div id="chart"></div>
+    </div>
+
+    <div id="info" class="info-panel">
+        <h3 id="info-title">Sabor</h3>
+        <p id="info-path">Categoría</p>
+    </div>
+
+    <script>
+        // Datos procesados basados en tu JSON
+        const coffeeData = {
+            name: "Café",
+            children: [
+                {
+                    name: "Floral",
+                    color: "#ec4899",
+                    children: [
+                        { name: "Té Negro" },
+                        {
+                            name: "Floral",
+                            children: [
+                                { name: "Manzanilla" }, { name: "Rosa" }, { name: "Jazmín" }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    name: "Frutal",
+                    color: "#ef4444",
+                    children: [
+                        {
+                            name: "Bayas",
+                            children: [{ name: "Mora" }, { name: "Frambuesa" }, { name: "Arándano" }, { name: "Fresa" }]
+                        },
+                        {
+                            name: "Frutas Secas",
+                            children: [{ name: "Pasa" }, { name: "Ciruela Pasa" }]
+                        },
+                        {
+                            name: "Otras Frutas",
+                            children: [{ name: "Coco" }, { name: "Cereza" }, { name: "Granada" }, { name: "Piña" }, { name: "Uva" }, { name: "Manzana" }, { name: "Durazno" }, { name: "Pera" }]
+                        },
+                        {
+                            name: "Cítricos",
+                            children: [{ name: "Toronja" }, { name: "Naranja" }, { name: "Limón" }, { name: "Lima" }]
+                        }
+                    ]
+                },
+                {
+                    name: "Agrio/Fermentado",
+                    color: "#a855f7",
+                    children: [
+                        {
+                            name: "Aromas Agrios",
+                            children: [{ name: "Ácido Agrio" }, { name: "Ácido Acético" }, { name: "Ácido Butírico" }, { name: "Ácido Isovalérico" }, { name: "Ácido Cítrico" }, { name: "Ácido Málico" }]
+                        },
+                        {
+                            name: "Fermentado",
+                            children: [{ name: "Vino" }, { name: "Whisky" }, { name: "Fermentado" }, { name: "Sobre-maduro" }]
+                        }
+                    ]
+                },
+                {
+                    name: "Verde/Vegetal",
+                    color: "#22c55e",
+                    children: [
+                        { name: "Aceite de Oliva" },
+                        { name: "Crudo" },
+                        {
+                            name: "Verde/Vegetal",
+                            children: [{ name: "Sub-maduro" }, { name: "Vaina de Guisante" }, { name: "Fresco" }, { name: "Verde Oscuro" }, { name: "Heno/Seco" }, { name: "Hierba" }]
+                        },
+                        { name: "Frijol" }
+                    ]
+                },
+                {
+                    name: "Tostado",
+                    color: "#0d9488",
+                    children: [
+                        { name: "Tabaco" },
+                        {
+                            name: "Quemado",
+                            children: [{ name: "Acre" }, { name: "Ceniza" }, { name: "Humo" }, { name: "Marrón/Asado" }]
+                        },
+                        {
+                            name: "Cereal",
+                            children: [{ name: "Grano" }, { name: "Malta" }]
+                        }
+                    ]
+                },
+                {
+                    name: "Especias",
+                    color: "#d97706",
+                    children: [
+                        { name: "Picante" },
+                        { name: "Pimienta" },
+                        {
+                            name: "Especias Dulces",
+                            children: [{ name: "Clavo" }, { name: "Canela" }, { name: "Nuez Moscada" }, { name: "Anís" }]
+                        }
+                    ]
+                },
+                {
+                    name: "Nuez/Cacao",
+                    color: "#78350f",
+                    children: [
+                        {
+                            name: "Nueces",
+                            children: [{ name: "Maní" }, { name: "Avellana" }, { name: "Almendra" }]
+                        },
+                        {
+                            name: "Cacao",
+                            children: [{ name: "Chocolate Amargo" }, { name: "Chocolate de Leche" }, { name: "Cacao en Polvo" }]
+                        }
+                    ]
+                },
+                {
+                    name: "Dulce",
+                    color: "#f59e0b",
+                    children: [
+                        {
+                            name: "Azúcar Moreno",
+                            children: [{ name: "Melaza" }, { name: "Jarabe de Maple" }, { name: "Azúcar Caramelizada" }, { name: "Miel" }]
+                        },
+                        { name: "Vainilla" },
+                        { name: "Dulce General" },
+                        { name: "Aromas Dulces" }
+                    ]
+                }
+            ]
+        };
+
+        const width = 800;
+        const radius = width / 7;
+
+        // Crear la jerarquía
+        const root = d3.hierarchy(coffeeData)
+            .sum(d => d.children ? 0 : 1)
+            .sort((a, b) => b.value - a.value);
+
+        // Layout
+        d3.partition().size([2 * Math.PI, root.height + 1])(root);
+
+        // Arco
+        const arc = d3.arc()
+            .startAngle(d => d.x0)
+            .endAngle(d => d.x1)
+            .padAngle(d => Math.min((d.x1 - d.x0) / 2, 0.005))
+            .innerRadius(d => d.y0 * radius)
+            .outerRadius(d => d.y1 * radius - 1);
+
+        // SVG
+        const svg = d3.select("#chart")
+            .append("svg")
+            .attr("viewBox", [0, 0, width, width])
+            .style("width", "100%")
+            .style("height", "auto")
+            .append("g")
+            .attr("transform", `translate(${width / 2},${width / 2})`);
+
+        // Dibujar arcos
+        const arcs = svg.selectAll("path")
+            .data(root.descendants().slice(1))
+            .join("path")
+            .attr("class", "arc")
+            .attr("fill", d => {
+                while (d.depth > 1) d = d.parent;
+                return d.data.color;
+            })
+            .attr("d", arc)
+            .on("mouseenter", (event, d) => {
+                // Resaltar
+                d3.selectAll(".arc").style("opacity", 0.3);
+
+                // Obtener ancestros para resaltar el camino
+                const ancestors = d.ancestors();
+                d3.selectAll(".arc")
+                    .filter(node => ancestors.includes(node))
+                    .style("opacity", 1);
+
+                // Mostrar info
+                const info = document.getElementById("info");
+                document.getElementById("info-title").innerText = d.data.name;
+                document.getElementById("info-path").innerText = d.ancestors()
+                    .reverse()
+                    .map(a => a.data.name)
+                    .join(" > ");
+                info.style.display = "block";
+                info.style.borderLeftColor = d3.select(event.currentTarget).attr("fill");
+            })
+            .on("mouseleave", () => {
+                d3.selectAll(".arc").style("opacity", 1);
+                document.getElementById("info").style.display = "none";
+            });
+
+        // Añadir textos
+        svg.append("g")
+            .attr("pointer-events", "none")
+            .attr("text-anchor", "middle")
+            .selectAll("text")
+            .data(root.descendants().slice(1).filter(d => (d.x1 - d.x0) > 0.05))
+            .join("text")
+            .attr("class", "label")
+            .attr("transform", function (d) {
+                const x = (d.x0 + d.x1) / 2 * 180 / Math.PI;
+                const y = (d.y0 + d.y1) / 2 * radius;
+                return `rotate(${x - 90}) translate(${y}, 0) rotate(${x < 180 ? 0 : 180})`;
+            })
+            .attr("dy", "0.35em")
+            .text(d => d.data.name)
+            .style("fill", d => d.depth === 1 ? "white" : "#333");
+
+        // Centro de la rueda
+        svg.append("circle")
+            .attr("r", radius - 2)
+            .attr("class", "center-circle");
+
+        svg.append("text")
+            .attr("class", "center-text")
+            .attr("dy", "0.35em")
+            .text("SCA");
+
+    </script>
+</body>
+
+</html>
