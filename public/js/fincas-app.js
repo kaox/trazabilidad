@@ -45,6 +45,26 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentFincaCertifications = [];
     let currentImages = [];
 
+    // Helper para parsear JSON robustamente (maneja doble stringificado)
+    function parseJSON(data) {
+        if (!data) return null;
+        if (typeof data === 'object') return data;
+        try {
+            let parsed = JSON.parse(data);
+            if (typeof parsed === 'string' && (parsed.trim().startsWith('[') || parsed.trim().startsWith('{'))) {
+                try {
+                    return JSON.parse(parsed);
+                } catch (e) {
+                    return parsed;
+                }
+            }
+            return parsed;
+        } catch (e) {
+            console.error("Error parsing JSON:", e, data);
+            return null;
+        }
+    }
+
     // Mapa Google
     let map;
     let drawingManager;
@@ -259,7 +279,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!coordsJson || !map) return;
 
         try {
-            let coordsArray = typeof coordsJson === 'string' ? JSON.parse(coordsJson) : coordsJson;
+            let coordsArray = parseJSON(coordsJson);
             
             // Soporte para GeoJSON (Polygon con coordinates: [[[lng, lat], ...]])
             if (coordsArray && coordsArray.type === 'Polygon' && Array.isArray(coordsArray.coordinates)) {
@@ -583,9 +603,9 @@ document.addEventListener('DOMContentLoaded', () => {
             productorFotoPreview.src = finca.foto_productor || 'https://placehold.co/100x100/e0e0e0/757575?text=Productor';
             fotoProductorHiddenInput.value = finca.foto_productor || '';
 
-            currentImages = Array.isArray(finca.imagenes_json) ? finca.imagenes_json : [];
-            currentFincaCertifications = Array.isArray(finca.certificaciones_json) ? finca.certificaciones_json : [];
-            currentFincaPremios = Array.isArray(finca.premios_json) ? finca.premios_json : [];
+            currentImages = parseJSON(finca.imagenes_json) || [];
+            currentFincaCertifications = parseJSON(finca.certificaciones_json) || [];
+            currentFincaPremios = parseJSON(finca.premios_json) || [];
             
             renderImagePreviews();
             renderAddedCertifications();

@@ -419,31 +419,20 @@ const app = {
                             <p class="text-xl font-bold text-stone-800 mt-1">${this.product.proceso || 'N/A'}</p>
                         </div>
                         <div class="spec-row">
-                            <span class="text-[11px] font-bold text-stone-400 uppercase tracking-widest">Tipo de Producto</span>
-                            <p class="text-xl font-bold text-stone-800 mt-1">${this.product.tipo === 'cafe' ? 'Single Origin Coffee' : 'Single Origin Cacao 70%'}</p>
-                        </div>
-                        <div class="spec-row">
                             <span class="text-[11px] font-bold text-stone-400 uppercase tracking-widest">Altitud</span>
-                            <p class="text-xl font-bold text-stone-800 mt-1">${this.product.finca?.altura || '850'} msnm</p>
+                            <p class="text-xl font-bold text-stone-800 mt-1">${this.product.finca?.altura || '-'} msnm</p>
                         </div>
                         <div class="spec-row">
                             <span class="text-[11px] font-bold text-stone-400 uppercase tracking-widest">Puntaje de Cata</span>
-                            <p class="text-2xl font-black text-amber-900 mt-1">${this.product.puntaje_sca || '88.5'} Puntos</p>
+                            <p class="text-2xl font-black text-amber-900 mt-1">${this.product.puntaje_sca || '-'} Puntos</p>
                         </div>
                         <div class="spec-row">
                             <span class="text-[11px] font-bold text-stone-400 uppercase tracking-widest">Año de Cosecha</span>
-                            <p class="text-xl font-bold text-stone-800 mt-1">2025</p>
+                            <p class="text-xl font-bold text-stone-800 mt-1">${this.product.cosecha || '-'} </p>
                         </div>
                         <div class="spec-row">
                             <span class="text-[11px] font-bold text-stone-400 uppercase tracking-widest">Perfil de Tueste</span>
-                            <p class="text-xl font-bold text-stone-800 mt-1">${this.product.nivel_tueste || 'Medio / Convección'}</p>
-                        </div>
-                        <div class="spec-row">
-                            <span class="text-[11px] font-bold text-stone-400 uppercase tracking-widest">Certificaciones</span>
-                            <p class="text-lg font-bold text-emerald-700 mt-1 flex flex-wrap gap-2">
-                                <span class="px-2 py-0.5 bg-emerald-50 rounded">Orgánico (EU&NOP)</span>
-                                <span class="px-2 py-0.5 bg-emerald-50 rounded">Rainforest Alliance</span>
-                            </p>
+                            <p class="text-xl font-bold text-stone-800 mt-1">${this.product.nivel_tueste || '-'} </p>
                         </div>
                     </div>
                 </div>
