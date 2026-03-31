@@ -561,7 +561,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>
 
                     <!-- Boton Ver Detalle (Si quieres un botón similar al de la imagen) -->
-                    <a href="/origen-unico/${companySlug}" class="mt-4 w-full text-center bg-[#92400e] hover:bg-amber-900 text-white font-bold py-3 rounded-2xl transition-all shadow-lg shadow-amber-900/10 flex items-center justify-center gap-2">
+                    <a href="/producto-detalle.html?id=${p.id}" class="mt-4 w-full text-center bg-[#92400e] hover:bg-amber-900 text-white font-bold py-3 rounded-2xl transition-all shadow-lg shadow-amber-900/10 flex items-center justify-center gap-2">
                         <i class="fas fa-shopping-bag text-sm"></i>
                         Ver Detalles
                     </a>

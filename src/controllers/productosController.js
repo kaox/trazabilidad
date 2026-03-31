@@ -201,18 +201,18 @@ const deleteProducto = async (req, res) => {
 
 const getPublicProducts = async (req, res) => {
     const { userId } = req.params;
-    
+
     try {
         // Llamamos al modelo pasándole solo el dato que necesita
         const rows = await ProductoModel.getPublicProductsWithImmutable(userId);
-        
+
         // Transformamos los strings JSON de la BD a objetos JS para el frontend
         const products = rows.map(p => ({
             ...p,
             atributos_dinamicos: safeJSONParse(p.atributos_dinamicos || '{}'),
             imagenes_json: safeJSONParse(p.imagenes_json || '[]')
         }));
-        
+
         res.status(200).json(products);
     } catch (err) {
         console.error("Error getPublicProducts:", err);
@@ -228,7 +228,7 @@ const normalizeImage = (data) => {
             try {
                 const parsed = JSON.parse(trimmed);
                 return normalizeImage(parsed);
-            } catch (e) {}
+            } catch (e) { }
         }
         return data;
     }
@@ -287,7 +287,12 @@ const getMarketplaceProducts = async (req, res) => {
                     departamento: row.finca_departamento,
                     provincia: row.finca_provincia,
                     distrito: row.finca_distrito,
-                    altura: row.finca_altura
+                    altura: row.finca_altura,
+                    historia: row.finca_historia,
+                    productor: row.finca_propietario,
+                    coordenadas: row.finca_coordenadas,
+                    imagenes: row.finca_imagenes,
+                    video: row.finca_video
                 } : null,
                 empresa: {
                     id: row.company_id,
@@ -304,7 +309,7 @@ const getMarketplaceProducts = async (req, res) => {
         if (categorias) {
             const selectedCategories = Array.isArray(categorias) ? categorias : [categorias];
             if (selectedCategories.length > 0) {
-                products = products.filter(p => p.sabores && Array.isArray(p.sabores) && 
+                products = products.filter(p => p.sabores && Array.isArray(p.sabores) &&
                     selectedCategories.some(cat => p.sabores.some(n => n.category && n.category.toLowerCase() === cat.toLowerCase()))
                 );
             }
@@ -313,7 +318,7 @@ const getMarketplaceProducts = async (req, res) => {
         if (sabores) {
             const selectedSubnotes = Array.isArray(sabores) ? sabores : [sabores];
             if (selectedSubnotes.length > 0) {
-                products = products.filter(p => p.sabores && Array.isArray(p.sabores) && 
+                products = products.filter(p => p.sabores && Array.isArray(p.sabores) &&
                     selectedSubnotes.some(sub => p.sabores.some(n => n.subnote && n.subnote.toLowerCase() === sub.toLowerCase()))
                 );
             }
@@ -336,7 +341,7 @@ const getMarketplaceProducts = async (req, res) => {
         if (premiosFiltro) {
             const premiosArray = Array.isArray(premiosFiltro) ? premiosFiltro : [premiosFiltro];
             if (premiosArray.length > 0) {
-                products = products.filter(p => p.premios && p.premios.length > 0 && 
+                products = products.filter(p => p.premios && p.premios.length > 0 &&
                     premiosArray.some(prem => p.premios.some(pp => pp.nombre && pp.nombre.toLowerCase().includes(prem.toLowerCase())))
                 );
             }
