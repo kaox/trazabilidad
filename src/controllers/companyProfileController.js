@@ -60,6 +60,8 @@ const companyProfileController = {
             const userId = req.user.id;
             const profileData = req.body;
 
+            const RESERVED_SUBDOMAINS = ['www', 'app', 'api', 'admin', 'localhost', 'rurulab', 'mail', 'smtp'];
+
             // Validación básica
             if (!profileData.name || profileData.name.trim() === '') {
                 return res.status(400).json({ error: "El nombre comercial es obligatorio." });
@@ -69,6 +71,28 @@ const companyProfileController = {
             }
             if (!profileData.company_id || profileData.company_id.trim() === '') {
                 return res.status(400).json({ error: "Debe seleccionar una entidad vinculada válida." });
+            }
+
+            // Validación de Subdominio
+            if (profileData.subdomain) {
+                const subd = profileData.subdomain.toLowerCase().trim();
+                
+                // Formato: Alfanumérico y guiones únicamente
+                const subdRegex = /^[a-z0-9-]+$/;
+                if (!subdRegex.test(subd)) {
+                    return res.status(400).json({ error: "El subdominio solo puede contener letras, números y guiones." });
+                }
+
+                // Palabras reservadas
+                if (RESERVED_SUBDOMAINS.includes(subd)) {
+                    return res.status(400).json({ error: "Este subdominio no está disponible (palabra reservada)." });
+                }
+
+                // Unicidad
+                const isAvailable = await CompanyProfile.isSubdomainAvailable(subd, userId);
+                if (!isAvailable) {
+                    return res.status(400).json({ error: "Este subdominio ya está siendo usado por otra empresa." });
+                }
             }
 
             // Buscamos el perfil antiguo por si necesitamos borrar su logo

@@ -87,6 +87,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     typeSelect.value = response.company_type;
                 }
                 
+                if (response.subdomain) {
+                    document.getElementById('subdomain').value = response.subdomain || '';
+                }
+                
                 // Guardar ID en memoria para setearlo en el Select dinámico
                 savedCompanyId = response.company_id || null;
 
@@ -125,8 +129,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 // Configurar botón "Ver mi Landing"
                 if (currentUserId) {
-                    const slug = createSlug(response.name);
-                    btnViewLanding.href = `/origen-unico/${slug}-${currentUserId}`;
+                    const slug = response.subdomain || createSlug(response.name);
+                    const baseUrl = response.subdomain ? `${response.subdomain}.rurulab.com` : `rurulab.com/origen-unico/${slug}-${currentUserId}`;
+                    
+                    btnViewLanding.href = response.subdomain ? `https://${response.subdomain}.rurulab.com` : `/origen-unico/${slug}-${currentUserId}`;
                     btnViewLanding.classList.remove('hidden');
                     btnViewLanding.classList.add('inline-flex');
                 }
@@ -192,6 +198,12 @@ document.addEventListener('DOMContentLoaded', () => {
         // Escuchar cambios en el Tipo de Entidad
         typeSelect.addEventListener('change', (e) => {
             updateEntitySelect(e.target.value, null); // Pasamos null porque es un cambio manual, no BD
+        });
+
+        // Auto-limpiar subdominio mientras escribe
+        const subdomainInput = document.getElementById('subdomain');
+        subdomainInput.addEventListener('input', (e) => {
+            e.target.value = createSlug(e.target.value);
         });
     }
 
@@ -283,6 +295,11 @@ document.addEventListener('DOMContentLoaded', () => {
         // Limpiar @ de instagram si el usuario lo puso por error
         if (data.social_instagram) {
             data.social_instagram = data.social_instagram.replace('@', '').trim();
+        }
+        
+        // Limpiar subdominio
+        if (data.subdomain) {
+            data.subdomain = createSlug(data.subdomain);
         }
 
         try {

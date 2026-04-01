@@ -35,12 +35,27 @@ const CompanyProfile = {
     },
 
     /**
+     * Verifica si un subdominio ya está en uso por otro usuario.
+     */
+    isSubdomainAvailable: async (subdomain, excludeUserId) => {
+        try {
+            const sql = 'SELECT id FROM company_profiles WHERE subdomain = ? AND user_id != ?';
+            const row = await get(sql, [subdomain.toLowerCase(), excludeUserId]);
+            return !row;
+        } catch (error) {
+            console.error('Error in CompanyProfile.isSubdomainAvailable:', error);
+            throw error;
+        }
+    },
+
+    /**
      * Crea o actualiza un perfil comercial (Upsert logic).
      */
     upsert: async (userId, data) => {
         try {
             const existingProfile = await get('SELECT id FROM company_profiles WHERE user_id = ?', [userId]);
             const isPublished = data.is_published === true || data.is_published === 'true';
+            const subdomain = data.subdomain ? data.subdomain.toLowerCase().trim() : null;
 
             // Convertimos el array de categorías a un String JSON para guardarlo
             const productCategoriesJson = data.product_categories ? JSON.stringify(data.product_categories) : '[]';
@@ -58,12 +73,13 @@ const CompanyProfile = {
                 data.social_facebook || null,
                 data.website_url || null,
                 isPublished, 
-                productCategoriesJson, // <-- NUEVO PARÁMETRO
+                productCategoriesJson,
+                subdomain,
                 userId 
             ];
 
             if (existingProfile) {
-                // UPDATE (13 campos a actualizar + 1 ID en el WHERE)
+                // UPDATE
                 const sql = `
                     UPDATE company_profiles SET 
                         company_type = ?, 
@@ -79,20 +95,22 @@ const CompanyProfile = {
                         website_url = ?, 
                         is_published = ?,
                         product_categories = ?,
+                        subdomain = ?,
                         updated_at = CURRENT_TIMESTAMP
                     WHERE user_id = ?
                 `;
                 await run(sql, params);
                 return existingProfile.id;
             } else {
-                // INSERT (14 campos en total)
+                // INSERT
                 const newId = crypto.randomUUID();
                 const sql = `
                     INSERT INTO company_profiles (
                         id, company_type, company_id, name, logo_url, cover_image_url, 
                         history_text, contact_email, contact_phone, 
-                        social_instagram, social_facebook, website_url, is_published, product_categories, user_id
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        social_instagram, social_facebook, website_url, is_published, 
+                        product_categories, subdomain, user_id
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 `;
                 const insertParams = [newId, ...params];
                 await run(sql, insertParams);

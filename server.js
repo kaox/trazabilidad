@@ -47,14 +47,19 @@ app.use(async (req, res, next) => {
     }
 
     // --- ES UN SUBDOMINIO DE CLIENTE ---
+    // Importante: Solo interceptar si es la raíz (/) o no es un archivo estático.
+    // Esto evita que intentemos servir el HTML de la landing para los scripts/css.
+    if (req.path !== '/') {
+        return next();
+    }
+
     try {
         console.log(`🔍 Detectado subdominio: ${subdomain}`);
 
-        // Obtener todas las empresas (Idealmente crear una función db.findCompanyBySlug para optimizar)
-        const companies = await EmpresaModel.getPublicCompaniesDataInternal();
+        // Buscar empresa cuyo subdominio personalizado o slug coincida con el subdominio de forma optimizada
+        const company = await EmpresaModel.findCompanyBySubdomainOrSlug(subdomain);
 
-        // Buscar empresa cuyo slug coincida con el subdominio
-        const company = companies.find(c => createSlug(c.empresa) === subdomain);
+        console.log(company);
 
         if (!company) {
             console.log(`❌ Empresa no encontrada para subdominio: ${subdomain}`);

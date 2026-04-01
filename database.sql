@@ -150,6 +150,7 @@ CREATE TABLE IF NOT EXISTS company_profiles (
     social_facebook VARCHAR(255),  
     website_url TEXT,              
     is_published BOOLEAN DEFAULT TRUE, 
+    subdomain VARCHAR(255),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     

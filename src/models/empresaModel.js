@@ -80,7 +80,8 @@ const getPublicCompaniesDataInternal = async () => {
             cp.logo_url AS company_logo,
             COALESCE(f.provincia, p.provincia) AS provincia,
             COALESCE(f.departamento, p.departamento) AS departamento,
-            COALESCE(f.pais, p.pais) AS pais
+            COALESCE(f.pais, p.pais) AS pais,
+            cp.subdomain
         FROM 
             company_profiles cp
         LEFT JOIN 
@@ -99,7 +100,8 @@ const getPublicCompaniesDataInternal = async () => {
             logo as company_logo, 
             provincia, 
             departamento, 
-            pais
+            pais,
+            NULL as subdomain
         FROM 
             suggested_companies
     `;
@@ -112,6 +114,45 @@ const getPublicCompaniesDataInternal = async () => {
     }
 };
 
+// 8. (NUEVO) Búsqueda optimizada por subdominio o slug
+const findCompanyBySubdomainOrSlug = async (subdomain) => {
+    // 1. Intento de búsqueda directa por la columna subdomain (Muy rápido)
+    const sqlDirect = `
+        SELECT cp.user_id AS id, cp.name AS empresa, cp.logo_url AS company_logo, cp.subdomain
+        FROM company_profiles cp 
+        WHERE LOWER(cp.subdomain) = ? AND cp.is_published IS TRUE
+        LIMIT 1
+    `;
+    const directMatch = await db.get(sqlDirect, [subdomain.toLowerCase()]);
+    if (directMatch) return directMatch;
+
+    // 2. Fallback: Búsqueda por slug (Solo IDs y nombres mínimos para filtrar en JS)
+    const sqlAll = `
+        SELECT cp.user_id AS id, cp.name AS empresa, cp.subdomain
+        FROM company_profiles cp 
+        WHERE cp.is_published IS TRUE
+    `;
+    const companies = await db.all(sqlAll);
+
+    // Función local para slug (duplicada de server.js para independencia del modelo)
+    const createSlug = (text) => {
+        if (!text) return '';
+        return text.toString().toLowerCase().trim()
+            .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+            .replace(/\s+/g, '-')
+            .replace(/[^\w\-]+/g, '')
+            .replace(/\-\-+/g, '-');
+    };
+
+    const match = companies.find(c => createSlug(c.empresa) === subdomain.toLowerCase());
+    if (match) {
+        // Si fue por slug, necesitamos el logo que no pedimos en el sqlAll por ligereza (opcional)
+        // Pero para ser consistente con el directMatch, lo devolvemos si existe
+        return match;
+    }
+    return null;
+};
+
 module.exports = {
     getVerifiedCompaniesWithImmutable,
     getSuggestedCompanies,
@@ -119,5 +160,6 @@ module.exports = {
     getVerifiedProfileByUserId,
     getFincaById,
     getProcesadoraById,
-    getPublicCompaniesDataInternal
+    getPublicCompaniesDataInternal,
+    findCompanyBySubdomainOrSlug
 };
