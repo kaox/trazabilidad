@@ -1,55 +1,124 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Detalle de Producto - Ruru Lab</title>
-    
+
     <link href="/css/styles.css" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
-    
+
     <!-- Scripts Externos -->
     <script src="https://d3js.org/d3.v7.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAM37iJTRcIoSAxESlDzB2DxlNJWKasW5U&libraries=geometry&v=weekly"></script>
-    
+    <script
+        src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAM37iJTRcIoSAxESlDzB2DxlNJWKasW5U&libraries=geometry&v=weekly"></script>
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@700;800;900&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@700;800;900&display=swap"
+        rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
 
     <style>
-        body { font-family: 'Inter', sans-serif; background-color: #fdfaf6; }
-        .font-display { font-family: 'Playfair Display', serif; }
-        
-        .tab-btn.active { color: #854d0e; border-bottom: 2px solid #854d0e; }
-        .tab-btn { transition: all 0.2s; border-bottom: 2px solid transparent; }
-        
-        .product-gallery-main { width: 100%; aspect-square; border-radius: 1.5rem; background: white; padding: 2rem; box-shadow: 0 10px 30px -10px rgba(0,0,0,0.05); }
-        .thumbnail { width: 60px; height: 60px; border-radius: 0.5rem; border: 2px solid transparent; cursor: pointer; transition: 0.2s; }
-        .thumbnail.active { border-color: #854d0e; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #fdfaf6;
+        }
 
-        .section-header { position: relative; margin-bottom: 2rem; }
-        .section-header::after { content: ''; position: absolute; left: 0; bottom: -8px; width: 40px; height: 3px; background: #854d0e; }
+        .font-display {
+            font-family: 'Playfair Display', serif;
+        }
+
+        .tab-btn.active {
+            color: #854d0e;
+            border-bottom: 2px solid #854d0e;
+        }
+
+        .tab-btn {
+            transition: all 0.2s;
+            border-bottom: 2px solid transparent;
+        }
+
+        .product-gallery-main {
+            width: 100%;
+            aspect-square;
+            border-radius: 1.5rem;
+            background: white;
+            padding: 2rem;
+            box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.05);
+        }
+
+        .thumbnail {
+            width: 60px;
+            height: 60px;
+            border-radius: 0.5rem;
+            border: 2px solid transparent;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .thumbnail.active {
+            border-color: #854d0e;
+        }
+
+        .section-header {
+            position: relative;
+            margin-bottom: 2rem;
+        }
+
+        .section-header::after {
+            content: '';
+            position: absolute;
+            left: 0;
+            bottom: -8px;
+            width: 40px;
+            height: 3px;
+            background: #854d0e;
+        }
 
         /* Estilos Mapa */
-        .leaflet-container { border-radius: 1rem; }
-        
+        .leaflet-container {
+            border-radius: 1rem;
+        }
+
         /* Timeline Cards */
-        .timeline-scroll { display: flex; overflow-x: auto; gap: 1rem; pb-4; }
-        .timeline-card { min-width: 280px; background: white; border-radius: 1.2rem; padding: 1rem; border: 1px solid #f1f1f1; }
-        .timeline-card.active { border-color: #854d0e; box-shadow: 0 5px 15px -5px rgba(133, 77, 14, 0.2); }
+        .timeline-scroll {
+            display: flex;
+            overflow-x: auto;
+            gap: 1rem;
+            pb-4;
+        }
+
+        .timeline-card {
+            min-width: 280px;
+            background: white;
+            border-radius: 1.2rem;
+            padding: 1rem;
+            border: 1px solid #f1f1f1;
+        }
+
+        .timeline-card.active {
+            border-color: #854d0e;
+            box-shadow: 0 5px 15px -5px rgba(133, 77, 14, 0.2);
+        }
 
         /* Sunburst */
-        #sunburst-container svg { width: 100%; height: auto; }
+        #sunburst-container svg {
+            width: 100%;
+            height: auto;
+        }
     </style>
 </head>
+
 <body class="text-stone-800 antialiased min-h-screen flex flex-col">
 
     <div id="public-nav-placeholder"></div>
 
     <main class="container mx-auto px-6 py-12 flex flex-col lg:flex-row gap-12">
-        
+
         <!-- Sidebar Izquierda (4/12) -->
         <aside class="w-full lg:w-4/12 space-y-8">
             <div class="product-gallery space-y-4">
@@ -76,7 +145,8 @@
                     <i class="fas fa-chevron-right text-[8px]"></i>
                     <span id="breadcrumb-category" class="text-amber-800">Cacao</span>
                 </div>
-                <h1 id="product-title" class="text-4xl md:text-5xl font-display font-bold text-stone-900 leading-tight mb-4">
+                <h1 id="product-title"
+                    class="text-4xl md:text-5xl font-display font-bold text-stone-900 leading-tight mb-4">
                     <!-- Título -->
                 </h1>
                 <p id="product-description" class="text-stone-500 text-lg leading-relaxed max-w-2xl">
@@ -87,19 +157,29 @@
             <!-- Tabs Navigation -->
             <div class="border-b border-stone-200 mb-8 overflow-x-auto hide-scrollbar">
                 <nav class="flex gap-8 min-w-max">
-                    <button onclick="app.switchTab('origen')" class="tab-btn active px-1 py-4 text-xs font-bold uppercase tracking-widest flex items-center gap-2" data-tab="origen">
+                    <button onclick="app.switchTab('origen')"
+                        class="tab-btn active px-1 py-4 text-xs font-bold uppercase tracking-widest flex items-center gap-2"
+                        data-tab="origen">
                         <i class="fas fa-compass"></i> ORIGEN
                     </button>
-                    <button onclick="app.switchTab('proceso')" class="tab-btn px-1 py-4 text-xs font-bold uppercase tracking-widest flex items-center gap-2" data-tab="proceso">
+                    <button onclick="app.switchTab('proceso')"
+                        class="tab-btn px-1 py-4 text-xs font-bold uppercase tracking-widest flex items-center gap-2 hidden"
+                        data-tab="proceso">
                         <i class="fas fa-route"></i> RUTA DE PROCESO
                     </button>
-                    <button onclick="app.switchTab('specs')" class="tab-btn px-1 py-4 text-xs font-bold uppercase tracking-widest flex items-center gap-2" data-tab="specs">
+                    <button onclick="app.switchTab('specs')"
+                        class="tab-btn px-1 py-4 text-xs font-bold uppercase tracking-widest flex items-center gap-2"
+                        data-tab="specs">
                         <i class="fas fa-list-check"></i> ESPECIFICACIONES
                     </button>
-                    <button onclick="app.switchTab('analisis')" class="tab-btn px-1 py-4 text-xs font-bold uppercase tracking-widest flex items-center gap-2" data-tab="analisis">
+                    <button onclick="app.switchTab('analisis')"
+                        class="tab-btn px-1 py-4 text-xs font-bold uppercase tracking-widest flex items-center gap-2"
+                        data-tab="analisis">
                         <i class="fas fa-chart-line"></i> ANÁLISIS
                     </button>
-                    <button onclick="app.switchTab('maridaje')" class="tab-btn px-1 py-4 text-xs font-bold uppercase tracking-widest flex items-center gap-2" data-tab="maridaje">
+                    <button onclick="app.switchTab('maridaje')"
+                        class="tab-btn px-1 py-4 text-xs font-bold uppercase tracking-widest flex items-center gap-2 hidden"
+                        data-tab="maridaje">
                         <i class="fas fa-wine-glass"></i> MARIDAJE
                     </button>
                 </nav>
@@ -116,4 +196,5 @@
     <script src="/js/chart-utils.js"></script>
     <script src="/js/producto-detalle-app.js"></script>
 </body>
+
 </html>

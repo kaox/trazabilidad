@@ -6,6 +6,8 @@ const CompanyProfile = require('../models/CompanyProfile');
 const { get } = require('../config/db.js'); // Importamos 'get' temporalmente para el fallback
 const { processImagesArray, deleteImagesArray } = require('../utils/storage');
 
+const PROVIDER = 'vercel';//'vercel'
+
 const companyProfileController = {
     /**
      * GET /api/user/company-profile
@@ -80,15 +82,14 @@ const companyProfileController = {
 
             // Procesamos la imagen del logo si es base64
             if (profileData.logo_url && profileData.logo_url.startsWith('data:image/')) {
-                const provider = 'vercel';
-                const uploadResult = await processImagesArray([profileData.logo_url], 'company-logos', userId, provider);
+                const uploadResult = await processImagesArray([profileData.logo_url], 'company-logos', userId, PROVIDER);
 
                 if (uploadResult && uploadResult.length > 0) {
                     profileData.logo_url = uploadResult[0]; // asignamos la URL generada
 
                     // Borramos la foto anterior si se subió una nueva
                     if (oldLogo && oldLogo.startsWith('http')) {
-                        await deleteImagesArray([oldLogo], provider);
+                        await deleteImagesArray([oldLogo], PROVIDER);
                     }
                 }
             }

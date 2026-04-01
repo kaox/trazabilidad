@@ -422,18 +422,24 @@ const app = {
                             <span class="text-[11px] font-bold text-stone-400 uppercase tracking-widest">Altitud</span>
                             <p class="text-xl font-bold text-stone-800 mt-1">${this.product.finca?.altura || '-'} msnm</p>
                         </div>
+                        ${this.product.puntaje_sca ? `
                         <div class="spec-row">
                             <span class="text-[11px] font-bold text-stone-400 uppercase tracking-widest">Puntaje de Cata</span>
-                            <p class="text-2xl font-black text-amber-900 mt-1">${this.product.puntaje_sca || '-'} Puntos</p>
+                            <p class="text-2xl font-black text-amber-900 mt-1">${this.product.puntaje_sca} Puntos</p>
                         </div>
+                        ` : ''}
+                        ${this.product.cosecha ? `
                         <div class="spec-row">
                             <span class="text-[11px] font-bold text-stone-400 uppercase tracking-widest">Año de Cosecha</span>
-                            <p class="text-xl font-bold text-stone-800 mt-1">${this.product.cosecha || '-'} </p>
+                            <p class="text-2xl font-black text-amber-900 mt-1">${this.product.cosecha}</p>
                         </div>
+                        ` : ''}
+                        ${this.product.nivel_tueste ? `
                         <div class="spec-row">
                             <span class="text-[11px] font-bold text-stone-400 uppercase tracking-widest">Perfil de Tueste</span>
-                            <p class="text-xl font-bold text-stone-800 mt-1">${this.product.nivel_tueste || '-'} </p>
+                            <p class="text-xl font-bold text-stone-800 mt-1">${this.product.nivel_tueste}</p>
                         </div>
+                        ` : ''}
                     </div>
                 </div>
             </div>
@@ -449,16 +455,16 @@ const app = {
                     <h2 class="text-2xl font-display font-bold text-stone-900">Perfil Sensorial</h2>
                 </div>
 
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-16">
-                    <div class="space-y-8">
-                        <h3 class="text-sm font-bold text-stone-400 uppercase tracking-widest text-center lg:text-left">Complejidad Sensorial (Rueda)</h3>
-                        <div id="sunburst-container" class="w-full relative py-4">
+                <div class="grid grid-cols-1 gap-16">
+                    <div class="bg-white p-12 rounded-[3.5rem] border border-stone-100 shadow-sm space-y-8">
+                        <h3 class="text-sm font-bold text-stone-400 uppercase tracking-widest text-center">Complejidad Sensorial (Rueda)</h3>
+                        <div id="sunburst-container" class="w-full relative py-4 flex justify-center">
                             <!-- SVG D3 se inyecta aquí -->
                         </div>
                     </div>
-                    <div class="space-y-8">
-                        <h3 class="text-sm font-bold text-stone-400 uppercase tracking-widest text-center lg:text-left">Análisis de Atributos</h3>
-                        <div class="aspect-square w-full max-w-[500px] mx-auto bg-white p-8 rounded-[3rem] border border-stone-50 shadow-sm relative overflow-hidden">
+                    <div class="bg-white p-12 rounded-[3.5rem] border border-stone-100 shadow-sm space-y-8">
+                        <h3 class="text-sm font-bold text-stone-400 uppercase tracking-widest text-center">Análisis de Atributos</h3>
+                        <div class="aspect-square w-full max-w-[600px] mx-auto relative overflow-hidden">
                             <canvas id="radar-analisis" class="w-full h-full"></canvas>
                         </div>
                     </div>
@@ -495,26 +501,53 @@ const app = {
             return;
         }
 
-        const width = 600;
-        const radius = width / 6;
-
         const rootData = { name: "Root", children: [] };
         Object.entries(FLAVOR_DATA).forEach(([catName, catData]) => {
-            const hasSelection = this.product.sabores && this.product.sabores.some(s => s.category === catName);
+            const hasCatSelection = this.product.sabores && this.product.sabores.some(s => s.category === catName);
+            
             const catNode = {
                 name: catName,
-                color: hasSelection ? catData.color : '#F3F4F6',
-                children: catData.children.map(child => ({
-                    name: child.name,
-                    color: (this.product.sabores && this.product.sabores.some(s => s.subnote === child.name)) ? catData.color : '#F3F4F6',
-                    value: 1
-                }))
+                color: hasCatSelection ? catData.color : '#F3F4F6',
+                children: catData.children.map(child => {
+                    const hasSubSelection = this.product.sabores && this.product.sabores.some(s => 
+                        (s.subnote && s.subnote.toLowerCase() === child.name.toLowerCase()) || 
+                        (s.note && s.note.toLowerCase() === child.name.toLowerCase()) ||
+                        (s.label && s.label.toLowerCase() === child.name.toLowerCase())
+                    );
+                    
+                    const childNode = {
+                        name: child.name,
+                        color: hasSubSelection ? catData.color : '#F3F4F6',
+                    };
+
+                    if (child.children && child.children.length > 0) {
+                        childNode.children = child.children.map(grandchild => {
+                            const hasNoteSelection = this.product.sabores && this.product.sabores.some(s => 
+                                (s.note && s.note.toLowerCase() === grandchild.name.toLowerCase()) ||
+                                (s.label && s.label.toLowerCase() === grandchild.name.toLowerCase()) ||
+                                (s.subnote && s.subnote.toLowerCase() === grandchild.name.toLowerCase())
+                            );
+                            return {
+                                name: grandchild.name,
+                                color: hasNoteSelection ? catData.color : '#F3F4F6',
+                                value: 1
+                            };
+                        });
+                    } else {
+                        childNode.value = 1;
+                    }
+                    return childNode;
+                })
             };
             rootData.children.push(catNode);
         });
 
         const root = d3.hierarchy(rootData).sum(d => d.value);
-        d3.partition().size([2 * Math.PI, root.height + 1])(root);
+        const depth = root.height;
+        d3.partition().size([2 * Math.PI, depth + 1])(root);
+
+        const width = 600;
+        const radius = width / (2 * (depth + 1));
 
         const arc = d3.arc()
             .startAngle(d => d.x0).endAngle(d => d.x1)
@@ -532,7 +565,7 @@ const app = {
             .attr("d", arc);
 
         g.selectAll("text")
-            .data(root.descendants().slice(1).filter(d => d.y0 > 0 && (d.x1 - d.x0) * radius > 10))
+            .data(root.descendants().slice(1).filter(d => d.y0 > 0 && (d.x1 - d.x0) * radius > 4))
             .join("text")
             .attr("transform", d => {
                 const x = (d.x0 + d.x1) / 2 * 180 / Math.PI;
@@ -541,9 +574,9 @@ const app = {
             })
             .attr("dy", "0.35em")
             .attr("text-anchor", "middle")
-            .style("font-size", d => d.depth === 1 ? "12px" : "10px")
+            .style("font-size", d => d.depth === 1 ? "12px" : (d.depth === 2 ? "10px" : "8px"))
             .style("font-weight", "bold")
-            .style("fill", "#333")
+            .style("fill", d => d.data.color === '#F3F4F6' ? '#999' : '#fff') // Texto blanco en áreas con color
             .text(d => d.data.name);
 
         g.append("text").attr("text-anchor", "middle").style("font-size", "14px").style("font-weight", "900").attr("dy", "0.35em").text(this.product.tipo.toUpperCase());
