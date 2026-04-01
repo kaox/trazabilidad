@@ -5,6 +5,24 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Detalle de Producto - Ruru Lab</title>
+    <meta name="description" content="Descubre la trazabilidad completa, perfil sensorial y origen de este producto en Ruru Lab. Transparencia desde la finca hasta tu mesa.">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="product">
+    <meta property="og:url" content="">
+    <meta property="og:title" content="Detalle de Producto - Ruru Lab">
+    <meta property="og:description" content="Descubre la trazabilidad completa, perfil sensorial y origen de este producto en Ruru Lab.">
+    <meta property="og:image" content="">
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:url" content="">
+    <meta name="twitter:title" content="Detalle de Producto - Ruru Lab">
+    <meta name="twitter:description" content="Descubre la trazabilidad completa, perfil sensorial y origen de este producto en Ruru Lab.">
+    <meta name="twitter:image" content="">
+
+    <!-- Structured Data -->
+    <script type="application/ld+json" id="product-jsonld"></script>
 
     <link href="/css/styles.css" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
@@ -22,6 +40,7 @@
         rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
 
+    <script src="/js/analytics-loader.js" defer></script>
     <style>
         body {
             font-family: 'Inter', sans-serif;
@@ -156,13 +175,15 @@
                 <!-- Precio y Tamaño -->
                 <div class="flex flex-wrap items-center gap-8 mt-10">
                     <div id="price-container" class="flex flex-col border-r border-stone-200 pr-10">
-                        <span class="text-[10px] font-bold text-stone-400 uppercase tracking-widest mb-1.5">Precio Sugerido</span>
+                        <span class="text-[10px] font-bold text-stone-400 uppercase tracking-widest mb-1.5">Precio
+                            Sugerido</span>
                         <p id="product-price" class="text-3xl font-black text-amber-900 tracking-tight">
                             <!-- Precio se inyecta desde JS -->
                         </p>
                     </div>
                     <div id="size-container" class="flex flex-col">
-                        <span class="text-[10px] font-bold text-stone-400 uppercase tracking-widest mb-1.5">Presentación</span>
+                        <span
+                            class="text-[10px] font-bold text-stone-400 uppercase tracking-widest mb-1.5">Presentación</span>
                         <p id="product-size" class="text-xl font-bold text-stone-700">
                             <!-- Tamaño se inyecta desde JS -->
                         </p>

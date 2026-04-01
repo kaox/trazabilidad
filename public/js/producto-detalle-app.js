@@ -14,7 +14,119 @@ const app = {
         if (this.product) {
             this.renderHeader();
             this.renderSidebar();
+            this.updateSEO();
+            this.updateJSONLD();
             this.switchTab(this.currentTab);
+        }
+    },
+
+    updateSEO() {
+        const name = this.product.nombre;
+        const company = this.product.empresa?.nombre || 'Ruru Lab';
+        const type = this.product.tipo === 'cafe' ? 'Café de Especialidad' : 'Cacao Fino de Aroma';
+        const origin = this.product.finca?.distrito || '';
+        const description = `${name} (${type}). ${this.product.descripcion || ''} Origen: ${origin}. Trazabilidad completa garantizada por Ruru Lab.`.substring(0, 160);
+        const imageUrl = this.product.imagen || (this.product.imagenes_json && this.product.imagenes_json[0]);
+        const url = window.location.href;
+
+        // Title
+        document.title = `${name} | ${company} - Trazabilidad Ruru Lab`;
+
+        // Meta Description
+        document.querySelector('meta[name="description"]')?.setAttribute('content', description);
+
+        // OG Tags
+        document.querySelector('meta[property="og:url"]')?.setAttribute('content', url);
+        document.querySelector('meta[property="og:title"]')?.setAttribute('content', `${name} - ${type} | ${company}`);
+        document.querySelector('meta[property="og:description"]')?.setAttribute('content', description);
+        if (imageUrl) document.querySelector('meta[property="og:image"]')?.setAttribute('content', imageUrl);
+
+        // Twitter Tags
+        document.querySelector('meta[name="twitter:url"]')?.setAttribute('content', url);
+        document.querySelector('meta[name="twitter:title"]')?.setAttribute('content', `${name} - ${type} | ${company}`);
+        document.querySelector('meta[name="twitter:description"]')?.setAttribute('content', description);
+        if (imageUrl) document.querySelector('meta[name="twitter:image"]')?.setAttribute('content', imageUrl);
+    },
+
+    updateJSONLD() {
+        const name = this.product.nombre;
+        const description = this.product.descripcion || '';
+        const companyName = this.product.empresa?.nombre || 'Ruru Lab';
+        const companyLogo = this.product.empresa?.logo;
+        const imageUrl = this.product.imagen || (this.product.imagenes_json && this.product.imagenes_json[0]);
+        const price = this.product.precio || 0;
+        const currency = this.product.moneda || 'PEN';
+
+        const jsonLd = {
+            "@context": "https://schema.org/",
+            "@type": "Product",
+            "name": name,
+            "description": description,
+            "image": imageUrl ? [imageUrl] : [],
+            "sku": this.product.id,
+            "category": this.product.tipo,
+            "brand": {
+                "@type": "Brand",
+                "name": companyName,
+                "logo": companyLogo || undefined
+            },
+            "weight": this.product.presentacion ? {
+                "@type": "QuantitativeValue",
+                "value": this.product.presentacion,
+                "unitText": this.product.unidad || "gr"
+            } : undefined,
+            "additionalProperty": [
+                {
+                    "@type": "PropertyValue",
+                    "name": "Variedad",
+                    "value": this.product.variedad || "N/A"
+                },
+                {
+                    "@type": "PropertyValue",
+                    "name": "Proceso",
+                    "value": this.product.proceso || "N/A"
+                },
+                {
+                    "@type": "PropertyValue",
+                    "name": "Puntaje SCA",
+                    "value": this.product.puntaje_sca || "N/A"
+                }
+            ],
+            "offers": {
+                "@type": "Offer",
+                "url": window.location.href,
+                "priceCurrency": currency,
+                "price": price,
+                "priceValidUntil": "2026-12-31",
+                "availability": "https://schema.org/InStock",
+                "shippingDetails": {
+                    "@type": "OfferShippingDetails",
+                    "shippingRate": {
+                        "@type": "MonetaryAmount",
+                        "value": 0,
+                        "currency": currency
+                    },
+                    "deliveryTime": {
+                        "@type": "ShippingDeliveryTime",
+                        "handlingTime": {
+                            "@type": "QuantitativeValue",
+                            "minValue": 1,
+                            "maxValue": 2,
+                            "unitCode": "DAY"
+                        }
+                    }
+                },
+                "seller": {
+                    "@type": "Organization",
+                    "name": companyName,
+                    "url": window.location.origin
+                }
+            }
+        };
+
+        const scriptTag = document.getElementById('product-jsonld');
+        if (scriptTag) {
+            scriptTag.textContent = JSON.stringify(jsonLd);
         }
     },
 
