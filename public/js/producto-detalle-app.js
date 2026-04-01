@@ -42,6 +42,35 @@ const app = {
         document.getElementById('breadcrumb-category').textContent = this.product.tipo.toUpperCase();
         document.getElementById('product-title').textContent = this.product.nombre;
         document.getElementById('product-description').textContent = this.product.descripcion || 'Sin descripción disponible.';
+
+        // Precio
+        const priceEl = document.getElementById('product-price');
+        if (this.product.precio) {
+            priceEl.textContent = `${this.product.moneda || 'S/'} ${Number(this.product.precio).toFixed(2)}`;
+        } else {
+            priceEl.textContent = 'Consultar';
+        }
+
+        // Tamaño/Peso
+        const sizeEl = document.getElementById('product-size');
+        const sizeContainer = document.getElementById('size-container');
+        if (this.product.presentacion) {
+            sizeEl.textContent = `${this.product.presentacion} ${this.product.unidad || 'gr'}`;
+            sizeContainer.classList.remove('hidden');
+        } else {
+            sizeContainer.classList.add('hidden');
+        }
+
+        // Botón WhatsApp
+        const whatsappBtn = document.getElementById('whatsapp-btn');
+        if (this.product.empresa && this.product.empresa.whatsapp) {
+            const message = encodeURIComponent("Vengo desde RuruLab estoy interesado en este producto");
+            const phone = this.product.empresa.whatsapp.replace(/\D/g, ''); // Limpiar caracteres no numéricos
+            whatsappBtn.href = `https://wa.me/${phone}?text=${message}`;
+            whatsappBtn.classList.remove('hidden');
+        } else {
+            whatsappBtn.classList.add('hidden');
+        }
     },
 
     renderSidebar() {

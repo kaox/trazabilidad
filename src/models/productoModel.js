@@ -186,6 +186,7 @@ const getMarketplaceBaseProducts = async (tipo) => {
             rueda.tipo as sabores_tipo,
             cp.name as company_name,
             cp.company_type as company_type,
+            cp.contact_phone as company_phone,
             COALESCE(cp.logo_url, u.company_logo) as company_logo,
             CASE WHEN tp.producto_id IS NOT NULL THEN 1 ELSE 0 END as has_traceability
         FROM productos p

@@ -298,9 +298,10 @@ const getMarketplaceProducts = async (req, res) => {
                     id: row.company_id,
                     nombre: row.company_name,
                     tipo: row.company_type,
-                    slug: row.company_slug, // Nota: row.company_slug no está en el SELECT de tu query actual, revísalo
+                    slug: row.company_slug,
                     logo: row.company_logo,
-                    pais: row.company_pais  // Nota: row.company_pais tampoco está en el SELECT actual
+                    whatsapp: row.company_phone,
+                    pais: row.company_pais
                 }
             };
         });

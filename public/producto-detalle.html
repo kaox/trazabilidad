@@ -152,6 +152,35 @@
                 <p id="product-description" class="text-stone-500 text-lg leading-relaxed max-w-2xl">
                     <!-- Descripción corta -->
                 </p>
+
+                <!-- Precio y Tamaño -->
+                <div class="flex flex-wrap items-center gap-8 mt-10">
+                    <div id="price-container" class="flex flex-col border-r border-stone-200 pr-10">
+                        <span class="text-[10px] font-bold text-stone-400 uppercase tracking-widest mb-1.5">Precio Sugerido</span>
+                        <p id="product-price" class="text-3xl font-black text-amber-900 tracking-tight">
+                            <!-- Precio se inyecta desde JS -->
+                        </p>
+                    </div>
+                    <div id="size-container" class="flex flex-col">
+                        <span class="text-[10px] font-bold text-stone-400 uppercase tracking-widest mb-1.5">Presentación</span>
+                        <p id="product-size" class="text-xl font-bold text-stone-700">
+                            <!-- Tamaño se inyecta desde JS -->
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Botón WhatsApp -->
+                <div class="pt-10">
+                    <a id="whatsapp-btn" href="#" target="_blank"
+                        class="inline-flex items-center gap-4 px-10 py-5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-[2rem] font-bold shadow-xl shadow-emerald-100 hover:shadow-emerald-200 transition-all transform hover:-translate-y-1 active:scale-95 group">
+                        <i class="fab fa-whatsapp text-2xl group-hover:rotate-12 transition-transform"></i>
+                        <span class="tracking-wide">COMPRAR POR WHATSAPP</span>
+                    </a>
+                    <div class="flex items-center gap-2 mt-4 text-[10px] text-stone-400 font-medium ml-4">
+                        <div class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></div>
+                        Enlace directo con el productor
+                    </div>
+                </div>
             </div>
 
             <!-- Tabs Navigation -->
