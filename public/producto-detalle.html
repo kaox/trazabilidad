@@ -136,74 +136,82 @@
 
     <div id="public-nav-placeholder"></div>
 
-    <main class="container mx-auto px-6 py-12 flex flex-col lg:flex-row gap-12">
-
-        <!-- Sidebar Izquierda (4/12) -->
-        <aside class="w-full lg:w-4/12 space-y-8">
-            <div class="product-gallery space-y-4">
-                <div class="product-gallery-main flex items-center justify-center overflow-hidden">
-                    <img id="main-product-image" src="" alt="Producto" class="max-w-full max-h-full object-contain">
+    <main class="container mx-auto px-6 py-12">
+        <!-- Parte Superior: Galería, Premios e Info -->
+        <div class="flex flex-col lg:flex-row gap-12 mb-12">
+            <!-- Columna Izquierda: Galería y Premios (5/12) -->
+            <div class="w-full lg:w-5/12">
+                <div class="flex flex-row gap-4">
+                    <!-- Imagen Principal -->
+                    <div class="product-gallery flex-grow">
+                        <div class="product-gallery-main flex items-center justify-center overflow-hidden">
+                            <img id="main-product-image" src="" alt="Producto" class="max-w-full max-h-full object-contain">
+                        </div>
+                    </div>
+                    <!-- Premios (Lateral Derecho de la Imagen) -->
+                    <div id="awards-container" class="flex flex-col gap-3 min-w-[110px]">
+                        <!-- Se llenan con JS -->
+                    </div>
                 </div>
-                <div id="thumbnail-gallery" class="flex gap-3 px-1">
+                <!-- Miniaturas (Debajo) -->
+                <div id="thumbnail-gallery" class="flex gap-3 px-1 mt-4">
                     <!-- Thumbnails se llenan con JS -->
                 </div>
             </div>
 
-            <!-- Premios/Certificaciones -->
-            <div id="awards-container" class="flex flex-wrap gap-4 pt-4">
-                <!-- Se llenan con JS -->
-            </div>
-        </aside>
-
-        <!-- Contenido Principal (8/12) -->
-        <div class="w-full lg:w-8/12">
-            <!-- Header -->
-            <div class="mb-8">
-                <div class="flex items-center gap-2 text-xs font-bold text-stone-400 uppercase tracking-widest mb-3">
-                    <a href="/marketplace" class="hover:text-stone-600">Marketplace</a>
-                    <i class="fas fa-chevron-right text-[8px]"></i>
-                    <span id="breadcrumb-category" class="text-amber-800">Cacao</span>
-                </div>
-                <h1 id="product-title"
-                    class="text-4xl md:text-5xl font-display font-bold text-stone-900 leading-tight mb-4">
-                    <!-- Título -->
-                </h1>
-                <p id="product-description" class="text-stone-500 text-lg leading-relaxed max-w-2xl">
-                    <!-- Descripción corta -->
-                </p>
-
-                <!-- Precio y Tamaño -->
-                <div class="flex flex-wrap items-center gap-8 mt-10">
-                    <div id="price-container" class="flex flex-col border-r border-stone-200 pr-10">
-                        <span class="text-[10px] font-bold text-stone-400 uppercase tracking-widest mb-1.5">Precio
-                            Sugerido</span>
-                        <p id="product-price" class="text-3xl font-black text-amber-900 tracking-tight">
-                            <!-- Precio se inyecta desde JS -->
-                        </p>
+            <!-- Columna Derecha: Información Principal (7/12) -->
+            <div class="w-full lg:w-7/12">
+                <!-- Header -->
+                <div class="mb-8">
+                    <div class="flex items-center gap-2 text-xs font-bold text-stone-400 uppercase tracking-widest mb-3">
+                        <a href="/marketplace" class="hover:text-stone-600">Marketplace</a>
+                        <i class="fas fa-chevron-right text-[8px]"></i>
+                        <span id="breadcrumb-category" class="text-amber-800">Cacao</span>
                     </div>
-                    <div id="size-container" class="flex flex-col">
-                        <span
-                            class="text-[10px] font-bold text-stone-400 uppercase tracking-widest mb-1.5">Presentación</span>
-                        <p id="product-size" class="text-xl font-bold text-stone-700">
-                            <!-- Tamaño se inyecta desde JS -->
-                        </p>
-                    </div>
-                </div>
+                    <h1 id="product-title"
+                        class="text-4xl md:text-5xl font-display font-bold text-stone-900 leading-tight mb-4">
+                        <!-- Título -->
+                    </h1>
+                    <p id="product-description" class="text-stone-500 text-lg leading-relaxed max-w-2xl">
+                        <!-- Descripción corta -->
+                    </p>
 
-                <!-- Botón WhatsApp -->
-                <div class="pt-10">
-                    <a id="whatsapp-btn" href="#" target="_blank"
-                        class="inline-flex items-center gap-4 px-10 py-5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-[2rem] font-bold shadow-xl shadow-emerald-100 hover:shadow-emerald-200 transition-all transform hover:-translate-y-1 active:scale-95 group">
-                        <i class="fab fa-whatsapp text-2xl group-hover:rotate-12 transition-transform"></i>
-                        <span class="tracking-wide">COMPRAR POR WHATSAPP</span>
-                    </a>
-                    <div class="flex items-center gap-2 mt-4 text-[10px] text-stone-400 font-medium ml-4">
-                        <div class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></div>
-                        Enlace directo con el productor
+                    <!-- Precio y Tamaño -->
+                    <div class="flex flex-wrap items-center gap-8 mt-10">
+                        <div id="price-container" class="flex flex-col border-r border-stone-200 pr-10">
+                            <span class="text-[10px] font-bold text-stone-400 uppercase tracking-widest mb-1.5">Precio
+                                Sugerido</span>
+                            <p id="product-price" class="text-3xl font-black text-amber-900 tracking-tight">
+                                <!-- Precio se inyecta desde JS -->
+                            </p>
+                        </div>
+                        <div id="size-container" class="flex flex-col">
+                            <span
+                                class="text-[10px] font-bold text-stone-400 uppercase tracking-widest mb-1.5">Presentación</span>
+                            <p id="product-size" class="text-xl font-bold text-stone-700">
+                                <!-- Tamaño se inyecta desde JS -->
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Botón WhatsApp -->
+                    <div class="pt-10">
+                        <a id="whatsapp-btn" href="#" target="_blank"
+                            class="inline-flex items-center gap-4 px-10 py-5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-[2rem] font-bold shadow-xl shadow-emerald-100 hover:shadow-emerald-200 transition-all transform hover:-translate-y-1 active:scale-95 group">
+                            <i class="fab fa-whatsapp text-2xl group-hover:rotate-12 transition-transform"></i>
+                            <span class="tracking-wide">COMPRAR POR WHATSAPP</span>
+                        </a>
+                        <div class="flex items-center gap-2 mt-4 text-[10px] text-stone-400 font-medium ml-4">
+                            <div class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></div>
+                            Enlace directo con el productor
+                        </div>
                     </div>
                 </div>
             </div>
+        </div>
 
+        <!-- Parte Inferior: Tabs de Ancho Completo -->
+        <div class="w-full">
             <!-- Tabs Navigation -->
             <div class="border-b border-stone-200 mb-8 overflow-x-auto hide-scrollbar">
                 <nav class="flex gap-8 min-w-max">
