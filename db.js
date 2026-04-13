@@ -568,7 +568,10 @@ const getProductTraceability = async (req, res) => {
             `, [productId]);
 
             if (!fallbackBatch) {
-                return res.status(404).json({ error: 'No se encontró trazabilidad verificada para este producto.' });
+                return res.status(200).json({ 
+                    message: 'Trazabilidad no disponible aún para este producto.',
+                    stages: [] 
+                });
             }
             latestBatch.id = fallbackBatch.id;
         }
