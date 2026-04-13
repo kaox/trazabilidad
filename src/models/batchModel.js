@@ -252,6 +252,27 @@ const getImmutableBatchesByUserId = async (userId) => {
     return await db.all(sql, [userId]);
 };
 
+const getLatestImmutableBatchByProductId = async (productId) => {
+    const sql = `
+        SELECT * FROM batches 
+        WHERE (producto_id = ? OR 
+              id IN (
+                  SELECT batch_id FROM (
+                      WITH RECURSIVE lineage AS (
+                          SELECT id, parent_id, producto_id FROM batches
+                          UNION ALL
+                          SELECT b.id, b.parent_id, b.producto_id FROM batches b
+                          JOIN lineage l ON b.id = l.parent_id
+                      )
+                      SELECT id as batch_id FROM lineage WHERE producto_id = ?
+                  )
+              ))
+        AND blockchain_hash IS NOT NULL AND blockchain_hash != ''
+        ORDER BY created_at DESC LIMIT 1
+    `;
+    return await db.get(sql, [productId, productId]);
+};
+
 module.exports = {
     getAll, getById, getRootOwnerByAncestry, checkIdExists, 
     getStageName, updateAcquisitionStatus, createAsRoot, 
@@ -262,5 +283,5 @@ module.exports = {
     getAcquisitionById, getProductById, getProcesadorasByUserId, getNutritionalRecipeById,
     getRecipeIngredients, getFincaByNameAndUser, getSensoryProfileById, getSensoryProfileByNameAndUser,
     getCoffeeProfilesByUser, getTasteWheelById, upsertTraceabilityRegistry, lockBatchAndSetHash, 
-    lockBatch, getParentId, getImmutableBatchesByUserId
+    lockBatch, getParentId, getImmutableBatchesByUserId, getLatestImmutableBatchByProductId
 };

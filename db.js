@@ -542,6 +542,47 @@ const deleteStage = async (req, res) => {
     } catch (err) { res.status(500).json({ error: err.message }); }
 };
 
+const getProductTraceability = async (req, res) => {
+    const { productId } = req.params;
+    try {
+        // 1. Encontrar el lote inmutable más reciente para este producto
+        const latestBatch = await get(`
+            SELECT id FROM batches 
+            WHERE producto_id = ? AND blockchain_hash IS NOT NULL AND blockchain_hash != ''
+            ORDER BY created_at DESC LIMIT 1
+        `, [productId]);
+
+        if (!latestBatch) {
+            // Fallback: buscar lotes cuyo linaje termine en este producto (buscando hacia arriba)
+            const fallbackBatch = await get(`
+                WITH RECURSIVE lineage AS (
+                    SELECT id, parent_id, producto_id FROM batches WHERE producto_id = ?
+                    UNION ALL
+                    SELECT b.id, b.parent_id, b.producto_id FROM batches b
+                    JOIN lineage l ON b.id = l.parent_id
+                )
+                SELECT id FROM batches 
+                WHERE id IN (SELECT id FROM lineage) 
+                AND blockchain_hash IS NOT NULL AND blockchain_hash != ''
+                ORDER BY created_at DESC LIMIT 1
+            `, [productId]);
+
+            if (!fallbackBatch) {
+                return res.status(404).json({ error: 'No se encontró trazabilidad verificada para este producto.' });
+            }
+            latestBatch.id = fallbackBatch.id;
+        }
+
+        // 2. Reutilizar la lógica de getTrazabilidad usando el batchId encontrado
+        req.params.id = latestBatch.id;
+        return getTrazabilidad(req, res);
+
+    } catch (error) {
+        console.error("Error en getProductTraceability:", error);
+        res.status(500).json({ error: "Error interno al obtener trazabilidad." });
+    }
+};
+
 const getTrazabilidad = async (req, res) => {
     const { id } = req.params;
     try {
@@ -1914,7 +1955,7 @@ module.exports = {
     getTemplates, createTemplate, updateTemplate, deleteTemplate,
     getSystemTemplates, cloneTemplate, // <-- NUEVAS FUNCIONES EXPORTADAS
     getStagesForTemplate, createStage, updateStage, deleteStage,
-    getTrazabilidad, getBatchMetadata, serveProductImage,
+    getTrazabilidad, getProductTraceability, getBatchMetadata, serveProductImage,
     getUserProfile, updateUserProfile, updateUserPassword,
     getRuedasSabores, createRuedaSabores, updateRuedaSabores, deleteRuedaSabores,
     getBlends, createBlend, deleteBlend,

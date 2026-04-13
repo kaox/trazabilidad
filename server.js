@@ -511,7 +511,8 @@ app.get('/sitemap-origen-unico.xml', async (req, res) => {
 
 app.get('/api/public/companies', empresasController.getPublicCompaniesWithImmutable);
 app.get('/api/public/companies/:userId/products', productosController.getPublicProducts);
-app.get('/api/public/products/:productId/batches', db.getPublicBatchesForProduct);//TODO Validar si se usa, sino borrar
+app.get('/api/public/products/:productId/batches', db.getPublicBatchesForProduct);
+app.get('/api/public/products/:productId/traceability', db.getProductTraceability);
 app.get('/api/public/companies/:userId/landing', landingsController.getCompanyLandingData);
 app.get('/api/public/marketplace/products', productosController.getMarketplaceProducts);
 

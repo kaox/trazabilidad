@@ -141,6 +141,16 @@ const app = {
             this.product = productsData.products.find(p => p.id === this.productId);
             this.flavorWheels = await flavorsRes.json();
 
+            // Cargar trazabilidad del producto
+            try {
+                const traceRes = await fetch(`/api/public/products/${this.productId}/traceability`);
+                if (traceRes.ok) {
+                    this.traceability = await traceRes.json();
+                }
+            } catch (err) {
+                console.warn("No se pudo cargar la trazabilidad:", err);
+            }
+
             if (!this.product) {
                 console.error("Producto no encontrado");
                 return;
@@ -229,6 +239,7 @@ const app = {
         setTimeout(() => {
             switch (tabId) {
                 case 'origen': this.renderOrigen(); break;
+                case 'trazabilidad': this.renderTrazabilidad(); break;
                 case 'proceso': this.renderProceso(); break;
                 case 'specs': this.renderSpecs(); break;
                 case 'analisis': this.renderAnalisis(); break;
@@ -765,6 +776,221 @@ const app = {
             </div>
         `;
         document.getElementById('tab-content').innerHTML = html;
+    },
+    renderTrazabilidad() {
+        if (!this.traceability || !this.traceability.stages || this.traceability.stages.length === 0) {
+            document.getElementById('tab-content').innerHTML = `
+                <div class="py-20 text-center animate-in fade-in duration-500">
+                    <i class="fas fa-route text-stone-200 text-6xl mb-4"></i>
+                    <h3 class="text-xl font-bold text-stone-400">Trazabilidad No Disponible</h3>
+                    <p class="text-stone-400 mt-2">Este producto aún no cuenta con un lote verificado en blockchain.</p>
+                </div>
+            `;
+            return;
+        }
+
+        const stages = [...this.traceability.stages].reverse(); // Clonar y revertir para mostrar desde el origen al final
+        const lastBatchId = this.traceability.id || 'N/A';
+
+        const html = `
+            <div class="animate-in fade-in duration-700">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-12">
+                    <!-- Columna Mapa -->
+                    <div class="space-y-6">
+                        <div class="flex items-center justify-between">
+                            <h2 class="text-3xl font-display font-bold text-stone-900">Geographic Coordinates</h2>
+                        </div>
+                        <div class="relative group">
+                            <div id="trace-map" class="w-full h-[500px] rounded-[2.5rem] border border-stone-200 shadow-inner overflow-hidden"></div>
+                            <div id="map-overlay-info" class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white/95 backdrop-blur-sm p-8 rounded-3xl shadow-2xl border border-stone-100 text-center min-w-[240px] pointer-events-none transition-all duration-500 opacity-0 scale-90">
+                                <span class="text-[10px] font-bold text-stone-400 uppercase tracking-widest block mb-2">ELEVATION</span>
+                                <p id="overlay-elevation" class="text-3xl font-black text-amber-900 mb-1">2300 MSNM</p>
+                                <p id="overlay-coords" class="text-[10px] font-medium text-stone-400 font-mono italic">8.5273° N, 38.4111° E</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Columna Timeline -->
+                    <div class="space-y-8">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-4">
+                                <h2 class="text-3xl font-display font-bold text-stone-900">Tree to Cup Timeline</h2>
+                                <span class="px-3 py-1 bg-amber-50 text-amber-800 text-[10px] font-bold rounded-full border border-amber-100 uppercase tracking-wider">LOTE ${lastBatchId}</span>
+                            </div>
+                        </div>
+
+                        <div class="relative">
+                            <!-- Línea vertical del timeline -->
+                            <div class="absolute left-4 top-2 bottom-2 w-0.5 bg-stone-100"></div>
+
+                            <div class="space-y-10 pl-12 relative" id="timeline-list">
+                                ${stages.map((stage, idx) => {
+                                    const dateStr = stage.timestamp ? new Date(stage.timestamp).toLocaleDateString('es-ES', { month: 'short', day: 'numeric', year: 'numeric' }) : 'N/A';
+                                    const loc = this.getStageLocation(stage);
+                                    
+                                    return `
+                                    <div class="timeline-item group cursor-pointer relative" onclick="app.setTraceStage(${idx})" data-index="${idx}">
+                                        <!-- Punto indicator -->
+                                        <div class="absolute left-0 top-1 w-8 h-8 rounded-full border-2 border-stone-200 bg-white flex items-center justify-center -ml-[3.1rem] transition-all group-hover:border-amber-500 group-hover:bg-amber-50 z-10 node-dot">
+                                            <div class="w-2.5 h-2.5 rounded-full bg-stone-200 transition-all group-hover:bg-amber-600 inner-dot"></div>
+                                        </div>
+                                        
+                                        <div class="space-y-1">
+                                            <span class="text-[10px] font-bold text-stone-400 uppercase tracking-widest">${dateStr}</span>
+                                            <h4 class="text-xl font-bold text-stone-800 group-hover:text-amber-900 transition-colors">${stage.nombre_etapa}</h4>
+                                            <p class="text-sm text-stone-500 max-w-md">${loc}</p>
+                                            
+                                            <!-- Atributos compactos -->
+                                            <div class="flex flex-wrap gap-2 mt-3 opacity-0 group-hover:opacity-100 transform translate-y-2 group-hover:translate-y-0 transition-all duration-300">
+                                                ${Object.entries(stage.data || {}).slice(0, 3).map(([key, val]) => {
+                                                    const displayVal = typeof val === 'object' ? val.value : val;
+                                                    if (!displayVal || key === 'imageUrl') return '';
+                                                    return `
+                                                        <span class="px-2.5 py-1 bg-stone-50 text-stone-500 text-[10px] font-medium rounded-lg border border-stone-100">
+                                                            <b class="text-stone-700">${key}:</b> ${displayVal}
+                                                        </span>
+                                                    `;
+                                                }).join('')}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    `;
+                                }).join('')}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Blockchain Verification Footer -->
+                <div class="mt-20 p-8 border border-stone-200 rounded-[2rem] bg-stone-50/50 flex flex-col md:flex-row items-center gap-8">
+                    <div class="w-16 h-16 rounded-2xl bg-white shadow-sm flex items-center justify-center border border-stone-100">
+                        <i class="fas fa-shield-halved text-emerald-600 text-3xl"></i>
+                    </div>
+                    <div class="flex-grow text-center md:text-left">
+                        <h4 class="font-bold text-stone-800 text-lg">Blockchain Proof of Authenticity</h4>
+                        <p class="text-stone-500 text-sm">This timeline is backed by an immutable blockchain registry. Every stage was verified and locked by the responsible producer.</p>
+                        <p class="mt-2 font-mono text-[10px] text-stone-400 break-all">${this.traceability.blockchain_hash || ''}</p>
+                    </div>
+                    <a href="https://polygonscan.com/tx/${this.traceability.blockchain_hash}" target="_blank" class="px-6 py-3 bg-white border border-stone-200 rounded-xl text-xs font-bold text-stone-700 hover:bg-stone-50 transition-colors whitespace-nowrap">
+                        VERIFY TRANSACTION
+                    </a>
+                </div>
+            </div>
+        `;
+        document.getElementById('tab-content').innerHTML = html;
+
+        // Inicializar mapa y seleccionar primera etapa
+        setTimeout(() => {
+            this.initTraceMap();
+            this.setTraceStage(0);
+        }, 100);
+    },
+
+    getStageLocation(stage) {
+        const data = stage.data || {};
+        // Intentar sacar de los atributos
+        const loc = data.lugar?.value || data.ubicacion?.value || data.finca?.value || data.procesadora?.value;
+        if (loc) return loc;
+
+        // Fallback a info genérica si es el primer stage (finca normalmente)
+        if (stage.nombre_etapa.toLowerCase().includes('cosecha') || stage.nombre_etapa.toLowerCase().includes('acopio')) {
+            return `${this.product.finca?.nombre || ''} - ${this.product.finca?.distrito || ''}`;
+        }
+        
+        return 'Planta de Procesamiento';
+    },
+
+    initTraceMap() {
+        const mapDiv = document.getElementById('trace-map');
+        if (!mapDiv) return;
+
+        this.traceMap = new google.maps.Map(mapDiv, {
+            zoom: 15,
+            mapTypeId: 'satellite',
+            disableDefaultUI: true,
+            zoomControl: true,
+            styles: [
+                { "featureType": "all", "elementType": "labels.text.fill", "stylers": [{ "color": "#ffffff" }] },
+                { "featureType": "all", "elementType": "labels.text.stroke", "stylers": [{ "visibility": "off" }] }
+            ]
+        });
+
+        // Crear marcador único
+        this.traceMarker = new google.maps.Marker({
+            map: this.traceMap,
+            icon: {
+                path: google.maps.SymbolPath.CIRCLE,
+                fillColor: '#854d0e',
+                fillOpacity: 1,
+                strokeColor: '#ffffff',
+                strokeWeight: 2,
+                scale: 8
+            }
+        });
+    },
+
+    setTraceStage(index) {
+        const stages = [...this.traceability.stages].reverse(); 
+        const stage = stages[index];
+        if (!stage) return;
+
+        const stageData = stage.data || {};
+        let coords = null;
+
+        // 1. Buscar coordenadas en el stage data
+        if (stageData.coordenadas?.value) {
+            coords = this.parseCoordinates(stageData.coordenadas.value);
+        }
+
+        // 2. Si no hay coords, usar las de la finca para etapas iniciales
+        if (!coords && (stage.nombre_etapa.toLowerCase().includes('cosecha') || stage.nombre_etapa.toLowerCase().includes('acopio'))) {
+            coords = this.parseCoordinates(this.product.finca?.coordenadas);
+        }
+
+        // 3. Si sigue sin haber, usar las de la empresa (procesadora) para etapas finales
+        if (!coords && this.traceability.procesadorasData?.length > 0) {
+            coords = this.parseCoordinates(this.traceability.procesadorasData[0].coordenadas);
+        }
+
+        if (coords && coords.length > 0) {
+            const point = coords[0];
+            this.traceMap.panTo(point);
+            this.traceMarker.setPosition(point);
+
+            // Actualizar Overlay Info
+            const overlay = document.getElementById('map-overlay-info');
+            const elevationEl = document.getElementById('overlay-elevation');
+            const coordsEl = document.getElementById('overlay-coords');
+            
+            if (overlay) {
+                overlay.style.opacity = '1';
+                overlay.style.transform = 'translate(-50%, -50%) scale(1)';
+                
+                const alt = stageData.altitud?.value || stageData.altura?.value || this.product.finca?.altura || '---';
+                elevationEl.textContent = `${alt} MSNM`;
+                coordsEl.textContent = `${point.lat.toFixed(4)}° N, ${point.lng.toFixed(4)}° E`;
+            }
+        }
+
+        // UI Feedback en el timeline
+        document.querySelectorAll('.timeline-item').forEach(item => {
+            const isSelected = parseInt(item.dataset.index) === index;
+            item.classList.toggle('active-stage', isSelected);
+            const dot = item.querySelector('.node-dot');
+            const inner = item.querySelector('.inner-dot');
+            
+            if (isSelected) {
+                dot.style.borderColor = '#854d0e';
+                dot.style.backgroundColor = '#fffbeb';
+                inner.style.backgroundColor = '#854d0e';
+                inner.style.transform = 'scale(1.2)';
+            } else {
+                dot.style.borderColor = '';
+                dot.style.backgroundColor = '';
+                inner.style.backgroundColor = '';
+                inner.style.transform = '';
+            }
+        });
     }
 };
 
