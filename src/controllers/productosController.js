@@ -5,7 +5,7 @@ const { processImagesArray, deleteImagesArray } = require('../utils/storage');
 // Ajusta la ruta a donde tengas tus helpers
 const { safeJSONParse } = require('../utils/helpers');
 
-const provider = 'vercel';//'vercel'
+const provider = 'supabase';//'vercel'
 
 const getProductos = async (req, res) => {
     const userId = req.user.id;

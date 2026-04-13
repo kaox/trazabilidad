@@ -7,6 +7,13 @@ const ChartUtils = {
     // Registro de instancias para limpieza de memoria
     instances: {},
 
+    // Registro del plugin de etiquetas si existe
+    registerPlugins: function() {
+        if (typeof ChartDataLabels !== 'undefined' && typeof Chart !== 'undefined') {
+            Chart.register(ChartDataLabels);
+        }
+    },
+
     // Convierte un color HEX a rgba con alpha
     hexToRgba: function (hex, alpha = 1) {
         let h = hex.replace('#', '');
@@ -26,7 +33,7 @@ const ChartUtils = {
      * @param {object} perfilData - Objeto con los valores de los atributos
      * @param {string} tipoProducto - 'cafe' o 'cacao' (u otro)
      */
-    initializePerfilChart: function (canvasId, perfilData, tipoProducto = '') {
+    initializePerfilChart: function (canvasId, perfilData, tipoProducto = '', options = {}) {
         const chartCanvas = document.getElementById(canvasId);
         if (!chartCanvas || !perfilData) return;
 
@@ -83,6 +90,7 @@ const ChartUtils = {
                 }]
             },
             options: {
+                ...options,
                 scales: {
                     r: {
                         angleLines: { color: 'rgba(0,0,0,0.1)' },
@@ -102,6 +110,8 @@ const ChartUtils = {
                 maintainAspectRatio: false
             }
         });
+        
+        return this.instances[canvasId];
     },
 
     /**
@@ -143,86 +153,155 @@ const ChartUtils = {
             ? options.selectedSubnotes
             : notes.map(n => n.subnote).filter(Boolean);
         const showAllLabels = options.showAllLabels === true;
+        const isCafe = ruedaData.tipo === 'cafe';
 
+        // Helper para contar hojas (hoja = nivel 3 si existe, o nivel 2 si no tiene hijos)
+        const countLeafs = (item) => {
+            if (!item.children || item.children.length === 0) return 1;
+            return item.children.reduce((sum, child) => sum + countLeafs(child), 0);
+        };
+
+        // --- NIVEL 1 (Interno) ---
         const l1_labels = Object.keys(FLAVOR_DATA);
-        const l1_data = l1_labels.map(cat => FLAVOR_DATA[cat].children.length);
+        const l1_data = l1_labels.map(cat => countLeafs(FLAVOR_DATA[cat]));
         const l1_colors = l1_labels.map(label => {
-            return selectedCategoryNames.includes(label) ? FLAVOR_DATA[label].color : '#E5E7EB';
+            return selectedCategoryNames.includes(label) ? FLAVOR_DATA[label].color : '#F3F4F6';
         });
 
-        const l2_labels = Object.values(FLAVOR_DATA).flatMap(d => d.children.map(c => c.name));
-        const l2_data = Array(l2_labels.length).fill(1);
-        const l2_colors = Object.values(FLAVOR_DATA).flatMap(d => {
-            return d.children.map(child => {
-                const categoryName = Object.keys(FLAVOR_DATA).find(k => FLAVOR_DATA[k] === d);
+        // --- NIVEL 2 (Medio) ---
+        const l2_labels = [];
+        const l2_data = [];
+        const l2_colors = [];
+        const l2_parent_colors = [];
 
-                const isSelectedByNotes = notes.some(n => n.category === categoryName && n.subnote === child.name);
-                const isSelectedByState = selectedSubnotes.includes(child.name);
-
-                if (isSelectedByNotes || isSelectedByState) {
-                    // Nivel 2 seleccionado: color más suave que el color padre
-                    return this.hexToRgba(d.color, 0.55);
-                }
-
-                return '#E5E7EB';
+        l1_labels.forEach(catName => {
+            const cat = FLAVOR_DATA[catName];
+            cat.children.forEach(sub => {
+                l2_labels.push(sub.name);
+                l2_data.push(countLeafs(sub));
+                
+                const isSelected = selectedSubnotes.includes(sub.name) || 
+                                 notes.some(n => n.category === catName && n.subnote === sub.name);
+                
+                l2_colors.push(isSelected ? this.hexToRgba(cat.color, 0.7) : '#F9FAFB');
+                l2_parent_colors.push(cat.color);
             });
         });
+
+        // --- NIVEL 3 (Externo - Solo Café) ---
+        let datasets = [];
+        let finalLabels = l2_labels;
+        const l3_labels = [];
+        const l3_data = [];
+        const l3_colors = [];
+
+        if (isCafe) {
+            l1_labels.forEach(catName => {
+                const cat = FLAVOR_DATA[catName];
+                cat.children.forEach(sub => {
+                    if (sub.children && sub.children.length > 0) {
+                        sub.children.forEach(note => {
+                            l3_labels.push(note.name);
+                            l3_data.push(1);
+                            const isSelected = notes.some(n => n.category === catName && (n.subnote === sub.name || n.subnote === note.name));
+                            l3_colors.push(isSelected ? this.hexToRgba(cat.color, 0.45) : '#FFFFFF');
+                        });
+                    } else {
+                        // Si no tiene hijos, ocupamos el espacio con un "vacío" o el mismo nombre
+                        l3_labels.push(sub.name);
+                        l3_data.push(1);
+                        l3_colors.push('transparent'); // Ocultar si es solo relleno
+                    }
+                });
+            });
+
+            finalLabels = l3_labels;
+            datasets.push({
+                data: l3_data,
+                backgroundColor: l3_colors,
+                borderColor: '#ffffff',
+                borderWidth: 1,
+                weight: 1.5
+            });
+            datasets.push({
+                data: l2_data,
+                backgroundColor: l2_colors,
+                borderColor: '#ffffff',
+                borderWidth: 1,
+                weight: 1.2
+            });
+            datasets.push({
+                data: l1_data,
+                backgroundColor: l1_colors,
+                borderColor: '#ffffff',
+                borderWidth: 1,
+                weight: 1
+            });
+        } else {
+            // Cacao / Otros (2 niveles)
+            datasets.push({
+                data: l2_data,
+                backgroundColor: l2_colors,
+                borderColor: '#ffffff',
+                borderWidth: 1,
+                weight: 1.2
+            });
+            datasets.push({
+                data: l1_data,
+                backgroundColor: l1_colors,
+                borderColor: '#ffffff',
+                borderWidth: 1,
+                weight: 0.8
+            });
+        }
 
         const chart = new Chart(ctxL1, {
             type: 'doughnut',
             data: {
-                labels: l2_labels,
-                datasets: [
-                    {
-                        data: l2_data,
-                        backgroundColor: l2_colors,
-                        borderColor: '#ffffff',
-                        borderWidth: 1,
-                        weight: 1.2
-                    },
-                    {
-                        data: l1_data,
-                        backgroundColor: l1_colors,
-                        borderColor: '#ffffff',
-                        borderWidth: 1,
-                        weight: 0.8
-                    }
-                ]
+                labels: finalLabels,
+                datasets: datasets
             },
             options: {
                 responsive: false,
                 maintainAspectRatio: false,
-                cutout: '25%',
+                cutout: isCafe ? '20%' : '30%',
                 layout: { top: 0, left: 0, right: 0, bottom: 0 },
                 plugins: {
                     legend: { display: false },
-                    tooltip: {
-                        callbacks: {
-                            label: function (context) {
-                                const idx = context.dataIndex;
-                                if (context.datasetIndex === 0) return l2_labels[idx];
-                                return l1_labels[idx];
-                            }
-                        }
-                    },
                     datalabels: {
                         color: '#444444',
                         font: function (context) {
                             var width = context.chart.width;
-                            var size = Math.round(width / 45);
-                            if (size > 14) size = 14;
-                            if (size < 8) size = 8;
+                            var size = Math.round(width / 50);
+                            if (size > 12) size = 12;
+                            if (size < 7) size = 7;
                             return { size: size, family: 'Arial', weight: 'bold' };
                         },
                         formatter: function (value, context) {
-                            if (context.datasetIndex === 0) {
-                                // Nivel 2 (subnotas): mostrar solo si está seleccionada o si se muestran todos los labels
-                                if (showAllLabels) return l2_labels[context.dataIndex];
-                                return selectedSubnotes.includes(l2_labels[context.dataIndex]) ? l2_labels[context.dataIndex] : "";
+                            const dsIdx = context.datasetIndex;
+                            const idx = context.dataIndex;
+                            
+                            // Lógica de etiquetas dinámica
+                            if (isCafe) {
+                                if (dsIdx === 0) { // Nivel 3
+                                    const label = l3_labels[idx];
+                                    if (l3_colors[idx] === 'transparent') return '';
+                                    return (showAllLabels || notes.some(n => n.subnote === label)) ? label : '';
+                                } else if (dsIdx === 1) { // Nivel 2
+                                    const label = l2_labels[idx];
+                                    return (showAllLabels || selectedSubnotes.includes(label)) ? label : '';
+                                } else { // Nivel 1
+                                    const label = l1_labels[idx];
+                                    return (showAllLabels || selectedCategoryNames.includes(label)) ? label : '';
+                                }
                             } else {
-                                // Nivel 1 (categorías)
-                                if (showAllLabels) return l1_labels[context.dataIndex];
-                                return selectedCategoryNames.includes(l1_labels[context.dataIndex]) ? l1_labels[context.dataIndex] : "";
+                                if (dsIdx === 0) { // Nivel 2
+                                    const label = l2_labels[idx];
+                                    return (showAllLabels || selectedSubnotes.includes(label)) ? label : '';
+                                } else { // Nivel 1
+                                    const label = l1_labels[idx];
+                                    return (showAllLabels || selectedCategoryNames.includes(label)) ? label : '';
+                                }
                             }
                         },
                         anchor: 'center',
@@ -233,7 +312,7 @@ const ChartUtils = {
                             const currentVal = ctx.dataset.data[ctx.dataIndex];
 
                             const spanAngle = (currentVal / sum) * 360;
-                            if (spanAngle > 40) return 0;
+                            if (spanAngle > 60) return 0;
 
                             const angle = Math.PI * 2 * (valuesBefore + currentVal / 2) / sum - Math.PI / 2;
                             var degree = angle * 180 / Math.PI;
@@ -247,8 +326,8 @@ const ChartUtils = {
                             }
                             return rotation;
                         },
-                        textStrokeColor: 'rgba(255,255,255,0.8)',
-                        textStrokeWidth: 2
+                        textStrokeColor: 'rgba(255,255,255,0.7)',
+                        textStrokeWidth: 1
                     }
                 }
             }
@@ -299,3 +378,6 @@ const ChartUtils = {
         legendContainer.innerHTML = `<div class="grid grid-cols-2 gap-x-4">${legendHtml}</div>`;
     }
 };
+
+// Exportar globalmente para acceso desde módulos
+window.ChartUtils = ChartUtils;

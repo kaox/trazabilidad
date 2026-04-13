@@ -11,7 +11,13 @@ const getAllByUserId = async (userId) => {
     const sql = `
         SELECT p.*, r.nombre as receta_nutricional_nombre,
                u.code as unit_code, c.symbol as currency_symbol,
-               f.nombre_finca as finca_nombre
+               f.nombre_finca as finca_nombre,
+               f.pais as finca_pais,
+               f.departamento as finca_departamento,
+               f.provincia as finca_provincia,
+               f.distrito as finca_distrito,
+               f.ciudad as finca_ciudad,
+               f.altura as finca_altura
         FROM productos p
         LEFT JOIN recetas_nutricionales r ON p.receta_nutricional_id = r.id
         LEFT JOIN units_of_measure u ON p.unit_id = u.id

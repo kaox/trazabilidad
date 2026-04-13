@@ -6,7 +6,7 @@ const CompanyProfile = require('../models/CompanyProfile');
 const { get } = require('../config/db.js'); // Importamos 'get' temporalmente para el fallback
 const { processImagesArray, deleteImagesArray } = require('../utils/storage');
 
-const PROVIDER = 'vercel';//'vercel'
+const PROVIDER = 'supabase';//'vercel'
 
 const companyProfileController = {
     /**
@@ -76,7 +76,7 @@ const companyProfileController = {
             // Validación de Subdominio
             if (profileData.subdomain) {
                 const subd = profileData.subdomain.toLowerCase().trim();
-                
+
                 // Formato: Alfanumérico y guiones únicamente
                 const subdRegex = /^[a-z0-9-]+$/;
                 if (!subdRegex.test(subd)) {

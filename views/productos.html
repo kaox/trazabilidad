@@ -198,7 +198,7 @@
                                 <!-- Wrapper para Perfil Sensorial (Radar) -->
                                 <div id="perfil-wrapper">
                                     <!-- Se llena dinámicamente -->
-                                    <label class="block text-sm font-medium text-stone-400 mb-1">Perfil
+                                    <label class="block text-sm font-medium text-stone-700 mb-1">Perfil
                                         Sensorial</label>
                                     <div
                                         class="p-3 bg-white rounded-xl border border-stone-200 text-sm text-stone-400 italic">
@@ -207,7 +207,7 @@
                                 <!-- Wrapper para Rueda de Sabores -->
                                 <div id="rueda-wrapper">
                                     <!-- Se llena dinámicamente -->
-                                    <label class="block text-sm font-medium text-stone-400 mb-1">Rueda de Sabor</label>
+                                    <label class="block text-sm font-medium text-stone-700 mb-1">Rueda de Sabor</label>
                                     <div
                                         class="p-3 bg-white rounded-xl border border-stone-200 text-sm text-stone-400 italic">
                                         Selecciona un tipo de producto primero</div>
@@ -362,7 +362,19 @@
         </div>
     </dialog>
 
+    <!-- PDF Generation Support -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+    
+    <!-- Hidden Canvas for PDF Chart Rendering -->
+    <div style="visibility: hidden; position: fixed; top: 0; left: 0; pointer-events: none; z-index: -1;">
+        <canvas id="pdf-radar-canvas" width="600" height="600"></canvas>
+        <canvas id="pdf-wheel-l1" width="600" height="600"></canvas>
+    </div>
+
     <script src="/js/nav-loader.js"></script>
+    <script src="/js/chart-utils.js"></script>
     <script type="module" src="/js/productos-app.js"></script>
     <script src="/js/help-menu.js"></script>
 </body>
