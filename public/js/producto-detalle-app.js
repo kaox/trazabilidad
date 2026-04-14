@@ -1267,8 +1267,9 @@ const app = {
         let pointIdx = 0;
         const animateSegment = () => {
             if (pointIdx >= targetPoints.length - 1) {
-                // Fin de la animación, asegurar que el último punto esté
-                currentPath.push(targetPoints[targetPoints.length - 1]);
+                // Fin de la animación, asegurar que el último punto esté (clonado como LatLng)
+                const lastPoint = targetPoints[targetPoints.length - 1];
+                currentPath.push(new google.maps.LatLng(lastPoint.lat, lastPoint.lng));
                 return;
             }
 
