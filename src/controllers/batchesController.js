@@ -47,7 +47,7 @@ const ensureTemplateAndStageExists = async (userId, systemTemplateName, stageNam
         } else {
             // 2. Si no existe, CLONAR desde el JSON (Lógica JIT)            
             // Ajustamos la ruta asumiendo que el archivo de datos está en una carpeta 'data' fuera de 'controllers'
-            const catalogPath = path.join(__dirname, 'data/procesos_config.json'); 
+            const catalogPath = path.join(__dirname, 'data/procesos_config.json');
             const catalogData = JSON.parse(fs.readFileSync(catalogPath, 'utf8'));
             const templateToClone = catalogData.templates.find(t => t.nombre_producto === systemTemplateName);
 
@@ -64,7 +64,7 @@ const ensureTemplateAndStageExists = async (userId, systemTemplateName, stageNam
                 const fase = (templateToClone.acopio && templateToClone.acopio.includes(stage)) ? 'acopio' : 'procesamiento';
 
                 await BatchModel.createTemplateStage(
-                    templateId, stage.nombre_etapa, stage.descripcion, stage.orden, 
+                    templateId, stage.nombre_etapa, stage.descripcion, stage.orden,
                     JSON.stringify(stage.campos_json), fase
                 );
             }
@@ -137,7 +137,7 @@ const syncBatchOutputs = async (batchId, etapaId, dataObj) => {
 const checkBatchOwnership = async (batchId, userId) => {
     const targetBatch = await BatchModel.getById(batchId);
     if (!targetBatch) return null;
-    
+
     let ownerId = targetBatch.user_id;
     if (!ownerId) {
         // Delegamos la complejidad de la consulta recursiva (CTE) al modelo
@@ -167,31 +167,31 @@ const getBatchesTree = async (req, res) => {
     const userId = req.user.id;
     try {
         const allBatches = await BatchModel.getAll();
-        
+
         // Lógica de negocio: Construcción del árbol en memoria
-        const batchesProcessed = allBatches.map(b => ({ 
-            ...b, 
-            data: safeJSONParse(b.data), 
-            is_locked: !!b.is_locked, 
-            children: [] 
+        const batchesProcessed = allBatches.map(b => ({
+            ...b,
+            data: safeJSONParse(b.data),
+            is_locked: !!b.is_locked,
+            children: []
         }));
-        
+
         const batchMap = {};
         batchesProcessed.forEach(b => { batchMap[b.id] = b; });
-        
+
         const allRoots = [];
         batchesProcessed.forEach(b => {
-            if (b.parent_id && batchMap[b.parent_id]) { 
-                batchMap[b.parent_id].children.push(b); 
-            } else { 
-                allRoots.push(b); 
+            if (b.parent_id && batchMap[b.parent_id]) {
+                batchMap[b.parent_id].children.push(b);
+            } else {
+                allRoots.push(b);
             }
         });
-        
+
         const userRoots = allRoots.filter(root => root.user_id === userId);
         res.status(200).json(userRoots);
-    } catch (err) { 
-        res.status(500).json({ error: "Error batches." }); 
+    } catch (err) {
+        res.status(500).json({ error: "Error batches." });
     }
 };
 
@@ -234,24 +234,24 @@ const createBatch = async (req, res) => {
         // Delegar inserción al modelo según tenga padre o no
         if (!parent_id) {
             await BatchModel.createAsRoot({
-                id: data.id, userId, plantilla_id, etapa_id, 
-                dataString: JSON.stringify(data), 
-                producto_id: finalProductId, 
-                acquisition_id: acquisition_id || null, 
+                id: data.id, userId, plantilla_id, etapa_id,
+                dataString: JSON.stringify(data),
+                producto_id: finalProductId,
+                acquisition_id: acquisition_id || null,
                 input_quantity: qtyUsed
             });
         } else {
             const ownerInfo = await checkBatchOwnership(parent_id, userId);
             if (!ownerInfo) return res.status(403).json({ error: "No tienes permiso." });
-            
+
             const parentBatch = await BatchModel.getById(parent_id);
 
             await BatchModel.createWithParent({
-                id: data.id, 
-                plantilla_id: parentBatch.plantilla_id, 
-                etapa_id, parent_id, 
-                dataString: JSON.stringify(data), 
-                producto_id: finalProductId, 
+                id: data.id,
+                plantilla_id: parentBatch.plantilla_id,
+                etapa_id, parent_id,
+                dataString: JSON.stringify(data),
+                producto_id: finalProductId,
                 input_quantity: qtyUsed
             });
         }
@@ -260,15 +260,15 @@ const createBatch = async (req, res) => {
         await syncBatchOutputs(data.id, etapa_id, data);
 
         res.status(201).json({ message: "Lote creado", id: data.id });
-    } catch (err) { 
-        console.error(err); 
-        res.status(500).json({ error: err.message }); 
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: err.message });
     }
 };
 
 const updateBatch = async (req, res) => {
     const { id } = req.params;
-    const { data, producto_id, input_quantity } = req.body;
+    let { data, producto_id, input_quantity } = req.body;
 
     try {
         const targetBatch = await BatchModel.getById(id);
@@ -299,8 +299,8 @@ const updateBatch = async (req, res) => {
         await syncBatchOutputs(id, targetBatch.etapa_id, data);
 
         res.status(200).json({ message: "Lote actualizado" });
-    } catch (err) { 
-        res.status(500).json({ error: err.message }); 
+    } catch (err) {
+        res.status(500).json({ error: err.message });
     }
 };
 
@@ -322,16 +322,16 @@ const deleteBatch = async (req, res) => {
         }
 
         await BatchModel.deleteById(id);
-        res.status(204).send(); 
-    } catch (err) { 
-        res.status(500).json({ error: err.message }); 
+        res.status(204).send();
+    } catch (err) {
+        res.status(500).json({ error: err.message });
     }
 };
 
 const finalizeBatch = async (req, res) => {
-    const { id } = req.params; 
+    const { id } = req.params;
     const userId = req.user.id;
-    
+
     try {
         const targetBatch = await checkBatchOwnership(id, userId);
         if (!targetBatch) return res.status(403).json({ error: "Sin permiso." });
@@ -361,28 +361,28 @@ const finalizeBatch = async (req, res) => {
             certificaciones_json: safeJSONParse(p.certificaciones_json || '[]')
         }));
 
-        const historySnapshot = { 
-            productName: templateInfo.nombre_producto, 
-            ownerInfo, 
-            stages: [], 
-            fincaData: null, 
-            procesadorasData: procesadorasData, 
-            acopioData: acopioData ? { ...acopioData, data_adicional: safeJSONParse(acopioData.data_adicional) } : null, 
-            productoFinal: null, 
-            nutritionalData: null, 
-            perfilSensorialData: null, 
-            ruedaSaborData: null, 
-            maridajesRecomendados: {}, 
-            generatedAt: new Date().toISOString() 
+        const historySnapshot = {
+            productName: templateInfo.nombre_producto,
+            ownerInfo,
+            stages: [],
+            fincaData: null,
+            procesadorasData: procesadorasData,
+            acopioData: acopioData ? { ...acopioData, data_adicional: safeJSONParse(acopioData.data_adicional) } : null,
+            productoFinal: null,
+            nutritionalData: null,
+            perfilSensorialData: null,
+            ruedaSaborData: null,
+            maridajesRecomendados: {},
+            generatedAt: new Date().toISOString()
         };
 
         if (productoInfo) {
             historySnapshot.productoFinal = { ...productoInfo, imagenes_json: safeJSONParse(productoInfo.imagenes_json), premios_json: safeJSONParse(productoInfo.premios_json) };
             if (productoInfo.receta_nutricional_id) {
                 const receta = await BatchModel.getNutritionalRecipeById(productoInfo.receta_nutricional_id);
-                if (receta) { 
-                    const ing = await BatchModel.getRecipeIngredients(receta.id); 
-                    historySnapshot.nutritionalData = { ...receta, ingredientes: ing.map(i => ({ ...i, nutrientes_base_json: safeJSONParse(i.nutrientes_base_json) })) }; 
+                if (receta) {
+                    const ing = await BatchModel.getRecipeIngredients(receta.id);
+                    historySnapshot.nutritionalData = { ...receta, ingredientes: ing.map(i => ({ ...i, nutrientes_base_json: safeJSONParse(i.nutrientes_base_json) })) };
                 }
             }
         }
@@ -390,13 +390,13 @@ const finalizeBatch = async (req, res) => {
         // --- DESGLOSE ACOPIO ---
         if (historySnapshot.acopioData) {
             const ad = historySnapshot.acopioData.data_adicional || {};
-            const imgs = safeJSONParse(acopioData.imagenes_json || '{}'); 
+            const imgs = safeJSONParse(acopioData.imagenes_json || '{}');
 
             if (acopioData.finca_origen) {
                 const finca = await BatchModel.getFincaByNameAndUser(acopioData.finca_origen, userId);
                 if (finca) historySnapshot.fincaData = { ...finca, coordenadas: safeJSONParse(finca.coordenadas), imagenes_json: safeJSONParse(finca.imagenes_json), certificaciones_json: safeJSONParse(finca.certificaciones_json), premios_json: safeJSONParse(finca.premios_json) };
             }
-            
+
             const acopioStagesDef = allStages.filter(s => s.fase === 'acopio' || (s.orden <= 3 && s.nombre_etapa.match(/(cosecha|ferment|secado)/i)));
             acopioStagesDef.forEach(stageDef => {
                 const suffix = `__${stageDef.orden}`;
@@ -428,59 +428,59 @@ const finalizeBatch = async (req, res) => {
             });
         }
 
-        let perfilId = null, ruedaId = null; 
-        const rootData = safeJSONParse(rootBatch.data); 
-        
-        if (rootData.target_profile_id?.value) perfilId = rootData.target_profile_id.value; 
-        if (rootData.target_wheel_id?.value) ruedaId = rootData.target_wheel_id.value; 
-        
-        if (!perfilId || !ruedaId) { 
-            for (const row of rows) { 
-                const rd = safeJSONParse(row.data); 
-                if (!perfilId && rd.tipoPerfil?.value) perfilId = rd.tipoPerfil.value; 
-                if (!ruedaId && rd.tipoRuedaSabor?.value) ruedaId = rd.tipoRuedaSabor.value; 
-            } 
-        }
-        
-        if (perfilId) { 
-            let perfil = await BatchModel.getSensoryProfileById(perfilId); 
-            if (!perfil && isNaN(perfilId)) perfil = await BatchModel.getSensoryProfileByNameAndUser(perfilId, userId); 
-            
-            if (perfil) { 
-                historySnapshot.perfilSensorialData = safeJSONParse(perfil.perfil_data); 
-                
-                if (perfil.tipo === 'cacao' && typeof calcularMaridajeCacaoCafe === 'function') { 
-                    const allCafes = await BatchModel.getCoffeeProfilesByUser(userId); 
-                    const recCafe = allCafes.map(cafe => ({ 
-                        producto: { ...cafe, perfil_data: safeJSONParse(cafe.perfil_data) }, 
-                        puntuacion: calcularMaridajeCacaoCafe(historySnapshot.perfilSensorialData, safeJSONParse(cafe.perfil_data)) 
-                    })).sort((a, b) => b.puntuacion - a.puntuacion).slice(0, 3); 
-                    
-                    historySnapshot.maridajesRecomendados = { cafe: recCafe }; 
-                } 
-            } 
-        }
-        
-        if (ruedaId) { 
-            const rueda = await BatchModel.getTasteWheelById(ruedaId); 
-            if (rueda) historySnapshot.ruedaSaborData = { ...rueda, notas_json: safeJSONParse(rueda.notas_json) }; 
+        let perfilId = null, ruedaId = null;
+        const rootData = safeJSONParse(rootBatch.data);
+
+        if (rootData.target_profile_id?.value) perfilId = rootData.target_profile_id.value;
+        if (rootData.target_wheel_id?.value) ruedaId = rootData.target_wheel_id.value;
+
+        if (!perfilId || !ruedaId) {
+            for (const row of rows) {
+                const rd = safeJSONParse(row.data);
+                if (!perfilId && rd.tipoPerfil?.value) perfilId = rd.tipoPerfil.value;
+                if (!ruedaId && rd.tipoRuedaSabor?.value) ruedaId = rd.tipoRuedaSabor.value;
+            }
         }
 
-        rows.sort((a, b) => { 
-            const sA = allStages.find(s => s.id === a.etapa_id)?.orden || 0; 
-            const sB = allStages.find(s => s.id === b.etapa_id)?.orden || 0; 
-            return sA - sB; 
+        if (perfilId) {
+            let perfil = await BatchModel.getSensoryProfileById(perfilId);
+            if (!perfil && isNaN(perfilId)) perfil = await BatchModel.getSensoryProfileByNameAndUser(perfilId, userId);
+
+            if (perfil) {
+                historySnapshot.perfilSensorialData = safeJSONParse(perfil.perfil_data);
+
+                if (perfil.tipo === 'cacao' && typeof calcularMaridajeCacaoCafe === 'function') {
+                    const allCafes = await BatchModel.getCoffeeProfilesByUser(userId);
+                    const recCafe = allCafes.map(cafe => ({
+                        producto: { ...cafe, perfil_data: safeJSONParse(cafe.perfil_data) },
+                        puntuacion: calcularMaridajeCacaoCafe(historySnapshot.perfilSensorialData, safeJSONParse(cafe.perfil_data))
+                    })).sort((a, b) => b.puntuacion - a.puntuacion).slice(0, 3);
+
+                    historySnapshot.maridajesRecomendados = { cafe: recCafe };
+                }
+            }
+        }
+
+        if (ruedaId) {
+            const rueda = await BatchModel.getTasteWheelById(ruedaId);
+            if (rueda) historySnapshot.ruedaSaborData = { ...rueda, notas_json: safeJSONParse(rueda.notas_json) };
+        }
+
+        rows.sort((a, b) => {
+            const sA = allStages.find(s => s.id === a.etapa_id)?.orden || 0;
+            const sB = allStages.find(s => s.id === b.etapa_id)?.orden || 0;
+            return sA - sB;
         }).forEach(row => {
             const sInfo = allStages.find(s => s.id === row.etapa_id);
-            if (sInfo) historySnapshot.stages.push({ 
-                id: row.id, 
-                nombre_etapa: sInfo.nombre_etapa, 
-                descripcion: sInfo.descripcion, 
-                campos_json: safeJSONParse(sInfo.campos_json), 
-                data: safeJSONParse(row.data), 
-                blockchain_hash: row.blockchain_hash, 
-                is_locked: row.is_locked, 
-                timestamp: row.created_at 
+            if (sInfo) historySnapshot.stages.push({
+                id: row.id,
+                nombre_etapa: sInfo.nombre_etapa,
+                descripcion: sInfo.descripcion,
+                campos_json: safeJSONParse(sInfo.campos_json),
+                data: safeJSONParse(row.data),
+                blockchain_hash: row.blockchain_hash,
+                is_locked: row.is_locked,
+                timestamp: row.created_at
             });
         });
 
@@ -502,25 +502,25 @@ const finalizeBatch = async (req, res) => {
 
         // Bloquear el lote actual
         await BatchModel.lockBatchAndSetHash(id, hash);
-        
+
         // Bloquear todos los lotes padre iterativamente
         let curr = targetBatch.parent_id;
-        while (curr) { 
-            await BatchModel.lockBatch(curr); 
-            const p = await BatchModel.getParentId(curr); 
-            curr = p ? p.parent_id : null; 
+        while (curr) {
+            await BatchModel.lockBatch(curr);
+            const p = await BatchModel.getParentId(curr);
+            curr = p ? p.parent_id : null;
         }
 
         res.status(200).json({ message: "Certificado exitosamente.", hash });
-    } catch (err) { 
+    } catch (err) {
         console.error("Error finalizeBatch:", err);
-        res.status(500).json({ error: err.message }); 
+        res.status(500).json({ error: err.message });
     }
 };
 
 const getImmutableBatches = async (req, res) => {
     const userId = req.user.id;
-    
+
     try {
         const rows = await BatchModel.getImmutableBatchesByUserId(userId);
 

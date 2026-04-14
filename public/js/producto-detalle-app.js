@@ -144,6 +144,7 @@ const app = {
             // Cargar trazabilidad del producto
             try {
                 const traceRes = await fetch(`/api/public/products/${this.productId}/traceability`);
+                console.log("Trazabilidad", traceRes);
                 if (traceRes.ok) {
                     this.traceability = await traceRes.json();
                 }
@@ -370,21 +371,40 @@ const app = {
     parseCoordinates(coords) {
         if (!coords) return null;
         try {
-            let data = this.parseJSON(coords);
+            let data = coords;
+
+            // Si es string, tratar de parsear o dividir
+            if (typeof coords === 'string') {
+                if (coords.trim().startsWith('[') || coords.trim().startsWith('{')) {
+                    data = this.parseJSON(coords);
+                } else if (coords.includes(',')) {
+                    // Caso string "lat, lng"
+                    const parts = coords.split(',').map(s => Number(s.trim()));
+                    if (parts.length >= 2) return [{ lat: parts[0], lng: parts[1] }];
+                }
+            }
 
             // Caso GeoJSON Polygon
             if (data && data.type === 'Polygon' && Array.isArray(data.coordinates)) {
-                // GeoJSON es [lng, lat], Google Maps es {lat, lng}
                 return data.coordinates[0].map(p => ({ lat: Number(p[1]), lng: Number(p[0]) }));
             }
 
-            // Caso Array de arrays [[lat, lng], ...] o [{lat, lng}, ...]
+            // Caso Array de puntos [[lat, lng]] o [{lat, lng}]
             if (Array.isArray(data) && data.length > 0) {
+                // Si es un array simple de dos números [lat, lng]
+                if (data.length === 2 && typeof data[0] === 'number') {
+                    return [{ lat: data[0], lng: data[1] }];
+                }
                 return data.map(p => {
                     if (Array.isArray(p)) return { lat: Number(p[0]), lng: Number(p[1]) };
                     if (p && typeof p === 'object' && p.lat !== undefined) return { lat: Number(p.lat), lng: Number(p.lng) };
                     return null;
                 }).filter(p => p !== null);
+            }
+
+            // Caso Objeto de punto {lat, lng}
+            if (data && typeof data === 'object' && data.lat !== undefined) {
+                return [{ lat: Number(data.lat), lng: Number(data.lng) }];
             }
 
             return null;
@@ -404,27 +424,47 @@ const app = {
             zoom: 14,
             mapTypeId: 'satellite',
             disableDefaultUI: true,
-            zoomControl: true
+            zoomControl: true,
+            tilt: 45
         });
 
         const paths = this.parseCoordinates(finca.coordenadas);
 
         if (paths && paths.length > 0) {
-            new google.maps.Polygon({
-                paths: paths,
-                strokeColor: '#fbbf24',
-                strokeOpacity: 0.8,
-                strokeWeight: 3,
-                fillColor: '#fbbf24',
-                fillOpacity: 0.35,
-                map: map
-            });
-
             const bounds = new google.maps.LatLngBounds();
             paths.forEach(p => bounds.extend(p));
-            map.fitBounds(bounds);
+
+            if (paths.length === 1) {
+                // Caso Punto único
+                new google.maps.Marker({
+                    position: paths[0],
+                    map: map,
+                    icon: {
+                        path: google.maps.SymbolPath.CIRCLE,
+                        fillColor: '#fbbf24',
+                        fillOpacity: 1,
+                        strokeColor: '#ffffff',
+                        strokeWeight: 2,
+                        scale: 10
+                    }
+                });
+                map.setCenter(paths[0]);
+                map.setZoom(17);
+            } else {
+                // Caso Polígono
+                new google.maps.Polygon({
+                    paths: paths,
+                    strokeColor: '#fbbf24',
+                    strokeOpacity: 0.8,
+                    strokeWeight: 3,
+                    fillColor: '#fbbf24',
+                    fillOpacity: 0.35,
+                    map: map
+                });
+                map.fitBounds(bounds);
+            }
         } else {
-            console.warn("No hay coordenadas de polígono para esta finca.");
+            console.warn("No hay coordenadas para esta finca.");
         }
     },
 
@@ -656,17 +696,17 @@ const app = {
         const rootData = { name: "Root", children: [] };
         Object.entries(FLAVOR_DATA).forEach(([catName, catData]) => {
             const hasCatSelection = this.product.sabores && this.product.sabores.some(s => s.category === catName);
-            
+
             const catNode = {
                 name: catName,
                 color: hasCatSelection ? catData.color : '#F3F4F6',
                 children: catData.children.map(child => {
-                    const hasSubSelection = this.product.sabores && this.product.sabores.some(s => 
-                        (s.subnote && s.subnote.toLowerCase() === child.name.toLowerCase()) || 
+                    const hasSubSelection = this.product.sabores && this.product.sabores.some(s =>
+                        (s.subnote && s.subnote.toLowerCase() === child.name.toLowerCase()) ||
                         (s.note && s.note.toLowerCase() === child.name.toLowerCase()) ||
                         (s.label && s.label.toLowerCase() === child.name.toLowerCase())
                     );
-                    
+
                     const childNode = {
                         name: child.name,
                         color: hasSubSelection ? catData.color : '#F3F4F6',
@@ -674,7 +714,7 @@ const app = {
 
                     if (child.children && child.children.length > 0) {
                         childNode.children = child.children.map(grandchild => {
-                            const hasNoteSelection = this.product.sabores && this.product.sabores.some(s => 
+                            const hasNoteSelection = this.product.sabores && this.product.sabores.some(s =>
                                 (s.note && s.note.toLowerCase() === grandchild.name.toLowerCase()) ||
                                 (s.label && s.label.toLowerCase() === grandchild.name.toLowerCase()) ||
                                 (s.subnote && s.subnote.toLowerCase() === grandchild.name.toLowerCase())
@@ -780,110 +820,257 @@ const app = {
     renderTrazabilidad() {
         if (!this.traceability || !this.traceability.stages || this.traceability.stages.length === 0) {
             document.getElementById('tab-content').innerHTML = `
-                <div class="py-20 text-center animate-in fade-in duration-500">
-                    <i class="fas fa-route text-stone-200 text-6xl mb-4"></i>
-                    <h3 class="text-xl font-bold text-stone-400">Trazabilidad No Disponible</h3>
-                    <p class="text-stone-400 mt-2">Este producto aún no cuenta con un lote verificado en blockchain.</p>
+                <div class="py-24 text-center animate-in fade-in slide-in-from-bottom-4 duration-700">
+                    <div class="w-24 h-24 bg-stone-50 rounded-full flex items-center justify-center mx-auto mb-8 border border-stone-100 shadow-sm">
+                        <i class="fas fa-route text-stone-200 text-4xl"></i>
+                    </div>
+                    <h3 class="text-2xl font-display font-bold text-stone-300">Trazabilidad No Disponible</h3>
+                    <p class="text-stone-400 mt-2 max-w-sm mx-auto">Este producto aún no cuenta con un lote verificado en la blockchain de Ruru Lab.</p>
                 </div>
             `;
             return;
         }
 
-        const stages = [...this.traceability.stages].reverse(); // Clonar y revertir para mostrar desde el origen al final
+        const stages = [...this.traceability.stages].reverse();
         const lastBatchId = this.traceability.id || 'N/A';
 
         const html = `
-            <div class="animate-in fade-in duration-700">
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-12">
-                    <!-- Columna Mapa -->
-                    <div class="space-y-6">
-                        <div class="flex items-center justify-between">
-                            <h2 class="text-3xl font-display font-bold text-stone-900">Geographic Coordinates</h2>
+            <style>
+                .stage-card.active-stage {
+                    border-color: #854d0e;
+                    background-color: #fffbeb;
+                    transform: translateX(8px);
+                }
+                .stage-card {
+                    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+                }
+                .node-dot.active {
+                    border-color: #854d0e !important;
+                    background-color: #854d0e !important;
+                    box-shadow: 0 0 0 6px rgba(133, 77, 14, 0.1);
+                }
+                .pulse-ring {
+                    position: absolute;
+                    inset: 0;
+                    margin: auto;
+                    width: 100%;
+                    height: 100%;
+                    border: 3px solid #854d0e;
+                    border-radius: 50%;
+                    animation: pulse 2s infinite;
+                    opacity: 0;
+                    pointer-events: none;
+                }
+                @keyframes pulse {
+                    0% { transform: scale(0.6); opacity: 0; }
+                    50% { opacity: 0.6; }
+                    100% { transform: scale(1.6); opacity: 0; }
+                }
+                /* Custom Google Maps Styling */
+                #trace-map [title="Google"] img, #trace-map .gmnoprint { display: none !important; }
+            </style>
+
+            <div class="animate-in fade-in duration-1000">
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
+                    
+                    <!-- Columna Mapa (Sticky) -->
+                    <div class="lg:col-span-7 sticky top-24 space-y-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <div>
+                                <h2 class="text-4xl font-display font-bold text-stone-900 leading-tight">Descubre el viaje!</h2>
+                                <p class="text-stone-400 font-medium text-sm mt-1 tracking-wide">Trazabilidad Satelital</p>
+                            </div>
                         </div>
+                        
                         <div class="relative group">
-                            <div id="trace-map" class="w-full h-[500px] rounded-[2.5rem] border border-stone-200 shadow-inner overflow-hidden"></div>
-                            <div id="map-overlay-info" class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white/95 backdrop-blur-sm p-8 rounded-3xl shadow-2xl border border-stone-100 text-center min-w-[240px] pointer-events-none transition-all duration-500 opacity-0 scale-90">
-                                <span class="text-[10px] font-bold text-stone-400 uppercase tracking-widest block mb-2">ELEVATION</span>
-                                <p id="overlay-elevation" class="text-3xl font-black text-amber-900 mb-1">2300 MSNM</p>
-                                <p id="overlay-coords" class="text-[10px] font-medium text-stone-400 font-mono italic">8.5273° N, 38.4111° E</p>
+                            <!-- Overlay Glassmorphism -->
+                            <div id="map-overlay-info" class="absolute z-10 top-12 right-8 bg-white/80 backdrop-blur-xl p-6 rounded-[2rem] border border-white/50 shadow-2xl text-center min-w-[200px] transition-all duration-700 opacity-0 scale-95">
+                                <span class="text-[9px] font-black text-amber-900/40 uppercase tracking-[0.2em] block mb-2">ELEVATION</span>
+                                <p id="overlay-elevation" class="text-4xl font-black text-amber-950 mb-1 tabular-nums tracking-tighter">--</p>
+                                <p id="overlay-coords" class="text-[9px] font-bold text-stone-500 font-mono tracking-widest uppercase italic">0.0000° N, 0.0000° E</p>
+                            </div>
+
+                            <div id="trace-map" class="w-full h-[600px] rounded-[3.5rem] border-8 border-white shadow-[0_32px_64px_-16px_rgba(0,0,0,0.15)] overflow-hidden bg-stone-100"></div>
+                            
+                            <!-- Legend -->
+                            <div class="absolute bottom-10 left-10 flex gap-4 bg-white/90 backdrop-blur-md p-4 rounded-3xl border border-white/50 shadow-xl">
+                                <div class="flex items-center gap-2">
+                                    <div class="w-3 h-3 rounded-full bg-amber-800"></div>
+                                    <span class="text-[10px] font-bold text-stone-600 uppercase tracking-wider">Actual</span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <div class="w-3 h-0.5 bg-stone-300 border-t border-dashed border-stone-400"></div>
+                                    <span class="text-[10px] font-bold text-stone-600 uppercase tracking-wider">Ruta</span>
+                                </div>
                             </div>
                         </div>
                     </div>
 
                     <!-- Columna Timeline -->
-                    <div class="space-y-8">
-                        <div class="flex items-center justify-between">
-                            <div class="flex items-center gap-4">
-                                <h2 class="text-3xl font-display font-bold text-stone-900">Tree to Cup Timeline</h2>
-                                <span class="px-3 py-1 bg-amber-50 text-amber-800 text-[10px] font-bold rounded-full border border-amber-100 uppercase tracking-wider">LOTE ${lastBatchId}</span>
+                    <div class="lg:col-span-5 space-y-10 py-4">
+                        <div class="flex items-center justify-between pl-6">
+                            <h2 class="text-4xl font-display font-bold text-stone-900">Timeline</h2>
+                            <div class="flex flex-col items-end">
+                                <span class="text-[10px] font-bold text-stone-400 uppercase tracking-widest mb-1">PROCESSED LOTE</span>
+                                <span class="px-4 py-1.5 bg-stone-900 text-white text-[11px] font-black rounded-full shadow-lg tracking-wider">#${lastBatchId.substring(0, 12)}</span>
                             </div>
                         </div>
 
-                        <div class="relative">
-                            <!-- Línea vertical del timeline -->
-                            <div class="absolute left-4 top-2 bottom-2 w-0.5 bg-stone-100"></div>
+                        <div class="relative px-6">
+                            <!-- Animated Pulse Line Background -->
+                            <div class="absolute left-[2.25rem] top-8 bottom-8 w-[2px] bg-gradient-to-b from-amber-800/20 via-stone-100 to-stone-50 selection:bg-none"></div>
 
-                            <div class="space-y-10 pl-12 relative" id="timeline-list">
+                            <div class="space-y-6 relative" id="timeline-list">
                                 ${stages.map((stage, idx) => {
-                                    const dateStr = stage.timestamp ? new Date(stage.timestamp).toLocaleDateString('es-ES', { month: 'short', day: 'numeric', year: 'numeric' }) : 'N/A';
-                                    const loc = this.getStageLocation(stage);
-                                    
-                                    return `
-                                    <div class="timeline-item group cursor-pointer relative" onclick="app.setTraceStage(${idx})" data-index="${idx}">
-                                        <!-- Punto indicator -->
-                                        <div class="absolute left-0 top-1 w-8 h-8 rounded-full border-2 border-stone-200 bg-white flex items-center justify-center -ml-[3.1rem] transition-all group-hover:border-amber-500 group-hover:bg-amber-50 z-10 node-dot">
-                                            <div class="w-2.5 h-2.5 rounded-full bg-stone-200 transition-all group-hover:bg-amber-600 inner-dot"></div>
+            const dateStr = stage.timestamp ? new Date(stage.timestamp).toLocaleDateString('es-ES', { month: 'short', day: 'numeric' }).toUpperCase() : 'N/A';
+            const yearStr = stage.timestamp ? new Date(stage.timestamp).getFullYear() : '';
+            const loc = this.getStageLocation(stage);
+            const isFinca = stage.nombre_etapa.toLowerCase().includes('cosecha');
+
+            return `
+                                    <div class="stage-card group cursor-pointer p-6 rounded-[2rem] border border-transparent hover:border-stone-100 hover:bg-white hover:shadow-xl relative ml-6" 
+                                         onclick="app.setTraceStage(${idx})" data-index="${idx}">
+                                        
+                                        <!-- Node Indicator -->
+                                        <div class="absolute -left-[3.15rem] top-8 w-11 h-11 rounded-full border-4 border-white bg-stone-100 flex items-center justify-center transition-all duration-500 shadow-sm z-20 node-dot">
+                                            <i class="fas ${isFinca ? 'fa-seedling' : 'fa-gear'} text-xs text-stone-400 group-hover:text-white transition-colors relative z-10"></i>
+                                            <div class="pulse-ring"></div>
+                                        </div>
+
+                                        <div class="flex justify-between items-start mb-2">
+                                            <div class="flex flex-col">
+                                                <span class="text-[10px] font-black text-amber-800/60 uppercase tracking-[0.2em] mb-1">${dateStr} ${yearStr}</span>
+                                                <h4 class="text-2xl font-display font-bold text-stone-800 group-hover:text-amber-950 transition-colors">${stage.nombre_etapa}</h4>
+                                            </div>
+                                            <div class="w-10 h-10 rounded-2xl bg-stone-50 flex items-center justify-center group-hover:bg-amber-100 transition-colors">
+                                                <i class="fas fa-chevron-right text-stone-300 group-hover:text-amber-600 text-[10px]"></i>
+                                            </div>
+                                        </div>
+
+                                        <div class="flex items-center gap-2 mb-4">
+                                            <i class="fas fa-location-dot text-[10px] text-stone-300"></i>
+                                            <p class="text-xs font-bold text-stone-400 group-hover:text-stone-600 transition-colors tracking-tight italic">${loc}</p>
                                         </div>
                                         
-                                        <div class="space-y-1">
-                                            <span class="text-[10px] font-bold text-stone-400 uppercase tracking-widest">${dateStr}</span>
-                                            <h4 class="text-xl font-bold text-stone-800 group-hover:text-amber-900 transition-colors">${stage.nombre_etapa}</h4>
-                                            <p class="text-sm text-stone-500 max-w-md">${loc}</p>
-                                            
-                                            <!-- Atributos compactos -->
-                                            <div class="flex flex-wrap gap-2 mt-3 opacity-0 group-hover:opacity-100 transform translate-y-2 group-hover:translate-y-0 transition-all duration-300">
-                                                ${Object.entries(stage.data || {}).slice(0, 3).map(([key, val]) => {
-                                                    const displayVal = typeof val === 'object' ? val.value : val;
-                                                    if (!displayVal || key === 'imageUrl') return '';
-                                                    return `
-                                                        <span class="px-2.5 py-1 bg-stone-50 text-stone-500 text-[10px] font-medium rounded-lg border border-stone-100">
-                                                            <b class="text-stone-700">${key}:</b> ${displayVal}
-                                                        </span>
-                                                    `;
-                                                }).join('')}
-                                            </div>
+                                        <!-- Technical Badges -->
+                                        <div class="flex flex-wrap gap-2 pt-2 opacity-60 group-hover:opacity-100 transition-opacity duration-500">
+                                            ${this.renderStageBadges(stage)}
                                         </div>
                                     </div>
                                     `;
-                                }).join('')}
+        }).join('')}
                             </div>
                         </div>
                     </div>
                 </div>
-                
-                <!-- Blockchain Verification Footer -->
-                <div class="mt-20 p-8 border border-stone-200 rounded-[2rem] bg-stone-50/50 flex flex-col md:flex-row items-center gap-8">
-                    <div class="w-16 h-16 rounded-2xl bg-white shadow-sm flex items-center justify-center border border-stone-100">
-                        <i class="fas fa-shield-halved text-emerald-600 text-3xl"></i>
+
+                <!-- Footer Section -->
+                <div class="mt-24 p-12 rounded-[4rem] bg-stone-900 text-white relative overflow-hidden">
+                    <div class="absolute top-0 right-0 w-96 h-96 bg-amber-800/10 rounded-full -mr-48 -mt-48 blur-3xl"></div>
+                    <div class="relative flex flex-col lg:flex-row items-center gap-12">
+                        <div class="flex-shrink-0">
+                            <div class="w-24 h-24 rounded-[2.5rem] bg-gradient-to-br from-amber-700 to-amber-900 p-[1px]">
+                                <div class="w-full h-full bg-stone-900 rounded-[2.5rem] flex items-center justify-center">
+                                    <i class="fas fa-shield-halved text-amber-600 text-4xl"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex-grow text-center lg:text-left space-y-4">
+                            <h4 class="text-3xl font-display font-bold leading-tight">Blockchain Certified Lineage</h4>
+                            <p class="text-stone-400 text-lg max-w-2xl">This cryptographic seal guarantees that every step of this products journey is authentic, permanent, and verified by Ruru Lab's private oracle.</p>
+                            <div class="pt-4 flex flex-col md:flex-row items-center gap-4">
+                                <span class="px-5 py-2 bg-stone-800 border border-stone-700 rounded-2xl font-mono text-xs text-amber-500 selection:bg-amber-500 selection:text-white">
+                                    ${this.traceability.blockchain_hash || 'SHA256_UNAVAILABLE'}
+                                </span>
+                            </div>
+                        </div>
+                        <a href="https://polygonscan.com/tx/${this.traceability.blockchain_hash}" target="_blank" 
+                           class="px-10 py-5 bg-amber-800 hover:bg-amber-700 text-white rounded-[2rem] text-sm font-black tracking-widest uppercase transition-all hover:shadow-2xl hover:-translate-y-1">
+                            Verify Ledger
+                        </a>
                     </div>
-                    <div class="flex-grow text-center md:text-left">
-                        <h4 class="font-bold text-stone-800 text-lg">Blockchain Proof of Authenticity</h4>
-                        <p class="text-stone-500 text-sm">This timeline is backed by an immutable blockchain registry. Every stage was verified and locked by the responsible producer.</p>
-                        <p class="mt-2 font-mono text-[10px] text-stone-400 break-all">${this.traceability.blockchain_hash || ''}</p>
-                    </div>
-                    <a href="https://polygonscan.com/tx/${this.traceability.blockchain_hash}" target="_blank" class="px-6 py-3 bg-white border border-stone-200 rounded-xl text-xs font-bold text-stone-700 hover:bg-stone-50 transition-colors whitespace-nowrap">
-                        VERIFY TRANSACTION
-                    </a>
                 </div>
             </div>
         `;
         document.getElementById('tab-content').innerHTML = html;
 
-        // Inicializar mapa y seleccionar primera etapa
         setTimeout(() => {
             this.initTraceMap();
             this.setTraceStage(0);
-        }, 100);
+            this.initScrollIntersectionObserver();
+        }, 300);
+    },
+
+    renderStageBadges(stage) {
+        const d = stage.data || {};
+        const badges = [];
+
+        // Mapeo de iconos para campos conocidos
+        const iconMap = {
+            humedad: 'fa-droplet',
+            humidity: 'fa-droplet',
+            altitud: 'fa-mountain',
+            altitude: 'fa-mountain',
+            mimasl: 'fa-mountain',
+            temperatura: 'fa-temperature-half',
+            temp: 'fa-temperature-half',
+            variedad: 'fa-dna',
+            variety: 'fa-dna',
+            lote: 'fa-barcode',
+            presentacion: 'fa-box-open',
+            peso: 'fa-weight-hanging',
+            weight: 'fa-weight-hanging',
+            fermentacion: 'fa-vial',
+            tiempo: 'fa-clock'
+        };
+
+        const skipKeys = ['lugar', 'coordenadas', 'imageUrl', 'ubicacion', 'finca', 'procesadora', 'id', 'target_profile_id', 'target_wheel_id'];
+
+        Object.entries(d).forEach(([key, val]) => {
+            const rawKey = key.toLowerCase();
+            if (skipKeys.includes(rawKey)) return;
+
+            const displayVal = typeof val === 'object' ? val.value : val;
+            if (!displayVal) return;
+
+            const icon = iconMap[rawKey] || 'fa-circle-info';
+            const label = val.nombre || key;
+
+            badges.push(`
+                <span class="badge-premium">
+                    <i class="fas ${icon} mr-1.5 opacity-40"></i>
+                    <b class="text-stone-700 mr-1">${label}:</b> ${displayVal}
+                </span>
+            `);
+        });
+
+        if (badges.length === 0) {
+            return `<span class="text-[10px] font-black tracking-widest text-stone-300 uppercase">Process Details Verified</span>`;
+        }
+
+        return `
+            <style>
+                .badge-premium {
+                    display: inline-flex;
+                    align-items: center;
+                    padding: 0.45rem 0.9rem;
+                    background: #fafaf9;
+                    border: 1px solid #f5f5f4;
+                    border-radius: 1.25rem;
+                    color: #57534e;
+                    font-size: 10px;
+                    font-weight: 500;
+                    letter-spacing: -0.01em;
+                    transition: all 0.3s ease;
+                }
+                .badge-premium:hover {
+                    background: #ffffff;
+                    border-color: #854d0e/20;
+                    box-shadow: 0 4px 12px rgba(133, 77, 14, 0.05);
+                }
+            </style>
+            ${badges.join('')}
+        `;
     },
 
     getStageLocation(stage) {
@@ -896,7 +1083,7 @@ const app = {
         if (stage.nombre_etapa.toLowerCase().includes('cosecha') || stage.nombre_etapa.toLowerCase().includes('acopio')) {
             return `${this.product.finca?.nombre || ''} - ${this.product.finca?.distrito || ''}`;
         }
-        
+
         return 'Planta de Procesamiento';
     },
 
@@ -904,93 +1091,210 @@ const app = {
         const mapDiv = document.getElementById('trace-map');
         if (!mapDiv) return;
 
+        // Custom Satellite Style
         this.traceMap = new google.maps.Map(mapDiv, {
             zoom: 15,
             mapTypeId: 'satellite',
             disableDefaultUI: true,
             zoomControl: true,
-            styles: [
-                { "featureType": "all", "elementType": "labels.text.fill", "stylers": [{ "color": "#ffffff" }] },
-                { "featureType": "all", "elementType": "labels.text.stroke", "stylers": [{ "visibility": "off" }] }
-            ]
+            gestureHandling: 'cooperative',
+            tilt: 45
         });
 
-        // Crear marcador único
-        this.traceMarker = new google.maps.Marker({
+        // 1. Initial Pathway Polyline (Background)
+        this.tracePathBg = new google.maps.Polyline({
             map: this.traceMap,
-            icon: {
-                path: google.maps.SymbolPath.CIRCLE,
-                fillColor: '#854d0e',
-                fillOpacity: 1,
-                strokeColor: '#ffffff',
-                strokeWeight: 2,
-                scale: 8
+            strokeColor: '#854d0e',
+            strokeOpacity: 0,
+            strokeWeight: 2,
+            icons: [{
+                icon: {
+                    path: 'M 0,-1 0,1',
+                    strokeOpacity: 0.4,
+                    strokeColor: '#ffffff',
+                    scale: 3,
+                    strokeWeight: 2
+                },
+                offset: '0',
+                repeat: '20px'
+            }]
+        });
+
+        // 2. Active Progress Polyline (Animated)
+        this.tracePathActive = new google.maps.Polyline({
+            map: this.traceMap,
+            strokeColor: '#854d0e',
+            strokeOpacity: 0.95,
+            strokeWeight: 5,
+            zIndex: 10
+        });
+
+        // 3. User Journey Markers
+        const stages = [...this.traceability.stages].reverse();
+        const pathPoints = [];
+
+        stages.forEach((stage, idx) => {
+            const stageData = stage.data || {};
+            let coords = null;
+
+            // Prioridad 1: Coordenadas en el atributo del stage
+            if (stageData.coordenadas?.value) {
+                coords = this.parseCoordinates(stageData.coordenadas.value);
+            }
+
+            // Prioridad 2: Coordenadas de la finca para etapas iniciales
+            if (!coords && (stage.nombre_etapa.toLowerCase().includes('cosecha') || stage.nombre_etapa.toLowerCase().includes('acopio'))) {
+                coords = this.parseCoordinates(this.product.finca?.coordenadas);
+            }
+
+            // Prioridad 3: Buscar en las procesadoras vinculadas
+            if (!coords && this.traceability.procesadorasData?.length > 0) {
+                const processor = this.traceability.procesadorasData.find(p => p.user_id === stage.user_id) || this.traceability.procesadorasData[0];
+                coords = this.parseCoordinates(processor.coordenadas);
+            }
+
+            if (coords && coords.length > 0) {
+                const point = coords[0];
+                pathPoints.push(point);
+
+                new google.maps.Marker({
+                    position: point,
+                    map: this.traceMap,
+                    icon: {
+                        path: google.maps.SymbolPath.CIRCLE,
+                        fillColor: '#ffffff',
+                        fillOpacity: 1,
+                        strokeColor: '#854d0e',
+                        strokeWeight: 2,
+                        scale: 6
+                    },
+                    zIndex: 5
+                });
             }
         });
+
+        this.pathPoints = pathPoints;
+        this.tracePathBg.setPath(pathPoints);
+        this.tracePathActive.setPath([]);
+
+        if (pathPoints.length > 1) {
+            const bounds = new google.maps.LatLngBounds();
+            pathPoints.forEach(p => bounds.extend(p));
+            this.traceMap.fitBounds(bounds);
+        } else if (pathPoints.length === 1) {
+            this.traceMap.setCenter(pathPoints[0]);
+            this.traceMap.setZoom(17);
+        }
     },
 
-    setTraceStage(index) {
-        const stages = [...this.traceability.stages].reverse(); 
+    initScrollIntersectionObserver() {
+        const options = {
+            root: null,
+            rootMargin: '-40% 0% -40% 0%',
+            threshold: 0
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const index = parseInt(entry.target.dataset.index);
+                    this.setTraceStage(index, false);
+                }
+            });
+        }, options);
+
+        document.querySelectorAll('.stage-card').forEach(card => observer.observe(card));
+    },
+
+    setTraceStage(index, autoScroll = true) {
+        const stages = [...this.traceability.stages].reverse();
         const stage = stages[index];
-        if (!stage) return;
+        if (!stage || !this.pathPoints) return;
 
-        const stageData = stage.data || {};
-        let coords = null;
+        // El punto correspondiente a esta etapa es el index de pathPoints
+        const targetPoint = this.pathPoints[index] || this.pathPoints[this.pathPoints.length - 1];
 
-        // 1. Buscar coordenadas en el stage data
-        if (stageData.coordenadas?.value) {
-            coords = this.parseCoordinates(stageData.coordenadas.value);
-        }
+        if (targetPoint) {
+            this.animatePathTo(index);
 
-        // 2. Si no hay coords, usar las de la finca para etapas iniciales
-        if (!coords && (stage.nombre_etapa.toLowerCase().includes('cosecha') || stage.nombre_etapa.toLowerCase().includes('acopio'))) {
-            coords = this.parseCoordinates(this.product.finca?.coordenadas);
-        }
+            // Suave paneo
+            this.traceMap.panTo(targetPoint);
 
-        // 3. Si sigue sin haber, usar las de la empresa (procesadora) para etapas finales
-        if (!coords && this.traceability.procesadorasData?.length > 0) {
-            coords = this.parseCoordinates(this.traceability.procesadorasData[0].coordenadas);
-        }
+            // Animación de zoom si es necesario
+            if (this.traceMap.getZoom() < 16) {
+                this.traceMap.setZoom(17);
+            }
 
-        if (coords && coords.length > 0) {
-            const point = coords[0];
-            this.traceMap.panTo(point);
-            this.traceMarker.setPosition(point);
-
-            // Actualizar Overlay Info
             const overlay = document.getElementById('map-overlay-info');
-            const elevationEl = document.getElementById('overlay-elevation');
-            const coordsEl = document.getElementById('overlay-coords');
-            
             if (overlay) {
                 overlay.style.opacity = '1';
-                overlay.style.transform = 'translate(-50%, -50%) scale(1)';
-                
-                const alt = stageData.altitud?.value || stageData.altura?.value || this.product.finca?.altura || '---';
-                elevationEl.textContent = `${alt} MSNM`;
-                coordsEl.textContent = `${point.lat.toFixed(4)}° N, ${point.lng.toFixed(4)}° E`;
+                overlay.style.transform = 'translate(0,0) scale(1)';
+                const alt = stage.data?.altitud?.value || stage.data?.altura?.value || this.product.finca?.altura || '---';
+                document.getElementById('overlay-elevation').textContent = `${alt} MSNM`;
+                document.getElementById('overlay-coords').textContent = `${targetPoint.lat.toFixed(4)}° N, ${targetPoint.lng.toFixed(4)}° E`;
             }
-        }
 
-        // UI Feedback en el timeline
-        document.querySelectorAll('.timeline-item').forEach(item => {
-            const isSelected = parseInt(item.dataset.index) === index;
-            item.classList.toggle('active-stage', isSelected);
-            const dot = item.querySelector('.node-dot');
-            const inner = item.querySelector('.inner-dot');
-            
-            if (isSelected) {
-                dot.style.borderColor = '#854d0e';
-                dot.style.backgroundColor = '#fffbeb';
-                inner.style.backgroundColor = '#854d0e';
-                inner.style.transform = 'scale(1.2)';
-            } else {
-                dot.style.borderColor = '';
-                dot.style.backgroundColor = '';
-                inner.style.backgroundColor = '';
-                inner.style.transform = '';
+            document.querySelectorAll('.stage-card').forEach((card, i) => {
+                const isSelected = i === index;
+                card.classList.toggle('active-stage', isSelected);
+                const dot = card.querySelector('.node-dot');
+                const pulse = card.querySelector('.pulse-ring');
+                const icon = card.querySelector('i.fas:not(.fa-chevron-right)');
+
+                if (isSelected) {
+                    dot.classList.add('active');
+                    if (pulse) pulse.style.opacity = '1';
+                    if (icon) icon.style.color = 'white';
+                    if (autoScroll) card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                } else {
+                    dot.classList.remove('active');
+                    if (pulse) pulse.style.opacity = '0';
+                    if (icon) icon.style.color = '';
+                }
+            });
+        }
+    },
+
+    animatePathTo(targetIndex) {
+        if (!this.pathPoints || this.pathPoints.length < 2) return;
+
+        const currentPath = this.tracePathActive.getPath();
+        const targetPoints = this.pathPoints.slice(0, targetIndex + 1);
+
+        // Limpiamos y empezamos la animación
+        currentPath.clear();
+
+        let pointIdx = 0;
+        const animateSegment = () => {
+            if (pointIdx >= targetPoints.length - 1) {
+                // Fin de la animación, asegurar que el último punto esté
+                currentPath.push(targetPoints[targetPoints.length - 1]);
+                return;
             }
-        });
+
+            const p1 = targetPoints[pointIdx];
+            const p2 = targetPoints[pointIdx + 1];
+
+            // Interpolar entre p1 y p2
+            const steps = 15; // Pasos de animación entre puntos
+            let step = 0;
+
+            const drawStep = () => {
+                if (step <= steps) {
+                    const lat = p1.lat + (p2.lat - p1.lat) * (step / steps);
+                    const lng = p1.lng + (p2.lng - p1.lng) * (step / steps);
+                    currentPath.push(new google.maps.LatLng(lat, lng));
+                    step++;
+                    requestAnimationFrame(drawStep);
+                } else {
+                    pointIdx++;
+                    animateSegment();
+                }
+            };
+            drawStep();
+        };
+
+        animateSegment();
     }
 };
 

@@ -544,40 +544,39 @@ const deleteStage = async (req, res) => {
 
 const getProductTraceability = async (req, res) => {
     const { productId } = req.params;
+    console.log("Product ID", productId);
     try {
-        // 1. Encontrar el lote inmutable más reciente para este producto
-        const latestBatch = await get(`
-            SELECT id FROM batches 
-            WHERE producto_id = ? AND blockchain_hash IS NOT NULL AND blockchain_hash != ''
-            ORDER BY created_at DESC LIMIT 1
+        // 1. Encontrar el lote finalizado más reciente vinculado a este producto (en cualquier parte de la cadena)
+        const finalizedBatch = await get(`
+            WITH RECURSIVE
+            tree_up AS (
+                SELECT id, parent_id FROM batches WHERE producto_id = ?
+                UNION ALL
+                SELECT b.id, b.parent_id FROM batches b JOIN tree_up t ON b.id = t.parent_id
+            ),
+            tree_full AS (
+                SELECT id, parent_id FROM batches WHERE id IN (SELECT id FROM tree_up)
+                UNION ALL
+                SELECT b.id, b.parent_id FROM batches b JOIN tree_full t ON b.parent_id = t.id
+            )
+            SELECT b.id, b.blockchain_hash 
+            FROM batches b
+            JOIN tree_full tf ON b.id = tf.id
+            WHERE b.blockchain_hash IS NOT NULL AND b.blockchain_hash != ''
+            ORDER BY b.created_at DESC LIMIT 1
         `, [productId]);
 
-        if (!latestBatch) {
-            // Fallback: buscar lotes cuyo linaje termine en este producto (buscando hacia arriba)
-            const fallbackBatch = await get(`
-                WITH RECURSIVE lineage AS (
-                    SELECT id, parent_id, producto_id FROM batches WHERE producto_id = ?
-                    UNION ALL
-                    SELECT b.id, b.parent_id, b.producto_id FROM batches b
-                    JOIN lineage l ON b.id = l.parent_id
-                )
-                SELECT id FROM batches 
-                WHERE id IN (SELECT id FROM lineage) 
-                AND blockchain_hash IS NOT NULL AND blockchain_hash != ''
-                ORDER BY created_at DESC LIMIT 1
-            `, [productId]);
+        console.log("Finalized batch found:", finalizedBatch);
 
-            if (!fallbackBatch) {
-                return res.status(200).json({ 
-                    message: 'Trazabilidad no disponible aún para este producto.',
-                    stages: [] 
-                });
-            }
-            latestBatch.id = fallbackBatch.id;
+        if (!finalizedBatch) {
+            return res.status(200).json({
+                message: 'Trazabilidad no disponible aún para este producto.',
+                stages: []
+            });
         }
 
         // 2. Reutilizar la lógica de getTrazabilidad usando el batchId encontrado
-        req.params.id = latestBatch.id;
+        req.params.id = finalizedBatch.id;
         return getTrazabilidad(req, res);
 
     } catch (error) {
@@ -618,7 +617,8 @@ const getTrazabilidad = async (req, res) => {
         const procesadorasData = procesadorasList.map(p => ({ ...p, coordenadas: safeJSONParse(p.coordenadas || 'null'), imagenes_json: safeJSONParse(p.imagenes_json || '[]'), premios_json: safeJSONParse(p.premios_json || '[]'), certificaciones_json: safeJSONParse(p.certificaciones_json || '[]') }));
 
         const history = {
-            productName: templateInfo.nombre_producto, ownerInfo, stages: [], fincaData: null, procesadorasData: procesadorasData,
+            productName: templateInfo ? templateInfo.nombre_producto : (productoInfo ? productoInfo.nombre : 'Producto'),
+            ownerInfo, stages: [], fincaData: null, procesadorasData: procesadorasData,
             acopioData: acopioData ? { ...acopioData, data_adicional: safeJSONParse(acopioData.data_adicional) } : null,
             productoFinal: null, nutritionalData: null, perfilSensorialData: null, ruedaSaborData: null, maridajesRecomendados: {}
         };

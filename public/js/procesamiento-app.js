@@ -1,35 +1,35 @@
 document.addEventListener('DOMContentLoaded', () => {
     // --- ESTADO ---
     let state = {
-        acquisitions: [], 
-        batches: [],      
-        templates: [],    
-        userTemplates: [], 
+        acquisitions: [],
+        batches: [],
+        templates: [],
+        userTemplates: [],
         stagesByTemplate: {},
         acopioConfig: [],
         fincas: [],
         procesadoras: [],
-        products: [], 
-        perfilesSensoriales: [], 
+        products: [],
+        perfilesSensoriales: [],
         ruedasSabor: [],
-        units: [],      
-        currencies: [], 
+        units: [],
+        currencies: [],
         userProfile: {},
-        
+
         // UI State
-        currentView: 'acopios', 
-        filterProduct: 'all',   
-        filterStatus: 'active', 
-        
+        currentView: 'acopios',
+        filterProduct: 'all',
+        filterStatus: 'active',
+
         // Contexto
         activeRootBatch: null,
         currentAcopio: null,
         currentSystemTemplate: null,
-        nextStage: null, 
+        nextStage: null,
         extraFields: []
     };
 
-    let imagesMap = {}; 
+    let imagesMap = {};
 
     // DOM Elements
     const viewAcopios = document.getElementById('view-acopios');
@@ -38,7 +38,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const procesosGrid = document.getElementById('procesos-grid');
     const filtersContainer = document.getElementById('filters-container');
     const viewTabs = document.querySelectorAll('.view-tab');
-    
+
     // Modal
     const formModal = document.getElementById('form-modal');
     const modalContent = document.getElementById('modal-content');
@@ -61,24 +61,24 @@ document.addEventListener('DOMContentLoaded', () => {
                 loadConfig(),
                 loadSystemTemplates(),
                 loadUserTemplates(),
-                loadData(), 
+                loadData(),
                 loadFincas(),
                 loadProcesadoras(),
                 loadProducts(),
-                loadPerfilesSensoriales(), 
-                loadRuedasSabor()          
+                loadPerfilesSensoriales(),
+                loadRuedasSabor()
             ]);
-            
-            createWorkstationView(); 
+
+            createWorkstationView();
             setupEventListeners();
-            
+
             const hash = window.location.hash.substring(1);
             if (hash && !hash.startsWith('acopio=')) {
                 const targetBatch = state.batches.find(b => b.id === hash);
                 if (targetBatch) openWorkstation(targetBatch);
             }
             updateView();
-            
+
         } catch (e) {
             console.error("Error init:", e);
         }
@@ -91,11 +91,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 api('/api/config/units'),
                 api('/api/config/currencies')
             ]);
-            state.units = units; 
+            state.units = units;
             state.currencies = currencies;
         } catch (e) { console.error("Error configs globales", e); }
     }
-    async function loadUserProfile() { try { state.userProfile = await api('/api/user/profile'); } catch (e) {} }
+    async function loadUserProfile() { try { state.userProfile = await api('/api/user/profile'); } catch (e) { } }
 
     async function loadConfig() {
         const res = await fetch('/data/acopio_config.json');
@@ -103,10 +103,10 @@ document.addEventListener('DOMContentLoaded', () => {
         state.acopioConfig = data.acopios;
     }
     async function loadSystemTemplates() { state.templates = await api('/api/templates/system'); }
-    
-    async function loadUserTemplates() { 
-        try { 
-            state.userTemplates = await api('/api/templates'); 
+
+    async function loadUserTemplates() {
+        try {
+            state.userTemplates = await api('/api/templates');
             for (const t of state.userTemplates) {
                 try {
                     state.stagesByTemplate[t.id] = await api(`/api/templates/${t.id}/stages`);
@@ -114,21 +114,21 @@ document.addEventListener('DOMContentLoaded', () => {
                     state.stagesByTemplate[t.id] = [];
                 }
             }
-        } catch(e) { state.userTemplates = []; } 
+        } catch (e) { state.userTemplates = []; }
     }
 
-    async function loadFincas() { try { state.fincas = await api('/api/fincas'); } catch(e){ state.fincas = []; } }
-    async function loadProcesadoras() { try { state.procesadoras = await api('/api/procesadoras'); } catch(e){ state.procesadoras = []; } }
-    async function loadProducts() { try { state.products = await api('/api/productos'); } catch(e){ state.products = []; } }
-    async function loadPerfilesSensoriales() { try { state.perfilesSensoriales = await api('/api/perfiles'); } catch(e){ state.perfilesSensoriales = []; } }
-    async function loadRuedasSabor() { try { state.ruedasSabor = await api('/api/ruedas-sabores'); } catch(e){ state.ruedasSabor = []; } }
+    async function loadFincas() { try { state.fincas = await api('/api/fincas'); } catch (e) { state.fincas = []; } }
+    async function loadProcesadoras() { try { state.procesadoras = await api('/api/procesadoras'); } catch (e) { state.procesadoras = []; } }
+    async function loadProducts() { try { state.products = await api('/api/productos'); } catch (e) { state.products = []; } }
+    async function loadPerfilesSensoriales() { try { state.perfilesSensoriales = await api('/api/perfiles'); } catch (e) { state.perfilesSensoriales = []; } }
+    async function loadRuedasSabor() { try { state.ruedasSabor = await api('/api/ruedas-sabores'); } catch (e) { state.ruedasSabor = []; } }
 
     async function loadData() {
         const [acq, batchTree] = await Promise.all([
             api('/api/acquisitions'),
             api('/api/batches/tree')
         ]);
-        state.acquisitions = acq || []; 
+        state.acquisitions = acq || [];
         state.batches = batchTree || [];
     }
 
@@ -143,13 +143,13 @@ document.addEventListener('DOMContentLoaded', () => {
             if (freshRoot) openWorkstation(freshRoot);
             else { state.currentView = 'procesos'; updateView(); }
         } else {
-            updateView(); 
+            updateView();
         }
     }
 
     // --- GESTIÓN DE VISTAS ---
     function createWorkstationView() {
-        const mainContainer = document.getElementById('main-app-container'); 
+        const mainContainer = document.getElementById('main-app-container');
         if (!mainContainer) return;
 
         viewWorkstation = document.createElement('div');
@@ -165,7 +165,7 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>
         `;
         mainContainer.appendChild(viewWorkstation);
-        
+
         document.getElementById('btn-back-main').addEventListener('click', () => {
             state.currentView = 'procesos';
             history.pushState("", document.title, window.location.pathname + window.location.search);
@@ -193,7 +193,7 @@ document.addEventListener('DOMContentLoaded', () => {
         renderFilters();
         viewAcopios.classList.add('hidden');
         viewProcesos.classList.add('hidden');
-        if(viewWorkstation) viewWorkstation.classList.add('hidden');
+        if (viewWorkstation) viewWorkstation.classList.add('hidden');
         filtersContainer.classList.remove('hidden');
 
         if (state.currentView === 'acopios') {
@@ -204,7 +204,7 @@ document.addEventListener('DOMContentLoaded', () => {
             renderProcesosView();
         } else if (state.currentView === 'workstation') {
             viewWorkstation.classList.remove('hidden');
-            filtersContainer.classList.add('hidden'); 
+            filtersContainer.classList.add('hidden');
         }
     }
 
@@ -216,7 +216,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const btn = document.createElement('button');
                 btn.className = `px-4 py-1.5 rounded-full text-sm font-medium border transition ${isActive ? 'bg-stone-800 text-white border-stone-800' : 'bg-white text-stone-600 border-stone-200 hover:bg-stone-50'}`;
                 btn.innerText = f === 'all' ? 'Todos' : f;
-                btn.onclick = () => { state.filterProduct = f; renderAcopiosView(); }; 
+                btn.onclick = () => { state.filterProduct = f; renderAcopiosView(); };
                 filtersContainer.appendChild(btn);
             });
         } else if (state.currentView === 'procesos') {
@@ -255,10 +255,10 @@ document.addEventListener('DOMContentLoaded', () => {
             const remaining = Math.max(0, acop.peso_kg - totalUsed);
             const isDepleted = remaining <= 0.1; // Margen de error pequeño
             // ---------------------------------
-            
+
             const card = document.createElement('div');
             card.className = "bg-white rounded-xl shadow-sm border border-stone-200 overflow-hidden transition-all duration-300 mb-4";
-            
+
             let iconClass = 'fa-box';
             let colorClass = 'text-stone-700 bg-stone-100';
             if (acop.nombre_producto.includes('Cacao')) { iconClass = 'fa-cookie-bite'; colorClass = 'text-amber-800 bg-amber-50'; }
@@ -279,7 +279,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             <i class="fas fa-code-branch text-stone-400"></i>
                             <div>
                                 <span class="font-bold text-stone-700">${analysis.lastStageName}</span>
-                                <span class="text-xs text-stone-400 ml-1">#${b.id.substring(0,8)}</span>
+                                <span class="text-xs text-stone-400 ml-1">#${b.id.substring(0, 8)}</span>
                             </div>
                         </div>
                         <div class="flex items-center gap-3">
@@ -345,7 +345,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const newProcBtn = card.querySelector('.new-process-btn');
 
             header.addEventListener('click', (e) => {
-                if (e.target.closest('button')) return; 
+                if (e.target.closest('button')) return;
                 panel.classList.toggle('hidden');
                 header.classList.toggle('bg-stone-100');
             });
@@ -356,12 +356,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     prepareProcessing(acop); // CORREGIDO: acopio -> acop
                 });
             }
-            
+
             card.querySelectorAll('.view-process-btn').forEach(btn => {
                 btn.addEventListener('click', (e) => {
                     const batchId = e.target.dataset.id;
                     const batch = state.batches.find(b => b.id === batchId);
-                    if(batch) openWorkstation(batch);
+                    if (batch) openWorkstation(batch);
                 });
             });
 
@@ -373,7 +373,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function renderProcesosView() {
         procesosGrid.innerHTML = '';
         const roots = state.batches.filter(b => !b.parent_id);
-        
+
         const filtered = roots.filter(batch => {
             const analysis = analyzeBatchChain(batch);
             const isFinished = analysis.lastNode.is_locked;
@@ -390,12 +390,12 @@ document.addEventListener('DOMContentLoaded', () => {
         filtered.reverse().forEach(root => {
             const analysis = analyzeBatchChain(root);
             const startDate = new Date(root.created_at).toLocaleDateString();
-            
+
             // 1. Determinar Estilo por Producto
             let prodIcon = 'fa-box';
             let iconBg = 'bg-stone-600';
             const prodName = analysis.productName.toLowerCase();
-            
+
             if (prodName.includes('cacao')) {
                 prodIcon = 'fa-cookie-bite';
                 iconBg = 'bg-amber-700';
@@ -443,7 +443,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     </button>
                 </div>
             `;
-            
+
             card.querySelector('.manage-btn').addEventListener('click', () => openWorkstation(root));
             procesosGrid.appendChild(card);
         });
@@ -454,7 +454,7 @@ document.addEventListener('DOMContentLoaded', () => {
         let lastNode = rootBatch;
         const findLast = (node) => {
             if (node.children && node.children.length > 0) {
-                const child = node.children[node.children.length - 1]; 
+                const child = node.children[node.children.length - 1];
                 lastNode = child;
                 findLast(child);
             }
@@ -462,8 +462,8 @@ document.addEventListener('DOMContentLoaded', () => {
         findLast(rootBatch);
 
         const tmpl = state.userTemplates.find(t => t.id === rootBatch.plantilla_id);
-        const stageList = state.stagesByTemplate[rootBatch.plantilla_id] || []; 
-        
+        const stageList = state.stagesByTemplate[rootBatch.plantilla_id] || [];
+
         let stageName = 'Procesamiento';
         if (stageList.length > 0) {
             const stageObj = stageList.find(s => s.id === lastNode.etapa_id);
@@ -476,7 +476,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // --- MEJORA: Detección inteligente de peso ---
         // 1. Priorizar campos explícitamente marcados como 'output' en el JSON
         const outputValues = Object.values(d).filter(v => typeof v === 'object' && v.type === 'output');
-        
+
         if (outputValues.length > 0) {
             // Si hay outputs, asumimos que el mayor valor es el producto principal (heurística simple)
             // O idealmente buscar 'product_type'='principal' si estuviera en el JSON, pero 'type=output' es seguro.
@@ -484,7 +484,7 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
             // 2. Fallback: Buscar claves antiguas por nombre (legacy support)
             const outputKeys = Object.keys(d).filter(k => k.toLowerCase().includes('salida') || k.toLowerCase().includes('peso') || k.toLowerCase().includes('unidades'));
-            if(outputKeys.length > 0) weight = parseFloat(d[outputKeys[0]]?.value || 0);
+            if (outputKeys.length > 0) weight = parseFloat(d[outputKeys[0]]?.value || 0);
         }
         // ---------------------------------------------
 
@@ -504,13 +504,13 @@ document.addEventListener('DOMContentLoaded', () => {
     function openWorkstation(rootBatch) {
         state.activeRootBatch = rootBatch;
         state.currentView = 'workstation';
-        updateView(); 
+        updateView();
 
         const analysis = analyzeBatchChain(rootBatch);
         const header = document.getElementById('workstation-header');
-        
+
         const currentSkuId = rootBatch.producto_id;
-        const currentProfileId = rootBatch.data.target_profile_id?.value; 
+        const currentProfileId = rootBatch.data.target_profile_id?.value;
         const currentWheelId = rootBatch.data.target_wheel_id?.value;
 
         const productObj = state.products.find(p => p.id === currentSkuId);
@@ -559,9 +559,9 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>
             <div class="mt-6 pt-4 border-t border-stone-100" id="ws-action-container"></div>
         `;
-        
+
         document.getElementById('btn-view-trace').addEventListener('click', () => window.open(publicTraceUrl, '_blank'));
-        
+
         document.getElementById('btn-download-qr').addEventListener('click', () => {
             if (typeof qrcode === 'undefined') {
                 alert("Error: Librería de QR no cargada.");
@@ -585,12 +585,12 @@ document.addEventListener('DOMContentLoaded', () => {
         configureNextStageButton(analysis.lastNode, rootBatch.plantilla_id);
         renderTimeline(rootBatch);
     }
-    
+
     // --- FUNCIÓN RESTAURADA: openBatchConfigModal ---
     function openBatchConfigModal(rootBatch) {
         // Filtrar opciones por tipo de producto (Cacao/Cafe)
         const tmpl = state.userTemplates.find(t => t.id === rootBatch.plantilla_id);
-        
+
         const tipoProd = tmpl ? (tmpl.nombre_producto.toLowerCase().includes('cafe') ? 'cafe' : 'cacao') : 'otro';
 
         // Filtrar listas
@@ -650,34 +650,36 @@ document.addEventListener('DOMContentLoaded', () => {
             const productId = formData.get('producto_id');
             const profileId = formData.get('target_profile_id');
             const wheelId = formData.get('target_wheel_id');
-            
+
             // Actualizar datos del lote raíz
             const currentData = rootBatch.data || {};
-            
+
             // Actualizar campos específicos en data
             const newData = { ...currentData };
             if (profileId) newData.target_profile_id = { value: profileId, visible: false, nombre: 'Perfil Objetivo' };
             else delete newData.target_profile_id;
-            
+
             if (wheelId) newData.target_wheel_id = { value: wheelId, visible: false, nombre: 'Rueda Sabor' };
             else delete newData.target_wheel_id;
 
+            console.log(newData);
+            console.log(productId);
             try {
-                await api(`/api/batches/${rootBatch.id}`, { 
-                    method: 'PUT', 
-                    body: JSON.stringify({ 
-                        data: newData, 
-                        producto_id: productId 
-                    }) 
+                await api(`/api/batches/${rootBatch.id}`, {
+                    method: 'PUT',
+                    body: JSON.stringify({
+                        data: newData,
+                        producto_id: productId
+                    })
                 });
-                
+
                 formModal.close();
                 await loadBatches(); // Recargar para actualizar state
                 // Refrescar vista
                 const updatedRoot = state.batches.find(b => b.id === rootBatch.id);
                 openWorkstation(updatedRoot);
-                
-            } catch(err) {
+
+            } catch (err) {
                 console.error(err);
                 alert("Error guardando configuración: " + err.message);
             }
@@ -690,7 +692,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function configureNextStageButton(lastBatchNode, templateId) {
         const container = document.getElementById('ws-action-container');
         if (!container) return;
-        container.innerHTML = ''; 
+        container.innerHTML = '';
 
         const stages = state.stagesByTemplate[templateId];
         if (!stages) return;
@@ -717,7 +719,7 @@ document.addEventListener('DOMContentLoaded', () => {
             container.appendChild(btn);
         }
     }
-    
+
     // --- FUNCIÓN RESTAURADA: renderTimeline ---
     function renderTimeline(rootBatch) {
         const timeline = document.getElementById('workstation-timeline');
@@ -744,16 +746,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 weight = outputValues.reduce((max, curr) => Math.max(max, parseFloat(curr.value || 0)), 0);
             } else {
                 const outputKeys = Object.keys(d).filter(k => k.toLowerCase().includes('salida') || k.toLowerCase().includes('peso') || k.toLowerCase().includes('unidades'));
-                if(outputKeys.length > 0) {
-                     const val = d[outputKeys[0]];
-                     weight = parseFloat(val?.value || val || 0);
+                if (outputKeys.length > 0) {
+                    const val = d[outputKeys[0]];
+                    weight = parseFloat(val?.value || val || 0);
                 }
             }
-            
+
             // Buscar imagen
             let imageUrl = null;
-            Object.keys(d).forEach(k => { if(k.includes('image') && d[k]?.value) imageUrl = d[k].value; });
-            
+            Object.keys(d).forEach(k => { if (k.includes('image') && d[k]?.value) imageUrl = d[k].value; });
+
             // Generar detalles completos
             let detailsHtml = '';
             if (stage && batch.data) {
@@ -767,11 +769,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 allFields.forEach(field => {
                     if (field.type === 'image') return; // Se muestra aparte
                     const fieldName = field.name || toCamelCase(field.label);
-                    
+
                     // Manejo especial para outputs complejos (si se guardaron en data como objetos)
                     let valObj = batch.data[fieldName];
                     let val = valObj ? (valObj.value !== undefined ? valObj.value : valObj) : '';
-                    
+
                     // Si es un output, puede tener unidad y precio
                     if (field.product_type) {
                         const unitCode = valObj?.unit_id ? getUnitCode(valObj.unit_id) : '';
@@ -814,11 +816,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div class="flex justify-end gap-2 border-t border-stone-100 pt-3 mt-3">
                     <button class="text-xs text-stone-500 hover:text-amber-600 font-bold edit-batch-btn border border-stone-200 px-3 py-1.5 rounded-lg transition hover:bg-amber-50">Editar</button>
                     <button class="text-xs text-stone-500 hover:text-red-600 font-bold delete-batch-btn border border-stone-200 px-3 py-1.5 rounded-lg transition hover:bg-red-50">Eliminar</button>
-                </div>` : 
-                `<div class="text-xs text-green-600 font-bold border-t border-green-50 pt-3 mt-3 flex items-center gap-1 justify-end"><i class="fas fa-lock"></i> Certificado</div>`}
+                </div>` :
+                    `<div class="text-xs text-green-600 font-bold border-t border-green-50 pt-3 mt-3 flex items-center gap-1 justify-end"><i class="fas fa-lock"></i> Certificado</div>`}
             `;
-            
-            if(!batch.is_locked) {
+
+            if (!batch.is_locked) {
                 card.querySelector('.edit-batch-btn').addEventListener('click', () => openBatchForm('edit', template, stage, null, batch));
                 card.querySelector('.delete-batch-btn').addEventListener('click', () => handleDeleteBatch(batch.id));
             }
@@ -840,13 +842,13 @@ document.addEventListener('DOMContentLoaded', () => {
         let aConfig = pConfig.acopio.find(a => a.nombre_acopio === acopio.tipo_acopio);
         let completedStages = aConfig.etapas_acopio;
         if (acopio.subtipo && aConfig.tipo_acopio) {
-             const sub = aConfig.tipo_acopio.find(s => s.nombre === acopio.subtipo);
-             if(sub) completedStages = sub.etapas_acopio;
+            const sub = aConfig.tipo_acopio.find(s => s.nombre === acopio.subtipo);
+            if (sub) completedStages = sub.etapas_acopio;
         }
 
         const maxStageId = Math.max(...(completedStages || [0]), 0);
-        const allStages = [...(template.acopio||[]), ...(template.etapas||[])];
-        
+        const allStages = [...(template.acopio || []), ...(template.etapas || [])];
+
         const nextStage = allStages.find(s => (s.id_etapa !== undefined ? s.id_etapa : s.orden) === maxStageId + 1);
 
         if (!nextStage) return alert("Este producto ya completó todas las etapas configuradas.");
@@ -867,18 +869,18 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- FORMULARIO DE PROCESAMIENTO ---
-    async function openProcessingForm(stage, prefillData,  balance = null) {
+    async function openProcessingForm(stage, prefillData, balance = null) {
         imagesMap = {};
         let formFieldsHtml = '';
-        
+
         // CORRECCIÓN: Preparar campos incluyendo salidas
         const stageFields = [
-            ...(stage.campos_json.entradas || []).map(f => ({...f, section: 'Variables de Proceso'})),
-            ...(stage.campos_json.variables || []).map(f => ({...f, section: 'Variables de Proceso'})),
+            ...(stage.campos_json.entradas || []).map(f => ({ ...f, section: 'Variables de Proceso' })),
+            ...(stage.campos_json.variables || []).map(f => ({ ...f, section: 'Variables de Proceso' })),
             // Aseguramos que las SALIDAS tengan 'name' usando toCamelCase
             ...(stage.campos_json.salidas || []).map(f => ({
-                ...f, 
-                section: 'Resultados / Salidas', 
+                ...f,
+                section: 'Resultados / Salidas',
                 type: 'output_complex', // NUEVO TIPO PARA RENDERIZADO
                 name: f.name || toCamelCase(f.label)
             }))
@@ -910,7 +912,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         </div>
                     `;
                 }
-                
+
                 formFieldsHtml += `<h3 class="text-sm font-bold text-amber-800 uppercase tracking-wider border-b border-amber-100 pb-1 mb-3 mt-4">${section}</h3>`;
                 for (const field of groupedFields[section]) {
                     let val = '';
@@ -952,18 +954,18 @@ document.addEventListener('DOMContentLoaded', () => {
             e.preventDefault();
             const btn = e.target.querySelector('button[type="submit"]');
             btn.disabled = true; btn.innerText = 'Guardando...';
-            
+
             const formData = new FormData(e.target);
             const rawData = Object.fromEntries(formData.entries());
             const newData = {};
-            
+
             // --- NUEVO: Extraer cantidad usada ---
             const inputQuantity = parseFloat(rawData.input_quantity) || 0;
-            
+
             // PROCESAMIENTO DE CAMPOS (Incluyendo Outputs Complejos)
             stageFields.forEach(field => {
                 const key = field.name;
-                
+
                 if (field.type === 'output_complex') {
                     // Reconstruir objeto complejo
                     newData[key] = {
@@ -983,9 +985,9 @@ document.addEventListener('DOMContentLoaded', () => {
             });
 
             try {
-                const tmplRes = await api('/api/templates/clone', { 
-                    method: 'POST', 
-                    body: JSON.stringify({ nombre_producto_sistema: state.currentSystemTemplate.nombre_producto }) 
+                const tmplRes = await api('/api/templates/clone', {
+                    method: 'POST',
+                    body: JSON.stringify({ nombre_producto_sistema: state.currentSystemTemplate.nombre_producto })
                 });
 
                 if (!tmplRes || !tmplRes.id) throw new Error("Error al sincronizar plantilla.");
@@ -995,27 +997,27 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 if (!targetDbStage) throw new Error(`La etapa "${stage.nombre_etapa}" no se encontró en la base de datos.`);
 
-                const response = await api('/api/batches', { 
-                    method: 'POST', 
-                    body: JSON.stringify({ 
+                const response = await api('/api/batches', {
+                    method: 'POST',
+                    body: JSON.stringify({
                         plantilla_id: tmplRes.id,
                         etapa_id: targetDbStage.id,
-                        parent_id: null, 
-                        acquisition_id: state.currentAcopio.id, 
+                        parent_id: null,
+                        acquisition_id: state.currentAcopio.id,
                         data: newData,
                         input_quantity: inputQuantity // Enviamos al backend
-                    }) 
+                    })
                 });
-                
+
                 formModal.close();
                 await refreshData();
-                
+
                 const newBatch = state.batches.find(b => b.id === response.id);
                 if (newBatch) openWorkstation(newBatch);
 
-            } catch(err) { 
-                console.error(err); 
-                alert("Error al iniciar proceso: " + err.message); 
+            } catch (err) {
+                console.error(err);
+                alert("Error al iniciar proceso: " + err.message);
                 btn.disabled = false; btn.innerText = "Iniciar";
             }
         });
@@ -1028,16 +1030,16 @@ document.addEventListener('DOMContentLoaded', () => {
         imagesMap = {};
         let initialData = {};
         if (mode === 'edit') initialData = batchData.data || {};
-        
+
         let formFieldsHtml = '';
-        
+
         // CORRECCIÓN: Preparar campos incluyendo SALIDAS
         const stageFields = [
-            ...(stage.campos_json.entradas || []).map(f => ({...f, section: 'Variables de Proceso'})),
-            ...(stage.campos_json.variables || []).map(f => ({...f, section: 'Variables de Proceso'})),
+            ...(stage.campos_json.entradas || []).map(f => ({ ...f, section: 'Variables de Proceso' })),
+            ...(stage.campos_json.variables || []).map(f => ({ ...f, section: 'Variables de Proceso' })),
             ...(stage.campos_json.salidas || []).map(f => ({
-                ...f, 
-                section: 'Resultados / Salidas', 
+                ...f,
+                section: 'Resultados / Salidas',
                 type: 'output_complex', // Usar tipo complejo
                 name: f.name || toCamelCase(f.label)
             }))
@@ -1056,8 +1058,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 // --- NUEVO: INPUT CANTIDAD A PROCESAR (Solo en Create Mode desde Batch Anterior) ---
                 if (mode === 'create' && section === 'Variables de Proceso' && parentBatch) {
                     // Intentar obtener el peso disponible del padre (Output principal del padre)
-                    const parentWeight = getBatchWeight(parentBatch); 
-                    
+                    const parentWeight = getBatchWeight(parentBatch);
+
                     formFieldsHtml += `
                         <div class="mb-6 p-4 bg-blue-50 border border-blue-100 rounded-xl">
                             <label class="block text-xs font-bold text-blue-800 mb-1 uppercase">Cantidad a Procesar (Insumo)</label>
@@ -1077,9 +1079,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     // Para outputs complejos, el valor en initialData es un objeto {value, unit_id...}
                     // createFieldHTML ahora espera el objeto completo si es output_complex
                     let val = initialData[fieldName];
-                    
+
                     if (field.type === 'image' && val?.value) imagesMap[fieldName] = val.value;
-                    
+
                     formFieldsHtml += await createFieldHTML(field, fieldName, val);
                 }
             }
@@ -1102,15 +1104,15 @@ document.addEventListener('DOMContentLoaded', () => {
             e.preventDefault();
             const btn = e.target.querySelector('button[type="submit"]');
             btn.disabled = true; btn.innerText = 'Guardando...';
-            
+
             const formData = new FormData(e.target);
             const rawData = Object.fromEntries(formData.entries());
             const newData = {};
-            
+
             // --- NUEVO: Extraer cantidad usada ---
             const inputQuantity = parseFloat(rawData.input_quantity) || 0;
-            
-             stageFields.forEach(field => {
+
+            stageFields.forEach(field => {
                 const key = field.name;
                 if (field.type === 'output_complex') {
                     newData[key] = {
@@ -1131,10 +1133,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
             try {
                 if (mode === 'create') {
-                    const payload = { 
-                        plantilla_id: template.id, 
-                        etapa_id: stage.id, 
-                        parent_id: parentBatch.id, 
+                    const payload = {
+                        plantilla_id: template.id,
+                        etapa_id: stage.id,
+                        parent_id: parentBatch.id,
                         data: newData,
                         producto_id: preselectedProductId,
                         input_quantity: inputQuantity // Enviamos al backend
@@ -1144,30 +1146,30 @@ document.addEventListener('DOMContentLoaded', () => {
                     // En edición usualmente no se cambia el input quantity del origen, pero podría añadirse
                     await api(`/api/batches/${batchData.id}`, { method: 'PUT', body: JSON.stringify({ data: newData }) });
                 }
-                
+
                 formModal.close();
                 await refreshData();
-            } catch(err) { 
+            } catch (err) {
                 console.error(err); alert("Error: " + err.message); btn.disabled = false; btn.innerText = "Guardar";
             }
         });
 
         formModal.showModal();
     }
-    
+
     // --- HELPER: Obtener Peso de un Lote (Para sugerir input) ---
     function getBatchWeight(batch) {
         if (!batch || !batch.data) return 0;
         const d = typeof batch.data === 'string' ? JSON.parse(batch.data) : batch.data;
         // MEJORA: Detección inteligente de outputs
         const outputValues = Object.values(d).filter(v => typeof v === 'object' && v.type === 'output');
-        if(outputValues.length > 0) {
+        if (outputValues.length > 0) {
             // Asumir que el mayor valor es el peso principal
             return outputValues.reduce((max, curr) => Math.max(max, parseFloat(curr.value || 0)), 0);
         }
         // Fallback
         const outputKeys = Object.keys(d).filter(k => k.toLowerCase().includes('salida') || k.toLowerCase().includes('peso') || k.toLowerCase().includes('unidades'));
-        if(outputKeys.length > 0) {
+        if (outputKeys.length > 0) {
             const val = d[outputKeys[0]];
             return parseFloat(val?.value || val || 0);
         }
@@ -1175,21 +1177,21 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function handleDeleteBatch(id) {
-        if(confirm("¿Eliminar esta etapa?")) {
+        if (confirm("¿Eliminar esta etapa?")) {
             try {
                 await api(`/api/batches/${id}`, { method: 'DELETE' });
                 await refreshData();
-            } catch(e) { alert(e.message); }
+            } catch (e) { alert(e.message); }
         }
     }
-    
+
     async function handleFinalize(id) {
-        if(confirm("¿Finalizar y Certificar?")) {
+        if (confirm("¿Finalizar y Certificar?")) {
             try {
                 console.log(id);
                 await api(`/api/batches/${id}/finalize`, { method: 'POST' });
                 await refreshData();
-            } catch(e) { alert(e.message); }
+            } catch (e) { alert(e.message); }
         }
     }
 
@@ -1202,10 +1204,10 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- HELPERS CAMPOS (ACTUALIZADO PARA OUTPUT_COMPLEX) ---
     async function createFieldHTML(field, uniqueName, valueData = '') {
         const fieldName = uniqueName || field.name;
-        
+
         // Si valueData es un objeto (caso output complex), extraemos el valor numérico base
         let value = (typeof valueData === 'object' && valueData !== null) ? valueData.value : valueData;
-        
+
         // 1. OUTPUT COMPLEX (Salidas con Peso y Precio)
         if (field.type === 'output_complex') {
             const defaults = state.userProfile || {};
@@ -1247,29 +1249,29 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // ... Resto de campos (selectFinca, etc.) igual que antes ...
         let inputHtml = `<input type="${field.type === 'number' ? 'number' : 'text'}" id="${fieldName}" name="${fieldName}" class="w-full p-2.5 border border-stone-300 rounded-lg text-sm focus:ring-2 focus:ring-amber-500 outline-none transition" step="0.01" value="${value}">`;
-        
+
         if (field.type === 'selectFinca') {
-             const opts = state.fincas.map(f => `<option value="${f.nombre_finca}" ${f.nombre_finca === value ? 'selected' : ''}>${f.nombre_finca}</option>`).join('');
-             inputHtml = `<select id="${fieldName}" name="${fieldName}" class="w-full p-2.5 border border-stone-300 rounded-lg bg-white text-sm focus:ring-2 focus:ring-amber-500 outline-none finca-selector"><option value="">Seleccionar Finca...</option>${opts}</select>`;
-        } 
+            const opts = state.fincas.map(f => `<option value="${f.nombre_finca}" ${f.nombre_finca === value ? 'selected' : ''}>${f.nombre_finca}</option>`).join('');
+            inputHtml = `<select id="${fieldName}" name="${fieldName}" class="w-full p-2.5 border border-stone-300 rounded-lg bg-white text-sm focus:ring-2 focus:ring-amber-500 outline-none finca-selector"><option value="">Seleccionar Finca...</option>${opts}</select>`;
+        }
         else if (field.type === 'selectLugar') {
-             let opts = '<option value="">Seleccionar Lugar...</option>';
-             if (state.fincas.length > 0) opts += `<optgroup label="Fincas">${state.fincas.map(f => `<option value="${f.nombre_finca}" ${f.nombre_finca === value ? 'selected' : ''}>${f.nombre_finca}</option>`).join('')}</optgroup>`;
-             if (state.procesadoras.length > 0) opts += `<optgroup label="Procesadoras">${state.procesadoras.map(p => `<option value="${p.nombre_comercial || p.razon_social}" ${(p.nombre_comercial || p.razon_social) === value ? 'selected' : ''}>${p.nombre_comercial || p.razon_social}</option>`).join('')}</optgroup>`;
-             inputHtml = `<select id="${fieldName}" name="${fieldName}" class="w-full p-2.5 border border-stone-300 rounded-lg bg-white text-sm focus:ring-2 focus:ring-green-500 outline-none">${opts}</select>`;
+            let opts = '<option value="">Seleccionar Lugar...</option>';
+            if (state.fincas.length > 0) opts += `<optgroup label="Fincas">${state.fincas.map(f => `<option value="${f.nombre_finca}" ${f.nombre_finca === value ? 'selected' : ''}>${f.nombre_finca}</option>`).join('')}</optgroup>`;
+            if (state.procesadoras.length > 0) opts += `<optgroup label="Procesadoras">${state.procesadoras.map(p => `<option value="${p.nombre_comercial || p.razon_social}" ${(p.nombre_comercial || p.razon_social) === value ? 'selected' : ''}>${p.nombre_comercial || p.razon_social}</option>`).join('')}</optgroup>`;
+            inputHtml = `<select id="${fieldName}" name="${fieldName}" class="w-full p-2.5 border border-stone-300 rounded-lg bg-white text-sm focus:ring-2 focus:ring-green-500 outline-none">${opts}</select>`;
         }
         else if (field.type === 'selectProcesadora') {
-             const opts = state.procesadoras.map(p => `<option value="${p.nombre_comercial || p.razon_social}" ${(p.nombre_comercial || p.razon_social) === value ? 'selected' : ''}>${p.nombre_comercial || p.razon_social}</option>`).join('');
-             inputHtml = `<select id="${fieldName}" name="${fieldName}" class="w-full p-2.5 border border-stone-300 rounded-lg bg-white text-sm focus:ring-2 focus:ring-green-500 outline-none"><option value="">Seleccionar...</option>${opts}</select>`;
+            const opts = state.procesadoras.map(p => `<option value="${p.nombre_comercial || p.razon_social}" ${(p.nombre_comercial || p.razon_social) === value ? 'selected' : ''}>${p.nombre_comercial || p.razon_social}</option>`).join('');
+            inputHtml = `<select id="${fieldName}" name="${fieldName}" class="w-full p-2.5 border border-stone-300 rounded-lg bg-white text-sm focus:ring-2 focus:ring-green-500 outline-none"><option value="">Seleccionar...</option>${opts}</select>`;
         } else if (field.type === 'date') {
-             const dateVal = value || new Date().toISOString().split('T')[0];
-             inputHtml = `<input type="date" id="${fieldName}" name="${fieldName}" class="w-full p-2.5 border border-stone-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500 outline-none" value="${dateVal}">`;
+            const dateVal = value || new Date().toISOString().split('T')[0];
+            inputHtml = `<input type="date" id="${fieldName}" name="${fieldName}" class="w-full p-2.5 border border-stone-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500 outline-none" value="${dateVal}">`;
         } else if (field.options) {
-             const opts = field.options.map(o => `<option value="${o}" ${o === value ? 'selected' : ''}>${o}</option>`).join('');
-             inputHtml = `<select id="${fieldName}" name="${fieldName}" class="w-full p-2.5 border border-stone-300 rounded-lg bg-white text-sm focus:ring-2 focus:ring-green-500 outline-none"><option value="">Seleccionar...</option>${opts}</select>`;
-        } 
+            const opts = field.options.map(o => `<option value="${o}" ${o === value ? 'selected' : ''}>${o}</option>`).join('');
+            inputHtml = `<select id="${fieldName}" name="${fieldName}" class="w-full p-2.5 border border-stone-300 rounded-lg bg-white text-sm focus:ring-2 focus:ring-green-500 outline-none"><option value="">Seleccionar...</option>${opts}</select>`;
+        }
         else if (field.type === 'image') {
-             return `
+            return `
                 <div class="pt-2 mt-2">
                     <label class="block text-xs font-bold text-stone-500 mb-1 uppercase"><i class="fas fa-camera mr-1"></i> ${field.label}</label>
                     <div class="flex items-center gap-3">
@@ -1282,9 +1284,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     <img class="file-preview-img mt-2 w-full h-24 object-cover rounded-lg hidden">
                 </div>`;
         } else if (field.type === 'textarea') {
-             inputHtml = `<textarea id="${fieldName}" name="${fieldName}" class="w-full p-2.5 border border-stone-300 rounded-lg text-sm focus:ring-2 focus:ring-amber-500 outline-none" rows="3">${value}</textarea>`;
+            inputHtml = `<textarea id="${fieldName}" name="${fieldName}" class="w-full p-2.5 border border-stone-300 rounded-lg text-sm focus:ring-2 focus:ring-amber-500 outline-none" rows="3">${value}</textarea>`;
         }
-        
+
         return `<div><label for="${fieldName}" class="block text-xs font-bold text-stone-500 mb-1 uppercase">${field.label}</label>${inputHtml}</div>`;
     }
 
@@ -1293,8 +1295,8 @@ document.addEventListener('DOMContentLoaded', () => {
         fileInputs.forEach(input => {
             input.addEventListener('change', async (e) => {
                 const file = e.target.files[0];
-                const fieldName = e.target.name; 
-                const container = e.target.closest('div').parentElement; 
+                const fieldName = e.target.name;
+                const container = e.target.closest('div').parentElement;
                 const fileNameSpan = container.querySelector('.file-name-display');
                 const previewImg = container.querySelector('.file-preview-img');
                 if (file) {
@@ -1307,7 +1309,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                 r.onload = () => res(r.result);
                                 r.onerror = rej;
                                 r.readAsDataURL(file);
-                              });
+                            });
                         imagesMap[fieldName] = dataUrl;
                         previewImg.src = dataUrl;
                         previewImg.classList.remove('hidden');
@@ -1325,7 +1327,7 @@ document.addEventListener('DOMContentLoaded', () => {
         options.headers = { ...options.headers, 'Content-Type': 'application/json' };
         const res = await fetch(url, options);
         if (res.status === 204) return null;
-        if(!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e.error || `Error API: ${res.status}`); }
+        if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e.error || `Error API: ${res.status}`); }
         return res.json();
     }
 });
