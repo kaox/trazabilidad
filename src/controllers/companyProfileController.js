@@ -6,7 +6,7 @@ const CompanyProfile = require('../models/CompanyProfile');
 const { get } = require('../config/db.js'); // Importamos 'get' temporalmente para el fallback
 const { processImagesArray, deleteImagesArray } = require('../utils/storage');
 
-const PROVIDER = 'supabase';//'vercel'
+const PROVIDER = 'vercel';//'vercel'
 
 const companyProfileController = {
     /**
