@@ -1,5 +1,5 @@
 const app = {
-    productId: new URLSearchParams(window.location.search).get('id'),
+    productId: window.PRODUCT_ID || new URLSearchParams(window.location.search).get('id'),
     product: null,
     currentTab: 'origen',
     flavorWheels: null,

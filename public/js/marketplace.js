@@ -381,8 +381,15 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         emptyState.classList.add('hidden');
 
+        const createSlug = text => (text || '').toString().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, '-').replace(/[^\w-]+/g, '').replace(/--+/g, '-').replace(/^-+/, '').replace(/-+$/, '');
+
         const html = state.products.map(p => {
             const companySlug = p.empresa.slug || p.empresa.id;
+            
+            // Construir Ruta SEO
+            const productName = createSlug(p.nombre) || 'producto';
+            const fincaName = p.finca && p.finca.nombre ? createSlug(p.finca.nombre) : 'origen';
+            const seoUrl = `/lote/${productName}-${fincaName}-${p.id}`;
 
             // Badge de Tipo
             let typeBadge = '';
@@ -561,12 +568,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>
 
                     <!-- Boton Ver Detalle (Si quieres un botón similar al de la imagen) -->
-                    <a href="/producto-detalle.html?id=${p.id}" class="mt-4 w-full text-center bg-[#92400e] hover:bg-amber-900 text-white font-bold py-3 rounded-2xl transition-all shadow-lg shadow-amber-900/10 flex items-center justify-center gap-2">
+                    <a href="${seoUrl}" class="mt-4 w-full text-center bg-[#92400e] hover:bg-amber-900 text-white font-bold py-3 rounded-2xl transition-all shadow-lg shadow-amber-900/10 flex items-center justify-center gap-2">
                         <i class="fas fa-shopping-bag text-sm"></i>
                         Ver Detalles
                     </a>
                 </div>
             `;
+
         }).join('');
 
         productsGrid.innerHTML = html;
