@@ -357,7 +357,7 @@ const app = {
                     <div class="lg:col-span-2">
                         <h3 class="text-2xl font-display font-bold text-stone-800 mb-6 flex items-center gap-2"><i class="fas fa-store text-amber-600"></i> Catálogo Disponible</h3>
                         <div class="space-y-6">
-                            ${this.renderProductList(products, user.celular, userId)}
+                            ${this.renderProductList(products, user.phone, userId)}
                         </div>
                     </div>
                 </div>
@@ -488,6 +488,11 @@ const app = {
             const hasWheel = prod.notas_rueda && prod.notas_rueda.length > 0;
             const buyLink = phone ? `https://wa.me/${phone.replace(/\D/g, '')}?text=Hola vi esto en RuruLab, me interesa: ${encodeURIComponent(prod.nombre)}` : '#';
 
+            const createSlug = text => (text || '').toString().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, '-').replace(/[^\w-]+/g, '').replace(/--+/g, '-').replace(/^-+/, '').replace(/-+$/, '');
+            const productName = createSlug(prod.nombre) || 'producto';
+            const fincaName = prod.finca && prod.finca.nombre ? createSlug(prod.finca.nombre) : 'origen';
+            const detailLink = `/lote/${productName}-${fincaName}-${prod.id}`;
+
             const showTabs = hasSensory || hasWheel;
 
             const cardClasses = hasTraceability
@@ -598,9 +603,14 @@ const app = {
                             <span class="text-xs font-bold text-stone-400 uppercase tracking-widest">
                                 ${hasTraceability ? `<i class="fas fa-cubes text-emerald-500"></i> ${prod.recent_batches.length} Lotes` : ''}
                             </span>
-                            <a href="${buyLink}" target="_blank" class="bg-stone-900 hover:bg-stone-800 text-white px-5 py-2 rounded-xl text-sm font-bold transition flex items-center gap-2 shadow-lg">
-                                <i class="fas fa-shopping-cart"></i> Comprar
-                            </a>
+                            <div class="flex gap-2">
+                                <a href="${detailLink}" class="bg-amber-100 hover:bg-amber-200 text-amber-900 border border-amber-200 hover:border-amber-300 px-4 py-2 rounded-xl text-sm font-bold transition flex items-center shadow-sm">
+                                    Ver Detalle
+                                </a>
+                                <a href="${buyLink}" target="_blank" class="bg-stone-900 hover:bg-stone-800 text-white px-5 py-2 rounded-xl text-sm font-bold transition flex items-center gap-2 shadow-lg">
+                                    <i class="fas fa-shopping-cart"></i> Comprar
+                                </a>
+                            </div>
                         </div>
                     </div>
 
