@@ -820,12 +820,12 @@ const app = {
     renderTrazabilidad() {
         if (!this.traceability || !this.traceability.stages || this.traceability.stages.length === 0) {
             document.getElementById('tab-content').innerHTML = `
-                <div class="py-24 text-center animate-in fade-in slide-in-from-bottom-4 duration-700">
-                    <div class="w-24 h-24 bg-stone-50 rounded-full flex items-center justify-center mx-auto mb-8 border border-stone-100 shadow-sm">
-                        <i class="fas fa-route text-stone-200 text-4xl"></i>
+                <div class="py-16 md:py-24 text-center animate-in fade-in slide-in-from-bottom-4 duration-700">
+                    <div class="w-20 h-20 md:w-24 md:h-24 bg-stone-50 rounded-full flex items-center justify-center mx-auto mb-8 border border-stone-100 shadow-sm">
+                        <i class="fas fa-route text-stone-200 text-3xl md:text-4xl"></i>
                     </div>
-                    <h3 class="text-2xl font-display font-bold text-stone-300">Trazabilidad No Disponible</h3>
-                    <p class="text-stone-400 mt-2 max-w-sm mx-auto">Este producto aún no cuenta con un lote verificado en la blockchain de Ruru Lab.</p>
+                    <h3 class="text-xl md:text-2xl font-display font-bold text-stone-300">Trazabilidad No Disponible</h3>
+                    <p class="text-stone-400 mt-2 max-w-sm mx-auto px-6 text-sm md:text-base">Este producto aún no cuenta con un lote verificado en la blockchain de Ruru Lab.</p>
                 </div>
             `;
             return;
@@ -839,7 +839,10 @@ const app = {
                 .stage-card.active-stage {
                     border-color: #854d0e;
                     background-color: #fffbeb;
-                    transform: translateX(8px);
+                    transform: translateX(4px);
+                }
+                @media (min-width: 1024px) {
+                    .stage-card.active-stage { transform: translateX(8px); }
                 }
                 .stage-card {
                     transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
@@ -847,7 +850,7 @@ const app = {
                 .node-dot.active {
                     border-color: #854d0e !important;
                     background-color: #854d0e !important;
-                    box-shadow: 0 0 0 6px rgba(133, 77, 14, 0.1);
+                    box-shadow: 0 0 0 4px rgba(133, 77, 14, 0.1);
                 }
                 .pulse-ring {
                     position: absolute;
@@ -855,7 +858,7 @@ const app = {
                     margin: auto;
                     width: 100%;
                     height: 100%;
-                    border: 3px solid #854d0e;
+                    border: 2px solid #854d0e;
                     border-radius: 50%;
                     animation: pulse 2s infinite;
                     opacity: 0;
@@ -866,61 +869,60 @@ const app = {
                     50% { opacity: 0.6; }
                     100% { transform: scale(1.6); opacity: 0; }
                 }
-                /* Custom Google Maps Styling */
                 #trace-map [title="Google"] img, #trace-map .gmnoprint { display: none !important; }
             </style>
 
-            <div class="animate-in fade-in duration-1000">
-                <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
+            <div class="animate-in fade-in duration-1000 px-2 md:px-0">
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8 lg:gap-12 items-start">
                     
-                    <!-- Columna Mapa (Sticky) -->
-                    <div class="lg:col-span-7 sticky top-24 space-y-6">
-                        <div class="flex items-center justify-between mb-4">
+                    <!-- Columna Mapa (Sticky on Desktop) -->
+                    <div class="lg:col-span-7 lg:sticky lg:top-24 space-y-4 md:space-y-6">
+                        <div class="flex items-center justify-between mb-2 md:mb-4 px-4 lg:px-0">
                             <div>
-                                <h2 class="text-4xl font-display font-bold text-stone-900 leading-tight">Descubre el viaje!</h2>
-                                <p class="text-stone-400 font-medium text-sm mt-1 tracking-wide">Trazabilidad Satelital</p>
+                                <h2 class="text-2xl md:text-4xl font-display font-bold text-stone-900 leading-tight">Descubre el viaje!</h2>
+                                <p class="text-stone-400 font-medium text-[10px] md:text-sm mt-1 tracking-wide uppercase">Trazabilidad Satelital</p>
                             </div>
                         </div>
                         
-                        <div class="relative group">
-                            <!-- Overlay Glassmorphism -->
-                            <div id="map-overlay-info" class="absolute z-10 top-12 right-8 bg-white/80 backdrop-blur-xl p-6 rounded-[2rem] border border-white/50 shadow-2xl text-center min-w-[200px] transition-all duration-700 opacity-0 scale-95">
-                                <span class="text-[9px] font-black text-amber-900/40 uppercase tracking-[0.2em] block mb-2">ELEVATION</span>
-                                <p id="overlay-elevation" class="text-4xl font-black text-amber-950 mb-1 tabular-nums tracking-tighter">--</p>
-                                <p id="overlay-coords" class="text-[9px] font-bold text-stone-500 font-mono tracking-widest uppercase italic">0.0000° N, 0.0000° E</p>
+                        <div class="relative group mx-2 md:mx-0">
+                            <!-- Overlay Glassmorphism - Responsive Size -->
+                            <div id="map-overlay-info" class="absolute z-10 top-6 right-6 md:top-12 md:right-8 bg-white/80 backdrop-blur-xl p-4 md:p-6 rounded-2xl md:rounded-[2rem] border border-white/50 shadow-2xl text-center min-w-[140px] md:min-w-[200px] transition-all duration-700 opacity-0 scale-95">
+                                <span class="text-[8px] md:text-[9px] font-black text-amber-900/40 uppercase tracking-[0.2em] block mb-1 md:mb-2">ELEVATION</span>
+                                <p id="overlay-elevation" class="text-2xl md:text-4xl font-black text-amber-950 mb-1 tabular-nums tracking-tighter">--</p>
+                                <p id="overlay-coords" class="text-[8px] md:text-[9px] font-bold text-stone-500 font-mono tracking-widest uppercase italic">0.0000° N, 0.0000° E</p>
                             </div>
 
-                            <div id="trace-map" class="w-full h-[600px] rounded-[3.5rem] border-8 border-white shadow-[0_32px_64px_-16px_rgba(0,0,0,0.15)] overflow-hidden bg-stone-100"></div>
+                            <div id="trace-map" class="w-full h-[350px] md:h-[450px] lg:h-[600px] rounded-[2rem] md:rounded-[3.5rem] border-4 md:border-8 border-white shadow-[0_20px_40px_-12px_rgba(0,0,0,0.1)] md:shadow-[0_32px_64px_-16px_rgba(0,0,0,0.15)] overflow-hidden bg-stone-100"></div>
                             
-                            <!-- Legend -->
-                            <div class="absolute bottom-10 left-10 flex gap-4 bg-white/90 backdrop-blur-md p-4 rounded-3xl border border-white/50 shadow-xl">
+                            <!-- Legend - Compact on mobile -->
+                            <div class="absolute bottom-6 left-6 md:bottom-10 md:left-10 flex gap-3 md:gap-4 bg-white/90 backdrop-blur-md p-3 md:p-4 rounded-2xl md:rounded-3xl border border-white/50 shadow-xl">
                                 <div class="flex items-center gap-2">
-                                    <div class="w-3 h-3 rounded-full bg-amber-800"></div>
-                                    <span class="text-[10px] font-bold text-stone-600 uppercase tracking-wider">Actual</span>
+                                    <div class="w-2.5 h-2.5 md:w-3 md:h-3 rounded-full bg-amber-800"></div>
+                                    <span class="text-[9px] md:text-[10px] font-bold text-stone-600 uppercase tracking-wider">Actual</span>
                                 </div>
                                 <div class="flex items-center gap-2">
                                     <div class="w-3 h-0.5 bg-stone-300 border-t border-dashed border-stone-400"></div>
-                                    <span class="text-[10px] font-bold text-stone-600 uppercase tracking-wider">Ruta</span>
+                                    <span class="text-[9px] md:text-[10px] font-bold text-stone-600 uppercase tracking-wider">Ruta</span>
                                 </div>
                             </div>
                         </div>
                     </div>
 
                     <!-- Columna Timeline -->
-                    <div class="lg:col-span-5 space-y-10 py-4">
-                        <div class="flex items-center justify-between pl-6">
-                            <h2 class="text-4xl font-display font-bold text-stone-900">Timeline</h2>
+                    <div class="lg:col-span-5 space-y-6 md:space-y-10 py-4">
+                        <div class="flex items-center justify-between px-6 lg:pl-6 lg:pr-0">
+                            <h2 class="text-2xl md:text-4xl font-display font-bold text-stone-900">Timeline</h2>
                             <div class="flex flex-col items-end">
-                                <span class="text-[10px] font-bold text-stone-400 uppercase tracking-widest mb-1">PROCESSED LOTE</span>
-                                <span class="px-4 py-1.5 bg-stone-900 text-white text-[11px] font-black rounded-full shadow-lg tracking-wider">#${lastBatchId.substring(0, 12)}</span>
+                                <span class="text-[8px] md:text-[10px] font-bold text-stone-400 uppercase tracking-widest mb-1">PROCESSED LOTE</span>
+                                <span class="px-3 py-1 md:px-4 md:py-1.5 bg-stone-900 text-white text-[9px] md:text-[11px] font-black rounded-full shadow-lg tracking-wider">#${lastBatchId.substring(0, 12)}</span>
                             </div>
                         </div>
 
-                        <div class="relative px-6">
+                        <div class="relative px-4 md:px-6">
                             <!-- Animated Pulse Line Background -->
-                            <div class="absolute left-[2.25rem] top-8 bottom-8 w-[2px] bg-gradient-to-b from-amber-800/20 via-stone-100 to-stone-50 selection:bg-none"></div>
+                            <div class="absolute left-[2.25rem] md:left-[2.25rem] top-8 bottom-8 w-[2px] bg-gradient-to-b from-amber-800/20 via-stone-100 to-stone-50 selection:bg-none"></div>
 
-                            <div class="space-y-6 relative" id="timeline-list">
+                            <div class="space-y-4 md:space-y-6 relative" id="timeline-list">
                                 ${stages.map((stage, idx) => {
             const dateStr = stage.timestamp ? new Date(stage.timestamp).toLocaleDateString('es-ES', { month: 'short', day: 'numeric' }).toUpperCase() : 'N/A';
             const yearStr = stage.timestamp ? new Date(stage.timestamp).getFullYear() : '';
@@ -928,12 +930,12 @@ const app = {
             const isFinca = stage.nombre_etapa.toLowerCase().includes('cosecha');
 
             return `
-                                    <div class="stage-card group cursor-pointer p-6 rounded-[2rem] border border-transparent hover:border-stone-100 hover:bg-white hover:shadow-xl relative ml-6" 
+                                    <div class="stage-card group cursor-pointer p-4 md:p-6 rounded-2xl md:rounded-[2rem] border border-transparent hover:border-stone-100 hover:bg-white hover:shadow-xl relative ml-6" 
                                          onclick="app.setTraceStage(${idx})" data-index="${idx}">
                                         
                                         <!-- Node Indicator -->
-                                        <div class="absolute -left-[3.15rem] top-8 w-11 h-11 rounded-full border-4 border-white bg-stone-100 flex items-center justify-center transition-all duration-500 shadow-sm z-20 node-dot">
-                                            <i class="fas ${isFinca ? 'fa-seedling' : 'fa-gear'} text-xs text-stone-400 group-hover:text-white transition-colors relative z-10"></i>
+                                        <div class="absolute -left-[3.15rem] top-6 md:top-8 w-10 h-10 md:w-11 md:h-11 rounded-full border-4 border-white bg-stone-100 flex items-center justify-center transition-all duration-500 shadow-sm z-20 node-dot">
+                                            <i class="fas ${isFinca ? 'fa-seedling' : 'fa-gear'} text-[10px] md:text-xs text-stone-400 group-hover:text-white transition-colors relative z-10"></i>
                                             <div class="pulse-ring"></div>
                                         </div>
 
@@ -965,27 +967,27 @@ const app = {
                 </div>
 
                 <!-- Footer Section -->
-                <div class="mt-24 p-12 rounded-[4rem] bg-stone-900 text-white relative overflow-hidden">
-                    <div class="absolute top-0 right-0 w-96 h-96 bg-amber-800/10 rounded-full -mr-48 -mt-48 blur-3xl"></div>
-                    <div class="relative flex flex-col lg:flex-row items-center gap-12">
+                <div class="mt-12 md:mt-24 p-6 md:p-12 rounded-[2.5rem] md:rounded-[4rem] bg-stone-900 text-white relative overflow-hidden mx-2 md:mx-0">
+                    <div class="absolute top-0 right-0 w-64 h-64 md:w-96 md:h-96 bg-amber-800/10 rounded-full -mr-32 -mt-32 md:-mr-48 md:-mt-48 blur-3xl"></div>
+                    <div class="relative flex flex-col lg:flex-row items-center gap-8 md:gap-12 text-center lg:text-left">
                         <div class="flex-shrink-0">
-                            <div class="w-24 h-24 rounded-[2.5rem] bg-gradient-to-br from-amber-700 to-amber-900 p-[1px]">
-                                <div class="w-full h-full bg-stone-900 rounded-[2.5rem] flex items-center justify-center">
-                                    <i class="fas fa-shield-halved text-amber-600 text-4xl"></i>
+                            <div class="w-16 h-16 md:w-24 md:h-24 rounded-2xl md:rounded-[2.5rem] bg-gradient-to-br from-amber-700 to-amber-900 p-[1px]">
+                                <div class="w-full h-full bg-stone-900 rounded-2xl md:rounded-[2.5rem] flex items-center justify-center">
+                                    <i class="fas fa-shield-halved text-amber-600 text-2xl md:text-4xl"></i>
                                 </div>
                             </div>
                         </div>
-                        <div class="flex-grow text-center lg:text-left space-y-4">
-                            <h4 class="text-3xl font-display font-bold leading-tight">Blockchain Certified Lineage</h4>
-                            <p class="text-stone-400 text-lg max-w-2xl">This cryptographic seal guarantees that every step of this products journey is authentic, permanent, and verified by Ruru Lab's private oracle.</p>
-                            <div class="pt-4 flex flex-col md:flex-row items-center gap-4">
-                                <span class="px-5 py-2 bg-stone-800 border border-stone-700 rounded-2xl font-mono text-xs text-amber-500 selection:bg-amber-500 selection:text-white">
+                        <div class="flex-grow space-y-3 md:space-y-4">
+                            <h4 class="text-2xl md:text-3xl font-display font-bold leading-tight">Blockchain Certified Lineage</h4>
+                            <p class="text-stone-400 text-sm md:text-lg max-w-2xl px-2 lg:px-0">This cryptographic seal guarantees that every step of this products journey is authentic, permanent, and verified by Ruru Lab's private oracle.</p>
+                            <div class="pt-2 md:pt-4 flex flex-col md:flex-row items-center justify-center lg:justify-start gap-4">
+                                <span class="px-3 py-1.5 md:px-5 md:py-2 bg-stone-800 border border-stone-700 rounded-xl md:rounded-2xl font-mono text-[9px] md:text-xs text-amber-500 selection:bg-amber-500 selection:text-white break-all max-w-xs md:max-w-none">
                                     ${this.traceability.blockchain_hash || 'SHA256_UNAVAILABLE'}
                                 </span>
                             </div>
                         </div>
                         <a href="https://polygonscan.com/tx/${this.traceability.blockchain_hash}" target="_blank" 
-                           class="px-10 py-5 bg-amber-800 hover:bg-amber-700 text-white rounded-[2rem] text-sm font-black tracking-widest uppercase transition-all hover:shadow-2xl hover:-translate-y-1">
+                           class="w-full lg:w-auto px-8 py-4 md:px-10 md:py-5 bg-amber-800 hover:bg-amber-700 text-white rounded-2xl md:rounded-[2rem] text-xs md:text-sm font-black tracking-widest uppercase transition-all hover:shadow-2xl hover:-translate-y-1 mt-4 lg:mt-0">
                             Verify Ledger
                         </a>
                     </div>
@@ -1038,14 +1040,14 @@ const app = {
 
             badges.push(`
                 <span class="badge-premium">
-                    <i class="fas ${icon} mr-1.5 opacity-40"></i>
+                    <i class="fas ${icon} mr-1 md:mr-1.5 opacity-40"></i>
                     <b class="text-stone-700 mr-1">${label}:</b> ${displayVal}
                 </span>
             `);
         });
 
         if (badges.length === 0) {
-            return `<span class="text-[10px] font-black tracking-widest text-stone-300 uppercase">Process Details Verified</span>`;
+            return `<span class="text-[9px] md:text-[10px] font-black tracking-widest text-stone-300 uppercase">Process Details Verified</span>`;
         }
 
         return `
@@ -1053,15 +1055,22 @@ const app = {
                 .badge-premium {
                     display: inline-flex;
                     align-items: center;
-                    padding: 0.45rem 0.9rem;
+                    padding: 0.35rem 0.75rem;
                     background: #fafaf9;
                     border: 1px solid #f5f5f4;
-                    border-radius: 1.25rem;
+                    border-radius: 1rem;
                     color: #57534e;
-                    font-size: 10px;
+                    font-size: 9px;
                     font-weight: 500;
                     letter-spacing: -0.01em;
                     transition: all 0.3s ease;
+                }
+                @media (min-width: 768px) {
+                    .badge-premium {
+                        padding: 0.45rem 0.9rem;
+                        border-radius: 1.25rem;
+                        font-size: 10px;
+                    }
                 }
                 .badge-premium:hover {
                     background: #ffffff;
