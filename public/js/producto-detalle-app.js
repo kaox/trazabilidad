@@ -212,9 +212,9 @@ const app = {
             awards.innerHTML = this.product.premios.map((prem, index) => {
                 const year = 2025 - index;
                 return `
-                <div class="bg-white p-3 rounded-2xl shadow-sm border border-stone-100 flex flex-col items-center gap-1 w-[110px] transform hover:scale-105 transition-transform">
-                    <img src="${prem.logo_url || 'https://placehold.co/80/f5f5f5/999'}" class="w-12 h-12 object-contain mb-1">
-                    <span class="text-[10px] font-bold text-stone-900">${year}</span>
+                <div class="bg-white p-2 rounded-2xl shadow-sm border border-stone-100 flex flex-col items-center gap-0.5 w-20 transform hover:scale-105 transition-transform">
+                    <img src="${prem.logo_url || 'https://placehold.co/80/f5f5f5/999'}" class="w-10 h-10 object-contain mb-1">
+                    <span class="text-[9px] font-bold text-stone-900">${year}</span>
                 </div>
                 `;
             }).join('');
