@@ -144,7 +144,6 @@ const app = {
             // Cargar trazabilidad del producto
             try {
                 const traceRes = await fetch(`/api/public/products/${this.productId}/traceability`);
-                console.log("Trazabilidad", traceRes);
                 if (traceRes.ok) {
                     this.traceability = await traceRes.json();
                 }
@@ -831,7 +830,7 @@ const app = {
             return;
         }
 
-        const stages = [...this.traceability.stages].reverse();
+        const stages = [...this.traceability.stages];
         const lastBatchId = this.traceability.id || 'N/A';
 
         const html = `
@@ -885,12 +884,6 @@ const app = {
                         </div>
                         
                         <div class="relative group mx-2 md:mx-0">
-                            <!-- Overlay Glassmorphism - Responsive Size -->
-                            <div id="map-overlay-info" class="absolute z-10 top-6 right-6 md:top-12 md:right-8 bg-white/80 backdrop-blur-xl p-4 md:p-6 rounded-2xl md:rounded-[2rem] border border-white/50 shadow-2xl text-center min-w-[140px] md:min-w-[200px] transition-all duration-700 opacity-0 scale-95">
-                                <span class="text-[8px] md:text-[9px] font-black text-amber-900/40 uppercase tracking-[0.2em] block mb-1 md:mb-2">ELEVATION</span>
-                                <p id="overlay-elevation" class="text-2xl md:text-4xl font-black text-amber-950 mb-1 tabular-nums tracking-tighter">--</p>
-                                <p id="overlay-coords" class="text-[8px] md:text-[9px] font-bold text-stone-500 font-mono tracking-widest uppercase italic">0.0000° N, 0.0000° E</p>
-                            </div>
 
                             <div id="trace-map" class="w-full h-[350px] md:h-[450px] lg:h-[600px] rounded-[2rem] md:rounded-[3.5rem] border-4 md:border-8 border-white shadow-[0_20px_40px_-12px_rgba(0,0,0,0.1)] md:shadow-[0_32px_64px_-16px_rgba(0,0,0,0.15)] overflow-hidden bg-stone-100"></div>
                             
@@ -1005,7 +998,17 @@ const app = {
 
     renderStageBadges(stage) {
         const d = stage.data || {};
+        const campos_json = stage.campos_json || {};
         const badges = [];
+
+        // Crear mapa de búsqueda para los labels de la plantilla
+        const allFields = [
+            ...(campos_json.entradas || []),
+            ...(campos_json.salidas || []),
+            ...(campos_json.variables || [])
+        ];
+        const fieldMap = new Map();
+        allFields.forEach(f => fieldMap.set(f.name, f.label));
 
         // Mapeo de iconos para campos conocidos
         const iconMap = {
@@ -1026,17 +1029,21 @@ const app = {
             tiempo: 'fa-clock'
         };
 
-        const skipKeys = ['lugar', 'coordenadas', 'imageUrl', 'ubicacion', 'finca', 'procesadora', 'id', 'target_profile_id', 'target_wheel_id'];
+        const skipKeys = ['lugar', 'coordenadas', 'imageurl', 'ubicacion', 'finca', 'procesadora', 'id', 'target_profile_id', 'target_wheel_id', 'lugarproceso'];
 
         Object.entries(d).forEach(([key, val]) => {
             const rawKey = key.toLowerCase();
+
             if (skipKeys.includes(rawKey)) return;
+            if (rawKey.includes('fecha')) return;
 
             const displayVal = typeof val === 'object' ? val.value : val;
-            if (!displayVal) return;
+            if (displayVal === null || displayVal === undefined || displayVal === '' || displayVal === 'N/A' || displayVal === 'n/a') return;
+
+            if (typeof val === 'object' && val.visible === false) return;
 
             const icon = iconMap[rawKey] || 'fa-circle-info';
-            const label = val.nombre || key;
+            const label = fieldMap.get(key) || (typeof val === 'object' && val.nombre ? val.nombre : key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase()));
 
             badges.push(`
                 <span class="badge-premium">
@@ -1085,7 +1092,7 @@ const app = {
     getStageLocation(stage) {
         const data = stage.data || {};
         // Intentar sacar de los atributos
-        const loc = data.lugar?.value || data.ubicacion?.value || data.finca?.value || data.procesadora?.value;
+        const loc = data.lugarProceso?.value || data.finca?.value || data.procesadora?.value || 'N/A';
         if (loc) return loc;
 
         // Fallback a info genérica si es el primer stage (finca normalmente)
@@ -1139,7 +1146,7 @@ const app = {
         });
 
         // 3. User Journey Markers
-        const stages = [...this.traceability.stages].reverse();
+        const stages = [...this.traceability.stages];
         const pathPoints = [];
 
         stages.forEach((stage, idx) => {
@@ -1216,7 +1223,7 @@ const app = {
     },
 
     setTraceStage(index, autoScroll = true) {
-        const stages = [...this.traceability.stages].reverse();
+        const stages = [...this.traceability.stages];
         const stage = stages[index];
         if (!stage || !this.pathPoints) return;
 
@@ -1232,15 +1239,6 @@ const app = {
             // Animación de zoom si es necesario
             if (this.traceMap.getZoom() < 16) {
                 this.traceMap.setZoom(17);
-            }
-
-            const overlay = document.getElementById('map-overlay-info');
-            if (overlay) {
-                overlay.style.opacity = '1';
-                overlay.style.transform = 'translate(0,0) scale(1)';
-                const alt = stage.data?.altitud?.value || stage.data?.altura?.value || this.product.finca?.altura || '---';
-                document.getElementById('overlay-elevation').textContent = `${alt} MSNM`;
-                document.getElementById('overlay-coords').textContent = `${targetPoint.lat.toFixed(4)}° N, ${targetPoint.lng.toFixed(4)}° E`;
             }
 
             document.querySelectorAll('.stage-card').forEach((card, i) => {
