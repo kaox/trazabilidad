@@ -3,13 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard - RuruLab</title>
+    <title>Panel de Impacto - RuruLab</title>
     <script src="/auth.js"></script>
     <link href="/css/styles.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="/js/analytics-loader.js" defer></script>
     <style>
         body { font-family: 'Inter', sans-serif; background-color: #fdfaf6; }
@@ -19,50 +20,156 @@
 <body class="text-stone-800 antialiased">
     <div id="nav-placeholder"></div>
     
-    <div class="container mx-auto p-4 md:p-8">
-        <header class="text-center mb-10 mt-4">
-            <h1 class="text-4xl md:text-5xl font-bold text-amber-900 mb-2">Dashboard Analítico</h1>
-            <p class="text-stone-600">Una vista general del rendimiento y la rentabilidad de tu producción.</p>
-        </header>
-
-        <!-- Filtros -->
-        <div class="max-w-2xl mx-auto bg-white p-4 rounded-2xl shadow-lg mb-8 grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-                <label for="template-filter" class="block text-sm font-medium text-stone-700 mb-1">Filtrar por Proceso:</label>
-                <select id="template-filter" class="w-full p-2 border border-stone-300 rounded-xl bg-white"></select>
+    <!-- Hero Section -->
+    <div class="hero-gradient border-b border-amber-100">
+        <div class="container mx-auto px-4 py-12 md:py-16">
+            <div class="max-w-4xl">
+                <h1 class="text-4xl md:text-6xl font-black text-amber-900 mb-4 leading-tight">
+                    Bienvenido a tu Centro de <span class="text-amber-600">Impacto.</span>
+                </h1>
+                <p class="text-lg md:text-xl text-stone-600 mb-8 max-w-2xl">
+                    Gestiona tu cadena de suministro desde la raíz hasta el mercado global. Aquí tienes el pulso de tu producción hoy.
+                </p>
+                <div class="flex flex-wrap gap-4" id="quick-stats-summary">
+                    <!-- Dinámico: Kg procesados, Lotes activos -->
+                </div>
             </div>
-            <div>
-                <label for="batch-filter" class="block text-sm font-medium text-stone-700 mb-1">Filtrar por Lote de Inicio:</label>
-                <select id="batch-filter" class="w-full p-2 border border-stone-300 rounded-xl bg-white"></select>
+        </div>
+    </div>
+
+    <div class="container mx-auto px-4 -mt-8 pb-20">
+        
+        <!-- Pipeline de Valor (Stepper) -->
+        <div class="bg-white p-8 rounded-3xl shadow-xl mb-12 border border-stone-100">
+            <h2 class="text-xl font-bold text-stone-500 uppercase tracking-widest text-center mb-10">Tu Pipeline de Valor: "Tree to Cup"</h2>
+            <div class="dashboard-stepper">
+                <div class="stepper-item active" data-href="/app/fincas">
+                    <div class="stepper-icon"><i class="fas fa-mountain"></i></div>
+                    <span class="stepper-label">Finca</span>
+                </div>
+                <div class="stepper-item" data-href="/app/acopio" id="step-acopio">
+                    <div class="stepper-icon"><i class="fas fa-hand-holding-hand"></i></div>
+                    <span class="stepper-label">Acopio</span>
+                </div>
+                <div class="stepper-item" data-href="/app/procesamiento" id="step-procesamiento">
+                    <div class="stepper-icon"><i class="fas fa-microchip"></i></div>
+                    <span class="stepper-label">Procesar</span>
+                </div>
+                <div class="stepper-item" data-href="/app/perfiles" id="step-calidad">
+                    <div class="stepper-icon"><i class="fas fa-award"></i></div>
+                    <span class="stepper-label">Calidad</span>
+                </div>
+                <div class="stepper-item" data-href="/app/productos" id="step-mercado">
+                    <div class="stepper-icon"><i class="fas fa-shop"></i></div>
+                    <span class="stepper-label">Mercado</span>
+                </div>
+            </div>
+            <div class="text-center">
+                <button onclick="location.href='/app/acopio'" class="bg-amber-800 hover:bg-amber-900 text-white px-8 py-3 rounded-full font-bold transition-all transform hover:scale-105 shadow-lg">
+                    <i class="fas fa-plus mr-2"></i> Iniciar Nuevo Acopio
+                </button>
             </div>
         </div>
 
-        <!-- KPIs Section -->
-        <div id="kpi-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <!-- KPIs se cargarán aquí -->
-        </div>
-
-        <!-- Charts Section -->
-        <div class="grid grid-cols-1 lg:grid-cols-5 gap-8">
-            <div class="lg:col-span-3 bg-white p-6 rounded-2xl shadow-lg">
-                <h2 class="text-2xl font-display text-amber-900 mb-4">Rendimiento Promedio por Etapa</h2>
+        <!-- Módulos de Impacto (Grid) -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
+            
+            <!-- Identidad Digital -->
+            <div class="impact-card p-8 rounded-3xl flex flex-col justify-between">
                 <div>
-                    <canvas id="rendimiento-chart"></canvas>
+                    <div class="h-12 w-12 bg-amber-100 text-amber-800 rounded-2xl flex items-center justify-center mb-6">
+                        <i class="fas fa-fingerprint text-xl"></i>
+                    </div>
+                    <h3 class="text-2xl font-display font-bold text-amber-900 mb-3">Identidad Digital</h3>
+                    <p class="text-stone-600 mb-6">Gestiona tu presencia online y tu landing page de origen único.</p>
+                    <div id="identity-status" class="mb-6">
+                        <!-- Stat: Landing publicada? Subdominio? -->
+                    </div>
                 </div>
+                <a href="/app/perfil-comercial" class="text-amber-800 font-bold flex items-center group">
+                    Configurar Marca <i class="fas fa-arrow-right ml-2 transition-transform group-hover:translate-x-1"></i>
+                </a>
             </div>
-            <div class="bg-white p-6 rounded-2xl shadow-lg">
-                <h2 class="text-2xl font-display text-amber-900 mb-4">Costo Acumulado por Etapa ($/kg)</h2>
+
+            <!-- Motor de Trazabilidad -->
+            <div class="impact-card p-8 rounded-3xl flex flex-col justify-between">
                 <div>
-                    <canvas id="costo-etapa-chart"></canvas>
+                    <div class="h-12 w-12 bg-emerald-100 text-emerald-800 rounded-2xl flex items-center justify-center mb-6">
+                        <i class="fas fa-link text-xl"></i>
+                    </div>
+                    <h3 class="text-2xl font-display font-bold text-emerald-900 mb-3">Motor de Trazabilidad</h3>
+                    <p class="text-stone-600 mb-6">Control total sobre tus lotes, etapas y linaje productivo inmutable.</p>
+                    <div id="traceability-status" class="mb-6">
+                        <!-- Stat: Lotes activos, Kg procesados -->
+                    </div>
+                </div>
+                <a href="/app/procesamiento" class="text-emerald-800 font-bold flex items-center group">
+                    Ir a Workstation <i class="fas fa-arrow-right ml-2 transition-transform group-hover:translate-x-1"></i>
+                </a>
+            </div>
+
+            <!-- Excelencia Sensorial -->
+            <div class="impact-card p-8 rounded-3xl flex flex-col justify-between">
+                <div>
+                    <div class="h-12 w-12 bg-purple-100 text-purple-800 rounded-2xl flex items-center justify-center mb-6">
+                        <i class="fas fa-wand-magic-sparkles text-xl"></i>
+                    </div>
+                    <h3 class="text-2xl font-display font-bold text-purple-900 mb-3">Análisis de Calidad</h3>
+                    <p class="text-stone-600 mb-6">Registra puntajes de taza SCA/CoE y mapea perfiles de sabor.</p>
+                    <div id="quality-status" class="mb-6">
+                        <!-- Stat: Puntaje promedio, Ruedas creadas -->
+                    </div>
+                </div>
+                <a href="/app/perfiles" class="text-purple-800 font-bold flex items-center group">
+                    Gestionar Perfiles <i class="fas fa-arrow-right ml-2 transition-transform group-hover:translate-x-1"></i>
+                </a>
+            </div>
+
+        </div>
+
+        <!-- Analytical Section -->
+        <div class="border-t border-stone-200 pt-16">
+            <div class="flex flex-col md:flex-row justify-between items-end mb-10 gap-4">
+                <div>
+                    <h2 class="text-3xl font-display font-bold text-amber-950">Analítica Avanzada</h2>
+                    <p class="text-stone-500 uppercase tracking-widest text-sm font-bold mt-1">Rentabilidad y Rendimiento</p>
+                </div>
+                
+                <!-- Filtros movidos aquí -->
+                <div class="flex gap-4 bg-white p-2 rounded-2xl shadow-sm border border-stone-100">
+                    <select id="template-filter" class="p-2 text-sm border-none bg-stone-50 rounded-xl focus:ring-0"></select>
+                    <select id="batch-filter" class="p-2 text-sm border-none bg-stone-50 rounded-xl focus:ring-0"></select>
                 </div>
             </div>
-            <div class="lg:col-span-2 bg-white p-6 rounded-2xl shadow-lg">
-                <h2 class="text-2xl font-display text-amber-900 mb-4">Producción por Finca</h2>
-                <div class="max-w-xs mx-auto">
-                    <canvas id="produccion-chart"></canvas>
+
+            <!-- KPIs Section -->
+            <div id="kpi-container" class="grid grid-cols-2 md:grid-cols-4 gap-6 mb-12">
+                <!-- KPIs se cargarán aquí -->
+            </div>
+
+            <!-- Charts Section -->
+            <div class="grid grid-cols-1 lg:grid-cols-5 gap-8">
+                <div class="lg:col-span-3 bg-white p-8 rounded-3xl shadow-lg border border-stone-50">
+                    <h3 class="text-xl font-bold text-amber-900 mb-6 italic border-l-4 border-amber-600 pl-4">Rendimiento por Etapa (%)</h3>
+                    <div class="h-64">
+                        <canvas id="rendimiento-chart"></canvas>
+                    </div>
+                </div>
+                <div class="lg:col-span-2 bg-white p-8 rounded-3xl shadow-lg border border-stone-50">
+                    <h3 class="text-xl font-bold text-amber-900 mb-6 italic border-l-4 border-amber-600 pl-4">Costos ($/kg)</h3>
+                    <div class="h-64">
+                        <canvas id="costo-etapa-chart"></canvas>
+                    </div>
+                </div>
+                <div class="lg:col-span-2 bg-white p-8 rounded-3xl shadow-lg border border-stone-50">
+                    <h3 class="text-xl font-bold text-emerald-900 mb-6 italic border-l-4 border-emerald-600 pl-4">Producción por Finca</h3>
+                    <div class="max-w-[200px] mx-auto">
+                        <canvas id="produccion-chart"></canvas>
+                    </div>
                 </div>
             </div>
         </div>
+
     </div>
     
     <script src="/js/dashboard-app.js"></script>
@@ -70,4 +177,3 @@
     <script src="/js/help-menu.js"></script>
 </body>
 </html>
-

@@ -1067,14 +1067,20 @@ const getDashboardData = async (req, res) => {
             allStagesRaw,
             fincas,
             procesadoras,
-            costs
+            costs,
+            acquisitions,
+            productos,
+            userProfile
         ] = await Promise.all([
             all('SELECT * FROM batches WHERE user_id = ?', [userId]),
             all('SELECT * FROM plantillas_proceso WHERE user_id = ?', [userId]),
             all('SELECT * FROM etapas_plantilla WHERE plantilla_id IN (SELECT id FROM plantillas_proceso WHERE user_id = ?)', [userId]),
             all('SELECT * FROM fincas WHERE user_id = ?', [userId]),
             all('SELECT * FROM procesadoras WHERE user_id = ?', [userId]),
-            all('SELECT * FROM lote_costs WHERE user_id = ?', [userId])
+            all('SELECT * FROM lote_costs WHERE user_id = ?', [userId]),
+            all('SELECT * FROM acquisitions WHERE user_id = ?', [userId]),
+            all('SELECT * FROM productos WHERE user_id = ?', [userId]),
+            get('SELECT name, logo, cover, subdomain, history_text, is_published, company_type, company_id FROM users WHERE id = ?', [userId])
         ]);
 
         const lotesProcesados = allLotes.map(lote => ({
@@ -1110,7 +1116,10 @@ const getDashboardData = async (req, res) => {
             stages,
             fincas,
             procesadoras,
-            costs: costs.map(c => ({ ...c, cost_data: safeJSONParse(c.cost_data) }))
+            costs: costs.map(c => ({ ...c, cost_data: safeJSONParse(c.cost_data) })),
+            acquisitions,
+            productos,
+            userProfile
         });
 
     } catch (err) {
