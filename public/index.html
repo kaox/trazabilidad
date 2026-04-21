@@ -1,13 +1,16 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <!-- SEO Core -->
   <title>RuruLab | La Historia de tu Origen, Validada por el Mundo</title>
-  <meta name="description" content="Blockchain, Trazabilidad y Marketing de Especialidad para Productores de Cacao y Café. Cumple EUDR, crea un Pasaporte Digital QR y conecta el origen con el consumidor.">
-  <meta name="keywords" content="trazabilidad blockchain, EUDR, pasaporte digital QR, software cafe especialidad, trazabilidad cacao, rueda de sabores, SCA, perfil sensorial">
+  <meta name="description"
+    content="Blockchain, Trazabilidad y Marketing de Especialidad para Productores de Cacao y Café. Cumple EUDR, crea un Pasaporte Digital QR y conecta el origen con el consumidor.">
+  <meta name="keywords"
+    content="trazabilidad blockchain, EUDR, pasaporte digital QR, software cafe especialidad, trazabilidad cacao, rueda de sabores, SCA, perfil sensorial">
   <link rel="canonical" href="https://rurulab.com/">
   <meta name="robots" content="index, follow">
 
@@ -34,7 +37,8 @@
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://rurulab.com/">
   <meta property="og:title" content="RuruLab | La Historia de tu Origen, Validada por el Mundo">
-  <meta property="og:description" content="Blockchain, Trazabilidad y Marketing de Especialidad para Productores de Cacao y Café.">
+  <meta property="og:description"
+    content="Blockchain, Trazabilidad y Marketing de Especialidad para Productores de Cacao y Café.">
   <meta property="og:image" content="https://rurulab.com/images/hero_premium.png">
   <meta property="twitter:card" content="summary_large_image">
   <meta property="twitter:title" content="RuruLab | La Historia de tu Origen, Validada por el Mundo">
@@ -43,7 +47,9 @@
   <!-- Fonts & Icons (preloaded for LCP) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,700;0,900;1,700&display=swap" rel="stylesheet">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,700;0,900;1,700&display=swap"
+    rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
   <link href="/css/styles.css" rel="stylesheet">
   <script src="/js/analytics-loader.js" defer></script>
@@ -56,34 +62,60 @@
       --emerald: #065f46;
       --indigo: #1e1b4b;
     }
-    *, *::before, *::after { box-sizing: border-box; }
-    body { font-family: 'Inter', sans-serif; background-color: var(--cream); color: #292524; margin: 0; }
-    h1,h2,h3,.serif { font-family: 'Playfair Display', Georgia, serif; }
+
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: var(--cream);
+      color: #292524;
+      margin: 0;
+    }
+
+    h1,
+    h2,
+    h3,
+    .serif {
+      font-family: 'Playfair Display', Georgia, serif;
+    }
 
     /* ── Scrollbar ───────────────────────── */
-    .hide-scrollbar::-webkit-scrollbar { display:none; }
-    .hide-scrollbar { -ms-overflow-style:none; scrollbar-width:none; }
+    .hide-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+
+    .hide-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
 
     /* ── HERO ───────────────────────────── */
     .hero-bg {
-      background-image: linear-gradient(105deg, rgba(0,0,0,.88) 0%, rgba(0,0,0,.55) 55%, rgba(0,0,0,.15) 100%),
-                        url('/images/hero_premium.png');
-      background-size: cover; background-position: center;
+      background-image: linear-gradient(105deg, rgba(0, 0, 0, .88) 0%, rgba(0, 0, 0, .55) 55%, rgba(0, 0, 0, .15) 100%),
+        url('/images/hero_premium.png');
+      background-size: cover;
+      background-position: center;
       min-height: 100svh;
     }
 
     /* ── GLASS CARD ───────────────────── */
     .glass {
-      background: rgba(255,255,255,.06);
+      background: rgba(255, 255, 255, .06);
       backdrop-filter: blur(12px);
       -webkit-backdrop-filter: blur(12px);
-      border: 1px solid rgba(255,255,255,.12);
+      border: 1px solid rgba(255, 255, 255, .12);
     }
 
     /* ── GRADIENT TEXT ───────────────── */
     .grad-amber {
       background: linear-gradient(135deg, #fbbf24 0%, #d97706 100%);
-      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
     }
 
     /* ── FEATURE CARD ─────────────────── */
@@ -92,59 +124,132 @@
       border: 1px solid #f0ede9;
       border-radius: 2rem;
       padding: 2.5rem;
-      display: flex; flex-direction: column; gap: 1.25rem;
-      transition: transform .35s cubic-bezier(.22,1,.36,1), box-shadow .35s;
-      position: relative; overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+      transition: transform .35s cubic-bezier(.22, 1, .36, 1), box-shadow .35s;
+      position: relative;
+      overflow: hidden;
     }
+
     .f-card::after {
       content: attr(data-num);
-      position: absolute; bottom: -1rem; right: 1.5rem;
-      font-size: 6rem; font-weight: 900;
-      color: rgba(0,0,0,.04); line-height: 1; user-select: none;
+      position: absolute;
+      bottom: -1rem;
+      right: 1.5rem;
+      font-size: 6rem;
+      font-weight: 900;
+      color: rgba(0, 0, 0, .04);
+      line-height: 1;
+      user-select: none;
     }
-    .f-card:hover { transform: translateY(-10px); box-shadow: 0 24px 48px rgba(0,0,0,.08); }
+
+    .f-card:hover {
+      transform: translateY(-10px);
+      box-shadow: 0 24px 48px rgba(0, 0, 0, .08);
+    }
+
     .f-card .f-icon {
-      width: 3.25rem; height: 3.25rem; border-radius: 1rem;
-      display:flex; align-items:center; justify-content:center; font-size: 1.25rem;
+      width: 3.25rem;
+      height: 3.25rem;
+      border-radius: 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.25rem;
     }
-    .f-card h3 { font-size: 1.35rem; margin: 0; line-height: 1.25; }
-    .f-card p { font-size: .9rem; color: #78716c; line-height: 1.65; margin: 0; }
+
+    .f-card h3 {
+      font-size: 1.35rem;
+      margin: 0;
+      line-height: 1.25;
+    }
+
+    .f-card p {
+      font-size: .9rem;
+      color: #78716c;
+      line-height: 1.65;
+      margin: 0;
+    }
+
     .f-card .f-link {
-      display:inline-flex; align-items:center; gap:.45rem;
-      font-size:.8rem; font-weight:700; text-transform:uppercase; letter-spacing:.06em;
-      text-decoration:none; transition: gap .2s;
+      display: inline-flex;
+      align-items: center;
+      gap: .45rem;
+      font-size: .8rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      text-decoration: none;
+      transition: gap .2s;
     }
-    .f-card .f-link:hover { gap:.7rem; }
+
+    .f-card .f-link:hover {
+      gap: .7rem;
+    }
 
     /* ── STEPPER ──────────────────────── */
     .chain-step {
-      display:flex; flex-direction:column; align-items:center; gap:.6rem;
-      cursor: default; flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: .6rem;
+      cursor: default;
+      flex: 1;
     }
+
     .chain-icon {
-      width:3.5rem; height:3.5rem; border-radius:50%;
-      display:flex; align-items:center; justify-content:center;
-      font-size:1.1rem; border:2px solid #e7e5e4;
-      background:#fff; color:#a8a29e;
-      transition: all .4s cubic-bezier(.22,1,.36,1);
+      width: 3.5rem;
+      height: 3.5rem;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.1rem;
+      border: 2px solid #e7e5e4;
+      background: #fff;
+      color: #a8a29e;
+      transition: all .4s cubic-bezier(.22, 1, .36, 1);
     }
+
     .chain-step:hover .chain-icon {
-      background: var(--amber-deep); color:#fff; border-color: var(--amber-deep);
+      background: var(--amber-deep);
+      color: #fff;
+      border-color: var(--amber-deep);
       transform: scale(1.15);
     }
-    .chain-label { font-size:.7rem; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:#a8a29e; }
-    .chain-connector { flex:1; height:2px; background:#e7e5e4; margin-top:-1.75rem; }
+
+    .chain-label {
+      font-size: .7rem;
+      font-weight: 700;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: #a8a29e;
+    }
+
+    .chain-connector {
+      flex: 1;
+      height: 2px;
+      background: #e7e5e4;
+      margin-top: -1.75rem;
+    }
 
     /* ── BRAND SECTION ────────────────── */
     .mockup-device {
-      border-radius: 2.5rem; overflow:hidden; border:6px solid #1c1917;
-      box-shadow: 0 40px 80px rgba(0,0,0,.25);
+      border-radius: 2.5rem;
+      overflow: hidden;
+      border: 6px solid #1c1917;
+      box-shadow: 0 40px 80px rgba(0, 0, 0, .25);
     }
 
     /* ── TESTIMONIAL STRIP ─────────────── */
     .testistrip .t-item {
-      border:1px solid #e7e5e4; border-radius:1.5rem; padding:1.75rem;
-      background:#fff; flex-shrink:0; width:320px;
+      border: 1px solid #e7e5e4;
+      border-radius: 1.5rem;
+      padding: 1.75rem;
+      background: #fff;
+      flex-shrink: 0;
+      width: 320px;
     }
 
     /* ── CTA FINAL ────────────────────── */
@@ -153,25 +258,73 @@
     }
 
     /* ── ANIMATION CLASSES ────────────── */
-    @keyframes floatY { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-12px)} }
-    .float-anim { animation: floatY 4s ease-in-out infinite; }
-    @keyframes fadeUp { from{opacity:0;transform:translateY(30px)} to{opacity:1;transform:none} }
-    .reveal { opacity:0; }
-    .revealed { animation: fadeUp .7s cubic-bezier(.22,1,.36,1) forwards; }
+    @keyframes floatY {
+
+      0%,
+      100% {
+        transform: translateY(0)
+      }
+
+      50% {
+        transform: translateY(-12px)
+      }
+    }
+
+    .float-anim {
+      animation: floatY 4s ease-in-out infinite;
+    }
+
+    @keyframes fadeUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px)
+      }
+
+      to {
+        opacity: 1;
+        transform: none
+      }
+    }
+
+    .reveal {
+      opacity: 0;
+    }
+
+    .revealed {
+      animation: fadeUp .7s cubic-bezier(.22, 1, .36, 1) forwards;
+    }
 
     /* ── PILL BADGE ───────────────────── */
     .pill {
-      display:inline-flex; align-items:center; gap:.5rem;
-      padding:.35rem 1rem; border-radius:9999px; font-size:.7rem;
-      font-weight:700; letter-spacing:.06em; text-transform:uppercase;
+      display: inline-flex;
+      align-items: center;
+      gap: .5rem;
+      padding: .35rem 1rem;
+      border-radius: 9999px;
+      font-size: .7rem;
+      font-weight: 700;
+      letter-spacing: .06em;
+      text-transform: uppercase;
     }
 
     /* ── FOOTER ───────────────────────── */
-    footer { background:#0c0a09; color:#78716c; }
-    footer a { color:#a8a29e; text-decoration:none; transition: color .2s; }
-    footer a:hover { color:#fdfaf6; }
+    footer {
+      background: #0c0a09;
+      color: #78716c;
+    }
+
+    footer a {
+      color: #a8a29e;
+      text-decoration: none;
+      transition: color .2s;
+    }
+
+    footer a:hover {
+      color: #fdfaf6;
+    }
   </style>
 </head>
+
 <body>
 
   <div id="public-nav-placeholder"></div>
@@ -194,16 +347,17 @@
         </h1>
 
         <p class="text-lg md:text-xl text-stone-300 max-w-lg leading-relaxed mb-10 reveal" style="animation-delay:.2s">
-          Blockchain, Trazabilidad y Marketing de Especialidad para Productores de Cacao y Café que buscan diferenciar su&nbsp;marca.
+          Blockchain, Trazabilidad y Marketing de Especialidad para Productores de Cacao y Café que buscan diferenciar
+          su&nbsp;marca.
         </p>
 
         <div class="flex flex-wrap gap-4 reveal" style="animation-delay:.3s">
           <a href="/login.html" id="cta-hero-register"
-             class="inline-flex items-center gap-2 bg-amber-600 hover:bg-amber-700 text-white font-bold py-4 px-8 rounded-2xl shadow-xl transition-all transform hover:-translate-y-1 text-base">
+            class="inline-flex items-center gap-2 bg-amber-600 hover:bg-amber-700 text-white font-bold py-4 px-8 rounded-2xl shadow-xl transition-all transform hover:-translate-y-1 text-base">
             <i class="fas fa-rocket"></i> Comenzar Gratis
           </a>
           <a href="/origen-unico" id="cta-hero-marketplace"
-             class="inline-flex items-center gap-2 glass hover:bg-white/15 text-white font-bold py-4 px-8 rounded-2xl transition-all text-base">
+            class="inline-flex items-center gap-2 glass hover:bg-white/15 text-white font-bold py-4 px-8 rounded-2xl transition-all text-base">
             Explorar el Marketplace <i class="fas fa-arrow-right"></i>
           </a>
         </div>
@@ -232,7 +386,8 @@
         <div class="glass rounded-3xl p-8 max-w-sm w-full border-white/15 shadow-2xl">
           <!-- Batch passport card -->
           <div class="flex items-center gap-4 mb-6 pb-6 border-b border-white/10">
-            <div class="h-12 w-12 bg-emerald-500 rounded-2xl flex items-center justify-center text-2xl shadow-lg">🛰️</div>
+            <div class="h-12 w-12 bg-emerald-500 rounded-2xl flex items-center justify-center text-2xl shadow-lg">🛰️
+            </div>
             <div>
               <h3 class="text-white font-bold">Pasaporte Digital</h3>
               <p class="text-stone-300 text-xs">Lote ENV-5W8BL4HE · EUDR ✓</p>
@@ -268,8 +423,10 @@
   ════════════════════════════════════════ -->
   <section class="py-12 bg-white border-b border-stone-100">
     <div class="container mx-auto px-6">
-      <p class="text-center text-stone-400 text-[10px] font-bold uppercase tracking-[.3em] mb-8">Productores Verificados en RuruLab</p>
-      <div id="companies-carousel" class="flex items-center gap-12 overflow-x-auto hide-scrollbar justify-start md:justify-center">
+      <p class="text-center text-stone-400 text-[10px] font-bold uppercase tracking-[.3em] mb-8">Productores Verificados
+        en RuruLab</p>
+      <div id="companies-carousel"
+        class="flex items-center gap-12 overflow-x-auto hide-scrollbar justify-start md:justify-center">
         <!-- Loaded by JS -->
         <div class="animate-pulse flex gap-12">
           <div class="h-10 w-28 bg-stone-100 rounded"></div>
@@ -287,8 +444,10 @@
     <div class="container mx-auto px-6 max-w-5xl">
       <div class="text-center mb-16 reveal">
         <p class="pill bg-amber-100 text-amber-900 mb-4">Tree-to-Cup Experience</p>
-        <h2 class="text-4xl md:text-6xl font-black text-stone-900 mb-4">De la Finca al<br><span class="italic text-amber-700">Mercado Global.</span></h2>
-        <p class="text-stone-500 text-lg max-w-xl mx-auto">Cada grano tiene una historia. Nosotros la hacemos inmutable, visible y rentable en 5 pasos.</p>
+        <h2 class="text-4xl md:text-6xl font-black text-stone-900 mb-4">De la Finca al<br><span
+            class="italic text-amber-700">Mercado Global.</span></h2>
+        <p class="text-stone-500 text-lg max-w-xl mx-auto">Cada grano tiene una historia. Nosotros la hacemos inmutable,
+          visible y rentable en 5 pasos.</p>
       </div>
 
       <!-- Steps -->
@@ -337,9 +496,11 @@
       <div class="flex flex-col md:flex-row justify-between items-end gap-6 mb-16 reveal">
         <div>
           <p class="pill bg-stone-100 text-stone-700 mb-4">Módulos de Impacto Total</p>
-          <h2 class="text-4xl md:text-5xl font-black leading-tight">Todo lo que tu Marca<br>Necesita, en un solo lugar.</h2>
+          <h2 class="text-4xl md:text-5xl font-black leading-tight">Todo lo que tu Marca<br>Necesita, en un solo lugar.
+          </h2>
         </div>
-        <a href="/login.html" class="text-amber-700 font-bold border-b-2 border-amber-700 pb-0.5 hover:text-amber-900 transition-all whitespace-nowrap">
+        <a href="/login.html"
+          class="text-amber-700 font-bold border-b-2 border-amber-700 pb-0.5 hover:text-amber-900 transition-all whitespace-nowrap">
           Ver la plataforma →
         </a>
       </div>
@@ -350,24 +511,30 @@
         <div class="f-card reveal" data-num="01">
           <div class="f-icon bg-amber-50 text-amber-800"><i class="fas fa-shop"></i></div>
           <h3 class="text-amber-950">Marketplace de Especialidad</h3>
-          <p>Conecta directo con importadores, tostadores y compradores sin intermediarios opacos. Tu producto, tu precio, tu narrativa.</p>
-          <a href="/origen-unico" class="f-link text-amber-700">Explorar <i class="fas fa-arrow-right text-[10px]"></i></a>
+          <p>Conecta directo con importadores, tostadores y compradores sin intermediarios opacos. Tu producto, tu
+            precio, tu narrativa.</p>
+          <a href="/origen-unico" class="f-link text-amber-700">Explorar <i
+              class="fas fa-arrow-right text-[10px]"></i></a>
         </div>
 
         <!-- 02 Blockchain -->
         <div class="f-card reveal" data-num="02" style="animation-delay:.05s">
           <div class="f-icon bg-indigo-50 text-indigo-900"><i class="fas fa-link"></i></div>
           <h3 class="text-indigo-950">Linaje Inmutable</h3>
-          <p>Cada transformación genera un hash blockchain. La autenticidad de tu lote es matemáticamente incuestionable.</p>
-          <a href="/login.html" class="f-link text-indigo-700">Activar <i class="fas fa-arrow-right text-[10px]"></i></a>
+          <p>Cada transformación genera un hash blockchain. La autenticidad de tu lote es matemáticamente
+            incuestionable.</p>
+          <a href="/login.html" class="f-link text-indigo-700">Activar <i
+              class="fas fa-arrow-right text-[10px]"></i></a>
         </div>
 
         <!-- 03 Rueda Sabores -->
         <div class="f-card reveal" data-num="03" style="animation-delay:.1s">
           <div class="f-icon bg-purple-50 text-purple-900"><i class="fas fa-circle-nodes"></i></div>
           <h3 class="text-purple-950">Ingeniería del Sabor</h3>
-          <p>Diseña Ruedas de Sabor interactivas de la SCA y convierte las notas de cata en una experiencia visual para el consumidor.</p>
-          <a href="/login.html" class="f-link text-purple-700">Descubrir <i class="fas fa-arrow-right text-[10px]"></i></a>
+          <p>Diseña Ruedas de Sabor interactivas de la SCA y convierte las notas de cata en una experiencia visual para
+            el consumidor.</p>
+          <a href="/login.html" class="f-link text-purple-700">Descubrir <i
+              class="fas fa-arrow-right text-[10px]"></i></a>
         </div>
 
         <!-- 04 Perfil SCA -->
@@ -375,14 +542,16 @@
           <div class="f-icon bg-emerald-50 text-emerald-900"><i class="fas fa-award"></i></div>
           <h3 class="text-emerald-950">Calidad Validada SCA/CoE</h3>
           <p>Registra puntajes de taza profesionales. Valida la excelencia de cada lote antes de salir al mercado.</p>
-          <a href="/login.html" class="f-link text-emerald-700">Probar <i class="fas fa-arrow-right text-[10px]"></i></a>
+          <a href="/login.html" class="f-link text-emerald-700">Probar <i
+              class="fas fa-arrow-right text-[10px]"></i></a>
         </div>
 
         <!-- 05 Acopio -->
         <div class="f-card reveal" data-num="05" style="animation-delay:.1s">
           <div class="f-icon bg-rose-50 text-rose-900"><i class="fas fa-weight-hanging"></i></div>
           <h3 class="text-rose-950">Acopio Inteligente</h3>
-          <p>Digitaliza el ingreso de materia prima en tiempo real. Pago justo, origen verificado y trazabilidad desde la primera pesada.</p>
+          <p>Digitaliza el ingreso de materia prima en tiempo real. Pago justo, origen verificado y trazabilidad desde
+            la primera pesada.</p>
           <a href="/login.html" class="f-link text-rose-700">Comenzar <i class="fas fa-arrow-right text-[10px]"></i></a>
         </div>
 
@@ -390,7 +559,8 @@
         <div class="f-card reveal" data-num="06" style="animation-delay:.15s">
           <div class="f-icon bg-sky-50 text-sky-900"><i class="fas fa-map-location-dot"></i></div>
           <h3 class="text-sky-950">Gemelo Digital del Terroir</h3>
-          <p>Registra tus Fincas y Centros de Beneficio con coordenadas GPS, altitud, variedad y polígonos de validación EUDR.</p>
+          <p>Registra tus Fincas y Centros de Beneficio con coordenadas GPS, altitud, variedad y polígonos de validación
+            EUDR.</p>
           <a href="/login.html" class="f-link text-sky-700">Mapear <i class="fas fa-arrow-right text-[10px]"></i></a>
         </div>
 
@@ -398,15 +568,19 @@
         <div class="f-card reveal" data-num="07">
           <div class="f-icon bg-yellow-50 text-yellow-900"><i class="fas fa-globe"></i></div>
           <h3 class="text-yellow-950">Tu Marca, Tu Dominio</h3>
-          <p>Una Landing Page personalizada con tu subdominio único, catálogo, historia y chat de ventas directo. Gratis para todos los usuarios.</p>
-          <a href="/origen-unico" class="f-link text-yellow-700">Ver ejemplos <i class="fas fa-arrow-right text-[10px]"></i></a>
+          <p>Una Landing Page personalizada con tu subdominio único, catálogo, historia y chat de ventas directo. Gratis
+            para todos los usuarios.</p>
+          <a href="/origen-unico" class="f-link text-yellow-700">Ver ejemplos <i
+              class="fas fa-arrow-right text-[10px]"></i></a>
         </div>
 
         <!-- 08 QR / GS1 -->
-        <div class="f-card reveal" data-num="08" style="animation-delay:.05s; background:#1c1917; border-color:#1c1917;">
+        <div class="f-card reveal" data-num="08"
+          style="animation-delay:.05s; background:#1c1917; border-color:#1c1917;">
           <div class="f-icon bg-amber-500/20 text-amber-400"><i class="fas fa-barcode"></i></div>
           <h3 style="color:#fdfaf6">Pasaporte Digital GS1</h3>
-          <p style="color:#a8a29e">QR inteligente listo para Sunrise 2027. Un solo escaneo entrega la historia completa, certificaciones y notas de sabor.</p>
+          <p style="color:#a8a29e">QR inteligente listo para Sunrise 2027. Un solo escaneo entrega la historia completa,
+            certificaciones y notas de sabor.</p>
           <a href="#" class="f-link" style="color:#fbbf24">Generar QR <i class="fas fa-arrow-right text-[10px]"></i></a>
         </div>
 
@@ -414,8 +588,10 @@
         <div class="f-card reveal" data-num="09" style="animation-delay:.1s">
           <div class="f-icon bg-orange-50 text-orange-900"><i class="fas fa-gears"></i></div>
           <h3 class="text-orange-950">Motor de Procesamiento</h3>
-          <p>Control total sobre las transformaciones productivas: rendimientos por etapa, costos por kg y análisis de rentabilidad en tiempo real.</p>
-          <a href="/login.html" class="f-link text-orange-700">Explorar <i class="fas fa-arrow-right text-[10px]"></i></a>
+          <p>Control total sobre las transformaciones productivas: rendimientos por etapa, costos por kg y análisis de
+            rentabilidad en tiempo real.</p>
+          <a href="/login.html" class="f-link text-orange-700">Explorar <i
+              class="fas fa-arrow-right text-[10px]"></i></a>
         </div>
 
       </div>
@@ -432,11 +608,12 @@
       <div class="relative reveal order-2 lg:order-1">
         <!-- Product image -->
         <div class="transform -rotate-3 hover:rotate-0 transition-all duration-700">
-          <img src="/images/product_mockup.png" alt="Empaque de café con Rueda de Sabores y QR de RuruLab" 
-               class="w-full max-w-md mx-auto rounded-3xl shadow-2xl">
+          <img src="/images/product_mockup.png" alt="Empaque de café con Rueda de Sabores y QR de RuruLab"
+            class="w-full max-w-md mx-auto rounded-3xl shadow-2xl">
         </div>
         <!-- Floating EUDR badge -->
-        <div class="absolute -top-4 -right-4 bg-emerald-900 text-white p-4 rounded-2xl shadow-xl transform rotate-6 hover:rotate-0 transition-all duration-500 hidden md:block">
+        <div
+          class="absolute -top-4 -right-4 bg-emerald-900 text-white p-4 rounded-2xl shadow-xl transform rotate-6 hover:rotate-0 transition-all duration-500 hidden md:block">
           <div class="flex items-center gap-2 text-xs font-bold">
             <i class="fas fa-satellite text-emerald-300"></i>
             <span class="text-emerald-200">EUDR</span>
@@ -444,7 +621,8 @@
           <p class="text-[10px] text-emerald-400 mt-1">Zona Libre Deforestación ✓</p>
         </div>
         <!-- Floating SCA score -->
-        <div class="absolute -bottom-4 -left-4 bg-white border border-amber-100 p-4 rounded-2xl shadow-xl transform -rotate-3 hover:rotate-0 transition-all duration-500 hidden md:block">
+        <div
+          class="absolute -bottom-4 -left-4 bg-white border border-amber-100 p-4 rounded-2xl shadow-xl transform -rotate-3 hover:rotate-0 transition-all duration-500 hidden md:block">
           <p class="text-3xl font-black text-amber-900">88.5</p>
           <p class="text-[10px] uppercase tracking-widest text-stone-400 font-bold">SCA Score</p>
         </div>
@@ -463,7 +641,8 @@
             </div>
             <div>
               <h4 class="font-bold text-lg mb-1">Landing Page Gratis</h4>
-              <p class="text-stone-500 text-sm leading-relaxed">Tu subdominio personalizado en <code class="text-amber-800">tuempresa.rurulab.com</code> con catálogo, historia y contacto directo.</p>
+              <p class="text-stone-500 text-sm leading-relaxed">Tu subdominio personalizado en <code
+                  class="text-amber-800">tuempresa.rurulab.com</code> con catálogo, historia y contacto directo.</p>
             </div>
           </div>
           <div class="flex gap-5">
@@ -472,7 +651,8 @@
             </div>
             <div>
               <h4 class="font-bold text-lg mb-1">Empaque que Habla</h4>
-              <p class="text-stone-500 text-sm leading-relaxed">El QR lleva al consumidor a una página de producto con la Rueda de Sabores, fotos de la finca y certificaciones.</p>
+              <p class="text-stone-500 text-sm leading-relaxed">El QR lleva al consumidor a una página de producto con
+                la Rueda de Sabores, fotos de la finca y certificaciones.</p>
             </div>
           </div>
           <div class="flex gap-5">
@@ -481,12 +661,13 @@
             </div>
             <div>
               <h4 class="font-bold text-lg mb-1">Cumplimiento Automático</h4>
-              <p class="text-stone-500 text-sm leading-relaxed">Validación satelital EUDR con Google Earth Engine. tus polígonos analizados sin trámites manuales.</p>
+              <p class="text-stone-500 text-sm leading-relaxed">Validación satelital EUDR con Google Earth Engine. tus
+                polígonos analizados sin trámites manuales.</p>
             </div>
           </div>
         </div>
         <a href="/login.html" id="cta-marca"
-           class="inline-flex items-center gap-3 bg-stone-900 text-white font-bold py-4 px-10 rounded-2xl hover:bg-amber-900 transition-all shadow-xl text-base">
+          class="inline-flex items-center gap-3 bg-stone-900 text-white font-bold py-4 px-10 rounded-2xl hover:bg-amber-900 transition-all shadow-xl text-base">
           Crear mi Perfil Gratis <i class="fas fa-arrow-right"></i>
         </a>
       </div>
@@ -507,12 +688,14 @@
           <h3>Cacao &amp; Chocolate</h3>
           <p>Fermentación, Seco, Origen, fino. Conecta con chocolatiers en Europa y Japón.</p>
         </a>
-        <a href="/use-case.html?product=cafe" class="f-card text-left group reveal" data-num="" style="animation-delay:.05s">
+        <a href="/use-case.html?product=cafe" class="f-card text-left group reveal" data-num=""
+          style="animation-delay:.05s">
           <div class="f-icon bg-emerald-800 text-white"><i class="fas fa-mug-hot"></i></div>
           <h3>Café de Especialidad</h3>
           <p>Catación SCA, proceso natural, washed o honey. Diferénciate en el mercado de especialidad.</p>
         </a>
-        <a href="/use-case.html?product=miel" class="f-card text-left group reveal" data-num="" style="animation-delay:.1s">
+        <a href="/use-case.html?product=miel" class="f-card text-left group reveal" data-num=""
+          style="animation-delay:.1s">
           <div class="f-icon bg-amber-500 text-white"><i class="fas fa-jar"></i></div>
           <h3>Miel &amp; Apicultura</h3>
           <p>Composición floral, varietal, origen botánico. Tu miel con la historia de las abejas y el campo.</p>
@@ -530,22 +713,24 @@
       <h2 class="text-5xl md:text-7xl font-black mb-6 leading-tight">
         Tu Origen.<br><span class="italic text-amber-400">Digitalizado.</span>
       </h2>
-      <p class="text-stone-400 text-xl mb-12 max-w-xl mx-auto">Únete a los productores que ya han convertido su transparencia en su ventaja competitiva.</p>
+      <p class="text-stone-400 text-xl mb-12 max-w-xl mx-auto">Únete a los productores que ya han convertido su
+        transparencia en su ventaja competitiva.</p>
       <div class="flex flex-col sm:flex-row gap-4 justify-center">
         <a href="/login.html" id="cta-footer-main"
-           class="inline-flex items-center justify-center gap-2 bg-amber-600 hover:bg-amber-500 text-white font-bold py-5 px-12 rounded-2xl transition-all text-lg shadow-2xl transform hover:-translate-y-1">
+          class="inline-flex items-center justify-center gap-2 bg-amber-600 hover:bg-amber-500 text-white font-bold py-5 px-12 rounded-2xl transition-all text-lg shadow-2xl transform hover:-translate-y-1">
           <i class="fas fa-rocket"></i> Comenzar Gratis
         </a>
         <a href="http://wa.me/51961222040" target="_blank" rel="noopener"
-           class="inline-flex items-center justify-center gap-2 border border-white/20 hover:bg-white/10 text-white font-bold py-5 px-12 rounded-2xl transition-all text-lg">
+          class="inline-flex items-center justify-center gap-2 border border-white/20 hover:bg-white/10 text-white font-bold py-5 px-12 rounded-2xl transition-all text-lg">
           <i class="fab fa-whatsapp text-green-400"></i> Hablar con un Experto
         </a>
       </div>
       <!-- QR hint -->
-      <p class="text-stone-600 text-xs mt-10 uppercase tracking-widest">O escanea para ver un Pasaporte Digital en acción ↓</p>
+      <p class="text-stone-600 text-xs mt-10 uppercase tracking-widest">O escanea para ver un Pasaporte Digital en
+        acción ↓</p>
       <div class="flex justify-center mt-4">
         <a href="https://www.rurulab.com/ENV-5W8BL4HE" target="_blank" rel="noopener"
-           class="bg-white p-4 rounded-2xl inline-block hover:scale-105 transition-transform shadow-2xl">
+          class="bg-white p-4 rounded-2xl inline-block hover:scale-105 transition-transform shadow-2xl">
           <div id="qr-cta" class="w-28 h-28"></div>
         </a>
       </div>
@@ -560,10 +745,13 @@
       <div class="grid md:grid-cols-5 gap-12 mb-16">
         <div class="md:col-span-2">
           <h3 class="text-stone-100 text-3xl font-black italic mb-4">RuruLab.</h3>
-          <p class="text-stone-500 max-w-xs leading-relaxed text-sm">Infraestructura digital para la nueva economía del café y el cacao de especialidad.</p>
+          <p class="text-stone-500 max-w-xs leading-relaxed text-sm">Infraestructura digital para la nueva economía del
+            café y el cacao de especialidad.</p>
           <div class="flex gap-5 mt-6">
-            <a href="https://www.instagram.com/rurulab/" target="_blank" aria-label="Instagram" class="text-xl hover:text-white transition"><i class="fab fa-instagram"></i></a>
-            <a href="http://wa.me/51961222040" target="_blank" aria-label="WhatsApp" class="text-xl hover:text-white transition"><i class="fab fa-whatsapp"></i></a>
+            <a href="https://www.instagram.com/rurulab/" target="_blank" aria-label="Instagram"
+              class="text-xl hover:text-white transition"><i class="fab fa-instagram"></i></a>
+            <a href="http://wa.me/51961222040" target="_blank" aria-label="WhatsApp"
+              class="text-xl hover:text-white transition"><i class="fab fa-whatsapp"></i></a>
           </div>
         </div>
         <div>
@@ -586,11 +774,12 @@
           <h4 class="text-stone-300 font-bold text-xs uppercase tracking-widest mb-5">Novedades</h4>
           <ul class="space-y-3 text-sm">
             <li><a href="/blog">Entradas del blog</a></li>
-            <li><a href="/eventos">Eventos</a></li>
+            <li><a href="/events">Eventos</a></li>
           </ul>
         </div>
       </div>
-      <div class="pt-8 border-t border-white/5 flex flex-col md:flex-row justify-between gap-4 text-[10px] uppercase tracking-widest text-stone-600">
+      <div
+        class="pt-8 border-t border-white/5 flex flex-col md:flex-row justify-between gap-4 text-[10px] uppercase tracking-widest text-stone-600">
         <p>&copy; 2025 RuruLab Inc. Todos los derechos reservados.</p>
         <div class="flex gap-8">
           <a href="#">Términos de Uso</a>
@@ -653,4 +842,5 @@
     document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
   </script>
 </body>
+
 </html>

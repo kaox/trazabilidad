@@ -1267,12 +1267,45 @@ const getBlogPosts = async (req, res) => {
     try {
         // Obtenemos solo los publicados
         const posts = await all(
-            'SELECT id, title, slug, summary, cover_image, created_at FROM blog_posts WHERE is_published = TRUE ORDER BY created_at DESC LIMIT ? OFFSET ?',
+            'SELECT id, title, slug, summary, cover_image, created_at FROM blog_posts WHERE is_published = TRUE AND is_event = FALSE ORDER BY created_at DESC LIMIT ? OFFSET ?',
             [limit, offset]
         );
 
         // Contamos total para la paginación
-        const countResult = await get('SELECT COUNT(*) as count FROM blog_posts WHERE is_published = TRUE');
+        const countResult = await get('SELECT COUNT(*) as count FROM blog_posts WHERE is_published = TRUE AND is_event = FALSE');
+        const totalPosts = parseInt(countResult.count);
+        const totalPages = Math.ceil(totalPosts / limit);
+
+        res.status(200).json({
+            data: posts,
+            pagination: {
+                page,
+                limit,
+                totalPosts,
+                totalPages
+            }
+        });
+    } catch (err) {
+        console.error("Error getting blog posts:", err);
+        res.status(500).json({ error: err.message });
+    }
+};
+
+// Obtener eventos (Público, Paginado)
+const getEvents = async (req, res) => {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const offset = (page - 1) * limit;
+
+    try {
+        // Obtenemos solo los publicados
+        const posts = await all(
+            'SELECT id, title, slug, summary, cover_image, event_start_date, event_end_date, event_city, event_department, event_country, created_at FROM blog_posts WHERE is_published = TRUE AND is_event = TRUE ORDER BY created_at DESC LIMIT ? OFFSET ?',
+            [limit, offset]
+        );
+
+        // Contamos total para la paginación
+        const countResult = await get('SELECT COUNT(*) as count FROM blog_posts WHERE is_published = TRUE AND is_event = TRUE');
         const totalPosts = parseInt(countResult.count);
         const totalPages = Math.ceil(totalPosts / limit);
 
@@ -1306,8 +1339,8 @@ const getBlogPostBySlug = async (req, res) => {
 // Crear Post (Admin)
 const createBlogPost = async (req, res) => {
     const { title, content, summary, cover_image, is_published,
-            is_event, event_start_date, event_end_date,
-            event_city, event_department, event_country, event_companies } = req.body;
+        is_event, event_start_date, event_end_date,
+        event_city, event_department, event_country, event_companies } = req.body;
     const userId = req.user.id;
     const id = require('crypto').randomUUID();
     const slug = createSlug(title);
@@ -1320,9 +1353,9 @@ const createBlogPost = async (req, res) => {
               event_city, event_department, event_country, event_companies)
              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [id, title, slug, content, summary, cover_image, userId, is_published,
-             is_event ? 1 : 0, event_start_date || null, event_end_date || null,
-             event_city || null, event_department || null, event_country || null,
-             event_companies ? JSON.stringify(event_companies) : null]
+                is_event ? 1 : 0, event_start_date || null, event_end_date || null,
+                event_city || null, event_department || null, event_country || null,
+                event_companies ? JSON.stringify(event_companies) : null]
         );
         res.status(201).json({ message: "Artículo creado", slug });
     } catch (err) {
@@ -1335,8 +1368,8 @@ const createBlogPost = async (req, res) => {
 const updateBlogPost = async (req, res) => {
     const { id } = req.params;
     const { title, content, summary, cover_image, is_published,
-            is_event, event_start_date, event_end_date,
-            event_city, event_department, event_country, event_companies } = req.body;
+        is_event, event_start_date, event_end_date,
+        event_city, event_department, event_country, event_companies } = req.body;
     // Por simplicidad, regeneramos el slug si cambia el título.
     const slug = createSlug(title);
 
@@ -1348,10 +1381,10 @@ const updateBlogPost = async (req, res) => {
                  event_city = ?, event_department = ?, event_country = ?, event_companies = ?
              WHERE id = ?`,
             [title, slug, content, summary, cover_image, is_published,
-             is_event ? 1 : 0, event_start_date || null, event_end_date || null,
-             event_city || null, event_department || null, event_country || null,
-             event_companies ? JSON.stringify(event_companies) : null,
-             id]
+                is_event ? 1 : 0, event_start_date || null, event_end_date || null,
+                event_city || null, event_department || null, event_country || null,
+                event_companies ? JSON.stringify(event_companies) : null,
+                id]
         );
         if (result.changes === 0) return res.status(404).json({ error: "Artículo no encontrado." });
         res.status(200).json({ message: "Artículo actualizado", slug });
@@ -1389,7 +1422,7 @@ const getBlogPostById = async (req, res) => {
         if (!post) return res.status(404).json({ error: "Artículo no encontrado." });
         // Parsear event_companies si existe
         if (post.event_companies) {
-            try { post.event_companies = JSON.parse(post.event_companies); } catch(e) { post.event_companies = []; }
+            try { post.event_companies = JSON.parse(post.event_companies); } catch (e) { post.event_companies = []; }
         } else {
             post.event_companies = [];
         }
@@ -2027,7 +2060,7 @@ module.exports = {
     getDashboardData,
     createPaymentPreference, handlePaymentWebhook,
     getReviews, submitReview,
-    getBlogPosts, getBlogPostBySlug, createBlogPost, updateBlogPost, deleteBlogPost, getAdminBlogPosts, getBlogPostById, getPublicCompaniesForEvents,
+    getBlogPosts, getEvents, getBlogPostBySlug, createBlogPost, updateBlogPost, deleteBlogPost, getAdminBlogPosts, getBlogPostById, getPublicCompaniesForEvents,
     validateDeforestation, getBatchByGtinAndLot,
     addIngredienteReceta, updateIngredientePeso, deleteIngrediente,
     getRecetasNutricionales, createRecetaNutricional, deleteRecetaNutricional, updateRecetaNutricional,
