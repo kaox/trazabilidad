@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cargando evento... - Rurulab</title>
+
+    <link href="/css/styles.css" rel="stylesheet">
+    <!-- Estilos para el contenido del editor Quill (necesario para que el HTML se vea bien) -->
+    <link href="https://cdn.quilljs.com/1.3.6/quill.core.css" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Playfair+Display:wght@700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+    <script src="/js/analytics-loader.js" defer></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #fdfdfb;
+        }
+
+        .font-display {
+            font-family: 'Playfair Display', serif;
+        }
+
+        /* Estilos específicos para el contenido traído del CMS */
+        .prose img {
+            border-radius: 0.75rem;
+            margin: 2rem auto;
+            max-width: 100%;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .prose h1,
+        .prose h2,
+        .prose h3 {
+            font-family: 'Playfair Display', serif;
+            color: #451a03;
+            margin-top: 2em;
+            margin-bottom: 1em;
+            font-weight: 700;
+        }
+
+        .prose h2 {
+            font-size: 1.875rem;
+        }
+
+        .prose p {
+            margin-bottom: 1.25em;
+            line-height: 1.8;
+            color: #44403c;
+            font-size: 1.125rem;
+        }
+
+        .prose blockquote {
+            border-left: 4px solid #d97706;
+            padding-left: 1rem;
+            font-style: italic;
+            color: #78350f;
+            background: #fffbeb;
+            padding: 1rem;
+            border-radius: 0 0.5rem 0.5rem 0;
+        }
+
+        .prose ul {
+            list-style-type: disc;
+            padding-left: 1.5rem;
+            margin-bottom: 1.25rem;
+        }
+
+        .prose a {
+            color: #d97706;
+            text-decoration: underline;
+            font-weight: 500;
+        }
+
+        /* ── Event Info Card ── */
+        .event-info-card {
+            background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+            border: 1px solid #fde68a;
+            border-radius: 1rem;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .event-info-row {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+            padding: 0.625rem 0;
+        }
+
+        .event-info-row+.event-info-row {
+            border-top: 1px solid rgba(217, 119, 6, 0.12);
+        }
+
+        .event-info-icon {
+            flex-shrink: 0;
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+        }
+
+        .event-info-icon.date-icon {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .event-info-icon.location-icon {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+
+        .event-info-label {
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #92400e;
+            margin-bottom: 0.125rem;
+        }
+
+        .event-info-value {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: #451a03;
+        }
+
+        .event-status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.375rem;
+            padding: 0.25rem 0.75rem;
+            border-radius: 999px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            margin-left: 0.5rem;
+        }
+
+        .badge-upcoming {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .badge-active {
+            background: #fef3c7;
+            color: #92400e;
+            animation: pulse-subtle 2s infinite;
+        }
+
+        .badge-ended {
+            background: #f3f4f6;
+            color: #6b7280;
+        }
+
+        @keyframes pulse-subtle {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.7;
+            }
+        }
+
+        /* ── Companies Section ── */
+        .companies-section {
+            margin-top: 2.5rem;
+            padding-top: 2rem;
+            border-top: 2px solid #fde68a;
+        }
+
+        .companies-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .company-card {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem 1rem;
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: 0.75rem;
+            transition: all 0.2s ease;
+        }
+
+        .company-card:hover {
+            border-color: #d97706;
+            box-shadow: 0 4px 12px rgba(217, 119, 6, 0.1);
+            transform: translateY(-1px);
+        }
+
+        .company-card img {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            object-fit: cover;
+            background: #f3f4f6;
+            flex-shrink: 0;
+        }
+
+        a.company-card {
+            text-decoration: none;
+            color: inherit;
+            cursor: pointer;
+        }
+
+        .company-card span {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #1f2937;
+            line-height: 1.3;
+        }
+
+        .company-source-badge {
+            font-size: 0.6rem;
+            padding: 1px 6px;
+            border-radius: 999px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+        }
+
+        .source-user {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .source-suggested {
+            background: #e0e7ff;
+            color: #3730a3;
+        }
+    </style>
+</head>
+
+<body class="text-stone-800 antialiased min-h-screen flex flex-col">
+
+    <!-- Nav -->
+    <div id="public-nav-placeholder"></div>
+
+    <article class="max-w-3xl mx-auto px-6 py-12">
+        <div id="loading" class="text-center py-20">
+            <i class="fas fa-circle-notch fa-spin text-4xl text-amber-800"></i>
+        </div>
+
+        <div id="article-content" class="hidden">
+            <!-- Cabecera del Evento -->
+            <header class="mb-8 text-center">
+                <span
+                    class="inline-block bg-amber-100 text-amber-800 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider mb-4"
+                    id="post-date"></span>
+                <h1 class="text-4xl md:text-5xl font-bold font-display text-amber-900 mb-6 leading-tight"
+                    id="post-title"></h1>
+                <img id="post-cover" src="" alt="Cover"
+                    class="w-full h-64 md:h-96 object-cover rounded-2xl shadow-lg mb-8 hidden">
+            </header>
+
+            <!-- Tarjeta de Información del Evento (Fechas + Lugar) -->
+            <div id="event-info" class="event-info-card hidden">
+                <!-- Inyectado por JS -->
+            </div>
+
+            <!-- Cuerpo del Evento (Rich Text) -->
+            <div id="post-body" class="prose max-w-none">
+                <!-- Inyectado por JS -->
+            </div>
+
+            <!-- Empresas Participantes -->
+            <div id="companies-section" class="companies-section hidden">
+                <h2 class="text-2xl font-display font-bold text-amber-900 flex items-center gap-3">
+                    <i class="fas fa-building text-amber-600"></i>
+                    Empresas Participantes
+                </h2>
+                <div id="companies-grid" class="companies-grid">
+                    <!-- Inyectado por JS -->
+                </div>
+            </div>
+
+            <!-- Footer del Evento -->
+            <div class="mt-12 pt-8 border-t border-stone-200">
+                <h3 class="font-display font-bold text-xl mb-4">¿Quieres participar en este evento?</h3>
+                <p class="text-stone-600 mb-6">Descubre cómo Rurulab puede ayudarte a conectar con productores y mostrar
+                    tus productos en eventos del sector.</p>
+                <a href="/"
+                    class="inline-block bg-amber-800 text-white font-bold py-3 px-8 rounded-xl hover:bg-amber-900 transition">Conocer
+                    Rurulab</a>
+            </div>
+        </div>
+
+        <!-- Estado de Error -->
+        <div id="error-state" class="hidden text-center py-20">
+            <i class="fas fa-calendar-xmark text-6xl text-stone-300 mb-4"></i>
+            <h2 class="text-2xl font-display font-bold text-stone-700">Evento no encontrado</h2>
+            <p class="text-stone-500 mt-2">Parece que el enlace está roto o el evento fue eliminado.</p>
+            <a href="/events" class="inline-block mt-6 text-amber-800 font-bold hover:underline">Volver a Eventos</a>
+        </div>
+    </article>
+
+    <footer class="py-8 bg-stone-800 text-stone-300 mt-12">
+        <div class="container mx-auto px-6 text-center">
+            <p>&copy; 2025 Rurulab.</p>
+        </div>
+    </footer>
+
+    <script src="/js/public-nav-loader.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const pathParts = window.location.pathname.split('/');
+            const slug = pathParts[pathParts.length - 1];
+
+            if (!slug) return showError();
+
+            try {
+                const response = await fetch(`/api/events/${slug}`);
+                if (!response.ok) throw new Error('Evento no encontrado');
+
+                const post = await response.json();
+                renderEvent(post);
+            } catch (error) {
+                console.error(error);
+                showError();
+            }
+        });
+
+        /**
+         * Formatea un rango de fechas de evento de forma legible.
+         */
+        function formatEventDateRange(startDate, endDate) {
+            if (!startDate) return null;
+
+            const opts = { year: 'numeric', month: 'long', day: 'numeric' };
+            const start = new Date(startDate + 'T00:00:00');
+            const formattedStart = start.toLocaleDateString('es-ES', opts);
+
+            if (!endDate || startDate === endDate) return formattedStart;
+
+            const end = new Date(endDate + 'T00:00:00');
+
+            // Mismo mes y año
+            if (start.getMonth() === end.getMonth() && start.getFullYear() === end.getFullYear()) {
+                return `${start.getDate()} – ${end.getDate()} de ${start.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}`;
+            }
+
+            return `${formattedStart} – ${end.toLocaleDateString('es-ES', opts)}`;
+        }
+
+        /**
+         * Calcula el estado temporal del evento.
+         */
+        function getEventStatus(startDate, endDate) {
+            if (!startDate) return null;
+
+            const now = new Date();
+            now.setHours(0, 0, 0, 0);
+            const start = new Date(startDate + 'T00:00:00');
+            const end = endDate ? new Date(endDate + 'T23:59:59') : new Date(startDate + 'T23:59:59');
+
+            if (now < start) return { label: 'Próximamente', cls: 'badge-upcoming', icon: 'fas fa-clock' };
+            if (now <= end) return { label: 'En curso', cls: 'badge-active', icon: 'fas fa-circle' };
+            return { label: 'Finalizado', cls: 'badge-ended', icon: 'fas fa-check' };
+        }
+
+        function renderEvent(post) {
+            document.title = `${post.title} - Eventos Rurulab`;
+            document.getElementById('post-title').innerText = post.title;
+            document.getElementById('post-date').innerText = new Date(post.created_at).toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' });
+            document.getElementById('post-body').innerHTML = post.content;
+
+            if (post.cover_image) {
+                const img = document.getElementById('post-cover');
+                img.src = post.cover_image;
+                img.classList.remove('hidden');
+            }
+
+            // ── Tarjeta de información del evento ──
+            renderEventInfo(post);
+
+            // ── Empresas participantes ──
+            renderCompanies(post.event_companies);
+
+            document.getElementById('loading').classList.add('hidden');
+            document.getElementById('article-content').classList.remove('hidden');
+        }
+
+        function renderEventInfo(post) {
+            const hasDate = post.event_start_date;
+            const hasLocation = post.event_city || post.event_department || post.event_country;
+
+            if (!hasDate && !hasLocation) return;
+
+            const infoCard = document.getElementById('event-info');
+            let html = '';
+
+            // Fecha
+            if (hasDate) {
+                const dateRange = formatEventDateRange(post.event_start_date, post.event_end_date);
+                const status = getEventStatus(post.event_start_date, post.event_end_date);
+
+                html += `
+                    <div class="event-info-row">
+                        <div class="event-info-icon date-icon">
+                            <i class="far fa-calendar-alt"></i>
+                        </div>
+                        <div>
+                            <div class="event-info-label">Fecha</div>
+                            <div class="event-info-value">
+                                ${dateRange}
+                                ${status ? `<span class="event-status-badge ${status.cls}"><i class="${status.icon}" style="font-size:8px"></i> ${status.label}</span>` : ''}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            // Ubicación
+            if (hasLocation) {
+                const locationParts = [post.event_city, post.event_department, post.event_country].filter(Boolean);
+                const location = locationParts.join(', ');
+
+                html += `
+                    <div class="event-info-row">
+                        <div class="event-info-icon location-icon">
+                            <i class="fas fa-map-marker-alt"></i>
+                        </div>
+                        <div>
+                            <div class="event-info-label">Lugar</div>
+                            <div class="event-info-value">${location}</div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            infoCard.innerHTML = html;
+            infoCard.classList.remove('hidden');
+        }
+
+        function renderCompanies(companies) {
+            if (!companies || !Array.isArray(companies) || companies.length === 0) return;
+
+            const section = document.getElementById('companies-section');
+            const grid = document.getElementById('companies-grid');
+
+            const cardsHTML = companies.map(c => {
+                const logoSrc = c.logo || 'https://placehold.co/36x36/e5e7eb/9ca3af?text=' + encodeURIComponent((c.name || 'E').charAt(0));
+                const sourceLabel = c.source === 'user' ? 'Verificada' : 'Sugerida';
+                const sourceCls = c.source === 'user' ? 'source-user' : 'source-suggested';
+
+                // Generar slug para el link del perfil público
+                const slug = (c.name || '').toString().toLowerCase().trim()
+                    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+                    .replace(/\s+/g, '-')
+                    .replace(/[^\w\-]+/g, '')
+                    .replace(/\-\-+/g, '-');
+                const profileUrl = `/origen-unico/${slug}-${c.id}`;
+                const hasProfile = c.source === 'user';
+
+                const cardContent = `
+                    <img src="${logoSrc}" alt="${c.name}" onerror="this.src='https://placehold.co/36x36/e5e7eb/9ca3af?text=E'">
+                    <div>
+                        <span>${c.name}</span>
+                        <div style="margin-top:2px">
+                            <span class="company-source-badge ${sourceCls}">${sourceLabel}</span>
+                        </div>
+                    </div>
+                `;
+
+                if (hasProfile) {
+                    return `<a href="${profileUrl}" class="company-card" target="_blank" title="Ver perfil de ${c.name}">${cardContent}</a>`;
+                }
+                return `<div class="company-card">${cardContent}</div>`;
+            }).join('');
+
+            grid.innerHTML = cardsHTML;
+            section.classList.remove('hidden');
+        }
+
+        function showError() {
+            document.getElementById('loading').classList.add('hidden');
+            document.getElementById('error-state').classList.remove('hidden');
+        }
+    </script>
+</body>
+
+</html>

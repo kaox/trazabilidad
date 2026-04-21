@@ -448,6 +448,13 @@ CREATE TABLE IF NOT EXISTS blog_posts (
     is_published BOOLEAN DEFAULT FALSE, 
     published_at TIMESTAMPTZ, 
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    is_event BOOLEAN DEFAULT FALSE,
+    event_start_date TEXT,
+    event_end_date TEXT,
+    event_city TEXT,
+    event_department TEXT,
+    event_country TEXT,
+    event_companies JSONB,
     FOREIGN KEY (author_id) REFERENCES users(id)
 );
 
