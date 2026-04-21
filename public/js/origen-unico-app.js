@@ -240,8 +240,8 @@ const app = {
         } catch (e) { this.container.innerHTML = '<p class="text-center py-20 text-stone-400">No se pudo cargar el directorio.</p>'; }
     },
 
-    renderCompanies: function () {
-        const filtered = this.getFilteredCompanies();
+    renderCompanies: function (preFiltered = null) {
+        const filtered = preFiltered || this.getFilteredCompanies();
 
         let html = `<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 fade-in">`;
 
@@ -311,20 +311,7 @@ const app = {
         this.container.innerHTML = html;
     },
 
-    renderMap: function () {
-        if (typeof google === 'undefined' || !google.maps) {
-            console.error("Google Maps API no está cargada.");
-            return;
-        }
-
-        const mapContainer = document.getElementById('map-world-container');
-        if (!mapContainer) return;
-
-        if (!this.infoWindow) {
-            this.infoWindow = new google.maps.InfoWindow();
-        }
-
-        // Inicializar mapa si no existe
+    initMap: function (mapContainer) {
         if (!this.map) {
             this.map = new google.maps.Map(mapContainer, {
                 center: { lat: -9.19, lng: -75.0152 }, // Perú por defecto
@@ -340,7 +327,53 @@ const app = {
                     { "featureType": "water", "elementType": "all", "stylers": [{ "color": "#c1c1c1" }, { "visibility": "on" }] }
                 ]
             });
+
+            // NUEVO: Escuchar cambios en el mapa para filtrar el listado
+            this.map.addListener('idle', () => {
+                this.renderCompaniesFromMapBounds();
+            });
         }
+    },
+
+    // NUEVO: Filtrar y renderizar empresas según los límites actuales del mapa
+    renderCompaniesFromMapBounds: function() {
+        if (!this.map) return;
+        
+        const bounds = this.map.getBounds();
+        if (!bounds) return;
+
+        // 1. Obtener empresas filtradas por los selectores (Tipo, Producto, Subtipo)
+        const baseFiltered = this.getFilteredCompanies();
+
+        // 2. Aplicar filtro geográfico (solo lo que es visible en el viewport)
+        const visibleOnMap = baseFiltered.filter(c => {
+            if (!c.coordenadas || !c.coordenadas.lat || !c.coordenadas.lng) return false;
+            
+            const position = new google.maps.LatLng(
+                parseFloat(c.coordenadas.lat),
+                parseFloat(c.coordenadas.lng)
+            );
+            return bounds.contains(position);
+        });
+
+        // 3. Renderizar el listado con los resultados geográficos
+        this.renderCompanies(visibleOnMap);
+    },
+
+    renderMap: function () {
+        if (typeof google === 'undefined' || !google.maps) {
+            console.error("Google Maps API no está cargada.");
+            return;
+        }
+
+        const mapContainer = document.getElementById('map-world-container');
+        if (!mapContainer) return;
+
+        if (!this.infoWindow) {
+            this.infoWindow = new google.maps.InfoWindow();
+        }
+
+        this.initMap(mapContainer);
 
         // Limpiar marcadores existentes
         if (this.markers && this.markers.length > 0) {
