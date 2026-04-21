@@ -1,9 +1,9 @@
-// Lógica para la página pública del blog (blog.html)
+// Lógica para la página pública de eventos (events.html)
 document.addEventListener('DOMContentLoaded', () => {
     const blogGrid = document.getElementById('blog-grid');
     const paginationContainer = document.getElementById('pagination');
 
-    // Obtener el número de página actual de la URL (ej: blog.html?page=2)
+    // Obtener el número de página actual de la URL (ej: events.html?page=2)
     // Si no existe, por defecto es la página 1
     const urlParams = new URLSearchParams(window.location.search);
     const currentPage = parseInt(urlParams.get('page')) || 1;
@@ -23,14 +23,54 @@ document.addEventListener('DOMContentLoaded', () => {
             renderGrid(data);
             renderPagination(pagination);
         } catch (error) {
-            console.error("Error cargando el blog:", error);
+            console.error("Error cargando eventos:", error);
             blogGrid.innerHTML = `
                 <div class="col-span-full text-center py-12">
                     <i class="fas fa-exclamation-circle text-4xl text-stone-300 mb-4"></i>
-                    <p class="text-stone-500">No se pudieron cargar las historias. Intenta recargar la página.</p>
+                    <p class="text-stone-500">No se pudieron cargar los eventos. Intenta recargar la página.</p>
                 </div>
             `;
         }
+    }
+
+    /**
+     * Formatea un rango de fechas de evento de forma legible.
+     * Si start y end son el mismo día, muestra una sola fecha.
+     * Si están en el mismo mes, compacta el rango.
+     */
+    function formatEventDateRange(startDate, endDate) {
+        if (!startDate) return null;
+
+        const opts = { year: 'numeric', month: 'long', day: 'numeric' };
+        const optsShort = { day: 'numeric' };
+
+        const start = new Date(startDate + 'T00:00:00'); // Forzar zona local
+        const formattedStart = start.toLocaleDateString('es-ES', opts);
+
+        if (!endDate) return formattedStart;
+
+        const end = new Date(endDate + 'T00:00:00');
+
+        // Misma fecha
+        if (startDate === endDate) return formattedStart;
+
+        // Mismo mes y año
+        if (start.getMonth() === end.getMonth() && start.getFullYear() === end.getFullYear()) {
+            const endDay = end.toLocaleDateString('es-ES', optsShort);
+            return `${start.getDate()} – ${endDay} de ${start.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}`;
+        }
+
+        // Diferente mes
+        const formattedEnd = end.toLocaleDateString('es-ES', opts);
+        return `${formattedStart} – ${formattedEnd}`;
+    }
+
+    /**
+     * Construye la cadena de ubicación a partir de city, department, country.
+     */
+    function formatLocation(city, department, country) {
+        const parts = [city, department, country].filter(Boolean);
+        return parts.length > 0 ? parts.join(', ') : null;
     }
 
     function renderGrid(posts) {
@@ -40,9 +80,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (posts.length === 0) {
             blogGrid.innerHTML = `
                 <div class="col-span-full text-center py-20 bg-stone-50 rounded-2xl border border-stone-100">
-                    <i class="fas fa-feather-alt text-4xl text-stone-300 mb-4"></i>
-                    <h3 class="text-xl font-display font-bold text-stone-600">Aún no hay historias</h3>
-                    <p class="text-stone-500 mt-2">Estamos escribiendo el próximo capítulo. Vuelve pronto.</p>
+                    <i class="fas fa-calendar-xmark text-4xl text-stone-300 mb-4"></i>
+                    <h3 class="text-xl font-display font-bold text-stone-600">Aún no hay eventos</h3>
+                    <p class="text-stone-500 mt-2">Estamos preparando el próximo evento. Vuelve pronto.</p>
                 </div>
             `;
             return;
@@ -50,29 +90,56 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Generar HTML para cada tarjeta
         const cardsHTML = posts.map(post => {
-            // Formatear fecha
-            const date = new Date(post.created_at).toLocaleDateString('es-ES', {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric'
-            });
-
             // Imagen por defecto si no hay cover
-            const imageSrc = post.cover_image || 'https://placehold.co/600x400/78350f/ffffff?text=Rurulab';
+            const imageSrc = post.cover_image || 'https://placehold.co/600x400/78350f/ffffff?text=Evento';
+
+            // Formatear fechas del evento
+            const dateRange = formatEventDateRange(post.event_start_date, post.event_end_date);
+
+            // Formatear ubicación
+            const location = formatLocation(post.event_city, post.event_department, post.event_country);
+
+            // Badge de estado temporal
+            let statusBadge = '';
+            if (post.event_start_date) {
+                const now = new Date();
+                now.setHours(0, 0, 0, 0);
+                const start = new Date(post.event_start_date + 'T00:00:00');
+                const end = post.event_end_date ? new Date(post.event_end_date + 'T23:59:59') : new Date(post.event_start_date + 'T23:59:59');
+
+                if (now < start) {
+                    statusBadge = `<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-700 uppercase tracking-wider"><i class="fas fa-clock text-[9px]"></i> Próximamente</span>`;
+                } else if (now >= start && now <= end) {
+                    statusBadge = `<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 text-amber-700 uppercase tracking-wider animate-pulse"><i class="fas fa-circle text-[7px]"></i> En curso</span>`;
+                } else {
+                    statusBadge = `<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-stone-100 text-stone-500 uppercase tracking-wider"><i class="fas fa-check text-[9px]"></i> Finalizado</span>`;
+                }
+            }
 
             return `
             <article class="bg-white rounded-2xl shadow-sm border border-stone-100 overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col h-full group">
                 <a href="/blog/${post.slug}" class="block h-56 overflow-hidden relative">
                     <div class="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors z-10"></div>
+                    ${statusBadge ? `<div class="absolute top-3 right-3 z-20">${statusBadge}</div>` : ''}
                     <img src="${imageSrc}" 
                          alt="${post.title}" 
                          class="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-700"
                          loading="lazy">
                 </a>
                 <div class="p-6 flex-grow flex flex-col">
-                    <div class="flex items-center gap-2 text-xs text-amber-700 font-bold mb-3 uppercase tracking-wide">
-                        <i class="far fa-calendar-alt"></i> ${date}
+                    ${dateRange ? `
+                    <div class="flex items-center gap-2 text-xs text-amber-700 font-bold mb-2 uppercase tracking-wide">
+                        <i class="far fa-calendar-alt"></i>
+                        <span>${dateRange}</span>
                     </div>
+                    ` : ''}
+
+                    ${location ? `
+                    <div class="flex items-center gap-2 text-xs text-stone-500 mb-3">
+                        <i class="fas fa-map-marker-alt text-rose-400"></i>
+                        <span>${location}</span>
+                    </div>
+                    ` : ''}
                     
                     <h3 class="text-xl font-display font-bold text-stone-900 mb-3 leading-snug group-hover:text-amber-800 transition-colors">
                         <a href="/blog/${post.slug}">
@@ -86,7 +153,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     
                     <div class="mt-auto border-t border-stone-100 pt-4 flex justify-between items-center">
                         <a href="/blog/${post.slug}" class="text-sm font-bold text-amber-800 hover:text-amber-900 flex items-center gap-2 group/link">
-                            Leer artículo <i class="fas fa-arrow-right text-xs transform group-hover/link:translate-x-1 transition-transform"></i>
+                            Ver evento <i class="fas fa-arrow-right text-xs transform group-hover/link:translate-x-1 transition-transform"></i>
                         </a>
                     </div>
                 </div>
