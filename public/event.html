@@ -374,6 +374,7 @@
         }
 
         function renderEvent(post) {
+            console.log('POST', post);
             document.title = `${post.title} - Eventos Rurulab`;
             document.getElementById('post-title').innerText = post.title;
             document.getElementById('post-date').innerText = new Date(post.created_at).toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' });
@@ -448,6 +449,7 @@
         }
 
         function renderCompanies(companies) {
+            console.log('COMPANIES', companies);
             if (!companies || !Array.isArray(companies) || companies.length === 0) return;
 
             const section = document.getElementById('companies-section');
