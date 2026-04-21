@@ -1330,6 +1330,8 @@ const getBlogPostBySlug = async (req, res) => {
     try {
         const post = await get('SELECT * FROM blog_posts WHERE slug = ? AND is_published = TRUE', [slug]);
         if (!post) return res.status(404).json({ error: "Artículo no encontrado." });
+        // Parsear event_companies si existe
+        post.event_companies = safeJSONParse(post.event_companies) || [];
         res.status(200).json(post);
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -1343,11 +1345,7 @@ const getEventBySlug = async (req, res) => {
         const post = await get('SELECT * FROM blog_posts WHERE slug = ? AND is_published = TRUE AND is_event = TRUE', [slug]);
         if (!post) return res.status(404).json({ error: "Evento no encontrado." });
         // Parsear event_companies si existe
-        if (post.event_companies) {
-            try { post.event_companies = JSON.parse(post.event_companies); } catch (e) { post.event_companies = []; }
-        } else {
-            post.event_companies = [];
-        }
+        post.event_companies = safeJSONParse(post.event_companies) || [];
         res.status(200).json(post);
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -1438,11 +1436,7 @@ const getBlogPostById = async (req, res) => {
         const post = await get('SELECT * FROM blog_posts WHERE id = ?', [id]);
         if (!post) return res.status(404).json({ error: "Artículo no encontrado." });
         // Parsear event_companies si existe
-        if (post.event_companies) {
-            try { post.event_companies = JSON.parse(post.event_companies); } catch (e) { post.event_companies = []; }
-        } else {
-            post.event_companies = [];
-        }
+        post.event_companies = safeJSONParse(post.event_companies) || [];
         res.status(200).json(post);
     } catch (err) {
         res.status(500).json({ error: err.message });
