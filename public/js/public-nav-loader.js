@@ -46,20 +46,42 @@ function initPublicNavigation() {
         link.addEventListener('click', closeMenu);
     });
 
-    // Lógica para Dropdowns en escritorio (Hover/Click híbrido)
+    // Lógica para Dropdowns en escritorio (Hover con delay / Click híbrido)
     const dropdowns = document.querySelectorAll('[data-menu]');
     
     dropdowns.forEach(group => {
         const btn = group.querySelector('button');
         const content = group.querySelector('[data-menu-content]');
+        let hideTimeout;
+
+        const icon = btn.querySelector('i.fa-chevron-down');
+
+        const show = () => {
+            clearTimeout(hideTimeout);
+            content.classList.remove('hidden');
+            if (icon) icon.classList.add('rotate-180');
+        };
+
+        const hide = () => {
+            hideTimeout = setTimeout(() => {
+                content.classList.add('hidden');
+                if (icon) icon.classList.remove('rotate-180');
+            }, 300); // 300ms de gracia para mover el mouse
+        };
+
+        // Desktop: Hover behavior
+        group.addEventListener('mouseenter', show);
+        group.addEventListener('mouseleave', hide);
         
-        // Soporte táctil
+        // Soporte táctil / Click
         btn.addEventListener('click', (e) => {
             e.stopPropagation();
-            content.classList.toggle('hidden');
+            const isHidden = content.classList.contains('hidden');
+            if (isHidden) show();
+            else content.classList.add('hidden');
         });
 
-        // Cerrar al hacer clic fuera
+        // Cerrar al hacer clic fuera (global)
         document.addEventListener('click', (e) => {
             if (!group.contains(e.target)) {
                 content.classList.add('hidden');
