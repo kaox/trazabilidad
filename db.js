@@ -1371,7 +1371,7 @@ const createBlogPost = async (req, res) => {
               event_city, event_department, event_country, event_companies)
              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [id, title, slug, content, summary, cover_image, userId, is_published,
-                is_event ? 1 : 0, event_start_date || null, event_end_date || null,
+                !!is_event, event_start_date || null, event_end_date || null,
                 event_city || null, event_department || null, event_country || null,
                 event_companies ? JSON.stringify(event_companies) : null]
         );
@@ -1399,9 +1399,8 @@ const updateBlogPost = async (req, res) => {
                  event_city = ?, event_department = ?, event_country = ?, event_companies = ?
              WHERE id = ?`,
             [title, slug, content, summary, cover_image, is_published,
-                is_event ? 1 : 0, event_start_date || null, event_end_date || null,
-                event_city || null, event_department || null, event_country || null,
-                event_companies ? JSON.stringify(event_companies) : null,
+                is_event, event_start_date, event_end_date,
+                event_city, event_department, event_country, event_companies,
                 id]
         );
         if (result.changes === 0) return res.status(404).json({ error: "Artículo no encontrado." });
@@ -1457,7 +1456,7 @@ const getPublicCompaniesForEvents = async (req, res) => {
         const profileCompanies = await all(`
             SELECT cp.user_id AS id, cp.name, cp.logo_url AS logo, 'user' AS source
             FROM company_profiles cp
-            WHERE cp.is_published = 1
+            WHERE cp.is_published = TRUE
             ORDER BY cp.name ASC
         `);
 
