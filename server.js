@@ -313,6 +313,7 @@ app.get('/pricing-public.html', (req, res) => res.sendFile(path.join(__dirname, 
 app.get('/qr', (req, res) => res.sendFile(path.join(__dirname, 'public', 'tracking.html')));
 app.get('/registro-productor', (req, res) => res.sendFile(path.join(__dirname, 'public', 'registro-productor.html')));
 app.get('/blog/:slug', (req, res) => res.sendFile(path.join(__dirname, 'public', 'article.html')));
+app.get('/blog', (req, res) => res.sendFile(path.join(__dirname, 'public', 'blog.html')));
 app.get('/magic-login/:token', suggestionsController.handleMagicLogin);
 app.get('/scrap', (req, res) => res.sendFile(path.join(__dirname, 'public', 'scrap.html')));
 
@@ -470,11 +471,11 @@ app.get('/origen-unico/:slug', async (req, res) => {
 app.get('/lote/:slug', async (req, res) => {
     const slugParam = req.params.slug;
     const { get } = require('./src/config/db.js');
-    
+
     // Extraer UUID del final del slug
     const uuidPattern = /([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})$/i;
     const match = slugParam.match(uuidPattern);
-    
+
     const filePath = path.join(__dirname, 'public', 'producto-detalle.html');
 
     if (!match) {
@@ -494,7 +495,7 @@ app.get('/lote/:slug', async (req, res) => {
             if (product) {
                 const title = `${product.nombre} | Trazabilidad y Origen`;
                 const description = product.descripcion ? product.descripcion.replace(/"/g, '&quot;') : `Descubre la trazabilidad completa, perfil sensorial y origen de ${product.nombre} en Ruru Lab.`;
-                
+
                 let imageUrl = '';
                 if (product.imagenes_json) {
                     try {
@@ -502,7 +503,7 @@ app.get('/lote/:slug', async (req, res) => {
                         if (images && images.length > 0) {
                             imageUrl = images[0];
                         }
-                    } catch(e) {}
+                    } catch (e) { }
                 }
 
                 if (!imageUrl) {
@@ -516,10 +517,10 @@ app.get('/lote/:slug', async (req, res) => {
                     .replace(/<meta property="og:description" content=".*?">/gi, `<meta property="og:description" content="${description}">`)
                     .replace(/<meta name="twitter:title" content=".*?">/gi, `<meta name="twitter:title" content="${title}">`)
                     .replace(/<meta name="twitter:description" content=".*?">/gi, `<meta name="twitter:description" content="${description}">`);
-                
+
                 if (imageUrl) {
                     finalHtml = finalHtml.replace(/<meta property="og:image" content=".*?">/gi, `<meta property="og:image" content="${imageUrl}">`)
-                                         .replace(/<meta name="twitter:image" content=".*?">/gi, `<meta name="twitter:image" content="${imageUrl}">`);
+                        .replace(/<meta name="twitter:image" content=".*?">/gi, `<meta name="twitter:image" content="${imageUrl}">`);
                 }
 
                 // URL canónica y Open Graph URL
@@ -527,7 +528,7 @@ app.get('/lote/:slug', async (req, res) => {
                 const host = req.get('host');
                 const pageUrl = `${protocol}://${host}/lote/${slugParam}`;
                 finalHtml = finalHtml.replace(/<meta property="og:url" content=".*?">/gi, `<meta property="og:url" content="${pageUrl}">`)
-                                     .replace(/<meta name="twitter:url" content=".*?">/gi, `<meta name="twitter:url" content="${pageUrl}">`);
+                    .replace(/<meta name="twitter:url" content=".*?">/gi, `<meta name="twitter:url" content="${pageUrl}">`);
 
                 // Inyectar el ID de producto en window.PRODUCT_ID para el JS frontend
                 finalHtml = finalHtml.replace('</head>', `<script>window.PRODUCT_ID = "${productId}";</script>\n</head>`);

@@ -1,33 +1,86 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cargando artículo... - Rurulab</title>
-    
+
     <link href="/css/styles.css" rel="stylesheet">
     <!-- Estilos para el contenido del editor Quill (necesario para que el HTML se vea bien) -->
     <link href="https://cdn.quilljs.com/1.3.6/quill.core.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Playfair+Display:wght@700;800&display=swap"
+        rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
     <script src="/js/analytics-loader.js" defer></script>
     <style>
-        body { font-family: 'Inter', sans-serif; background-color: #fdfdfb; }
-        .font-display { font-family: 'Playfair Display', serif; }
-        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #fdfdfb;
+        }
+
+        .font-display {
+            font-family: 'Playfair Display', serif;
+        }
+
         /* Estilos específicos para el contenido traído del CMS */
-        .prose img { border-radius: 0.75rem; margin: 2rem auto; max-width: 100%; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
-        .prose h1, .prose h2, .prose h3 { font-family: 'Playfair Display', serif; color: #451a03; margin-top: 2em; margin-bottom: 1em; font-weight: 700; }
-        .prose h2 { font-size: 1.875rem; }
-        .prose p { margin-bottom: 1.25em; line-height: 1.8; color: #44403c; font-size: 1.125rem; }
-        .prose blockquote { border-left: 4px solid #d97706; padding-left: 1rem; font-style: italic; color: #78350f; background: #fffbeb; padding: 1rem; border-radius: 0 0.5rem 0.5rem 0; }
-        .prose ul { list-style-type: disc; padding-left: 1.5rem; margin-bottom: 1.25rem; }
-        .prose a { color: #d97706; text-decoration: underline; font-weight: 500; }
+        .prose img {
+            border-radius: 0.75rem;
+            margin: 2rem auto;
+            max-width: 100%;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .prose h1,
+        .prose h2,
+        .prose h3 {
+            font-family: 'Playfair Display', serif;
+            color: #451a03;
+            margin-top: 2em;
+            margin-bottom: 1em;
+            font-weight: 700;
+        }
+
+        .prose h2 {
+            font-size: 1.875rem;
+        }
+
+        .prose p {
+            margin-bottom: 1.25em;
+            line-height: 1.8;
+            color: #44403c;
+            font-size: 1.125rem;
+        }
+
+        .prose blockquote {
+            border-left: 4px solid #d97706;
+            padding-left: 1rem;
+            font-style: italic;
+            color: #78350f;
+            background: #fffbeb;
+            padding: 1rem;
+            border-radius: 0 0.5rem 0.5rem 0;
+        }
+
+        .prose ul {
+            list-style-type: disc;
+            padding-left: 1.5rem;
+            margin-bottom: 1.25rem;
+        }
+
+        .prose a {
+            color: #d97706;
+            text-decoration: underline;
+            font-weight: 500;
+        }
     </style>
 </head>
-<body class="text-stone-800 antialiased">
 
-    <script src="/js/public-nav-loader.js"></script>
+<body class="text-stone-800 antialiased min-h-screen flex flex-col">
+
+    <!-- Nav -->
+    <div id="public-nav-placeholder"></div>
 
     <article class="max-w-3xl mx-auto px-6 py-12">
         <div id="loading" class="text-center py-20">
@@ -37,24 +90,31 @@
         <div id="article-content" class="hidden">
             <!-- Cabecera del Artículo -->
             <header class="mb-10 text-center">
-                <span class="inline-block bg-amber-100 text-amber-800 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider mb-4" id="post-date"></span>
-                <h1 class="text-4xl md:text-5xl font-bold font-display text-amber-900 mb-6 leading-tight" id="post-title"></h1>
-                <img id="post-cover" src="" alt="Cover" class="w-full h-64 md:h-96 object-cover rounded-2xl shadow-lg mb-8 hidden">
+                <span
+                    class="inline-block bg-amber-100 text-amber-800 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider mb-4"
+                    id="post-date"></span>
+                <h1 class="text-4xl md:text-5xl font-bold font-display text-amber-900 mb-6 leading-tight"
+                    id="post-title"></h1>
+                <img id="post-cover" src="" alt="Cover"
+                    class="w-full h-64 md:h-96 object-cover rounded-2xl shadow-lg mb-8 hidden">
             </header>
 
             <!-- Cuerpo del Artículo (Rich Text) -->
             <div id="post-body" class="prose max-w-none">
                 <!-- Inyectado por JS -->
             </div>
-            
+
             <!-- Footer del Artículo -->
             <div class="mt-12 pt-8 border-t border-stone-200">
                 <h3 class="font-display font-bold text-xl mb-4">¿Te gustó este artículo?</h3>
-                <p class="text-stone-600 mb-6">Descubre cómo Rurulab puede ayudarte a contar la historia de tus propios productos.</p>
-                <a href="/" class="inline-block bg-amber-800 text-white font-bold py-3 px-8 rounded-xl hover:bg-amber-900 transition">Conocer Rurulab</a>
+                <p class="text-stone-600 mb-6">Descubre cómo Rurulab puede ayudarte a contar la historia de tus propios
+                    productos.</p>
+                <a href="/"
+                    class="inline-block bg-amber-800 text-white font-bold py-3 px-8 rounded-xl hover:bg-amber-900 transition">Conocer
+                    Rurulab</a>
             </div>
         </div>
-        
+
         <!-- Estado de Error -->
         <div id="error-state" class="hidden text-center py-20">
             <i class="fas fa-heart-crack text-6xl text-stone-300 mb-4"></i>
@@ -65,7 +125,9 @@
     </article>
 
     <footer class="py-8 bg-stone-800 text-stone-300 mt-12">
-        <div class="container mx-auto px-6 text-center"><p>&copy; 2025 Rurulab.</p></div>
+        <div class="container mx-auto px-6 text-center">
+            <p>&copy; 2025 Rurulab.</p>
+        </div>
     </footer>
 
     <script src="/js/public-nav-loader.js"></script>
@@ -81,7 +143,7 @@
             try {
                 const response = await fetch(`/api/blog/${slug}`);
                 if (!response.ok) throw new Error('Post not found');
-                
+
                 const post = await response.json();
                 renderPost(post);
             } catch (error) {
@@ -112,4 +174,5 @@
         }
     </script>
 </body>
+
 </html>
