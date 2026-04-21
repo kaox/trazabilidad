@@ -314,8 +314,71 @@ app.get('/use-case.html', (req, res) => res.sendFile(path.join(__dirname, 'publi
 app.get('/pricing-public.html', (req, res) => res.sendFile(path.join(__dirname, 'public', 'pricing-public.html')));
 app.get('/qr', (req, res) => res.sendFile(path.join(__dirname, 'public', 'tracking.html')));
 app.get('/registro-productor', (req, res) => res.sendFile(path.join(__dirname, 'public', 'registro-productor.html')));
-app.get('/blog/:slug', (req, res) => res.sendFile(path.join(__dirname, 'public', 'article.html')));
-app.get('/events/:slug', (req, res) => res.sendFile(path.join(__dirname, 'public', 'event.html')));
+app.get('/blog/:slug', async (req, res) => {
+    const { slug } = req.params;
+    const filePath = path.join(__dirname, 'public', 'article.html');
+
+    fs.readFile(filePath, 'utf8', async (err, htmlData) => {
+        if (err) return res.status(500).send('Error interno');
+
+        try {
+            const post = await db.getBlogPostBySlugInternal(slug); // Necesitamos esta función en db.js
+            if (post) {
+                const title = `${post.title} | Ruru Lab Blog`;
+                const description = post.summary ? post.summary.substring(0, 160) : `Lee sobre ${post.title} en el blog de Ruru Lab.`;
+                const image = post.cover_image || "https://rurulab.com/images/banner_1.png";
+
+                let injectedHtml = htmlData
+                    .replace(/<title>.*<\/title>/, `<title>${title}</title>`)
+                    .replace(/property="og:title" content="[^"]*"/, `property="og:title" content="${title}"`)
+                    .replace(/property="og:description" content="[^"]*"/, `property="og:description" content="${description}"`)
+                    .replace(/content="https:\/\/rurulab\.com\/images\/banner_1\.png"/g, `content="${image}"`)
+                    .replace(/name="twitter:title" content="[^"]*"/, `name="twitter:title" content="${title}"`)
+                    .replace(/name="twitter:description" content="[^"]*"/, `name="twitter:description" content="${description}"`);
+
+                res.send(injectedHtml);
+            } else {
+                res.send(htmlData);
+            }
+        } catch (error) {
+            console.error("Error inyectando metadatos blog:", error);
+            res.send(htmlData);
+        }
+    });
+});
+app.get('/events/:slug', async (req, res) => {
+    const { slug } = req.params;
+    const filePath = path.join(__dirname, 'public', 'event.html');
+
+    fs.readFile(filePath, 'utf8', async (err, htmlData) => {
+        if (err) return res.status(500).send('Error interno');
+
+        try {
+            const event = await db.getEventBySlugInternal(slug); // Necesitamos esta función en db.js
+            if (event) {
+                const title = `${event.title} | Eventos Ruru Lab`;
+                const location = [event.event_city, event.event_department, event.event_country].filter(Boolean).join(', ');
+                const description = `Únete a ${event.title}${location ? ` en ${location}` : ''}. Conoce todos los detalles y empresas participantes.`;
+                const image = event.cover_image || "https://rurulab.com/images/banner_1.png";
+
+                let injectedHtml = htmlData
+                    .replace(/<title>.*<\/title>/, `<title>${title}</title>`)
+                    .replace(/property="og:title" content="[^"]*"/, `property="og:title" content="${title}"`)
+                    .replace(/property="og:description" content="[^"]*"/, `property="og:description" content="${description}"`)
+                    .replace(/content="https:\/\/rurulab\.com\/images\/banner_1\.png"/g, `content="${image}"`)
+                    .replace(/name="twitter:title" content="[^"]*"/, `name="twitter:title" content="${title}"`)
+                    .replace(/name="twitter:description" content="[^"]*"/, `name="twitter:description" content="${description}"`);
+
+                res.send(injectedHtml);
+            } else {
+                res.send(htmlData);
+            }
+        } catch (error) {
+            console.error("Error inyectando metadatos eventos:", error);
+            res.send(htmlData);
+        }
+    });
+});
 app.get('/blog', (req, res) => res.sendFile(path.join(__dirname, 'public', 'blog.html')));
 app.get('/events', (req, res) => res.sendFile(path.join(__dirname, 'public', 'events.html')));
 app.get('/magic-login/:token', suggestionsController.handleMagicLogin);
@@ -551,27 +614,18 @@ app.get('/lote/:slug', async (req, res) => {
 // --- SITEMAP DINÁMICO PARA ORIGEN ÚNICO ---
 app.get('/sitemap-origen-unico.xml', async (req, res) => {
     try {
-        // 1. Obtener todas las empresas (Verificadas y Sugeridas)
-        // Reutilizamos la función que ya creaste en db.js
         const companies = await EmpresaModel.getPublicCompaniesDataInternal();
-
-        // 2. Configurar el inicio del XML
         let sitemap = '<?xml version="1.0" encoding="UTF-8"?>\n';
         sitemap += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n';
-
-        // 3. Añadir la página principal del directorio
         sitemap += '  <url>\n';
         sitemap += '    <loc>https://rurulab.com/origen-unico</loc>\n';
         sitemap += '    <changefreq>daily</changefreq>\n';
         sitemap += '    <priority>0.9</priority>\n';
         sitemap += '  </url>\n';
 
-        // 4. Generar URL por cada empresa
         companies.forEach(company => {
-            // Usamos la misma lógica de slug que usas en origen-unico-app.js
             const slug = createSlug(company.empresa) + '-' + company.id;
             const url = `https://rurulab.com/origen-unico/${slug}`;
-
             sitemap += '  <url>\n';
             sitemap += `    <loc>${url}</loc>\n`;
             sitemap += '    <changefreq>weekly</changefreq>\n';
@@ -580,13 +634,72 @@ app.get('/sitemap-origen-unico.xml', async (req, res) => {
         });
 
         sitemap += '</urlset>';
-
-        // 5. Enviar respuesta con el tipo de contenido correcto
         res.header('Content-Type', 'application/xml');
         res.send(sitemap);
-
     } catch (error) {
-        console.error("Error generando sitemap dinámico:", error);
+        console.error("Error generando sitemap origen único:", error);
+        res.status(500).end();
+    }
+});
+
+app.get('/sitemap-blog.xml', async (req, res) => {
+    try {
+        const posts = await db.getPublishedBlogSlugs();
+        let sitemap = '<?xml version="1.0" encoding="UTF-8"?>\n';
+        sitemap += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n';
+        sitemap += '  <url>\n';
+        sitemap += '    <loc>https://rurulab.com/blog</loc>\n';
+        sitemap += '    <changefreq>daily</changefreq>\n';
+        sitemap += '    <priority>0.9</priority>\n';
+        sitemap += '  </url>\n';
+
+        posts.forEach(post => {
+            const url = `https://rurulab.com/blog/${post.slug}`;
+            const lastmod = new Date(post.created_at).toISOString().split('T')[0];
+            sitemap += '  <url>\n';
+            sitemap += `    <loc>${url}</loc>\n`;
+            sitemap += `    <lastmod>${lastmod}</lastmod>\n`;
+            sitemap += '    <changefreq>monthly</changefreq>\n';
+            sitemap += '    <priority>0.7</priority>\n';
+            sitemap += '  </url>\n';
+        });
+
+        sitemap += '</urlset>';
+        res.header('Content-Type', 'application/xml');
+        res.send(sitemap);
+    } catch (error) {
+        console.error("Error generando sitemap blog:", error);
+        res.status(500).end();
+    }
+});
+
+app.get('/sitemap-events.xml', async (req, res) => {
+    try {
+        const events = await db.getPublishedEventSlugs();
+        let sitemap = '<?xml version="1.0" encoding="UTF-8"?>\n';
+        sitemap += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n';
+        sitemap += '  <url>\n';
+        sitemap += '    <loc>https://rurulab.com/events</loc>\n';
+        sitemap += '    <changefreq>daily</changefreq>\n';
+        sitemap += '    <priority>0.9</priority>\n';
+        sitemap += '  </url>\n';
+
+        events.forEach(event => {
+            const url = `https://rurulab.com/events/${event.slug}`;
+            const lastmod = new Date(event.created_at).toISOString().split('T')[0];
+            sitemap += '  <url>\n';
+            sitemap += `    <loc>${url}</loc>\n`;
+            sitemap += `    <lastmod>${lastmod}</lastmod>\n`;
+            sitemap += '    <changefreq>weekly</changefreq>\n';
+            sitemap += '    <priority>0.8</priority>\n';
+            sitemap += '  </url>\n';
+        });
+
+        sitemap += '</urlset>';
+        res.header('Content-Type', 'application/xml');
+        res.send(sitemap);
+    } catch (error) {
+        console.error("Error generando sitemap eventos:", error);
         res.status(500).end();
     }
 });

@@ -1324,11 +1324,15 @@ const getEvents = async (req, res) => {
     }
 };
 
+const getBlogPostBySlugInternal = async (slug) => {
+    return await get('SELECT * FROM blog_posts WHERE slug = ? AND is_published = TRUE AND is_event = FALSE', [slug]);
+};
+
 // Obtener un post por Slug (Público)
 const getBlogPostBySlug = async (req, res) => {
     const { slug } = req.params;
     try {
-        const post = await get('SELECT * FROM blog_posts WHERE slug = ? AND is_published = TRUE', [slug]);
+        const post = await getBlogPostBySlugInternal(slug);
         if (!post) return res.status(404).json({ error: "Artículo no encontrado." });
         // Parsear event_companies si existe
         post.event_companies = safeJSONParse(post.event_companies) || [];
@@ -1338,11 +1342,15 @@ const getBlogPostBySlug = async (req, res) => {
     }
 };
 
+const getEventBySlugInternal = async (slug) => {
+    return await get('SELECT * FROM blog_posts WHERE slug = ? AND is_published = TRUE AND is_event = TRUE', [slug]);
+};
+
 // Obtener un evento por Slug (Público)
 const getEventBySlug = async (req, res) => {
     const { slug } = req.params;
     try {
-        const post = await get('SELECT * FROM blog_posts WHERE slug = ? AND is_published = TRUE AND is_event = TRUE', [slug]);
+        const post = await getEventBySlugInternal(slug);
         if (!post) return res.status(404).json({ error: "Evento no encontrado." });
         // Parsear event_companies si existe
         post.event_companies = safeJSONParse(post.event_companies) || [];
@@ -1444,6 +1452,15 @@ const getBlogPostById = async (req, res) => {
 };
 
 // Obtener empresas públicas para selector de eventos
+// --- SITEMAPS ---
+const getPublishedBlogSlugs = async () => {
+    return await all('SELECT slug, created_at FROM blog_posts WHERE is_published = TRUE AND is_event = FALSE ORDER BY created_at DESC');
+};
+
+const getPublishedEventSlugs = async () => {
+    return await all('SELECT slug, created_at FROM blog_posts WHERE is_published = TRUE AND is_event = TRUE ORDER BY created_at DESC');
+};
+
 const getPublicCompaniesForEvents = async (req, res) => {
     try {
         // Empresas con perfil público (company_profiles publicados)
@@ -2080,5 +2097,7 @@ module.exports = {
     getCurrencies, getUnits,
     trackAnalyticsEvent,
     createSuggestion, getSuggestionById, claimSuggestion,
-    serveCompanyLogo
+    serveCompanyLogo,
+    getPublishedBlogSlugs, getPublishedEventSlugs,
+    getBlogPostBySlugInternal, getEventBySlugInternal
 };

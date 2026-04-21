@@ -9,4 +9,12 @@
     <loc>https://rurulab.com/sitemap-origen-unico.xml</loc>
   </sitemap>
 
+  <sitemap>
+    <loc>https://rurulab.com/sitemap-blog.xml</loc>
+  </sitemap>
+
+  <sitemap>
+    <loc>https://rurulab.com/sitemap-events.xml</loc>
+  </sitemap>
+
 </sitemapindex>
