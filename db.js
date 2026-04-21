@@ -1300,7 +1300,7 @@ const getEvents = async (req, res) => {
     try {
         // Obtenemos solo los publicados
         const posts = await all(
-            'SELECT id, title, slug, summary, cover_image, event_start_date, event_end_date, event_city, event_department, event_country, created_at FROM blog_posts WHERE is_published = TRUE AND is_event = TRUE ORDER BY created_at DESC LIMIT ? OFFSET ?',
+            'SELECT id, title, slug, summary, cover_image, event_start_date, event_end_date, event_city, event_department, event_country, created_at FROM blog_posts WHERE is_published = TRUE AND is_event = TRUE ORDER BY event_start_date ASC LIMIT ? OFFSET ?',
             [limit, offset]
         );
 
