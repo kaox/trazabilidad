@@ -1336,6 +1336,24 @@ const getBlogPostBySlug = async (req, res) => {
     }
 };
 
+// Obtener un evento por Slug (Público)
+const getEventBySlug = async (req, res) => {
+    const { slug } = req.params;
+    try {
+        const post = await get('SELECT * FROM blog_posts WHERE slug = ? AND is_published = TRUE AND is_event = TRUE', [slug]);
+        if (!post) return res.status(404).json({ error: "Evento no encontrado." });
+        // Parsear event_companies si existe
+        if (post.event_companies) {
+            try { post.event_companies = JSON.parse(post.event_companies); } catch (e) { post.event_companies = []; }
+        } else {
+            post.event_companies = [];
+        }
+        res.status(200).json(post);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};
+
 // Crear Post (Admin)
 const createBlogPost = async (req, res) => {
     const { title, content, summary, cover_image, is_published,
@@ -2060,7 +2078,7 @@ module.exports = {
     getDashboardData,
     createPaymentPreference, handlePaymentWebhook,
     getReviews, submitReview,
-    getBlogPosts, getEvents, getBlogPostBySlug, createBlogPost, updateBlogPost, deleteBlogPost, getAdminBlogPosts, getBlogPostById, getPublicCompaniesForEvents,
+    getBlogPosts, getEvents, getEventBySlug, getBlogPostBySlug, createBlogPost, updateBlogPost, deleteBlogPost, getAdminBlogPosts, getBlogPostById, getPublicCompaniesForEvents,
     validateDeforestation, getBatchByGtinAndLot,
     addIngredienteReceta, updateIngredientePeso, deleteIngrediente,
     getRecetasNutricionales, createRecetaNutricional, deleteRecetaNutricional, updateRecetaNutricional,

@@ -299,8 +299,9 @@ app.get('/api/trazabilidad/:id', db.getTrazabilidad);
 app.get('/api/reviews/:lote_id', db.getReviews);
 app.post('/api/reviews/submit', db.submitReview);
 app.get('/api/blog', db.getBlogPosts);
-app.get('/api/events', db.getEvents);
 app.get('/api/blog/:slug', db.getBlogPostBySlug);
+app.get('/api/events', db.getEvents);
+app.get('/api/events/:slug', db.getEventBySlug);
 app.post('/api/public/analytics', db.trackAnalyticsEvent);
 app.post('/api/public/suggest', db.createSuggestion);
 app.get('/api/public/suggestions/:id', db.getSuggestionById);
@@ -314,6 +315,7 @@ app.get('/pricing-public.html', (req, res) => res.sendFile(path.join(__dirname, 
 app.get('/qr', (req, res) => res.sendFile(path.join(__dirname, 'public', 'tracking.html')));
 app.get('/registro-productor', (req, res) => res.sendFile(path.join(__dirname, 'public', 'registro-productor.html')));
 app.get('/blog/:slug', (req, res) => res.sendFile(path.join(__dirname, 'public', 'article.html')));
+app.get('/events/:slug', (req, res) => res.sendFile(path.join(__dirname, 'public', 'event.html')));
 app.get('/blog', (req, res) => res.sendFile(path.join(__dirname, 'public', 'blog.html')));
 app.get('/events', (req, res) => res.sendFile(path.join(__dirname, 'public', 'events.html')));
 app.get('/magic-login/:token', suggestionsController.handleMagicLogin);

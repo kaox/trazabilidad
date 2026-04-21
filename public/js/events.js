@@ -118,7 +118,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             return `
             <article class="bg-white rounded-2xl shadow-sm border border-stone-100 overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col h-full group">
-                <a href="/blog/${post.slug}" class="block h-56 overflow-hidden relative">
+                <a href="/events/${post.slug}" class="block h-56 overflow-hidden relative">
                     <div class="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors z-10"></div>
                     ${statusBadge ? `<div class="absolute top-3 right-3 z-20">${statusBadge}</div>` : ''}
                     <img src="${imageSrc}" 
@@ -142,7 +142,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     ` : ''}
                     
                     <h3 class="text-xl font-display font-bold text-stone-900 mb-3 leading-snug group-hover:text-amber-800 transition-colors">
-                        <a href="/blog/${post.slug}">
+                        <a href="/events/${post.slug}">
                             ${post.title}
                         </a>
                     </h3>
@@ -152,7 +152,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     </p>
                     
                     <div class="mt-auto border-t border-stone-100 pt-4 flex justify-between items-center">
-                        <a href="/blog/${post.slug}" class="text-sm font-bold text-amber-800 hover:text-amber-900 flex items-center gap-2 group/link">
+                        <a href="/events/${post.slug}" class="text-sm font-bold text-amber-800 hover:text-amber-900 flex items-center gap-2 group/link">
                             Ver evento <i class="fas fa-arrow-right text-xs transform group-hover/link:translate-x-1 transition-transform"></i>
                         </a>
                     </div>
