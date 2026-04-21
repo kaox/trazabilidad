@@ -527,6 +527,16 @@ async function initializeDatabase() {
                 )`);
             console.log("Tabla 'analytics_events' creada.");
 
+            // --- MIGRACIONES: Campos de Evento en blog_posts ---
+            await runQuery(db, `ALTER TABLE blog_posts ADD COLUMN is_event BOOLEAN DEFAULT FALSE`);
+            await runQuery(db, `ALTER TABLE blog_posts ADD COLUMN event_start_date TEXT`);
+            await runQuery(db, `ALTER TABLE blog_posts ADD COLUMN event_end_date TEXT`);
+            await runQuery(db, `ALTER TABLE blog_posts ADD COLUMN event_city TEXT`);
+            await runQuery(db, `ALTER TABLE blog_posts ADD COLUMN event_department TEXT`);
+            await runQuery(db, `ALTER TABLE blog_posts ADD COLUMN event_country TEXT`);
+            await runQuery(db, `ALTER TABLE blog_posts ADD COLUMN event_companies TEXT`);
+            console.log("Columnas de evento en 'blog_posts' listas.");
+
             console.log('Esquema de base de datos listo.');
 
         } catch (error) {

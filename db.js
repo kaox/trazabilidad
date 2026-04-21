@@ -1305,15 +1305,24 @@ const getBlogPostBySlug = async (req, res) => {
 
 // Crear Post (Admin)
 const createBlogPost = async (req, res) => {
-    const { title, content, summary, cover_image, is_published } = req.body;
+    const { title, content, summary, cover_image, is_published,
+            is_event, event_start_date, event_end_date,
+            event_city, event_department, event_country, event_companies } = req.body;
     const userId = req.user.id;
     const id = require('crypto').randomUUID();
     const slug = createSlug(title);
 
     try {
         await run(
-            'INSERT INTO blog_posts (id, title, slug, content, summary, cover_image, author_id, is_published) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-            [id, title, slug, content, summary, cover_image, userId, is_published]
+            `INSERT INTO blog_posts
+             (id, title, slug, content, summary, cover_image, author_id, is_published,
+              is_event, event_start_date, event_end_date,
+              event_city, event_department, event_country, event_companies)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [id, title, slug, content, summary, cover_image, userId, is_published,
+             is_event ? 1 : 0, event_start_date || null, event_end_date || null,
+             event_city || null, event_department || null, event_country || null,
+             event_companies ? JSON.stringify(event_companies) : null]
         );
         res.status(201).json({ message: "Artículo creado", slug });
     } catch (err) {
@@ -1325,16 +1334,24 @@ const createBlogPost = async (req, res) => {
 // Actualizar Post (Admin)
 const updateBlogPost = async (req, res) => {
     const { id } = req.params;
-    const { title, content, summary, cover_image, is_published } = req.body;
-    // Si cambia el título, podríamos querer actualizar el slug, pero para mantener SEO, a veces es mejor no hacerlo.
-    // Aquí actualizaremos el slug solo si se envía explícitamente o generaremos uno nuevo si cambia el título significativamente (opcional).
+    const { title, content, summary, cover_image, is_published,
+            is_event, event_start_date, event_end_date,
+            event_city, event_department, event_country, event_companies } = req.body;
     // Por simplicidad, regeneramos el slug si cambia el título.
     const slug = createSlug(title);
 
     try {
         const result = await run(
-            'UPDATE blog_posts SET title = ?, slug = ?, content = ?, summary = ?, cover_image = ?, is_published = ? WHERE id = ?',
-            [title, slug, content, summary, cover_image, is_published, id]
+            `UPDATE blog_posts
+             SET title = ?, slug = ?, content = ?, summary = ?, cover_image = ?, is_published = ?,
+                 is_event = ?, event_start_date = ?, event_end_date = ?,
+                 event_city = ?, event_department = ?, event_country = ?, event_companies = ?
+             WHERE id = ?`,
+            [title, slug, content, summary, cover_image, is_published,
+             is_event ? 1 : 0, event_start_date || null, event_end_date || null,
+             event_city || null, event_department || null, event_country || null,
+             event_companies ? JSON.stringify(event_companies) : null,
+             id]
         );
         if (result.changes === 0) return res.status(404).json({ error: "Artículo no encontrado." });
         res.status(200).json({ message: "Artículo actualizado", slug });
@@ -1358,7 +1375,7 @@ const deleteBlogPost = async (req, res) => {
 // Obtener todos los posts para el admin (incluso borradores)
 const getAdminBlogPosts = async (req, res) => {
     try {
-        const posts = await all('SELECT id, title, slug, is_published, created_at, cover_image FROM blog_posts ORDER BY created_at DESC');
+        const posts = await all('SELECT id, title, slug, is_published, is_event, event_start_date, event_end_date, created_at, cover_image FROM blog_posts ORDER BY created_at DESC');
         res.status(200).json(posts);
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -1370,8 +1387,40 @@ const getBlogPostById = async (req, res) => {
     try {
         const post = await get('SELECT * FROM blog_posts WHERE id = ?', [id]);
         if (!post) return res.status(404).json({ error: "Artículo no encontrado." });
+        // Parsear event_companies si existe
+        if (post.event_companies) {
+            try { post.event_companies = JSON.parse(post.event_companies); } catch(e) { post.event_companies = []; }
+        } else {
+            post.event_companies = [];
+        }
         res.status(200).json(post);
     } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};
+
+// Obtener empresas públicas para selector de eventos
+const getPublicCompaniesForEvents = async (req, res) => {
+    try {
+        // Empresas con perfil público (company_profiles publicados)
+        const profileCompanies = await all(`
+            SELECT cp.user_id AS id, cp.name, cp.logo_url AS logo, 'user' AS source
+            FROM company_profiles cp
+            WHERE cp.is_published = 1
+            ORDER BY cp.name ASC
+        `);
+
+        // Empresas sugeridas (todas las que están en el sistema)
+        const suggestedCompanies = await all(`
+            SELECT id, name, logo, 'suggested' AS source
+            FROM suggested_companies
+            ORDER BY name ASC
+        `);
+
+        const companies = [...profileCompanies, ...suggestedCompanies];
+        res.status(200).json(companies);
+    } catch (err) {
+        console.error('Error getPublicCompaniesForEvents:', err);
         res.status(500).json({ error: err.message });
     }
 };
@@ -1978,7 +2027,7 @@ module.exports = {
     getDashboardData,
     createPaymentPreference, handlePaymentWebhook,
     getReviews, submitReview,
-    getBlogPosts, getBlogPostBySlug, createBlogPost, updateBlogPost, deleteBlogPost, getAdminBlogPosts, getBlogPostById,
+    getBlogPosts, getBlogPostBySlug, createBlogPost, updateBlogPost, deleteBlogPost, getAdminBlogPosts, getBlogPostById, getPublicCompaniesForEvents,
     validateDeforestation, getBatchByGtinAndLot,
     addIngredienteReceta, updateIngredientePeso, deleteIngrediente,
     getRecetasNutricionales, createRecetaNutricional, deleteRecetaNutricional, updateRecetaNutricional,

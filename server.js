@@ -724,6 +724,7 @@ app.post('/api/payments/webhook', express.raw({ type: 'application/json' }), db.
 
 // Admin Blog CRUD
 app.get('/api/admin/blog', authenticateApi, checkAdmin, db.getAdminBlogPosts);
+app.get('/api/admin/blog/companies', authenticateApi, checkAdmin, db.getPublicCompaniesForEvents);
 app.get('/api/admin/blog/:id', authenticateApi, checkAdmin, db.getBlogPostById);
 app.post('/api/admin/blog', authenticateApi, checkAdmin, db.createBlogPost);
 app.put('/api/admin/blog/:id', authenticateApi, checkAdmin, db.updateBlogPost);
