@@ -1388,24 +1388,23 @@ const updateBlogPost = async (req, res) => {
     const { title, content, summary, cover_image, is_published,
         is_event, event_start_date, event_end_date,
         event_city, event_department, event_country, event_companies } = req.body;
-    // Por simplicidad, regeneramos el slug si cambia el título.
-    const slug = createSlug(title);
+
 
     try {
         const result = await run(
             `UPDATE blog_posts
-             SET title = ?, slug = ?, content = ?, summary = ?, cover_image = ?, is_published = ?,
+             SET title = ?, content = ?, summary = ?, cover_image = ?, is_published = ?,
                  is_event = ?, event_start_date = ?, event_end_date = ?,
                  event_city = ?, event_department = ?, event_country = ?, event_companies = ?
              WHERE id = ?`,
-            [title, slug, content, summary, cover_image, is_published,
+            [title, content, summary, cover_image, is_published,
                 !!is_event, event_start_date || null, event_end_date || null,
                 event_city || null, event_department || null, event_country || null,
                 event_companies ? JSON.stringify(event_companies) : null,
                 id]
         );
         if (result.changes === 0) return res.status(404).json({ error: "Artículo no encontrado." });
-        res.status(200).json({ message: "Artículo actualizado", slug });
+        res.status(200).json({ message: "Artículo actualizado" });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
