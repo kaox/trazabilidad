@@ -331,9 +331,11 @@ app.get('/blog/:slug', async (req, res) => {
 
                 let injectedHtml = htmlData
                     .replace(/<title>.*<\/title>/, `<title>${title}</title>`)
+                    .replace(/property="og:url" content="[^"]*"/, `property="og:url" content="https://rurulab.com/blog/${post.slug}"`)
                     .replace(/property="og:title" content="[^"]*"/, `property="og:title" content="${title}"`)
                     .replace(/property="og:description" content="[^"]*"/, `property="og:description" content="${description}"`)
                     .replace(/property="og:image" content="[^"]*"/g, `property="og:image" content="${image}"`)
+                    .replace(/name="twitter:url" content="[^"]*"/, `name="twitter:url" content="https://rurulab.com/blog/${post.slug}"`)
                     .replace(/name="twitter:title" content="[^"]*"/, `name="twitter:title" content="${title}"`)
                     .replace(/name="twitter:description" content="[^"]*"/, `name="twitter:description" content="${description}"`)
                     .replace(/name="twitter:image" content="[^"]*"/g, `name="twitter:image" content="${image}"`);
@@ -366,9 +368,11 @@ app.get('/events/:slug', async (req, res) => {
 
                 let injectedHtml = htmlData
                     .replace(/<title>.*<\/title>/, `<title>${title}</title>`)
+                    .replace(/property="og:url" content="[^"]*"/, `property="og:url" content="https://rurulab.com/events/${event.slug}"`)
                     .replace(/property="og:title" content="[^"]*"/, `property="og:title" content="${title}"`)
                     .replace(/property="og:description" content="[^"]*"/, `property="og:description" content="${description}"`)
                     .replace(/property="og:image" content="[^"]*"/g, `property="og:image" content="${image}"`)
+                    .replace(/name="twitter:url" content="[^"]*"/, `name="twitter:url" content="https://rurulab.com/events/${event.slug}"`)
                     .replace(/name="twitter:title" content="[^"]*"/, `name="twitter:title" content="${title}"`)
                     .replace(/name="twitter:description" content="[^"]*"/, `name="twitter:description" content="${description}"`)
                     .replace(/name="twitter:image" content="[^"]*"/g, `name="twitter:image" content="${image}"`);
