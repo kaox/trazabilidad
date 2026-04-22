@@ -492,10 +492,7 @@
                     </div>
                 `;
 
-                if (hasProfile) {
-                    return `<a href="${profileUrl}" class="company-card" target="_blank" title="Ver perfil de ${c.name}">${cardContent}</a>`;
-                }
-                return `<div class="company-card">${cardContent}</div>`;
+                return `<a href="${profileUrl}" class="company-card" target="_blank" title="Ver perfil de ${c.name}">${cardContent}</a>`;
             }).join('');
 
             grid.innerHTML = cardsHTML;

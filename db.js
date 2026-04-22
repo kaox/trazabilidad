@@ -1978,12 +1978,20 @@ const createSuggestion = async (req, res) => {
     const id = `SUG-${require('crypto').randomUUID().substring(0, 8).toUpperCase()}`;
 
     try {
+        let finalLogo = logo;
+        
+        // Si el logo viene en base64, subirlo a Vercel Blob
+        if (logo && logo.startsWith('data:image/')) {
+            const filename = `suggestions/company-${id}`;
+            finalLogo = await uploadImageBase64(logo, filename);
+        }
+
         await run(`
             INSERT INTO suggested_companies (
                 id, type, name, logo, social_instagram, social_facebook
             ) VALUES (?, ?, ?, ?, ?, ?)
         `, [
-            id, type, name, logo, instagram, facebook
+            id, type, name, finalLogo, instagram, facebook
         ]);
 
         res.status(201).json({ message: "Sugerencia enviada", id });
