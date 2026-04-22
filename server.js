@@ -335,10 +335,10 @@ app.get('/blog/:slug', async (req, res) => {
                     .replace(/property="og:title" content="[^"]*"/, `property="og:title" content="${title}"`)
                     .replace(/property="og:description" content="[^"]*"/, `property="og:description" content="${description}"`)
                     .replace(/property="og:image" content="[^"]*"/g, `property="og:image" content="${image}"`)
-                    .replace(/name="twitter:url" content="[^"]*"/, `name="twitter:url" content="https://rurulab.com/blog/${post.slug}"`)
-                    .replace(/name="twitter:title" content="[^"]*"/, `name="twitter:title" content="${title}"`)
-                    .replace(/name="twitter:description" content="[^"]*"/, `name="twitter:description" content="${description}"`)
-                    .replace(/name="twitter:image" content="[^"]*"/g, `name="twitter:image" content="${image}"`);
+                    .replace(/property="twitter:url" content="[^"]*"/, `property="twitter:url" content="https://rurulab.com/blog/${post.slug}"`)
+                    .replace(/property="twitter:title" content="[^"]*"/, `property="twitter:title" content="${title}"`)
+                    .replace(/property="twitter:description" content="[^"]*"/, `property="twitter:description" content="${description}"`)
+                    .replace(/property="twitter:image" content="[^"]*"/g, `property="twitter:image" content="${image}"`);
 
                 res.send(injectedHtml);
             } else {
@@ -372,10 +372,10 @@ app.get('/events/:slug', async (req, res) => {
                     .replace(/property="og:title" content="[^"]*"/, `property="og:title" content="${title}"`)
                     .replace(/property="og:description" content="[^"]*"/, `property="og:description" content="${description}"`)
                     .replace(/property="og:image" content="[^"]*"/g, `property="og:image" content="${image}"`)
-                    .replace(/name="twitter:url" content="[^"]*"/, `name="twitter:url" content="https://rurulab.com/events/${event.slug}"`)
-                    .replace(/name="twitter:title" content="[^"]*"/, `name="twitter:title" content="${title}"`)
-                    .replace(/name="twitter:description" content="[^"]*"/, `name="twitter:description" content="${description}"`)
-                    .replace(/name="twitter:image" content="[^"]*"/g, `name="twitter:image" content="${image}"`);
+                    .replace(/property="twitter:url" content="[^"]*"/, `property="twitter:url" content="https://rurulab.com/events/${event.slug}"`)
+                    .replace(/property="twitter:title" content="[^"]*"/, `property="twitter:title" content="${title}"`)
+                    .replace(/property="twitter:description" content="[^"]*"/, `property="twitter:description" content="${description}"`)
+                    .replace(/property="twitter:image" content="[^"]*"/g, `property="twitter:image" content="${image}"`);
 
                 res.send(injectedHtml);
             } else {
