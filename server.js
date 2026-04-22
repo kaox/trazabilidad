@@ -326,15 +326,17 @@ app.get('/blog/:slug', async (req, res) => {
             if (post) {
                 const title = `${post.title} | Ruru Lab Blog`;
                 const description = post.summary ? post.summary.substring(0, 160) : `Lee sobre ${post.title} en el blog de Ruru Lab.`;
-                const image = post.cover_image || "https://rurulab.com/images/banner_1.png";
+                let image = post.cover_image || "https://rurulab.com/images/banner_1.png";
+                if (image.startsWith('/')) image = `https://rurulab.com${image}`;
 
                 let injectedHtml = htmlData
                     .replace(/<title>.*<\/title>/, `<title>${title}</title>`)
                     .replace(/property="og:title" content="[^"]*"/, `property="og:title" content="${title}"`)
                     .replace(/property="og:description" content="[^"]*"/, `property="og:description" content="${description}"`)
-                    .replace(/content="https:\/\/rurulab\.com\/images\/banner_1\.png"/g, `content="${image}"`)
+                    .replace(/property="og:image" content="[^"]*"/g, `property="og:image" content="${image}"`)
                     .replace(/name="twitter:title" content="[^"]*"/, `name="twitter:title" content="${title}"`)
-                    .replace(/name="twitter:description" content="[^"]*"/, `name="twitter:description" content="${description}"`);
+                    .replace(/name="twitter:description" content="[^"]*"/, `name="twitter:description" content="${description}"`)
+                    .replace(/name="twitter:image" content="[^"]*"/g, `name="twitter:image" content="${image}"`);
 
                 res.send(injectedHtml);
             } else {
@@ -359,15 +361,17 @@ app.get('/events/:slug', async (req, res) => {
                 const title = `${event.title} | Eventos Ruru Lab`;
                 const location = [event.event_city, event.event_department, event.event_country].filter(Boolean).join(', ');
                 const description = `Únete a ${event.title}${location ? ` en ${location}` : ''}. Conoce todos los detalles y empresas participantes.`;
-                const image = event.cover_image || "https://rurulab.com/images/banner_1.png";
+                let image = event.cover_image || "https://rurulab.com/images/banner_1.png";
+                if (image.startsWith('/')) image = `https://rurulab.com${image}`;
 
                 let injectedHtml = htmlData
                     .replace(/<title>.*<\/title>/, `<title>${title}</title>`)
                     .replace(/property="og:title" content="[^"]*"/, `property="og:title" content="${title}"`)
                     .replace(/property="og:description" content="[^"]*"/, `property="og:description" content="${description}"`)
-                    .replace(/content="https:\/\/rurulab\.com\/images\/banner_1\.png"/g, `content="${image}"`)
+                    .replace(/property="og:image" content="[^"]*"/g, `property="og:image" content="${image}"`)
                     .replace(/name="twitter:title" content="[^"]*"/, `name="twitter:title" content="${title}"`)
-                    .replace(/name="twitter:description" content="[^"]*"/, `name="twitter:description" content="${description}"`);
+                    .replace(/name="twitter:description" content="[^"]*"/, `name="twitter:description" content="${description}"`)
+                    .replace(/name="twitter:image" content="[^"]*"/g, `name="twitter:image" content="${image}"`);
 
                 res.send(injectedHtml);
             } else {
