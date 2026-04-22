@@ -155,10 +155,18 @@
                     </div>
                     <div class="space-y-3">
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">URL Imagen de Portada</label>
-                            <input type="text" id="cover_image"
-                                class="w-full p-2 border border-gray-300 rounded-lg focus:ring-indigo-400 text-sm"
-                                placeholder="https://...">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Imagen de Portada</label>
+                            <div class="flex flex-col gap-3">
+                                <div id="cover-preview-container" class="w-full h-40 bg-gray-100 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center overflow-hidden group relative">
+                                    <img id="cover-preview" class="w-full h-full object-cover hidden" alt="Vista previa">
+                                    <div id="cover-placeholder" class="text-gray-400 flex flex-col items-center gap-2">
+                                        <i class="fas fa-image text-3xl"></i>
+                                        <span class="text-xs">Seleccionar imagen...</span>
+                                    </div>
+                                    <input type="file" id="cover_file" accept="image/*" class="absolute inset-0 opacity-0 cursor-pointer z-10">
+                                </div>
+                                <input type="hidden" id="cover_image">
+                            </div>
                         </div>
                         <div class="flex items-center p-3 bg-yellow-50 rounded-lg border border-yellow-100">
                             <input type="checkbox" id="is_published" class="h-5 w-5 text-amber-600 rounded focus:ring-amber-500 cursor-pointer">
@@ -313,6 +321,34 @@
         const editorTitle     = document.getElementById('editor-title');
 
         isEventToggle.addEventListener('change', updateEventUI);
+        
+        // ─── Manejo de Imagen de Portada ──────────────────────
+        const coverFile      = document.getElementById('cover_file');
+        const coverImage     = document.getElementById('cover_image');
+        const coverPreview   = document.getElementById('cover-preview');
+        const coverPlaceholder = document.getElementById('cover-placeholder');
+
+        coverFile.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            // Validación de tamaño (ej: 5MB)
+            if (file.size > 5 * 1024 * 1024) {
+                alert("La imagen es demasiado grande. Máximo 5MB.");
+                this.value = '';
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                const base64 = event.target.result;
+                coverImage.value = base64;
+                coverPreview.src = base64;
+                coverPreview.classList.remove('hidden');
+                coverPlaceholder.classList.add('hidden');
+            };
+            reader.readAsDataURL(file);
+        });
 
         function updateEventUI() {
             const isEvent = isEventToggle.checked;
@@ -433,6 +469,11 @@
                 document.getElementById('title').value        = post.title;
                 document.getElementById('summary').value      = post.summary || '';
                 document.getElementById('cover_image').value  = post.cover_image || '';
+                if (post.cover_image) {
+                    coverPreview.src = post.cover_image;
+                    coverPreview.classList.remove('hidden');
+                    coverPlaceholder.classList.add('hidden');
+                }
                 document.getElementById('is_published').checked = post.is_published;
 
                 // Campos de evento

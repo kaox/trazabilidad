@@ -13,6 +13,8 @@ const {
     toCamelCase
 } = require('./src/utils/helpers.js');
 
+const { uploadImageBase64 } = require('./src/utils/storage.js');
+
 
 // Importar las clases necesarias del SDK v3 de Mercado Pago
 const { MercadoPagoConfig, Preference, Payment } = require('mercadopago');
@@ -1368,15 +1370,22 @@ const createBlogPost = async (req, res) => {
     const userId = req.user.id;
     const id = require('crypto').randomUUID();
     const slug = createSlug(title);
+    let finalCoverImage = cover_image;
 
     try {
+        // Si la imagen viene en base64, subirla a Vercel Blob
+        if (cover_image && cover_image.startsWith('data:image/')) {
+            const filename = `blog/post-${id}`;
+            finalCoverImage = await uploadImageBase64(cover_image, filename);
+        }
+
         await run(
             `INSERT INTO blog_posts
              (id, title, slug, content, summary, cover_image, author_id, is_published,
               is_event, event_start_date, event_end_date,
               event_city, event_department, event_country, event_companies)
              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-            [id, title, slug, content, summary, cover_image, userId, is_published,
+            [id, title, slug, content, summary, finalCoverImage, userId, is_published,
                 !!is_event, event_start_date || null, event_end_date || null,
                 event_city || null, event_department || null, event_country || null,
                 event_companies ? JSON.stringify(event_companies) : null]
@@ -1397,13 +1406,20 @@ const updateBlogPost = async (req, res) => {
 
 
     try {
+        let finalCoverImage = cover_image;
+        // Si la imagen viene en base64, subirla a Vercel Blob
+        if (cover_image && cover_image.startsWith('data:image/')) {
+            const filename = `blog/post-${id}`;
+            finalCoverImage = await uploadImageBase64(cover_image, filename);
+        }
+
         const result = await run(
             `UPDATE blog_posts
              SET title = ?, content = ?, summary = ?, cover_image = ?, is_published = ?,
                  is_event = ?, event_start_date = ?, event_end_date = ?,
                  event_city = ?, event_department = ?, event_country = ?, event_companies = ?
              WHERE id = ?`,
-            [title, content, summary, cover_image, is_published,
+            [title, content, summary, finalCoverImage, is_published,
                 !!is_event, event_start_date || null, event_end_date || null,
                 event_city || null, event_department || null, event_country || null,
                 event_companies ? JSON.stringify(event_companies) : null,
