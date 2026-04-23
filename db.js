@@ -1293,35 +1293,37 @@ const getBlogPosts = async (req, res) => {
     }
 };
 
-// Obtener eventos (Público, Paginado)
+// Obtener eventos (Público) - Próximos primero, luego pasados
 const getEvents = async (req, res) => {
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
-    const offset = (page - 1) * limit;
+    const today = new Date().toISOString().split('T')[0]; // Fecha de hoy en formato YYYY-MM-DD
 
     try {
-        // Obtenemos solo los publicados
-        const posts = await all(
-            'SELECT id, title, slug, summary, cover_image, event_start_date, event_end_date, event_city, event_department, event_country, created_at FROM blog_posts WHERE is_published = TRUE AND is_event = TRUE ORDER BY event_start_date ASC LIMIT ? OFFSET ?',
-            [limit, offset]
+        // Eventos próximos o en curso (start_date >= hoy), ordenados por fecha ascendente
+        const upcoming = await all(
+            `SELECT id, title, slug, summary, cover_image, event_start_date, event_end_date,
+                    event_city, event_department, event_country, created_at
+             FROM blog_posts
+             WHERE is_published = TRUE AND is_event = TRUE
+               AND (event_end_date >= ? OR (event_end_date IS NULL AND event_start_date >= ?))
+             ORDER BY event_start_date ASC`,
+            [today, today]
         );
 
-        // Contamos total para la paginación
-        const countResult = await get('SELECT COUNT(*) as count FROM blog_posts WHERE is_published = TRUE AND is_event = TRUE');
-        const totalPosts = parseInt(countResult.count);
-        const totalPages = Math.ceil(totalPosts / limit);
+        // Eventos pasados (end_date < hoy), ordenados por fecha descendente (más recientes primero)
+        const past = await all(
+            `SELECT id, title, slug, summary, cover_image, event_start_date, event_end_date,
+                    event_city, event_department, event_country, created_at
+             FROM blog_posts
+             WHERE is_published = TRUE AND is_event = TRUE
+               AND event_end_date < ?
+               AND event_end_date IS NOT NULL
+             ORDER BY event_start_date DESC`,
+            [today]
+        );
 
-        res.status(200).json({
-            data: posts,
-            pagination: {
-                page,
-                limit,
-                totalPosts,
-                totalPages
-            }
-        });
+        res.status(200).json({ upcoming, past });
     } catch (err) {
-        console.error("Error getting blog posts:", err);
+        console.error("Error getting events:", err);
         res.status(500).json({ error: err.message });
     }
 };

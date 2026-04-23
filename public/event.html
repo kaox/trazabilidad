@@ -258,6 +258,17 @@
             background: #e0e7ff;
             color: #3730a3;
         }
+
+        .company-card-suggest {
+            border-style: dashed !important;
+            border-color: #fcd34d !important;
+            background-color: rgba(255, 251, 235, 0.5);
+        }
+
+        .company-card-suggest:hover {
+            background-color: rgba(255, 251, 235, 1);
+            border-color: #d97706 !important;
+        }
     </style>
 </head>
 
@@ -463,40 +474,61 @@
         }
 
         function renderCompanies(companies) {
-            if (!companies || !Array.isArray(companies) || companies.length === 0) return;
-
             const section = document.getElementById('companies-section');
             const grid = document.getElementById('companies-grid');
+            const eventTitle = document.getElementById('post-title').innerText;
 
-            const cardsHTML = companies.map(c => {
-                const logoSrc = c.logo || 'https://placehold.co/36x36/e5e7eb/9ca3af?text=' + encodeURIComponent((c.name || 'E').charAt(0));
-                const sourceLabel = c.source === 'user' ? 'Verificada' : 'Sugerida';
-                const sourceCls = c.source === 'user' ? 'source-user' : 'source-suggested';
+            // Siempre mostrar la sección para permitir sugerir empresa, incluso si no hay ninguna cargada aún
+            section.classList.remove('hidden');
 
-                // Generar slug para el link del perfil público
-                const slug = (c.name || '').toString().toLowerCase().trim()
-                    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-                    .replace(/\s+/g, '-')
-                    .replace(/[^\w\-]+/g, '')
-                    .replace(/\-\-+/g, '-');
-                const profileUrl = `/origen-unico/${slug}-${c.id}`;
-                const hasProfile = c.source === 'user';
+            let cardsHTML = '';
 
-                const cardContent = `
-                    <img src="${logoSrc}" alt="${c.name}" onerror="this.src='https://placehold.co/36x36/e5e7eb/9ca3af?text=E'">
+            if (companies && Array.isArray(companies) && companies.length > 0) {
+                cardsHTML = companies.map(c => {
+                    const logoSrc = c.logo || 'https://placehold.co/36x36/e5e7eb/9ca3af?text=' + encodeURIComponent((c.name || 'E').charAt(0));
+                    const sourceLabel = c.source === 'user' ? 'Verificada' : 'Sugerida';
+                    const sourceCls = c.source === 'user' ? 'source-user' : 'source-suggested';
+
+                    const slug = (c.name || '').toString().toLowerCase().trim()
+                        .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+                        .replace(/\s+/g, '-')
+                        .replace(/[^\w\-]+/g, '')
+                        .replace(/\-\-+/g, '-');
+                    const profileUrl = `/origen-unico/${slug}-${c.id}`;
+
+                    return `
+                        <a href="${profileUrl}" class="company-card" target="_blank" title="Ver perfil de ${c.name}">
+                            <img src="${logoSrc}" alt="${c.name}" onerror="this.src='https://placehold.co/36x36/e5e7eb/9ca3af?text=E'">
+                            <div>
+                                <span>${c.name}</span>
+                                <div style="margin-top:2px">
+                                    <span class="company-source-badge ${sourceCls}">${sourceLabel}</span>
+                                </div>
+                            </div>
+                        </a>
+                    `;
+                }).join('');
+            }
+
+            // Agregar opción de sugerir empresa
+            const waMessage = encodeURIComponent(`Hola Rurulab, me gustaría sugerir una empresa participante para el evento: ${eventTitle}`);
+            const waLink = `https://wa.me/51961222040?text=${waMessage}`;
+
+            cardsHTML += `
+                <a href="${waLink}" target="_blank" class="company-card company-card-suggest">
+                    <div class="w-9 h-9 rounded-full bg-amber-100 flex items-center justify-center text-amber-700 flex-shrink-0">
+                        <i class="fas fa-plus text-xs"></i>
+                    </div>
                     <div>
-                        <span>${c.name}</span>
+                        <span class="text-amber-900">Sugerir empresa</span>
                         <div style="margin-top:2px">
-                            <span class="company-source-badge ${sourceCls}">${sourceLabel}</span>
+                            <span class="text-[10px] text-amber-600 font-medium">Click para WhatsApp</span>
                         </div>
                     </div>
-                `;
-
-                return `<a href="${profileUrl}" class="company-card" target="_blank" title="Ver perfil de ${c.name}">${cardContent}</a>`;
-            }).join('');
+                </a>
+            `;
 
             grid.innerHTML = cardsHTML;
-            section.classList.remove('hidden');
         }
 
         function showError() {

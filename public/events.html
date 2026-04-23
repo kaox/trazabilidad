@@ -48,21 +48,33 @@
     </section>
 
     <!-- Contenido Principal -->
-    <main class="flex-grow container mx-auto px-6 py-12">
+    <main class="flex-grow container mx-auto px-6 py-12 space-y-16">
 
-        <!-- Grid de Artículos -->
-        <div id="blog-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
-            <!-- Loading State -->
-            <div class="col-span-full text-center py-20">
-                <i class="fas fa-circle-notch fa-spin text-4xl text-amber-200"></i>
-                <p class="mt-4 text-stone-500">Cargando historias...</p>
+        <!-- Sección: Próximos Eventos -->
+        <section>
+            <div class="flex items-center gap-4 mb-8">
+                <h2 class="text-2xl md:text-3xl font-bold font-display text-stone-900">Próximos Eventos</h2>
+                <div class="h-0.5 flex-grow bg-stone-100 rounded-full"></div>
             </div>
-        </div>
+            <div id="upcoming-events" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <!-- Se inyecta vía JS -->
+                <div class="col-span-full text-center py-10">
+                    <i class="fas fa-circle-notch fa-spin text-3xl text-amber-200"></i>
+                    <p class="mt-4 text-stone-500">Buscando novedades...</p>
+                </div>
+            </div>
+        </section>
 
-        <!-- Paginación -->
-        <div id="pagination" class="flex justify-center items-center gap-2">
-            <!-- Se inyecta vía JS -->
-        </div>
+        <!-- Sección: Eventos Pasados -->
+        <section>
+            <div class="flex items-center gap-4 mb-8">
+                <h2 class="text-2xl md:text-3xl font-bold font-display text-stone-500">Eventos Pasados</h2>
+                <div class="h-0.5 flex-grow bg-stone-100 rounded-full"></div>
+            </div>
+            <div id="past-events" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <!-- Se inyecta vía JS -->
+            </div>
+        </section>
 
     </main>
 
