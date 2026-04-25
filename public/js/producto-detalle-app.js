@@ -601,10 +601,18 @@ const app = {
                 
                 <div class="bg-white rounded-[2.5rem] border border-stone-100 p-12 shadow-sm">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-x-16 gap-y-8">
+                        ${this.product.variedad ? `
                         <div class="spec-row">
                             <span class="text-[11px] font-bold text-stone-400 uppercase tracking-widest">Variedad Botánica</span>
-                            <p class="text-xl font-bold text-stone-800 mt-1">${this.product.variedad || 'N/A'}</p>
+                            <p class="text-xl font-bold text-stone-800 mt-1">${this.product.variedad}</p>
                         </div>
+                        ` : ''}
+                        ${this.product.grupo_genetico ? `
+                        <div class="spec-row">
+                            <span class="text-[11px] font-bold text-stone-400 uppercase tracking-widest">Grupo Genético</span>
+                            <p class="text-xl font-bold text-stone-800 mt-1">${this.product.grupo_genetico}</p>
+                        </div>
+                        ` : ''}
                         <div class="spec-row">
                             <span class="text-[11px] font-bold text-stone-400 uppercase tracking-widest">Proceso de Beneficio</span>
                             <p class="text-xl font-bold text-stone-800 mt-1">${this.product.proceso || 'N/A'}</p>
