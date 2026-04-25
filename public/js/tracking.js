@@ -535,9 +535,9 @@ document.addEventListener('DOMContentLoaded', () => {
                         <i class="fas fa-satellite text-3xl"></i>
                     </span>
                 </div>
-                <p class="text-lg font-bold font-display text-emerald-900 leading-tight mb-1 relative z-10">EUDR Compliant</p>
+                <p class="text-lg font-bold font-display text-emerald-900 leading-tight mb-1 relative z-10">Conformidad EUDR</p>
                 <div class="flex items-center justify-center gap-1 text-xs text-emerald-700 font-bold relative z-10">
-                    <i class="fas fa-check-circle"></i> <span>GEE Verified</span>
+                    <i class="fas fa-check-circle"></i> <span>Verificado GEE</span>
                 </div>
                 <p class="text-[10px] text-emerald-600/70 mt-2 relative z-10 uppercase tracking-widest font-bold">100% Libre de Deforestación</p>
             </div>`;
@@ -973,96 +973,88 @@ document.addEventListener('DOMContentLoaded', () => {
 
         return `
             <div style="${sContainer}">
-                <h1 style="${sTitle}">Nutrition Facts</h1>
-                <div style="${sLineLight}; margin-bottom: 6px;">
-                    <p style="font-size: 16px; margin: 0; font-weight: bold;">${servings} servings per container</p>
-                    <div style="${sFlexBetween} font-weight: 900; font-size: 18px; padding-bottom: 4px; border-top: 4px solid black;">
-                        <span>Serving size</span>
-                        <span>${portionSize}g</span>
-                    </div>
+                <div style="font-weight: 900; font-size: 28px; line-height: 1; margin-bottom: 2px;">Información Nutricional</div>
+                <div style="${sLineMedium} margin-bottom: 5px;"></div>
+                <div style="font-size: 14px; margin-bottom: 2px;">${servings} porciones por envase</div>
+                <div style="display: flex; justify-content: space-between; font-weight: 700; font-size: 14px; margin-bottom: 2px;">
+                    <span>Tamaño por porción</span>
+                    <span>${portionSize}g</span>
                 </div>
-                <div style="${sLineHeavy}"></div>
-                
-                <div style="${sFlexBetween} padding-top: 4px; padding-bottom: 4px;">
-                    <div>
-                        <span style="font-weight: 900; font-size: 14px;">Amount per serving</span><br>
-                        <span style="font-weight: 900; font-size: 26px;">Calories</span>
-                    </div>
-                    <span style="font-weight: 900; font-size: 42px; line-height: 1;">${Math.round(val.energy)}</span>
+                <div style="${sLineHeavy} margin-bottom: 4px;"></div>
+                <div style="font-weight: 700; font-size: 12px; margin-bottom: 1px;">Cantidad por porción</div>
+                <div style="display: flex; justify-content: space-between; align-items: baseline;">
+                    <span style="font-weight: 900; font-size: 32px;">Calorías</span>
+                    <span style="font-weight: 900; font-size: 32px;">${Math.round(val.energy)}</span>
                 </div>
+                <div style="${sLineMedium} margin-bottom: 4px;"></div>
+                <div style="text-align: right; font-weight: 700; font-size: 12px; margin-bottom: 3px;">% Valor Diario*</div>
                 
-                <div style="${sLineMedium}"></div>
-                
-                <div style="text-align: right; font-size: 13px; font-weight: bold; border-bottom: 1px solid black; padding: 2px 0;">
-                    % Daily Value*
-                </div>
-
                 <div style="${sLineLight} padding: 3px 0; font-size: 14px; display: flex; justify-content: space-between;">
-                    <span><span style="${sBold}">Total Fat</span> ${Math.round(val.fat)}g</span>
+                    <span><span style="${sBold}">Grasa Total</span> ${Math.round(val.fat)}g</span>
                     <span style="${sBold}">${getPct(val.fat, 'fat')}</span>
                 </div>
                 
                 <div style="${sLineLight} padding: 3px 0; font-size: 14px; display: flex; justify-content: space-between; ${sIndent}">
-                    <span>Saturated Fat ${Math.round(val.satFat)}g</span>
+                    <span>Grasa Saturada ${Math.round(val.satFat)}g</span>
                     <span style="${sBold}">${getPct(val.satFat, 'satFat')}</span>
                 </div>
                 
                 <div style="${sLineLight} padding: 3px 0; font-size: 14px; display: flex; justify-content: space-between; ${sIndent}">
-                    <span>Trans Fat ${val.transFat.toFixed(1)}g</span>
+                    <span>Grasa Trans ${val.transFat.toFixed(1)}g</span>
                 </div>
                 
                 <div style="${sLineLight} padding: 3px 0; font-size: 14px; display: flex; justify-content: space-between;">
-                    <span><span style="${sBold}">Cholesterol</span> ${Math.round(val.chol)}mg</span>
+                    <span><span style="${sBold}">Colesterol</span> ${Math.round(val.chol)}mg</span>
                     <span style="${sBold}">${getPct(val.chol, 'chol')}</span>
                 </div>
                 
                 <div style="${sLineLight} padding: 3px 0; font-size: 14px; display: flex; justify-content: space-between;">
-                    <span><span style="${sBold}">Sodium</span> ${Math.round(val.sod)}mg</span>
+                    <span><span style="${sBold}">Sodio</span> ${Math.round(val.sod)}mg</span>
                     <span style="${sBold}">${getPct(val.sod, 'sod')}</span>
                 </div>
                 
                 <div style="${sLineLight} padding: 3px 0; font-size: 14px; display: flex; justify-content: space-between;">
-                    <span><span style="${sBold}">Total Carbohydrate</span> ${Math.round(val.carb)}g</span>
+                    <span><span style="${sBold}">Carbohidratos Totales</span> ${Math.round(val.carb)}g</span>
                     <span style="${sBold}">${getPct(val.carb, 'carb')}</span>
                 </div>
                 
                 <div style="${sLineLight} padding: 3px 0; font-size: 14px; display: flex; justify-content: space-between; ${sIndent}">
-                    <span>Dietary Fiber ${Math.round(val.fiber)}g</span>
+                    <span>Fibra Dietética ${Math.round(val.fiber)}g</span>
                     <span style="${sBold}">${getPct(val.fiber, 'fiber')}</span>
                 </div>
                 
                 <div style="${sLineLight} padding: 3px 0; font-size: 14px; display: flex; justify-content: space-between; ${sIndent}">
-                    <span>Total Sugars ${Math.round(val.sugar)}g</span>
+                    <span>Azúcares Totales ${Math.round(val.sugar)}g</span>
                 </div>
                 
                 <div style="${sLineLight} padding: 3px 0; font-size: 14px; display: flex; justify-content: space-between; ${sIndent}">
-                    <span>Includes ${Math.round(val.addedSugar)}g Added Sugars</span>
+                    <span>Incluye ${Math.round(val.addedSugar)}g de Azúcares Añadidos</span>
                     <span style="${sBold}">${getPct(val.addedSugar, 'addedSugar')}</span>
                 </div>
                 
                 <div style="${sLineHeavy} padding: 3px 0; font-size: 14px; display: flex; justify-content: space-between;">
-                    <span style="${sBold}">Protein <span style="font-weight: normal;">${Math.round(val.protein)}g</span></span>
+                    <span style="${sBold}">Proteínas <span style="font-weight: normal;">${Math.round(val.protein)}g</span></span>
                 </div>
-
+                
                 <div style="${sLineLight} padding: 3px 0; font-size: 14px; display: flex; justify-content: space-between;">
-                    <span>Vitamin D ${Math.round(val.vitD)}mcg</span>
+                    <span>Vitamina D ${Math.round(val.vitD)}mcg</span>
                     <span>${getPct(val.vitD, 'vitD')}</span>
                 </div>
                 <div style="${sLineLight} padding: 3px 0; font-size: 14px; display: flex; justify-content: space-between;">
-                    <span>Calcium ${Math.round(val.calcium)}mg</span>
+                    <span>Calcio ${Math.round(val.calcium)}mg</span>
                     <span>${getPct(val.calcium, 'calcium')}</span>
                 </div>
                 <div style="${sLineLight} padding: 3px 0; font-size: 14px; display: flex; justify-content: space-between;">
-                    <span>Iron ${Math.round(val.iron)}mg</span>
+                    <span>Hierro ${Math.round(val.iron)}mg</span>
                     <span>${getPct(val.iron, 'iron')}</span>
                 </div>
                 <div style="${sLineMedium} padding: 3px 0; font-size: 14px; display: flex; justify-content: space-between;">
-                    <span>Potassium ${Math.round(val.pot)}mg</span>
+                    <span>Potasio ${Math.round(val.pot)}mg</span>
                     <span>${getPct(val.pot, 'pot')}</span>
                 </div>
 
                 <div style="font-size: 10px; margin-top: 6px; line-height: 1.3;">
-                    * The % Daily Value (DV) tells you how much a nutrient in a serving of food contributes to a daily diet. 2,000 calories a day is used for general nutrition advice.
+                    * El % Valor Diario (VD) le indica cuánto un nutriente en una porción de alimento contribuye a una dieta diaria. 2,000 calorías al día se utiliza para asesoramiento nutricional general.
                 </div>
             </div>
         `;

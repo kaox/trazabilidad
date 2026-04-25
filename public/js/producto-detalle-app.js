@@ -793,7 +793,7 @@ const app = {
                         </div>
                         <div class="text-right flex flex-col items-end">
                             <span class="text-3xl font-black text-amber-800">89%</span>
-                            <span class="text-[9px] font-bold text-stone-400 uppercase">Match Score</span>
+                            <span class="text-[9px] font-bold text-stone-400 uppercase">Nivel de Afinidad</span>
                         </div>
                     </div>
 
@@ -808,7 +808,7 @@ const app = {
                         </div>
                         <div class="text-right flex flex-col items-end">
                             <span class="text-3xl font-black text-stone-300 group-hover:text-amber-800 transition-colors">82%</span>
-                            <span class="text-[9px] font-bold text-stone-400 uppercase">Match Score</span>
+                            <span class="text-[9px] font-bold text-stone-400 uppercase">Nivel de Afinidad</span>
                         </div>
                     </div>
                 </div>

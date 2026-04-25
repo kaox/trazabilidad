@@ -88,6 +88,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 } else {
                     delete state.perfilMin[attr];
                 }
+                updateRadarPreview();
             }
         });
 
@@ -99,7 +100,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function renderPerfilSliders() {
-        perfilSlidersContainer.innerHTML = '';
         if (state.tipo === 'miel' || state.tipo === 'todos') {
             document.getElementById('perfil-container').classList.add('hidden');
             return;
@@ -123,6 +123,46 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
             `;
         }).join('');
+
+        updateRadarPreview();
+    }
+
+    function updateRadarPreview() {
+        const radarCanvas = document.getElementById('perfil-radar-preview');
+        const emptyState = document.getElementById('radar-empty-state');
+        if (!radarCanvas) return;
+
+        const hasValues = Object.values(state.perfilMin).some(v => v > 0);
+
+        if (!hasValues) {
+            if (ChartUtils.instances['perfil-radar-preview']) {
+                ChartUtils.instances['perfil-radar-preview'].destroy();
+                delete ChartUtils.instances['perfil-radar-preview'];
+            }
+            emptyState.classList.remove('hidden');
+            return;
+        }
+
+        emptyState.classList.add('hidden');
+
+        // Atributos base según tipo para que el radar tenga estructura
+        let baseData = {};
+        if (state.tipo === 'cafe') {
+            ['fraganciaAroma', 'sabor', 'postgusto', 'acidez', 'cuerpo', 'balance'].forEach(k => baseData[k] = state.perfilMin[k] || 0);
+        } else {
+            ['cacao', 'acidez', 'amargor', 'astringencia', 'frutaFresca', 'floral', 'nuez', 'caramelo'].forEach(k => baseData[k] = state.perfilMin[k] || 0);
+        }
+
+        ChartUtils.initializePerfilChart('perfil-radar-preview', baseData, state.tipo, {
+            scales: {
+                r: {
+                    suggestedMin: 0,
+                    suggestedMax: 10,
+                    ticks: { display: false },
+                    pointLabels: { display: true, font: { size: 9 } }
+                }
+            }
+        });
     }
 
     function renderInteractiveWheel() {
@@ -385,7 +425,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const html = state.products.map(p => {
             const companySlug = p.empresa.slug || p.empresa.id;
-            
+
             // Construir Ruta SEO
             const productName = createSlug(p.nombre) || 'producto';
             const fincaName = p.finca && p.finca.nombre ? createSlug(p.finca.nombre) : 'origen';

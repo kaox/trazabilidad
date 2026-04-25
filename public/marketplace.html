@@ -184,9 +184,18 @@
                 <div id="selected-flavors" class="mt-4 flex flex-wrap gap-1"></div>
             </div>
 
-            <!-- Precios (Temporal, o Perfil de Taza) -->
+            <!-- Perfil de Taza / Radar -->
             <div class="bg-white p-5 rounded-2xl shadow-sm border border-stone-100" id="perfil-container">
                 <h3 class="font-bold text-stone-800 mb-4">Perfil Mínimo</h3>
+                
+                <!-- Radar Chart Preview -->
+                <div class="mb-6 h-48 bg-stone-50 rounded-xl border border-stone-100 relative overflow-hidden">
+                    <canvas id="perfil-radar-preview"></canvas>
+                    <div id="radar-empty-state" class="absolute inset-0 flex items-center justify-center text-[10px] text-stone-400 font-bold uppercase tracking-widest text-center px-8 pointer-events-none">
+                        Ajusta los sliders para ver el perfil
+                    </div>
+                </div>
+
                 <div id="perfil-sliders" class="space-y-4">
                     <!-- Sliders se generan dinámicamente -->
                 </div>
