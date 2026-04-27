@@ -15,7 +15,8 @@ const getAdminSuggestions = async (req, res) => {
         const rows = await SuggestionModel.getAll();
         const suggestions = rows.map(s => ({
             ...s,
-            coordenadas: safeJSONParse(s.coordenadas_json)
+            coordenadas: safeJSONParse(s.coordenadas),
+            product_categories: safeJSONParse(s.product_categories)
         }));
         res.json(suggestions);
     } catch (err) {

@@ -47,6 +47,34 @@
 
 ---
 
+## 🔌 Integración Externa: Generador de Widget de Perfil Sensorial (iframe / Snippet)
+
+**Descripción:** Una sub-sección dentro del Gestor de Perfiles Sensoriales que permite a los usuarios exportar su "Gráfica de Radar" para incrustarla directamente en los escaparates de sus propias tiendas online (Shopify, WooCommerce, Magento, etc.) o sitios web corporativos. El sistema genera un fragmento de código (iframe o HTML/JS) listo para copiar y pegar en pestañas de descripción de producto o Metafields.
+
+**Objetivo Específico:** Conectar la gestión interna de calidad del laboratorio con el marketing B2C/B2B del cliente, permitiéndole mostrar evidencia visual del perfil de taza en su propio punto de venta sin necesidad de saber programar.
+
+### Reglas de Negocio y Lógica de Suscripción
+- **Validación de Generación:** El botón o sección para "Generar Código de Integración" solo estará visible y habilitado si la cuenta del usuario cuenta con una suscripción activa (o el tier/plan que incluya esta función).
+- **Widget Inteligente (Verificación en Tiempo Real):** El código generado está vinculado dinámicamente a la plataforma. Cada vez que un comprador final carga la página del producto en la tienda externa (ej. Shopify), el iframe hace una petición ligera (API Call) a los servidores principales.
+
+### Manejo de Estados de Renderizado
+- **Suscripción Activa:** La API autoriza la petición y el iframe renderiza la gráfica de radar interactiva, inyectando el CSS y JS necesarios para mostrar los parámetros del lote.
+- **Suscripción Inactiva/Expirada:** La API deniega la visualización. El iframe se colapsa de forma segura (altura cero) o muestra un mensaje de reserva elegante y sutil (ej. "Información sensorial temporalmente no disponible"), garantizando que el diseño (UI/UX) de la tienda del cliente no se rompa ni se vea poco profesional.
+
+### Flujo del Usuario (Customer Journey)
+1. El usuario (Tostador/Productor) aprueba y consolida el Perfil Sensorial de un lote en la plataforma.
+2. Se dirige a la pestaña de "Compartir / Integración Web".
+3. El sistema genera automáticamente el código (ej. `<iframe src="https://app.tuplataforma.com/widget/radar/TOKEN_DEL_LOTE" width="100%" height="400"></iframe>`).
+4. El usuario copia el código y lo pega en el editor de texto de su CMS (ej. un Custom Liquid o Metafield en Shopify, o en la descripción corta de WooCommerce).
+5. El consumidor final entra a la tienda online y visualiza el gráfico de tela de araña del producto.
+
+### Consideraciones Técnicas Relevantes
+- **Rendimiento y Carga Asíncrona:** El iframe debe ser extremadamente ligero y soportar lazy loading (`loading="lazy"`) para no penalizar el tiempo de carga (PageSpeed) ni el SEO de la tienda del cliente.
+- **Responsividad Autónoma:** El gráfico generado en el iframe debe adaptarse automáticamente al contenedor padre (`100% width`), garantizando una visualización perfecta tanto en la versión móvil como en la versión de escritorio de la tienda externa.
+- **Seguridad:** Uso de un token público de solo lectura (read-only) en la URL del iframe, el cual no exponga información sensible de la cuenta ni permita la alteración de los datos.
+
+---
+
 ## 🔗 Dependencias y Modelos de Datos
 - **Tablas de la BD:** `perfiles` (`id`, `empresa_id`, `nombre_perfil`, `tipo`, `perfil_data` (Estructura JSON numérico variable), `puntaje_sca` y metadata `created_at`).
 - **Framework Vectorial:** `Chart.js` (Radial scale, Radar Chart). Indispensable para graficar de forma legible las asimetrías de sabores dentro de polígonos rellenos.

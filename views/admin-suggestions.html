@@ -167,6 +167,26 @@
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Latitud</label>
+                        <input type="number" step="any" id="edit-lat" class="w-full p-2 border border-gray-300 rounded-lg" placeholder="-11.985246">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Longitud</label>
+                        <input type="number" step="any" id="edit-lng" class="w-full p-2 border border-gray-300 rounded-lg" placeholder="-77.107494">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 uppercase mb-2">Categorías de Producto</label>
+                    <div class="flex gap-4">
+                        <label class="flex items-center gap-1 text-sm"><input type="checkbox" name="edit-category" value="cafe"> Café</label>
+                        <label class="flex items-center gap-1 text-sm"><input type="checkbox" name="edit-category" value="cacao"> Cacao</label>
+                        <label class="flex items-center gap-1 text-sm"><input type="checkbox" name="edit-category" value="miel"> Miel</label>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
                         <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Instagram</label>
                         <input type="text" id="edit-instagram" class="w-full p-2 border border-gray-300 rounded-lg">
                     </div>
@@ -290,6 +310,30 @@
             document.getElementById('edit-instagram').value = s.social_instagram || '';
             document.getElementById('edit-facebook').value = s.social_facebook || '';
 
+            // Coordenadas
+            let lat = '';
+            let lng = '';
+            if (s.coordenadas) {
+                try {
+                    const coords = typeof s.coordenadas === 'string' ? JSON.parse(s.coordenadas) : s.coordenadas;
+                    lat = coords.lat || '';
+                    lng = coords.lng || '';
+                } catch(e){}
+            }
+            document.getElementById('edit-lat').value = lat;
+            document.getElementById('edit-lng').value = lng;
+
+            // Categorías
+            let cats = [];
+            if (s.product_categories) {
+                try {
+                    cats = typeof s.product_categories === 'string' ? JSON.parse(s.product_categories) : s.product_categories;
+                } catch(e){}
+            }
+            document.querySelectorAll('input[name="edit-category"]').forEach(cb => {
+                cb.checked = cats.includes(cb.value);
+            });
+
             // Logic for Logo
             const logoPreview = document.getElementById('edit-logo-preview');
             const logoBase64 = document.getElementById('edit-logo-base64');
@@ -347,6 +391,16 @@
                 social_facebook: document.getElementById('edit-facebook').value,
                 logo: document.getElementById('edit-logo-base64').value
             };
+
+            const latVal = document.getElementById('edit-lat').value;
+            const lngVal = document.getElementById('edit-lng').value;
+            if (latVal && lngVal) {
+                data.coordenadas = { lat: parseFloat(latVal), lng: parseFloat(lngVal) };
+            } else {
+                data.coordenadas = null;
+            }
+
+            data.product_categories = Array.from(document.querySelectorAll('input[name="edit-category"]:checked')).map(cb => cb.value);
 
             try {
                 // Se asume que existe la ruta PUT /api/admin/suggestions/:id (Agregada anteriormente)

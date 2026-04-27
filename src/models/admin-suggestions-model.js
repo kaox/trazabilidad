@@ -71,19 +71,23 @@ const createUserFromSuggestion = async (userObj) => {
 const updateById = async (id, data) => {
     const {
         name, type, pais, departamento, provincia, distrito,
-        social_instagram, social_facebook, logo
+        social_instagram, social_facebook, logo, coordenadas, product_categories
     } = data;
+
+    // Convert arrays/objects to strings if necessary (assuming SQLite)
+    const coordsStr = coordenadas ? (typeof coordenadas === 'string' ? coordenadas : JSON.stringify(coordenadas)) : null;
+    const catStr = product_categories ? (typeof product_categories === 'string' ? product_categories : JSON.stringify(product_categories)) : null;
 
     const sql = `
         UPDATE suggested_companies 
         SET name = ?, type = ?, pais = ?, departamento = ?, provincia = ?, distrito = ?, 
-            social_instagram = ?, social_facebook = ?, logo = ?
+            social_instagram = ?, social_facebook = ?, logo = ?, coordenadas = ?, product_categories = ?
         WHERE id = ?
     `;
 
     return await db.run(sql, [
         name, type, pais, departamento, provincia, distrito,
-        social_instagram, social_facebook, logo,
+        social_instagram, social_facebook, logo, coordsStr, catStr,
         id
     ]);
 };
