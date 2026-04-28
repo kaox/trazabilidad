@@ -39,10 +39,10 @@
 
 ### 2. Backend (`server.js`, Métodos en `db.js`)
 - **Endpoints Autenticados (CRUD):** 
-  - `GET /api/ruedas-sabores`: Lista todas las ruedas creadas bajo el `empresa_id` en sesión.
-  - `POST /api/ruedas-sabores`: Inserta un nuevo perfil en formato JSON `BJSON` asimilando el arreglo anidado de etiquetas seleccionadas en D3.
-  - `PUT /api/ruedas-sabores/:id`: Sobreescribe la taxonomía seleccionada para una rueda guardada.
-  - `DELETE /api/ruedas-sabores/:id`: Soft o hard delete del registro de perfil sensorial.
+  - `GET /api/ruedas`: Lista todas las ruedas creadas bajo el `empresa_id` en sesión.
+  - `POST /api/ruedas`: Inserta un nuevo perfil en formato JSON `BJSON` asimilando el arreglo anidado de etiquetas seleccionadas en D3.
+  - `PUT /api/ruedas/:id`: Sobreescribe la taxonomía seleccionada para una rueda guardada.
+  - `DELETE /api/ruedas/:id`: Soft o hard delete del registro de perfil sensorial.
 - **Integridad Referencial:** Cuando un producto se expone en el marketplace, el backend busca el `id` o el JSON de la nota que está amarrado al código del lote para dibujarlo en modo "Read-Only".
 
 ---

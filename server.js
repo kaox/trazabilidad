@@ -25,6 +25,7 @@ const landingsController = require('./src/controllers/landingsController');
 const acquisitionsController = require('./src/controllers/acquisitionsController');
 const batchesController = require('./src/controllers/batchesController');
 const perfilesRoutes = require('./src/routes/perfilesRoutes');
+const ruedasRoutes = require('./src/routes/ruedasRoutes');
 const widgetRoutes = require('./src/routes/widgetRoutes');
 
 const RESERVED_SUBDOMAINS = ['www', 'app', 'api', 'admin', 'localhost', 'rurulab', 'mail', 'smtp'];
@@ -786,10 +787,7 @@ app.put('/api/procesadoras/:procesadoraId/sucursales/:sucursalId', authenticateA
 app.delete('/api/procesadoras/:procesadoraId/sucursales/:sucursalId', authenticateApi, db.deleteSucursal);
 app.use('/api/perfiles', authenticateApi, perfilesRoutes);
 app.use('/widget', widgetRoutes);
-app.get('/api/ruedas-sabores', authenticateApi, db.getRuedasSabores);
-app.post('/api/ruedas-sabores', authenticateApi, db.createRuedaSabores);
-app.put('/api/ruedas-sabores/:id', authenticateApi, db.updateRuedaSabores);
-app.delete('/api/ruedas-sabores/:id', authenticateApi, db.deleteRuedaSabores);
+app.use('/api/ruedas', authenticateApi, ruedasRoutes);
 
 // Plantillas & Etapas
 app.get('/api/templates', authenticateApi, db.getTemplates);

@@ -3,122 +3,158 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ruedas de Sabores - Ruru Lab</title>
+    <title>Gestor de Ruedas de Sabor - Ruru Lab</title>
     <script src="/auth.js"></script>
-    <link href="/css/styles.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
     <script src="https://d3js.org/d3.v7.min.js"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" xintegrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
-    <script src="/js/analytics-loader.js" defer></script>
+    <script src="/js/d3-sunburst.js"></script>
     <style>
-        body { font-family: 'Inter', sans-serif; background-color: #fdfaf6; }
-        h1, h2, h3, .font-display { font-family: 'Playfair Display', serif; }
-        .flavor-tag {
-            transition: all 0.2s ease-in-out;
-            border: 2px solid transparent;
-        }
-        .flavor-tag.active {
-            transform: scale(1.05);
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-        }
-        #chart-container {
-            position: relative;
-            width: 100%;
-            max-width: 500px;
-            margin: auto;
-            aspect-ratio: 1 / 1;
-        }
-        #chart-container canvas {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100% !important;
-            height: 100% !important;
-        }
+        body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
+        .glass-panel { background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(10px); }
+        .note-chip { animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
+        
+        /* Custom radio buttons styling */
+        input[type="radio"]:checked + span { color: #b45309; }
+        input[type="radio"]:checked ~ .radio-bg { border-color: #b45309; background-color: #fef3c7; }
     </style>
 </head>
-<body class="text-stone-800 antialiased">
+<body class="text-gray-800">
     <div id="nav-placeholder"></div>
-    <div class="container mx-auto p-4 md:p-8">
-        <header class="text-center mb-10 mt-4">
-            <h1 class="text-4xl md:text-5xl font-bold text-amber-900 mb-2">Ruedas de Sabores</h1>
-            <p class="text-stone-600">Crea y gestiona los perfiles sensoriales de tus productos basados en la rueda de la SCA.</p>
+
+    <div class="min-h-screen flex flex-col">
+        <header class="bg-white shadow-sm border-b border-gray-200">
+            <div class="container mx-auto px-6 py-4 flex justify-between items-center">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 bg-amber-100 text-amber-600 rounded-lg flex items-center justify-center">
+                        <i class="fas fa-bullseye text-xl"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-2xl font-bold text-gray-900">Ruedas de Sabor</h1>
+                        <p class="text-xs text-gray-500">Configuración sensorial SCA / CoE</p>
+                    </div>
+                </div>
+                <button onclick="openRuedaModal()" class="bg-amber-600 hover:bg-amber-700 text-white font-bold py-2.5 px-5 rounded-xl transition text-sm flex items-center gap-2 shadow-lg shadow-amber-100">
+                    <i class="fas fa-plus"></i> Nueva Rueda
+                </button>
+            </div>
         </header>
 
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <!-- Columna de Lista (Menor ancho) -->
-            <div class="lg:col-span-1 bg-white p-6 rounded-2xl shadow-lg h-fit">
-                <div class="flex justify-between items-center border-b pb-2 mb-6">
-                    <h2 class="text-2xl font-display text-amber-900">Mis Ruedas de Sabor</h2>
-                    <button id="new-rueda-btn" class="bg-amber-100 hover:bg-amber-200 text-amber-800 text-xs font-bold py-2 px-3 rounded-xl transition-all flex items-center gap-2">
-                        <i class="fas fa-plus"></i> Nuevo
-                    </button>
-                </div>
-                <div class="mb-6">
-                    <label for="rueda-type-selector" class="block text-sm font-medium text-stone-700 mb-1">Tipo de Rueda</label>
-                    <select id="rueda-type-selector" class="w-full p-3 border border-stone-300 rounded-xl bg-white focus:ring-2 focus:ring-amber-500 outline-none">
-                        <option value="cafe">Café (SCA)</option>
-                        <option value="cacao">Cacao (CoEx)</option>
-                        <option value="miel">Miel (UC Davis)</option>
-                    </select>
-                </div>
-                <div id="ruedas-list" class="space-y-3 overflow-y-auto max-h-[60vh] pr-2">
-                    <!-- Lista de ruedas -->
+        <main class="flex-grow container mx-auto px-6 py-8">
+            <div id="ruedas-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Listado de ruedas -->
+                <div class="text-center text-gray-400 py-12 col-span-full">
+                    <i class="fas fa-circle-notch fa-spin text-3xl mb-4"></i>
+                    <p>Cargando configuraciones...</p>
                 </div>
             </div>
-            
-            <!-- Columna de Creación / Edición (Mayor ancho) -->
-            <div class="lg:col-span-2 bg-white p-8 rounded-2xl shadow-lg">
-                 <form id="rueda-form" class="space-y-6">
-                    <input type="hidden" id="edit-id">
-                    <h2 id="form-title" class="text-3xl font-display text-amber-900 border-b pb-3">Crear Nueva Rueda</h2>
+        </main>
+    </div>
+
+    <!-- Modal Form -->
+    <div id="ruedaModal" class="fixed inset-0 bg-black/60 hidden flex items-center justify-center z-50 overflow-y-auto">
+        <div class="bg-white rounded-3xl shadow-2xl max-w-6xl w-full mx-4 my-8 relative flex flex-col lg:flex-row overflow-hidden border border-white/20">
+            <button onclick="closeRuedaModal()" class="absolute top-6 right-6 text-gray-400 hover:text-gray-600 z-20 w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100 transition">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+
+            <!-- Panel Izquierdo: Configuración -->
+            <div class="lg:w-2/5 p-8 border-r border-gray-100 flex flex-col bg-white">
+                <h3 class="text-2xl font-bold text-gray-900 mb-8" id="modal-title">Configurar Perfil</h3>
+                
+                <form id="ruedaForm" class="space-y-8 flex-grow">
+                    <input type="hidden" id="rueda-id">
                     
-                    <div class="space-y-8">
-                        <!-- Nombre (Full Width) -->
-                        <div>
-                            <label for="nombre_rueda" class="block text-sm font-bold text-stone-700 mb-2 uppercase tracking-wider">Nombre del Perfil</label>
-                            <input type="text" id="nombre_rueda" name="nombre_rueda" placeholder="Ej: Geisha Lavado Lote #3" class="w-full p-4 border border-stone-300 rounded-2xl focus:ring-2 focus:ring-amber-800 outline-none text-lg" required>
-                        </div>
-                        
-                        <!-- Rueda (Full Width) -->
-                        <div id="chart-wrapper" class="relative bg-stone-50 rounded-3xl p-4 md:p-8">
-                            <div id="chart-container" class="w-full relative flex justify-center">
-                                <div id="flavor-wheel-chart" class="w-full max-w-[650px] cursor-pointer"></div>
-                                
-                                <!-- Tooltip flotante -->
-                                <div id="flavor-wheel-info" class="hidden absolute top-0 left-0 bg-white/95 backdrop-blur-sm p-4 rounded-2xl shadow-xl border-l-4 min-w-[180px] z-50 pointer-events-none transition-all duration-200">
-                                    <h3 id="flavor-wheel-info-title" class="m-0 text-stone-800 text-xl font-bold">Sabor</h3>
-                                    <p id="flavor-wheel-info-path" class="m-0 mt-1 text-stone-500 text-sm">Categoría</p>
+                    <div>
+                        <label class="block text-[11px] font-bold text-gray-400 uppercase mb-2 tracking-widest">Identificador del Perfil</label>
+                        <input type="text" id="rueda-nombre" required class="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-4 focus:ring-amber-500/10 focus:border-amber-500 outline-none transition font-medium" placeholder="Ej. Lote Especial Finca La Esperanza">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-[11px] font-bold text-gray-400 uppercase mb-3 tracking-widest">Módulo Sensorial</label>
+                        <div class="grid grid-cols-2 gap-4">
+                            <label class="relative group cursor-pointer">
+                                <input type="radio" name="rueda-tipo" value="cafe" checked class="absolute opacity-0" onchange="switchTipo('cafe')">
+                                <div class="radio-bg absolute inset-0 border-2 border-gray-100 rounded-2xl transition-all group-hover:border-amber-200"></div>
+                                <div class="relative flex flex-col items-center p-4">
+                                    <i class="fas fa-mug-hot text-2xl mb-2 text-gray-400 group-hover:text-amber-500 transition"></i>
+                                    <span class="text-sm font-bold text-gray-500 transition">Café</span>
                                 </div>
-                            </div>
-                            <p class="text-center text-stone-400 text-xs mt-4">Haz clic en los segmentos para activar/desactivar notas</p>
+                            </label>
+                            <label class="relative group cursor-pointer">
+                                <input type="radio" name="rueda-tipo" value="cacao" class="absolute opacity-0" onchange="switchTipo('cacao')">
+                                <div class="radio-bg absolute inset-0 border-2 border-gray-100 rounded-2xl transition-all group-hover:border-amber-200"></div>
+                                <div class="relative flex flex-col items-center p-4">
+                                    <i class="fas fa-seedling text-2xl mb-2 text-gray-400 group-hover:text-amber-500 transition"></i>
+                                    <span class="text-sm font-bold text-gray-500 transition">Cacao</span>
+                                </div>
+                            </label>
                         </div>
+                    </div>
 
-                        <!-- Leyenda (Full Width) -->
-                        <div id="chart-legend-wrapper">
-                            <label class="block text-sm font-bold text-stone-700 mb-4 uppercase tracking-wider">Atributos Seleccionados</label>
-                            <div id="chart-legend" class="w-full border-t pt-6 bg-stone-50/50 rounded-2xl p-6 min-h-[150px]">
-                                <!-- La leyenda se generará aquí -->
-                                <p class="text-stone-400 text-center italic text-sm mt-4">Selecciona notas en la rueda para construir tu perfil.</p>
+                    <div class="flex-grow flex flex-col">
+                        <label class="block text-[11px] font-bold text-gray-400 uppercase mb-3 tracking-widest">Descriptor Sensorial (Seleccionado)</label>
+                        <div id="selected-notes" class="flex flex-wrap gap-2.5 min-h-[160px] p-4 bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200 overflow-y-auto">
+                            <!-- Chips de notas -->
+                            <div class="w-full flex flex-col items-center justify-center text-center py-6 opacity-40">
+                                <i class="fas fa-plus-circle text-2xl mb-2"></i>
+                                <p class="text-[11px] font-bold uppercase tracking-tight">Haz clic en el gráfico para añadir descriptores</p>
                             </div>
                         </div>
                     </div>
 
-                    <div class="pt-8 border-t flex justify-end gap-5">
-                        <button type="button" id="cancel-edit-btn" class="bg-stone-200 hover:bg-stone-300 text-stone-700 font-bold py-3 px-8 rounded-2xl hidden transition-colors">Cancelar</button>
-                        <button type="submit" class="bg-amber-800 hover:bg-amber-900 text-white font-bold py-4 px-12 rounded-2xl shadow-lg shadow-amber-900/20 transition-all hover:-translate-y-1">Guardar Perfil</button>
+                    <div class="pt-8 flex gap-4 border-t border-gray-100">
+                        <button type="button" onclick="closeRuedaModal()" class="flex-1 px-6 py-4 text-gray-500 font-bold hover:bg-gray-100 rounded-2xl transition text-sm">Cancelar</button>
+                        <button type="submit" class="flex-[1.5] px-8 py-4 bg-amber-600 text-white hover:bg-amber-700 rounded-2xl font-bold shadow-xl shadow-amber-200 transition text-sm">Guardar Configuración</button>
                     </div>
-                 </form>
+                </form>
+            </div>
+
+            <!-- Panel Derecho: Visualizador D3 -->
+            <div class="lg:w-3/5 bg-gray-50 p-12 flex flex-col items-center justify-center relative min-h-[500px]">
+                <div class="absolute top-10 left-10 flex items-center gap-3 bg-white/80 backdrop-blur-sm px-4 py-2 rounded-full border border-gray-100 shadow-sm">
+                    <span class="w-2 h-2 bg-amber-500 rounded-full animate-ping"></span>
+                    <span class="text-[10px] font-extrabold text-gray-500 uppercase tracking-widest">Visualizador Interactivo</span>
+                </div>
+
+                <div id="sunburst-container" class="w-full aspect-square max-w-[540px] drop-shadow-2xl"></div>
+                
+                <div class="mt-12 text-center max-w-sm">
+                    <h4 class="text-xs font-bold text-gray-400 uppercase mb-2 tracking-widest">Navegación Radial</h4>
+                    <p class="text-sm text-gray-500 leading-relaxed font-medium">Explora la jerarquía desde el centro (Categorías) hacia el exterior (Descriptores específicos).</p>
+                </div>
             </div>
         </div>
     </div>
-    <script src="/js/ruedas-sabores-app.js"></script>
+
+    <!-- Modal Snippet (Iframe) -->
+    <div id="snippetModal" class="fixed inset-0 bg-black/70 hidden flex items-center justify-center z-50 p-4">
+        <div class="bg-white p-10 rounded-[2.5rem] shadow-2xl max-w-xl w-full relative">
+            <div class="text-center mb-8">
+                <div class="w-20 h-20 bg-amber-50 text-amber-600 rounded-3xl flex items-center justify-center mx-auto mb-6 text-3xl shadow-inner">
+                    <i class="fas fa-share-nodes"></i>
+                </div>
+                <h3 class="text-3xl font-black text-gray-900 tracking-tight">Publicar Widget</h3>
+                <p class="text-gray-500 mt-3 font-medium">Inserta este gráfico interactivo en tu página web o descripción de producto.</p>
+            </div>
+
+            <div class="relative group mb-8">
+                <div class="absolute -top-3 left-6 bg-white px-3 py-1 rounded-full border border-gray-100 text-[10px] font-black text-amber-600 uppercase tracking-widest z-10">Código HTML</div>
+                <textarea id="snippet-code" class="w-full h-44 bg-gray-900 text-amber-200/90 p-8 pt-10 rounded-3xl font-mono text-sm leading-relaxed resize-none focus:ring-4 focus:ring-amber-500/20 outline-none border-none shadow-2xl" readonly></textarea>
+                <button onclick="copySnippet()" class="absolute top-4 right-4 bg-gray-800/50 hover:bg-amber-600 text-white p-3 rounded-2xl transition backdrop-blur-md">
+                    <i class="fas fa-copy"></i>
+                </button>
+            </div>
+
+            <button onclick="document.getElementById('snippetModal').classList.add('hidden')" class="w-full bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold py-5 rounded-[1.5rem] transition text-lg tracking-tight">
+                Entendido
+            </button>
+        </div>
+    </div>
+
     <script src="/js/nav-loader.js" defer></script>
-    <script src="/js/help-menu.js"></script>
+    <script src="/js/ruedas-app.js"></script>
 </body>
 </html>
-

@@ -71,7 +71,7 @@ async function loadPerfiles() {
 
 async function loadRuedas() {
     try {
-        const ruedas = await api('/api/ruedas-sabores');
+        const ruedas = await api('/api/ruedas');
         ruedasCache = ruedas;
     } catch (e) { console.warn("Error cargando ruedas:", e); }
 }

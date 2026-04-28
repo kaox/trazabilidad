@@ -121,7 +121,7 @@ document.addEventListener('DOMContentLoaded', () => {
     async function loadProcesadoras() { try { state.procesadoras = await api('/api/procesadoras'); } catch (e) { state.procesadoras = []; } }
     async function loadProducts() { try { state.products = await api('/api/productos'); } catch (e) { state.products = []; } }
     async function loadPerfilesSensoriales() { try { state.perfilesSensoriales = await api('/api/perfiles'); } catch (e) { state.perfilesSensoriales = []; } }
-    async function loadRuedasSabor() { try { state.ruedasSabor = await api('/api/ruedas-sabores'); } catch (e) { state.ruedasSabor = []; } }
+    async function loadRuedasSabor() { try { state.ruedasSabor = await api('/api/ruedas'); } catch (e) { state.ruedasSabor = []; } }
 
     async function loadData() {
         const [acq, batchTree] = await Promise.all([

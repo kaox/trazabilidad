@@ -677,30 +677,31 @@ const app = {
     },
 
     initCharts() {
-        if (!this.product.perfil || !this.sensoryConfig) return;
+        // Radar Chart
+        if (this.product.perfil && this.sensoryConfig) {
+            const configList = this.sensoryConfig[this.product.tipo];
+            if (configList) {
+                const labels = configList.map(attr => attr.label);
+                const values = configList.map(attr => parseFloat(this.product.perfil[attr.id]) || 0);
 
-        const configList = this.sensoryConfig[this.product.tipo];
-        if (!configList) return;
+                const colors = {
+                    cafe: '#d97706',
+                    cacao: '#7c2d12',
+                    miel: '#fbbf24'
+                };
 
-        const labels = configList.map(attr => attr.label);
-        const values = configList.map(attr => parseFloat(this.product.perfil[attr.id]) || 0);
+                const config = {
+                    labels: labels,
+                    datasets: [{
+                        data: values,
+                        color: colors[this.product.tipo] || '#3b82f6'
+                    }]
+                };
 
-        const colors = {
-            cafe: '#d97706',
-            cacao: '#7c2d12',
-            miel: '#fbbf24'
-        };
-
-        const config = {
-            labels: labels,
-            datasets: [{
-                data: values,
-                color: colors[this.product.tipo] || '#3b82f6'
-            }]
-        };
-
-        if (typeof renderRadarChart !== 'undefined') {
-            renderRadarChart('#radar-analisis', config, { maxValue: 10 });
+                if (typeof renderRadarChart !== 'undefined') {
+                    renderRadarChart('#radar-analisis', config, { maxValue: 10 });
+                }
+            }
         }
 
         // Sunburst D3
@@ -708,94 +709,37 @@ const app = {
     },
 
     renderSunburst() {
-        const container = d3.select("#sunburst-container");
-        container.selectAll("*").remove();
+        const container = document.getElementById('sunburst-container');
+        if (!container) return;
 
-        const FLAVOR_DATA = this.flavorWheels ? this.flavorWheels[this.product.tipo] : null;
-        if (!FLAVOR_DATA) {
-            container.append("div").text("Sin datos de rueda").attr("class", "text-stone-300 italic");
+        const type = (this.product.tipo || '').toLowerCase();
+        const wheelData = this.flavorWheels ? this.flavorWheels[type] : null;
+        if (!wheelData) {
+            container.innerHTML = `<div class="py-12 text-center text-stone-300 italic"><p>Configuración sensorial no disponible</p></div>`;
             return;
         }
 
-        const rootData = { name: "Root", children: [] };
-        Object.entries(FLAVOR_DATA).forEach(([catName, catData]) => {
-            const hasCatSelection = this.product.sabores && this.product.sabores.some(s => s.category === catName);
+        // Parseamos las notas seleccionadas (vienen como 'sabores' desde el API del marketplace)
+        let selectedNotes = [];
+        const rawNotes = this.product.sabores || this.product.rueda_notas;
+        if (rawNotes) {
+            try {
+                selectedNotes = typeof rawNotes === 'string'
+                    ? JSON.parse(rawNotes)
+                    : rawNotes;
+            } catch (e) {
+                console.error("Error parsing flavor notes:", e);
+                selectedNotes = [];
+            }
+        }
 
-            const catNode = {
-                name: catName,
-                color: hasCatSelection ? catData.color : '#F3F4F6',
-                children: catData.children.map(child => {
-                    const hasSubSelection = this.product.sabores && this.product.sabores.some(s =>
-                        (s.subnote && s.subnote.toLowerCase() === child.name.toLowerCase()) ||
-                        (s.note && s.note.toLowerCase() === child.name.toLowerCase()) ||
-                        (s.label && s.label.toLowerCase() === child.name.toLowerCase())
-                    );
-
-                    const childNode = {
-                        name: child.name,
-                        color: hasSubSelection ? catData.color : '#F3F4F6',
-                    };
-
-                    if (child.children && child.children.length > 0) {
-                        childNode.children = child.children.map(grandchild => {
-                            const hasNoteSelection = this.product.sabores && this.product.sabores.some(s =>
-                                (s.note && s.note.toLowerCase() === grandchild.name.toLowerCase()) ||
-                                (s.label && s.label.toLowerCase() === grandchild.name.toLowerCase()) ||
-                                (s.subnote && s.subnote.toLowerCase() === grandchild.name.toLowerCase())
-                            );
-                            return {
-                                name: grandchild.name,
-                                color: hasNoteSelection ? catData.color : '#F3F4F6',
-                                value: 1
-                            };
-                        });
-                    } else {
-                        childNode.value = 1;
-                    }
-                    return childNode;
-                })
-            };
-            rootData.children.push(catNode);
+        // Usamos la nueva librería compartida con lógica de "poda" (pruning)
+        SunburstChart.render('#sunburst-container', wheelData, {
+            selection: selectedNotes,
+            isWidget: true, // Importante: Esto oculta lo no seleccionado (estilo Tastify)
+            width: 600,
+            height: 600
         });
-
-        const root = d3.hierarchy(rootData).sum(d => d.value);
-        const depth = root.height;
-        d3.partition().size([2 * Math.PI, depth + 1])(root);
-
-        const width = 600;
-        const radius = width / (2 * (depth + 1));
-
-        const arc = d3.arc()
-            .startAngle(d => d.x0).endAngle(d => d.x1)
-            .padAngle(d => Math.min((d.x1 - d.x0) / 2, 0.005))
-            .padRadius(radius * 1.5)
-            .innerRadius(d => d.y0 * radius).outerRadius(d => d.y1 * radius - 1);
-
-        const svg = container.append("svg").attr("viewBox", [0, 0, width, width]).style("width", "100%").style("height", "auto");
-        const g = svg.append("g").attr("transform", `translate(${width / 2},${width / 2})`);
-
-        g.selectAll("path")
-            .data(root.descendants().slice(1))
-            .join("path")
-            .attr("fill", d => d.data.color)
-            .attr("d", arc);
-
-        g.selectAll("text")
-            .data(root.descendants().slice(1).filter(d => d.y0 > 0 && (d.x1 - d.x0) * radius > 4))
-            .join("text")
-            .attr("transform", d => {
-                const x = (d.x0 + d.x1) / 2 * 180 / Math.PI;
-                const y = (d.y0 + d.y1) / 2 * radius;
-                return `rotate(${x - 90}) translate(${y}, 0) rotate(${x < 180 ? 0 : 180})`;
-            })
-            .attr("dy", "0.35em")
-            .attr("text-anchor", "middle")
-            .style("font-size", d => d.depth === 1 ? "12px" : (d.depth === 2 ? "10px" : "8px"))
-            .style("font-weight", "bold")
-            .style("fill", d => d.data.color === '#F3F4F6' ? '#999' : '#fff') // Texto blanco en áreas con color
-            .text(d => d.data.name);
-
-        g.append("text").attr("text-anchor", "middle").style("font-size", "14px").style("font-weight", "900").attr("dy", "0.35em").text(this.product.tipo.toUpperCase());
     },
 
     renderMaridaje() {

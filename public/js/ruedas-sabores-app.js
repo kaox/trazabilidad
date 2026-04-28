@@ -68,7 +68,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function loadRuedas() {
         try {
-            state.ruedas = await api('/api/ruedas-sabores');
+            state.ruedas = await api('/api/ruedas');
         } catch (error) {
             console.error("Error al cargar las ruedas de sabores:", error);
         }
@@ -364,9 +364,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const editId = editIdInput.value;
         try {
             if (editId) {
-                await api(`/api/ruedas-sabores/${editId}`, { method: 'PUT', body: JSON.stringify(data) });
+                await api(`/api/ruedas/${editId}`, { method: 'PUT', body: JSON.stringify(data) });
             } else {
-                await api('/api/ruedas-sabores', { method: 'POST', body: JSON.stringify(data) });
+                await api('/api/ruedas', { method: 'POST', body: JSON.stringify(data) });
             }
             state.selectedRuedaId = null;
             resetForm();
@@ -385,7 +385,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (e.target.closest('.delete-btn')) {
             e.stopPropagation();
             if (confirm('¿Seguro que quieres eliminar esta rueda de sabor?')) {
-                api(`/api/ruedas-sabores/${id}`, { method: 'DELETE' }).then(() => {
+                api(`/api/ruedas/${id}`, { method: 'DELETE' }).then(() => {
                     state.selectedRuedaId = null;
                     resetForm();
                     loadRuedas();
