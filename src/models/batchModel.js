@@ -84,6 +84,11 @@ const update = async (id, updateData) => {
         params.push(updateData.input_quantity);
     }
 
+    if (updateData.perfil_sensorial_id !== undefined) {
+        sql += ', perfil_sensorial_id = ?';
+        params.push(updateData.perfil_sensorial_id);
+    }
+
     sql += ' WHERE id = ?';
     params.push(id);
 

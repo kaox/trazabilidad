@@ -18,7 +18,7 @@ Como Analista de Calidad o Catador, quiero introducir manualmente los puntajes c
 **Acceptance Scenarios**:
 
 1. **Given** un nuevo formulario de cata de café, **When** el usuario introduce 8.5 en Acidez y 7.0 en Cuerpo, **Then** la gráfica de radar se actualiza inmediatamente mostrando los nuevos vértices.
-2. **Given** el formulario en pantalla, **When** el usuario cambia el selector de "Café" a "Cacao", **Then** los campos cambian a "Astringencia, Amargor", excluyendo criterios de café.
+2. **Given** el formulario en pantalla, **When** el usuario cambia el selector de tipo de producto (p.ej., de "Café" a "Cacao" o "Miel"), **Then** los campos se actualizan dinámicamente según la configuración definida en `public/data/perfiles.json`.
 
 ---
 
@@ -69,10 +69,12 @@ Como Administrador/Auditor, quiero vincular un Perfil Sensorial específico a un
 - **FR-006**: El `iframe` generado MUST implementar carga asíncrona (`loading="lazy"`) y responsividad fluida (`width="100%"`).
 - **FR-007**: El endpoint del widget MUST evaluar en tiempo real la suscripción del emisor; si está inactiva, MUST colapsar la vista de forma segura o renderizar un placeholder no disruptivo.
 - **FR-008**: El endpoint del widget MUST consumir datos utilizando un token público, inmutable y de solo lectura (`read-only`) generado específicamente para ese perfil.
+- **FR-009**: El sistema MUST cargar las definiciones de atributos (IDs y etiquetas) para cada tipo de producto desde `public/data/perfiles.json`.
+- **FR-010**: La interfaz de administración MUST ser extensible, permitiendo soportar nuevos productos (p.ej., miel) simplemente actualizando el archivo de configuración JSON.
 
 ### Key Entities
 
-- **PerfilSensorial (`perfiles`)**: Representa la evaluación paramétrica. Atributos: `id`, `empresa_id`, `nombre_perfil`, `tipo` (Café/Cacao), `perfil_data` (JSONB con vértices y puntuaciones), `puntaje_sca`, `public_token` (UUID de solo lectura).
+- **PerfilSensorial (`perfiles`)**: Representa la evaluación paramétrica. Atributos: `id`, `empresa_id`, `nombre_perfil`, `tipo` (Dinámico basado en JSON), `perfil_data` (JSONB con vértices y puntuaciones), `puntaje_sca`, `public_token` (UUID de solo lectura).
 - **WidgetSession**: Entidad virtual. Representa la petición pública desde un iframe utilizando el `public_token`, la cual desencadena la validación de suscripción de la `empresa_id` asociada.
 
 ## Success Criteria *(mandatory)*

@@ -268,7 +268,7 @@ const createBatch = async (req, res) => {
 
 const updateBatch = async (req, res) => {
     const { id } = req.params;
-    let { data, producto_id, input_quantity } = req.body;
+    let { data, producto_id, input_quantity, perfil_sensorial_id } = req.body;
 
     try {
         const targetBatch = await BatchModel.getById(id);
@@ -292,7 +292,8 @@ const updateBatch = async (req, res) => {
         await BatchModel.update(id, {
             dataString: JSON.stringify(data),
             producto_id: finalProductId,
-            input_quantity: qtyUsed
+            input_quantity: qtyUsed,
+            perfil_sensorial_id: perfil_sensorial_id || null
         });
 
         // Nota: syncBatchOutputs debe ser importado arriba

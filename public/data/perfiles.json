@@ -23,5 +23,13 @@
     { "id": "especia", "label": "Especia" },
     { "id": "nuez", "label": "Nuez" },
     { "id": "caramelo", "label": "Caramelo" }
+  ],
+  "miel": [
+    { "id": "color", "label": "Color" },
+    { "id": "aroma", "label": "Aroma" },
+    { "id": "sabor", "label": "Sabor" },
+    { "id": "humedad", "label": "Humedad" },
+    { "id": "cristalizacion", "label": "Cristalización" },
+    { "id": "pureza", "label": "Pureza" }
   ]
 }

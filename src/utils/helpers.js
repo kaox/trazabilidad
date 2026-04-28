@@ -1,4 +1,20 @@
 const crypto = require('crypto');
+const fs = require('fs');
+const path = require('path');
+
+/**
+ * Carga la configuración de perfiles sensoriales desde el archivo JSON
+ */
+const getSensoryProfilesConfig = () => {
+    try {
+        const configPath = path.join(__dirname, '../../public/data/perfiles.json');
+        const data = fs.readFileSync(configPath, 'utf8');
+        return JSON.parse(data);
+    } catch (e) {
+        console.error("Error loading sensory profiles config:", e);
+        return { cafe: [], cacao: [] }; // Fallback
+    }
+};
 
 /**
  * Parsea JSON de forma segura verificando si la entrada es un string
@@ -56,5 +72,6 @@ module.exports = {
     sanitizeNumber,
     createSlug,
     toCamelCase,
-    calcularMaridajeCacaoCafe
+    calcularMaridajeCacaoCafe,
+    getSensoryProfilesConfig
 };

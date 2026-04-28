@@ -126,7 +126,7 @@ function updateSensorySelects(type, selectedPerfil = null, selectedRueda = null)
                 <input type="hidden" name="perfil_id" id="perfil_id" value="">
             `;
         } else {
-            const options = filteredPerfiles.map(p => `<option value="${p.id}">${p.nombre}</option>`).join('');
+            const options = filteredPerfiles.map(p => `<option value="${p.id}">${p.nombre_perfil}</option>`).join('');
             perfilWrapper.innerHTML = `
                 <label for="perfil_id" class="block text-sm font-medium text-stone-700 mb-1">Perfil Sensorial</label>
                 <select id="perfil_id" name="perfil_id" class="w-full p-3 border border-stone-300 rounded-xl bg-white focus:ring-2 focus:ring-amber-500 outline-none">
@@ -341,6 +341,7 @@ window.removeAward = (i) => {
 
 // --- CRUD ---
 async function loadProducts() {
+    perfilesCache = await api('/api/perfiles');
     const grid = document.getElementById('products-grid');
     try {
         const products = await api('/api/productos');
@@ -366,7 +367,6 @@ async function loadProducts() {
             if (attr.proceso) detailLabels.push(`<span class="bg-amber-50 text-amber-800 px-2 py-0.5 rounded border border-amber-100">${attr.proceso}</span>`);
             if (attr.nivel_tueste) detailLabels.push(`<span class="bg-stone-100 text-stone-600 px-2 py-0.5 rounded border border-stone-200">${attr.nivel_tueste}</span>`);
             if (attr.grupo_genetico) detailLabels.push(`<span class="bg-emerald-50 text-emerald-800 px-2 py-0.5 rounded border border-emerald-100">${attr.grupo_genetico}</span>`);
-
             return `
             <div class="bg-white p-5 rounded-2xl shadow-sm border border-stone-100 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 flex flex-col group ${opacityClass} relative">
                 ${statusBadge}
@@ -396,7 +396,7 @@ async function loadProducts() {
                     
                     ${p.perfil_id ? `
                     <div class="flex items-center gap-2 mb-1 text-[11px] text-blue-700 font-medium">
-                        <i class="fas fa-sliders-h w-4"></i> Profile: ${perfilesCache.find(x => x.id == p.perfil_id)?.nombre || 'Custom'}
+                        <i class="fas fa-sliders-h w-4"></i> Profile: ${perfilesCache.find(x => x.id == p.perfil_id)?.nombre_perfil || 'Custom'}
                     </div>` : ''}
                     ${p.rueda_id ? `
                     <div class="flex items-center gap-2 mb-2 text-[11px] text-purple-700 font-medium">

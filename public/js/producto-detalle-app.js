@@ -132,14 +132,16 @@ const app = {
 
     async fetchData() {
         try {
-            const [productsRes, flavorsRes] = await Promise.all([
+            const [productsRes, flavorsRes, perfilesRes] = await Promise.all([
                 fetch('/api/public/marketplace/products'),
-                fetch('/data/flavor-wheels.json')
+                fetch('/data/flavor-wheels.json'),
+                fetch('/data/perfiles.json')
             ]);
 
             const productsData = await productsRes.json();
             this.product = productsData.products.find(p => p.id === this.productId);
             this.flavorWheels = await flavorsRes.json();
+            this.sensoryConfig = await perfilesRes.json();
 
             // Cargar trazabilidad del producto
             try {
@@ -664,7 +666,7 @@ const app = {
                     <div class="bg-white p-12 rounded-[3.5rem] border border-stone-100 shadow-sm space-y-8">
                         <h3 class="text-sm font-bold text-stone-400 uppercase tracking-widest text-center">Análisis de Atributos</h3>
                         <div class="aspect-square w-full max-w-[600px] mx-auto relative overflow-hidden">
-                            <canvas id="radar-analisis" class="w-full h-full"></canvas>
+                            <svg id="radar-analisis" class="w-full h-full"></svg>
                         </div>
                     </div>
                 </div>
@@ -675,15 +677,30 @@ const app = {
     },
 
     initCharts() {
-        if (!this.product.perfil) return;
+        if (!this.product.perfil || !this.sensoryConfig) return;
 
-        // Radar Chart
-        ChartUtils.initializePerfilChart('radar-analisis', this.product.perfil, this.product.tipo);
-        const inst = ChartUtils.instances['radar-analisis'];
-        if (inst) {
-            inst.options.scales.r.pointLabels.display = true;
-            inst.options.scales.r.pointLabels.font = { size: 12, weight: '700' };
-            inst.update();
+        const configList = this.sensoryConfig[this.product.tipo];
+        if (!configList) return;
+
+        const labels = configList.map(attr => attr.label);
+        const values = configList.map(attr => parseFloat(this.product.perfil[attr.id]) || 0);
+
+        const colors = {
+            cafe: '#d97706',
+            cacao: '#7c2d12',
+            miel: '#fbbf24'
+        };
+
+        const config = {
+            labels: labels,
+            datasets: [{
+                data: values,
+                color: colors[this.product.tipo] || '#3b82f6'
+            }]
+        };
+
+        if (typeof renderRadarChart !== 'undefined') {
+            renderRadarChart('#radar-analisis', config, { maxValue: 10 });
         }
 
         // Sunburst D3

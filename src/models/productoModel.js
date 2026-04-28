@@ -2,14 +2,15 @@ const db = require('../config/db');
 
 // Obtener un producto especifico
 const getByIdAndUserId = async (id, userId) => {
-    const sql = `SELECT * FROM productos WHERE id = ? AND user_id = ? AND deleted_at IS NULL`;
+    const sql = `SELECT *, COALESCE(perfil_sensorial_id, perfil_id) as perfil_id FROM productos WHERE id = ? AND user_id = ? AND deleted_at IS NULL`;
     return await db.get(sql, [id, userId]);
 };
 
 // Obtener productos activos de un usuario
 const getAllByUserId = async (userId) => {
     const sql = `
-        SELECT p.*, r.nombre as receta_nutricional_nombre,
+        SELECT p.*, COALESCE(p.perfil_sensorial_id, p.perfil_id) as perfil_id,
+               r.nombre as receta_nutricional_nombre,
                u.code as unit_code, c.symbol as currency_symbol,
                f.nombre_finca as finca_nombre,
                f.pais as finca_pais,
@@ -35,7 +36,7 @@ const create = async (data) => {
         INSERT INTO productos (
             user_id, nombre, descripcion, gtin, is_formal_gtin, imagenes_json,
             ingredientes, tipo_producto, peso, premios_json,
-            receta_nutricional_id, is_published, perfil_id, rueda_id,
+            receta_nutricional_id, is_published, perfil_sensorial_id, rueda_id,
             atributos_dinamicos,
             unit_id, precio, currency_id, finca_id,
             id
@@ -61,7 +62,7 @@ const update = async (id, userId, data) => {
         UPDATE productos 
         SET nombre = ?, descripcion = ?, gtin = ?, imagenes_json = ?,
             ingredientes = ?, tipo_producto = ?, peso = ?, premios_json = ?,
-            receta_nutricional_id = ?, is_published = ?, perfil_id = ?, rueda_id = ?,
+            receta_nutricional_id = ?, is_published = ?, perfil_sensorial_id = ?, rueda_id = ?,
             atributos_dinamicos = ?,
             unit_id = ?, precio = ?, currency_id = ?, finca_id = ?
         WHERE id = ? AND user_id = ?
@@ -201,7 +202,7 @@ const getMarketplaceBaseProducts = async (tipo) => {
         LEFT JOIN units_of_measure u_measure ON p.unit_id = u_measure.id
         LEFT JOIN fincas f ON p.finca_id = f.id
         LEFT JOIN company_profiles cp ON u.id = cp.user_id
-        LEFT JOIN perfiles perf ON p.perfil_id = perf.id
+        LEFT JOIN perfiles perf ON p.perfil_sensorial_id = perf.id
         LEFT JOIN ruedas_sabores rueda ON p.rueda_id = rueda.id
         LEFT JOIN TracedProducts tp ON CAST(p.id AS TEXT) = tp.producto_id
         WHERE p.is_published IS TRUE AND p.deleted_at IS NULL
@@ -223,7 +224,7 @@ const getPublicProductsWithProfilesByUserId = async (userId) => {
             perf.perfil_data, 
             rueda.notas_json, rueda.nombre_rueda
         FROM productos p
-        LEFT JOIN perfiles perf ON p.perfil_id = perf.id
+        LEFT JOIN perfiles perf ON p.perfil_sensorial_id = perf.id
         LEFT JOIN ruedas_sabores rueda ON p.rueda_id = rueda.id
         WHERE p.user_id = ? 
           AND p.deleted_at IS NULL

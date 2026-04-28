@@ -1,113 +1,125 @@
 <!DOCTYPE html>
 <html lang="es">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Perfiles Sensoriales - AgriTraza</title>
+    <title>Perfiles Sensoriales - Ruru Lab</title>
     <script src="/auth.js"></script>
-    <link href="/css/styles.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link
-        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Playfair+Display:wght@700;800&display=swap"
-        rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
-    <script src="/js/analytics-loader.js" defer></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="/js/d3-utils.js"></script>
     <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #fdfaf6;
-        }
-
-        h1,
-        h2,
-        h3,
-        .font-display {
-            font-family: 'Playfair Display', serif;
-        }
+        body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
+        input[type="range"] { accent-color: #d97706; }
     </style>
 </head>
-
-<body class="text-stone-800 antialiased">
+<body class="text-gray-800">
     <div id="nav-placeholder"></div>
 
-    <div class="container mx-auto p-4 md:p-8">
-        <header class="text-center mb-10 mt-4">
-            <h1 class="text-4xl md:text-5xl font-bold text-amber-900 mb-2">Perfiles Sensoriales</h1>
-            <p class="text-stone-600">Gestiona los perfiles de sabor de tus diferentes productos.</p>
+    <div class="min-h-screen flex flex-col">
+        <header class="bg-white shadow-sm border-b border-gray-200">
+            <div class="container mx-auto px-6 py-4 flex justify-between items-center">
+                <div class="flex items-center gap-3">
+                    <h1 class="text-2xl font-bold text-gray-900">Perfiles Sensoriales</h1>
+                </div>
+                <button onclick="document.getElementById('perfilModal').classList.remove('hidden')" class="bg-amber-600 hover:bg-amber-700 text-white font-bold py-2 px-4 rounded-lg transition text-sm">
+                    <i class="fas fa-plus mr-2"></i> Nuevo Perfil
+                </button>
+            </div>
         </header>
 
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <!-- Columna Izquierda: Lista y Gráfico -->
-            <div class="bg-white p-6 rounded-2xl shadow-lg">
-                <div class="flex justify-between items-center border-b pb-4 mb-4">
-                    <h2 class="text-2xl font-display text-amber-900">Mis Perfiles</h2>
-                    <!-- Filtro Visual -->
-                    <div class="flex bg-stone-100 rounded-lg p-1">
-                        <button id="filter-cafe"
-                            class="px-4 py-1 rounded-md text-sm font-medium transition-colors">Café</button>
-                        <button id="filter-cacao"
-                            class="px-4 py-1 rounded-md text-sm font-medium transition-colors">Cacao</button>
-                    </div>
-                </div>
-
-                <div id="perfiles-list" class="space-y-2 mb-6 max-h-60 overflow-y-auto">
-                    <!-- Lista dinámica -->
-                </div>
-
-                <div class="pt-6 border-t">
-                    <h2 class="text-xl font-display text-amber-900 mb-4 text-center" id="chart-title">Visualización</h2>
-                    <div class="relative aspect-square max-w-md mx-auto">
-                        <canvas id="radar-chart"></canvas>
-                    </div>
+        <main class="flex-grow container mx-auto px-6 py-8">
+            <div id="perfiles-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div class="text-center text-gray-500 py-12 col-span-full">
+                    <i class="fas fa-spinner fa-spin text-3xl mb-4"></i>
+                    <p>Cargando perfiles...</p>
                 </div>
             </div>
+        </main>
+    </div>
 
-            <!-- Columna Derecha: Formulario -->
-            <div class="bg-white p-6 rounded-2xl shadow-lg">
-                <h2 id="form-title" class="text-2xl font-display text-amber-900 border-b pb-2 mb-6">Nuevo Perfil</h2>
-                <form id="perfil-form" class="space-y-4">
-                    <input type="hidden" id="edit-id">
+    <!-- Modal Form -->
+    <div id="perfilModal" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center z-50 overflow-y-auto">
+        <div class="bg-white p-6 rounded-xl shadow-2xl max-w-5xl w-full mx-4 my-8 relative flex flex-col md:flex-row gap-8">
+            <button onclick="closeModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
+                <i class="fas fa-times text-xl"></i>
+            </button>
 
-                    <!-- Selector de Tipo -->
+            <!-- Formulario -->
+            <div class="flex-1">
+                <h3 class="text-xl font-bold text-gray-900 mb-6" id="modal-title">Nuevo Perfil Sensorial</h3>
+                
+                <form id="perfilForm" class="space-y-4">
+                    <input type="hidden" id="perfil-id">
+                    
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Nombre del Perfil</label>
+                            <input type="text" id="perfil-nombre" required class="w-full p-2 border border-gray-300 rounded-lg">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Tipo de Producto</label>
+                            <select id="perfil-tipo" class="w-full p-2 border border-gray-300 rounded-lg" onchange="renderAttributes()">
+                                <option value="cafe">Café</option>
+                                <option value="cacao">Cacao</option>
+                            </select>
+                        </div>
+                    </div>
+                    
                     <div>
-                        <label for="tipo-producto" class="block text-sm font-medium text-stone-700 mb-1">Tipo de
-                            Producto</label>
-                        <select id="tipo-producto"
-                            class="w-full p-3 border border-stone-300 rounded-xl bg-white focus:ring-2 focus:ring-amber-800 transition">
-                            <option value="cafe">Café (SCA)</option>
-                            <option value="cacao">Cacao (CoEx)</option>
-                        </select>
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Puntaje Global (SCA / CoE)</label>
+                        <input type="number" id="perfil-puntaje" min="0" max="100" step="0.25" class="w-full p-2 border border-gray-300 rounded-lg" placeholder="Ej. 84.5">
                     </div>
 
-                    <div>
-                        <label for="nombre" class="block text-sm font-medium text-stone-700 mb-1">Nombre del
-                            Perfil</label>
-                        <input type="text" id="nombre" name="nombre" placeholder="Ej: Lote Especial 2024"
-                            class="w-full p-3 border border-stone-300 rounded-xl" required>
+                    <div class="border-t border-gray-100 pt-4 mt-4">
+                        <h4 class="text-sm font-bold text-gray-700 mb-4">Atributos Sensoriales</h4>
+                        <div id="atributos-container" class="space-y-3 max-h-64 overflow-y-auto pr-2">
+                            <!-- Sliders dinámicos -->
+                        </div>
                     </div>
 
-                    <div id="sliders-container" class="space-y-4 pt-2 max-h-[50vh] overflow-y-auto pr-2">
-                        <!-- Sliders dinámicos se insertarán aquí -->
-                    </div>
-
-                    <div class="pt-6 flex justify-end gap-4">
-                        <button type="button" id="cancel-edit-btn"
-                            class="bg-stone-500 hover:bg-stone-600 text-white font-bold py-3 px-6 rounded-xl shadow-md hidden">Cancelar</button>
-                        <button type="submit"
-                            class="bg-amber-800 hover:bg-amber-900 text-white font-bold py-3 px-8 rounded-xl shadow-md">Guardar
-                            Perfil</button>
+                    <div class="pt-4 flex justify-end gap-3 mt-4">
+                        <button type="button" onclick="closeModal()" class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition">Cancelar</button>
+                        <button type="submit" class="px-6 py-2 bg-amber-600 text-white hover:bg-amber-700 rounded-lg font-bold shadow-md transition">Guardar Perfil</button>
                     </div>
                 </form>
+            </div>
+
+            <!-- Preview D3 Radar -->
+            <div class="flex-1 bg-gray-50 rounded-xl border border-gray-100 p-6 flex flex-col items-center justify-center min-h-[400px]">
+                <h4 class="text-sm font-bold text-gray-500 uppercase mb-4 text-center">Previsualización (Tiempo Real)</h4>
+                <svg id="radarPreview" class="w-full h-full max-w-sm"></svg>
             </div>
         </div>
     </div>
 
-    <script src="/js/perfiles-app.js"></script>
-    <script src="/js/nav-loader.js" defer></script>
-    <script src="/js/help-menu.js"></script>
-</body>
+    <!-- Modal Iframe Snippet -->
+    <div id="snippetModal" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center z-50">
+        <div class="bg-white p-6 rounded-xl shadow-2xl max-w-lg w-full mx-4">
+            <div class="text-center mb-4">
+                <div class="w-12 h-12 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-3 text-xl">
+                    <i class="fas fa-code"></i>
+                </div>
+                <h3 class="text-xl font-bold text-gray-900">Integración E-commerce</h3>
+                <p class="text-sm text-gray-500 mt-1">Copia y pega este código en la descripción de tu producto en Shopify, WooCommerce o sitio web.</p>
+            </div>
 
+            <div class="relative">
+                <textarea id="snippet-code" class="w-full h-32 bg-gray-900 text-green-400 p-4 rounded-lg font-mono text-xs mb-4 resize-none" readonly></textarea>
+                <button onclick="copySnippet()" class="absolute top-2 right-2 text-gray-400 hover:text-white p-2">
+                    <i class="fas fa-copy"></i>
+                </button>
+            </div>
+
+            <button onclick="document.getElementById('snippetModal').classList.add('hidden')" class="w-full text-gray-500 hover:text-gray-700 font-medium py-2">
+                Cerrar
+            </button>
+        </div>
+    </div>
+
+    <script src="/js/nav-loader.js" defer></script>
+    <script src="/js/perfiles-app.js"></script>
+</body>
 </html>

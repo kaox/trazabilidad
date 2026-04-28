@@ -1,310 +1,253 @@
-document.addEventListener('DOMContentLoaded', () => {
-    // --- ESTADO ---
-    let state = {
-        perfiles: [],
-        attributesConfig: {}, // Se cargará del JSON
-        currentType: 'cafe',  // Tipo seleccionado en el formulario
-        viewFilter: 'cafe',   // Tipo seleccionado en la lista
-        selectedProfileId: null
-    };
-    let radarChart = null;
+// public/js/perfiles-app.js
 
-    // --- SELECTORES ---
-    const form = document.getElementById('perfil-form');
-    const tipoSelect = document.getElementById('tipo-producto');
-    const slidersContainer = document.getElementById('sliders-container');
-    const perfilesList = document.getElementById('perfiles-list');
-    const chartTitle = document.getElementById('chart-title');
-    const cancelBtn = document.getElementById('cancel-edit-btn');
-    const submitBtn = form.querySelector('button[type="submit"]');
-    const editIdInput = document.getElementById('edit-id');
-    
-    const filterBtnCafe = document.getElementById('filter-cafe');
-    const filterBtnCacao = document.getElementById('filter-cacao');
+let sensoryConfig = {};
+let perfilesData = [];
 
-    // --- INICIALIZACIÓN ---
-    async function init() {
-        await Promise.all([
-            loadAttributesConfig(),
-            loadPerfiles()
-        ]);
-        
-        setupEventListeners();
-        updateFormUI(); // Renderizar sliders iniciales
-        updateListUI(); // Renderizar lista inicial
-        updateChart(null); // Chart vacío
-    }
+document.addEventListener('DOMContentLoaded', async () => {
+    try {
+        const configRes = await fetch('/data/perfiles.json');
+        sensoryConfig = await configRes.json();
 
-    async function loadAttributesConfig() {
-        try {
-            const response = await fetch('/data/perfiles.json');
-            state.attributesConfig = await response.json();
-        } catch (error) {
-            console.error("Error cargando configuración de atributos:", error);
-            state.attributesConfig = { cafe: [], cacao: [] };
+        // Populate the select dropdown with types from JSON
+        const typeSelect = document.getElementById('perfil-tipo');
+        if (typeSelect) {
+            typeSelect.innerHTML = Object.keys(sensoryConfig).map(type => `
+                <option value="${type}">${type.charAt(0).toUpperCase() + type.slice(1)}</option>
+            `).join('');
+
+            typeSelect.addEventListener('change', () => renderAttributes());
         }
+
+        await loadPerfiles();
+        document.getElementById('perfilForm').addEventListener('submit', handleSavePerfil);
+        document.getElementById('atributos-container').addEventListener('input', updateRadarPreview);
+
+        // Initial render for empty form
+        renderAttributes();
+
+    } catch (err) {
+        console.error("Error initializing app:", err);
     }
+});
 
-    async function loadPerfiles() {
-        try {
-            state.perfiles = await api('/api/perfiles'); // Carga TODOS los perfiles del usuario
-        } catch (error) {
-            console.error("Error cargando perfiles:", error);
-        }
-    }
+async function loadPerfiles() {
+    const container = document.getElementById('perfiles-container');
+    try {
+        const res = await fetch('/api/perfiles');
+        if (!res.ok) throw new Error("Error loading profiles");
 
-    function setupEventListeners() {
-        // Formulario
-        tipoSelect.addEventListener('change', (e) => {
-            state.currentType = e.target.value;
-            updateFormUI();
-            // Si estamos editando y cambiamos el tipo, es como resetear (a menos que sea intencional, pero simplifiquemos)
-            if (!editIdInput.value) {
-                 updateChart({ nombre: 'Nuevo Perfil', perfil_data: getRandomData(state.currentType) });
-            }
-        });
+        perfilesData = await res.json();
 
-        form.addEventListener('submit', handleFormSubmit);
-        cancelBtn.addEventListener('click', resetForm);
-
-        // Lista y Filtros
-        perfilesList.addEventListener('click', handleListClick);
-        
-        filterBtnCafe.addEventListener('click', () => setViewFilter('cafe'));
-        filterBtnCacao.addEventListener('click', () => setViewFilter('cacao'));
-        
-        // Live Chart Update
-        slidersContainer.addEventListener('input', () => {
-            const currentData = {};
-            slidersContainer.querySelectorAll('input[type="range"]').forEach(input => {
-                currentData[input.name] = parseFloat(input.value);
-            });
-            updateChart({ 
-                nombre: form.nombre.value || 'Vista Previa', 
-                perfil_data: currentData,
-                tipo: state.currentType
-            });
-        });
-    }
-
-    // --- UI LOGIC ---
-
-    function setViewFilter(type) {
-        state.viewFilter = type;
-        updateListUI();
-        // Actualizar estilos de botones
-        if (type === 'cafe') {
-            filterBtnCafe.classList.add('bg-amber-800', 'text-white');
-            filterBtnCafe.classList.remove('text-stone-600', 'hover:bg-stone-200');
-            filterBtnCacao.classList.remove('bg-amber-800', 'text-white');
-            filterBtnCacao.classList.add('text-stone-600', 'hover:bg-stone-200');
-        } else {
-            filterBtnCacao.classList.add('bg-amber-800', 'text-white');
-            filterBtnCacao.classList.remove('text-stone-600', 'hover:bg-stone-200');
-            filterBtnCafe.classList.remove('bg-amber-800', 'text-white');
-            filterBtnCafe.classList.add('text-stone-600', 'hover:bg-stone-200');
-        }
-    }
-
-    function updateFormUI() {
-        const attributes = state.attributesConfig[state.currentType] || [];
-        slidersContainer.innerHTML = attributes.map(attr => `
-            <div>
-                <div class="flex justify-between mb-1">
-                    <label for="${attr.id}" class="text-sm font-medium text-stone-700">${attr.label}</label>
-                    <span id="val-${attr.id}" class="text-sm font-bold text-amber-800">0</span>
-                </div>
-                <input type="range" id="${attr.id}" name="${attr.id}" min="0" max="10" step="0.5" value="0" 
-                    class="w-full h-2 bg-stone-200 rounded-lg appearance-none cursor-pointer accent-amber-800"
-                    oninput="document.getElementById('val-${attr.id}').textContent = this.value">
-            </div>
-        `).join('');
-    }
-
-    function updateListUI() {
-        const filtered = state.perfiles.filter(p => p.tipo === state.viewFilter);
-        
-        if (filtered.length === 0) {
-            perfilesList.innerHTML = `<p class="text-center text-stone-500 py-4">No hay perfiles de ${state.viewFilter} registrados.</p>`;
+        if (perfilesData.length === 0) {
+            container.innerHTML = `<div class="text-center text-gray-400 py-12 col-span-full">No hay perfiles creados.</div>`;
             return;
         }
 
-        perfilesList.innerHTML = filtered.map(p => `
-            <div class="flex items-center justify-between p-3 bg-stone-50 rounded-lg hover:bg-amber-50 transition cursor-pointer border border-stone-200 ${p.id === state.selectedProfileId ? 'border-amber-500 bg-amber-50' : ''}" data-id="${p.id}">
-                <span class="font-medium">${p.nombre}</span>
-                <div class="flex gap-2">
-                    <button class="edit-btn text-stone-400 hover:text-amber-800" title="Editar"><i class="fas fa-edit"></i></button>
-                    <button class="delete-btn text-stone-400 hover:text-red-600" title="Eliminar"><i class="fas fa-trash"></i></button>
+        container.innerHTML = perfilesData.map(p => `
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex flex-col justify-between hover:shadow-md transition w-80">
+                <div>
+                    <div class="flex justify-between items-start mb-2">
+                        <h3 class="font-bold text-gray-900">${p.nombre_perfil}</h3>
+                        <span class="text-xs font-bold uppercase tracking-wide px-2 py-1 bg-gray-100 text-gray-500 rounded">${p.tipo}</span>
+                    </div>
+                    <div class="text-sm text-gray-500 mb-4">
+                        Puntaje: <span class="font-bold text-amber-600">${p.puntaje_sca || 'N/A'}</span>
+                    </div>
+                    <div class="w-full h-64 flex items-center justify-center mb-4 bg-gray-50 rounded-lg">
+                        <svg id="radar-${p.id}" class="w-full h-full"></svg>
+                    </div>
+                </div>
+                <div class="flex justify-between border-t border-gray-100 pt-4 mt-2">
+                    <button onclick="showSnippet('${p.public_token}')" class="text-xs text-blue-600 hover:text-blue-800 font-medium">
+                        <i class="fas fa-code mr-1"></i> Iframe
+                    </button>
+                    <div class="flex gap-3 text-xs">
+                        <button onclick="editPerfil('${p.id}')" class="text-gray-400 hover:text-amber-600 transition"><i class="fas fa-pen"></i></button>
+                        <button onclick="deletePerfil('${p.id}')" class="text-gray-400 hover:text-red-600 transition"><i class="fas fa-trash"></i></button>
+                    </div>
                 </div>
             </div>
         `).join('');
+
+        // Render D3 for all cards
+        setTimeout(() => {
+            perfilesData.forEach(p => {
+                const config = formatDataForD3(p.tipo, p.perfil_data);
+                if (config) renderRadarChart(`#radar-${p.id}`, config, { maxValue: 10 });
+            });
+        }, 100);
+
+    } catch (e) {
+        container.innerHTML = `<div class="text-center text-red-500 py-12 col-span-full">Error al cargar.</div>`;
+    }
+}
+
+function formatDataForD3(tipo, data) {
+    const list = sensoryConfig[tipo];
+    if (!list) return null;
+
+    const labels = [];
+    const values = [];
+
+    list.forEach(attr => {
+        labels.push(attr.label);
+        values.push(parseFloat(data[attr.id]) || 0);
+    });
+
+    const colors = {
+        cafe: '#d97706',
+        cacao: '#7c2d12',
+        miel: '#fbbf24'
+    };
+
+    return {
+        labels,
+        datasets: [{
+            data: values,
+            color: colors[tipo] || '#3b82f6'
+        }]
+    };
+}
+
+function renderAttributes(existingData = {}) {
+    const tipo = document.getElementById('perfil-tipo').value;
+    const container = document.getElementById('atributos-container');
+    const list = sensoryConfig[tipo];
+
+    if (!list) {
+        container.innerHTML = '';
+        return;
     }
 
-    function updateChart(profile) {
-        const ctx = document.getElementById('radar-chart').getContext('2d');
-        
-        // Determinar qué atributos mostrar (del perfil seleccionado o del tipo actual en formulario)
-        const typeToUse = profile ? (profile.tipo || state.currentType) : state.currentType;
-        const attributes = state.attributesConfig[typeToUse] || [];
-        const labels = attributes.map(a => a.label);
-        
-        // Obtener datos
-        let data = [];
-        if (profile && profile.perfil_data) {
-            data = attributes.map(a => profile.perfil_data[a.id] || 0);
+    container.innerHTML = list.map(attr => {
+        const val = existingData[attr.id] || 0;
+        return `
+            <div class="flex items-center gap-4">
+                <label class="w-1/3 text-xs font-medium text-gray-600">${attr.label}</label>
+                <input type="range" name="attr_${attr.id}" min="0" max="10" step="0.25" value="${val}" class="flex-1">
+                <span class="text-xs font-bold text-gray-800 w-8 text-right attr-value-display">${val}</span>
+            </div>
+        `;
+    }).join('');
+
+    container.querySelectorAll('input[type="range"]').forEach(input => {
+        input.addEventListener('input', (e) => {
+            e.target.nextElementSibling.textContent = e.target.value;
+            updateRadarPreview();
+        });
+    });
+
+    updateRadarPreview();
+}
+
+function updateRadarPreview() {
+    const tipo = document.getElementById('perfil-tipo').value;
+    const list = sensoryConfig[tipo];
+    if (!list) return;
+
+    const currentData = {};
+    list.forEach(attr => {
+        const input = document.querySelector(`input[name="attr_${attr.id}"]`);
+        currentData[attr.id] = input ? parseFloat(input.value) : 0;
+    });
+
+    const config = formatDataForD3(tipo, currentData);
+    if (config) renderRadarChart('#radarPreview', config, { maxValue: 10 });
+}
+
+function editPerfil(id) {
+    const p = perfilesData.find(x => x.id === id);
+    if (!p) return;
+
+    document.getElementById('modal-title').textContent = 'Editar Perfil Sensorial';
+    document.getElementById('perfil-id').value = p.id;
+    document.getElementById('perfil-nombre').value = p.nombre_perfil;
+    document.getElementById('perfil-tipo').value = p.tipo;
+    document.getElementById('perfil-puntaje').value = p.puntaje_sca || '';
+
+    renderAttributes(p.perfil_data);
+    document.getElementById('perfilModal').classList.remove('hidden');
+}
+
+async function handleSavePerfil(e) {
+    e.preventDefault();
+    const btn = e.target.querySelector('button[type="submit"]');
+    btn.disabled = true;
+
+    const id = document.getElementById('perfil-id').value;
+    const tipo = document.getElementById('perfil-tipo').value;
+    const list = sensoryConfig[tipo];
+
+    const perfil_data = {};
+    list.forEach(attr => {
+        const input = document.querySelector(`input[name="attr_${attr.id}"]`);
+        perfil_data[attr.id] = input ? parseFloat(input.value) : 0;
+    });
+
+    const data = {
+        nombre_perfil: document.getElementById('perfil-nombre').value,
+        tipo,
+        puntaje_sca: parseFloat(document.getElementById('perfil-puntaje').value) || null,
+        perfil_data
+    };
+
+    try {
+        const url = id ? `/api/perfiles/${id}` : '/api/perfiles';
+        const method = id ? 'PUT' : 'POST';
+
+        const res = await fetch(url, {
+            method,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+
+        if (res.ok) {
+            closeModal();
+            loadPerfiles();
         } else {
-            data = attributes.map(() => 0);
+            const err = await res.json();
+            alert('Error: ' + err.error);
         }
-
-        if (radarChart) {
-            radarChart.destroy();
-        }
-
-        radarChart = new Chart(ctx, {
-            type: 'radar',
-            data: {
-                labels: labels,
-                datasets: [{
-                    label: profile ? profile.nombre : 'Nuevo Perfil',
-                    data: data,
-                    fill: true,
-                    backgroundColor: 'rgba(146, 64, 14, 0.2)',
-                    borderColor: 'rgb(146, 64, 14)',
-                    pointBackgroundColor: 'rgb(146, 64, 14)',
-                    pointBorderColor: '#fff',
-                    pointHoverBackgroundColor: '#fff',
-                    pointHoverBorderColor: 'rgb(146, 64, 14)'
-                }]
-            },
-            options: {
-                elements: { line: { borderWidth: 3 } },
-                scales: {
-                    r: {
-                        angleLines: { display: true },
-                        suggestedMin: 0,
-                        suggestedMax: 10
-                    }
-                },
-                plugins: { legend: { display: false } }
-            }
-        });
-        
-        if (chartTitle) chartTitle.textContent = profile ? profile.nombre : 'Visualización';
+    } catch (err) {
+        alert('Error de red');
+    } finally {
+        btn.disabled = false;
     }
+}
 
-    // --- HANDLERS ---
-
-    function handleListClick(e) {
-        const item = e.target.closest('[data-id]');
-        if (!item) return;
-        const id = item.dataset.id;
-        const profile = state.perfiles.find(p => p.id == id);
-
-        if (e.target.closest('.delete-btn')) {
-            e.stopPropagation();
-            if(confirm('¿Eliminar este perfil?')) deleteProfile(id);
-        } else if (e.target.closest('.edit-btn')) {
-            e.stopPropagation();
-            loadProfileToForm(profile);
-        } else {
-            // Solo visualizar
-            state.selectedProfileId = parseInt(id);
-            updateListUI(); // Para resaltar selección
-            updateChart(profile);
-        }
+async function deletePerfil(id) {
+    if (!confirm('¿Eliminar perfil de forma permanente?')) return;
+    try {
+        await fetch(`/api/perfiles/${id}`, { method: 'DELETE' });
+        loadPerfiles();
+    } catch (e) {
+        alert('Error al eliminar');
     }
+}
 
-    function loadProfileToForm(profile) {
-        // Cambiar el tipo en el formulario para que coincida con el perfil
-        state.currentType = profile.tipo;
-        tipoSelect.value = profile.tipo;
-        updateFormUI(); // Regenerar sliders
+function showSnippet(token) {
+    const protocol = window.location.protocol;
+    const host = window.location.host;
+    const url = `${protocol}//${host}/widget/radar/${token}`;
 
-        editIdInput.value = profile.id;
-        form.nombre.value = profile.nombre;
-        
-        // Llenar valores
-        Object.entries(profile.perfil_data).forEach(([key, value]) => {
-            const input = document.getElementById(key);
-            const display = document.getElementById(`val-${key}`);
-            if (input) {
-                input.value = value;
-                if(display) display.textContent = value;
-            }
-        });
+    const iframeCode = `<iframe src="${url}" width="100%" height="400" frameborder="0" loading="lazy" style="border:none; overflow:hidden;"></iframe>`;
 
-        document.getElementById('form-title').textContent = 'Editar Perfil';
-        submitBtn.textContent = 'Actualizar';
-        cancelBtn.classList.remove('hidden');
-        
-        // Cambiar la vista de la lista para coincidir
-        setViewFilter(profile.tipo);
-        
-        updateChart(profile);
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
+    document.getElementById('snippet-code').value = iframeCode;
+    document.getElementById('snippetModal').classList.remove('hidden');
+}
 
-    async function handleFormSubmit(e) {
-        e.preventDefault();
-        const formData = new FormData(form);
-        const data = {
-            nombre: formData.get('nombre'),
-            tipo: state.currentType,
-            perfil_data: {}
-        };
+function copySnippet() {
+    const text = document.getElementById('snippet-code');
+    text.select();
+    navigator.clipboard.writeText(text.value).then(() => {
+        alert('Código copiado al portapapeles');
+    });
+}
 
-        state.attributesConfig[state.currentType].forEach(attr => {
-            data.perfil_data[attr.id] = parseFloat(formData.get(attr.id));
-        });
-
-        const id = editIdInput.value;
-        try {
-            if (id) {
-                await api(`/api/perfiles/${id}`, { method: 'PUT', body: JSON.stringify(data) });
-            } else {
-                await api('/api/perfiles', { method: 'POST', body: JSON.stringify(data) });
-            }
-            resetForm();
-            await loadPerfiles();
-            updateListUI();
-        } catch (error) {
-            alert('Error al guardar: ' + error.message);
-        }
-    }
-
-    async function deleteProfile(id) {
-        try {
-            await api(`/api/perfiles/${id}`, { method: 'DELETE' });
-            await loadPerfiles();
-            updateListUI();
-            if(state.selectedProfileId == id) updateChart(null);
-        } catch (error) {
-            alert('Error al eliminar: ' + error.message);
-        }
-    }
-
-    function resetForm() {
-        form.reset();
-        editIdInput.value = '';
-        document.getElementById('form-title').textContent = 'Nuevo Perfil';
-        submitBtn.textContent = 'Guardar Perfil';
-        cancelBtn.classList.add('hidden');
-        
-        // Resetear sliders visualmente
-        slidersContainer.querySelectorAll('span[id^="val-"]').forEach(span => span.textContent = '0');
-        updateChart({ nombre: 'Nuevo Perfil', perfil_data: getRandomData(state.currentType) });
-    }
-
-    function getRandomData(type) {
-        // Solo para efecto visual al resetear
-        const data = {};
-        const attrs = state.attributesConfig[type] || [];
-        attrs.forEach(a => data[a.id] = 0);
-        return data;
-    }
-    
-    // Inicializar filtro visual por defecto
-    setViewFilter('cafe');
-
-    init();
-});
+function closeModal() {
+    document.getElementById('perfilModal').classList.add('hidden');
+    document.getElementById('perfilForm').reset();
+    document.getElementById('perfil-id').value = '';
+    document.getElementById('modal-title').textContent = 'Nuevo Perfil Sensorial';
+    renderAttributes();
+}

@@ -1,43 +1,25 @@
-# Investigación: Configuración de Perfiles Sensoriales y Puntuaciones
+# Research: Sensory Profiles Dynamic Config
 
-**Fecha**: 2026-04-26  
-**Especificación**: [spec.md](./spec.md)
+## Decisions
 
----
+### 1. Dynamic Attribute Loading
+- **Decision**: Cargar `public/data/perfiles.json` tanto en el backend como en el frontend.
+- **Rationale**: El backend necesita validar que los datos enviados en `perfil_data` correspondan a los atributos permitidos para el tipo de producto. El frontend necesita el JSON para generar dinámicamente los sliders y las etiquetas de la gráfica de radar.
+- **Implementation**: 
+  - Backend: Usar `fs.readFileSync` o `require` para cargar el JSON al inicio del controlador.
+  - Frontend: Usar `fetch('/data/perfiles.json')` durante la inicialización de la app.
 
-## Decisión 1: Implementación del Widget de Iframe Seguro
+### 2. Radar Chart Visualization (D3.js)
+- **Decision**: Crear un componente reutilizable `renderRadarChart` en `public/js/d3-utils.js`.
+- **Rationale**: Permite mantener una consistencia visual entre la previsualización del administrador y el widget externo. D3.js ofrece la flexibilidad necesaria para manejar un número variable de ejes (atributos).
+- **Alternatives**: Chart.js (rechazado por la directiva de la Constitución de usar D3.js para visualizaciones avanzadas).
 
-**Decisión**: El widget se expondrá como un endpoint GET público en Express (`/widget/radar/:token`) que servirá una vista HTML mínima (`widget-radar.html`). Esta vista contendrá un contenedor SVG para renderizar el radar con D3.js.
+### 3. Widget Security (Public Tokens)
+- **Decision**: Usar UUIDs v4 como `public_token` y un endpoint de solo lectura.
+- **Rationale**: Evita la exposición de IDs secuenciales y permite invalidar tokens si es necesario. La validación de suscripción se hace consultando la tabla `users` (empresa) asociada al perfil.
+- **Security**: El endpoint `/widget/radar/:token` solo devolverá los datos mínimos necesarios para renderizar la gráfica, sin información sensible del usuario.
 
-**Razonamiento**: 
-- Evita problemas de CORS (`Access-Control-Allow-Origin`) al servir el HTML completo que los clientes pueden incrustar vía `<iframe src="...">`.
-- El controlador asociado a esta ruta verificará el estado de la suscripción del emisor antes de renderizar la vista. Si la suscripción expiró, renderizará una vista alternativa (placeholder) sin datos.
-- Cumple con SC-002, SC-003, y SC-004 garantizando aislamiento, responsividad y protección de UI en el e-commerce destino.
+## Findings
 
-**Alternativas consideradas**: 
-- Distribuir un snippet Javascript puro que inyecta elementos en el DOM del cliente. Rechazado por riesgo de conflictos CSS con el tema del e-commerce (Shopify/WooCommerce) y mayor riesgo de seguridad.
-
----
-
-## Decisión 2: Diseño de Almacenamiento Dinámico (JSONB)
-
-**Decisión**: Utilizar una sola tabla `perfiles` donde los atributos cuantitativos de la cata (acidez, cuerpo, etc.) se guardan dentro de un campo `perfil_data` de tipo `JSONB`.
-
-**Razonamiento**: 
-- Permite extender el catálogo a nuevos productos (ej. Té, Miel) o nuevas normativas de cata sin necesidad de migraciones SQL complejas.
-- SQLite y PostgreSQL soportan funciones JSON nativas si fuese necesario indexar o buscar atributos específicos.
-- Simplifica el contrato de la API.
-
-**Alternativas consideradas**:
-- Crear tablas relacionales separadas `perfil_atributos`. Rechazado por la latencia en múltiples JOINs innecesarios, afectando la métrica SC-002 (Carga < 500ms).
-
----
-
-## Decisión 3: Generación de Identificador Público (Token de Solo Lectura)
-
-**Decisión**: La base de datos incluirá una columna `public_token` en la tabla `perfiles`. Este será un UUID v4 o un hash alfanumérico generado al crear el perfil, y se indexará para búsquedas rápidas.
-
-**Razonamiento**:
-- Separa el ID interno autoincremental/UUID primario del acceso público.
-- En caso de una vulneración (scraping), el usuario puede solicitar "revocar" y generar un nuevo token para el mismo perfil.
-- Cumple estrictamente con FR-008.
+- D3.js v7 tiene soporte nativo para escalas circulares y polígonos, ideales para radar charts.
+- La validación de JSONB en SQLite se puede hacer mediante `JSON_EXTRACT` o simplemente parseando el objeto en la capa del modelo de Node.js.

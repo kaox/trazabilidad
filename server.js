@@ -24,6 +24,8 @@ const empresasController = require('./src/controllers/empresasController');
 const landingsController = require('./src/controllers/landingsController');
 const acquisitionsController = require('./src/controllers/acquisitionsController');
 const batchesController = require('./src/controllers/batchesController');
+const perfilesRoutes = require('./src/routes/perfilesRoutes');
+const widgetRoutes = require('./src/routes/widgetRoutes');
 
 const RESERVED_SUBDOMAINS = ['www', 'app', 'api', 'admin', 'localhost', 'rurulab', 'mail', 'smtp'];
 
@@ -782,10 +784,8 @@ app.get('/api/procesadoras/:procesadoraId/sucursales', authenticateApi, db.getSu
 app.post('/api/procesadoras/:procesadoraId/sucursales', authenticateApi, db.createSucursal);
 app.put('/api/procesadoras/:procesadoraId/sucursales/:sucursalId', authenticateApi, db.updateSucursal);
 app.delete('/api/procesadoras/:procesadoraId/sucursales/:sucursalId', authenticateApi, db.deleteSucursal);
-app.get('/api/perfiles', authenticateApi, db.getPerfiles);
-app.post('/api/perfiles', authenticateApi, db.createPerfil);
-app.put('/api/perfiles/:id', authenticateApi, db.updatePerfil);
-app.delete('/api/perfiles/:id', authenticateApi, db.deletePerfil);
+app.use('/api/perfiles', authenticateApi, perfilesRoutes);
+app.use('/widget', widgetRoutes);
 app.get('/api/ruedas-sabores', authenticateApi, db.getRuedasSabores);
 app.post('/api/ruedas-sabores', authenticateApi, db.createRuedaSabores);
 app.put('/api/ruedas-sabores/:id', authenticateApi, db.updateRuedaSabores);

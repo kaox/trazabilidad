@@ -1,31 +1,33 @@
-# Implementation Plan: Configuración de Perfiles Sensoriales y Puntuaciones
+# Implementation Plan: Sensory Profiles Config
 
-**Branch**: `main` (Feature `003-sensory-profiles`) | **Date**: 2026-04-26 | **Spec**: [spec.md](./spec.md)
-**Input**: Feature specification from `specs/003-sensory-profiles/spec.md`
+**Branch**: `main` | **Date**: 2026-04-28 | **Spec**: [spec.md](./spec.md)
+**Input**: Feature specification from `/specs/003-sensory-profiles/spec.md`
 
 ## Summary
 
-Implementación del Gestor de Perfiles Sensoriales ("Cup Profiling") y un Generador de Widget de Integración. El sistema usará una arquitectura flexible basada en `JSONB` para almacenar las catas paramétricas dinámicas según el tipo (Café/Cacao). D3.js renderizará gráficos de radar interactivos tanto en el dashboard interno como a través de un endpoint público (`iframe`) protegido por un token de solo lectura, cuyo acceso se valida en tiempo real contra el estado de suscripción del usuario.
+Implementación de un gestor dinámico de perfiles sensoriales (Cup Profiling) que permite a los usuarios configurar atributos de cata (café, cacao, miel, etc.) a través de un archivo JSON (`public/data/perfiles.json`). El sistema incluye un panel administrativo para CRUD de perfiles, una visualización interactiva con radar charts (D3.js) y la generación de widgets (iframes) externos con validación de suscripción.
 
 ## Technical Context
 
-**Language/Version**: Node.js (Backend), Vanilla JS (Frontend)  
-**Primary Dependencies**: Express, D3.js (Frontend y Widget HTML), Tailwind CSS  
-**Storage**: SQLite (Dev) / PostgreSQL (Prod) mediante JSONB en `perfiles`.  
-**Testing**: Pruebas manuales E2E (Creación de perfil, generación de widget, prueba de expiración de suscripción en iframe embebido)  
-**Target Platform**: Web App y Tiendas Externas (Shopify/WooCommerce vía iframe)  
-**Project Type**: Web Application  
-**Performance Goals**: Widget load time < 500ms (usando `loading="lazy"`)  
-**Constraints**: El iframe no debe depender de JWT/Cookies del cliente final, solo del `public_token`. Se evita crear tablas relacionales para atributos de cata en favor del performance.  
-**Scale/Scope**: Múltiples tenants, un perfil referenciable por N lotes, alto tráfico de visualizaciones públicas.
+**Language/Version**: Node.js 18+ with Express  
+**Primary Dependencies**: D3.js, Tailwind CSS 3+, SQLite (Local) / PostgreSQL (Production)  
+**Storage**: SQLite/PostgreSQL (JSONB para `perfil_data`)  
+**Testing**: Jest  
+**Target Platform**: Web (Vercel)
+**Project Type**: Web application (Frontend Vanilla JS + Backend Express)  
+**Performance Goals**: Page load < 3s, Page size < 1MB, Lighthouse >= 90  
+**Constraints**: Atributos dinámicos, límites de puntuación (0-10.0), validación de suscripción en tiempo real para el widget  
+**Scale/Scope**: Repositorio centralizado de perfiles, exportación vía iframe para e-commerce externos
 
 ## Constitution Check
 
-*GATE: Passed*
+*GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-- **Desarrollo Ágil y Sin Migraciones Duras**: Aprobado. Uso de `JSONB` previene `ALTER TABLE` por cada nuevo atributo sensorial.
-- **Rendimiento e Integraciones Livianas**: Aprobado. El iframe sirve un HTML minificado con CDN de D3.js sin invocar librerías pesadas como React.
-- **Validación de Capacidad de Negocio**: Aprobado. Se integrará la validación de suscripciones antes de servir el contenido asíncrono, protegiendo el core model comercial.
+1. **Traceability & Transparency First**: El perfil sensorial se vincula criptográficamente a los lotes en procesamiento. (PASSED)
+2. **Specialty & Sensory Excellence**: Sigue estándares SCA/Cocoa of Excellence; integración de ruedas de sabores. (PASSED)
+3. **Premium "Wow" Experience**: Uso de D3.js para visualizaciones avanzadas y UI con Inter/Tailwind. (PASSED)
+4. **Resilient Hybrid Architecture**: Compatible con SQLite y PostgreSQL usando JSONB. (PASSED)
+5. **Vercel Ecosystem Optimization**: Preparado para despliegue en Vercel. (PASSED)
 
 ## Project Structure
 
@@ -33,38 +35,49 @@ Implementación del Gestor de Perfiles Sensoriales ("Cup Profiling") y un Genera
 
 ```text
 specs/003-sensory-profiles/
-├── plan.md              # Plan de implementación técnico
-├── research.md          # Decisiones de arquitectura (Iframe, JSONB, Token)
-├── data-model.md        # Estructura del JSON y llaves foráneas
-├── quickstart.md        # Guía para analistas de calidad e integradores e-commerce
-└── contracts/
-    └── sensory-profiles-api.md # Endpoints REST y snippet de Iframe
+├── plan.md              # This file
+├── research.md          # Phase 0 output
+├── data-model.md        # Phase 1 output
+├── quickstart.md        # Phase 1 output
+├── contracts/           # Phase 1 output
+└── tasks.md             # Phase 2 output
 ```
 
 ### Source Code (repository root)
 
 ```text
-public/
-├── js/
-│   ├── perfiles-app.js        # UI interna, manipulador dinámico y D3.js local
-│   └── d3-utils.js            # Refactor/Extracción de helpers de D3.js
-└── views/
-    ├── perfiles.html          # Vista protegida CRUD del Analista
-    └── widget-radar.html      # Plantilla pública HTML cruda para el iframe
-
 src/
-├── models/
-│   └── perfilModel.js         # Interfaz a BD con validaciones de JSONB y suscripciones
 ├── controllers/
-│   ├── perfilesController.js  # Lógica CRUD y generación de public_token
-│   └── widgetController.js    # Endpoint liviano para servir el iframe al consumidor
-└── routes/
-    ├── perfilesRoutes.js      # Rutas /api/perfiles (Auth)
-    └── widgetRoutes.js        # Rutas /widget/radar (Públicas)
+│   ├── perfilesController.js
+│   └── widgetController.js
+├── models/
+│   ├── perfilModel.js
+│   └── batchModel.js
+├── routes/
+│   ├── perfilesRoutes.js
+│   └── widgetRoutes.js
+└── config/
+    └── db.js
+
+public/
+├── data/
+│   └── perfiles.json    # Configuración de atributos
+├── js/
+│   ├── perfiles-app.js
+│   ├── d3-utils.js
+│   └── widget-radar.js
+└── css/
+    └── styles.css
+
+views/
+├── perfiles.html
+└── widget-radar.html
 ```
 
-**Structure Decision**: Se extiende la estructura actual añadiendo la lógica en un nuevo conjunto Modelo-Vista-Controlador dedicado a Perfiles, e introduciendo un `widgetController.js` especializado en inyectar data de forma asíncrona a un HTML base (`widget-radar.html`) sin requerir layouts pesados o autenticación estándar.
+**Structure Decision**: Se mantiene la estructura monolítica actual con separación clara de controladores, modelos y rutas en `src/`, y activos estáticos/vistas en `public/` y `views/`.
 
 ## Complexity Tracking
 
-Ninguna violación identificada a la constitución. El uso de JSONB vs tablas de base de datos relacionales es el camino recomendado y documentado en `research.md`.
+| Violation | Why Needed | Simpler Alternative Rejected Because |
+|-----------|------------|-------------------------------------|
+| N/A | | |
