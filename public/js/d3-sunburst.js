@@ -8,12 +8,12 @@ const SunburstChart = {
      * @param {Object} rawData - Hierarchical data (from flavor-wheels.json)
      * @param {Object} options - Configuration options
      */
-    render: function(selector, rawData, options = {}) {
+    render: function (selector, rawData, options = {}) {
         const width = options.width || 600;
         const height = options.height || 600;
         const radius = Math.min(width, height) / 2;
         const isMobile = window.innerWidth < 768;
-        
+
         const selection = options.selection || []; // Array of selected node names
         const isWidget = options.isWidget || false; // If true, prune unselected nodes
 
@@ -121,11 +121,11 @@ const SunburstChart = {
                 if (selection.length === 0) return isWidget ? 0.05 : 1;
                 return d.isVisible ? 1 : 0.15;
             })
-            .on("mouseover", function(event, d) {
+            .on("mouseover", function (event, d) {
                 if (!options.onClick) return;
                 d3.select(this).style("stroke", "#000").style("stroke-width", "2px");
             })
-            .on("mouseout", function(event, d) {
+            .on("mouseout", function (event, d) {
                 if (!options.onClick) return;
                 d3.select(this).style("stroke", "#fff").style("stroke-width", "1px");
             });
@@ -134,7 +134,7 @@ const SunburstChart = {
         svg.append("g")
             .attr("pointer-events", "none")
             .attr("text-anchor", "middle")
-            .attr("font-size", isMobile ? "12px" : "10px")
+            .attr("font-size", isMobile ? "14px" : "12px")
             .attr("font-family", "'Inter', sans-serif")
             .selectAll("text")
             .data(root.descendants().filter(d => {
@@ -145,21 +145,21 @@ const SunburstChart = {
             }))
             .enter()
             .append("text")
-            .attr("transform", function(d) {
+            .attr("transform", function (d) {
                 const x = (d.x0 + d.x1) / 2 * 180 / Math.PI;
                 const y = (d.y0 + d.y1) / 2;
-                
+
                 // Rotación tangencial (estilo Tastify)
                 // x-90 nos posiciona en el ángulo, translate nos aleja del centro
                 // 90 grados adicionales nos hace tangenciales al arco
                 let angle = x - 90;
                 let tangentialRotation = 90;
-                
+
                 // Si está en la parte inferior, giramos 180 para que el texto no esté invertido
                 if (x > 90 && x < 270) {
                     tangentialRotation += 180;
                 }
-                
+
                 return `rotate(${angle}) translate(${y},0) rotate(${tangentialRotation})`;
             })
             .attr("dy", "0.35em")
