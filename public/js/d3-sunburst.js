@@ -141,14 +141,26 @@ const SunburstChart = {
                 if (d.depth === 0) return false;
                 if (isWidget && !d.isVisible) return false;
                 // Threshold for label visibility based on arc length
-                return (d.x1 - d.x0) * d.y0 > (isMobile ? 18 : 12);
+                return (d.x1 - d.x0) * d.y0 > (isMobile ? 25 : 18);
             }))
             .enter()
             .append("text")
             .attr("transform", function(d) {
                 const x = (d.x0 + d.x1) / 2 * 180 / Math.PI;
                 const y = (d.y0 + d.y1) / 2;
-                return `rotate(${x - 90}) translate(${y},0) rotate(${x < 180 ? 0 : 180})`;
+                
+                // Rotación tangencial (estilo Tastify)
+                // x-90 nos posiciona en el ángulo, translate nos aleja del centro
+                // 90 grados adicionales nos hace tangenciales al arco
+                let angle = x - 90;
+                let tangentialRotation = 90;
+                
+                // Si está en la parte inferior, giramos 180 para que el texto no esté invertido
+                if (x > 90 && x < 270) {
+                    tangentialRotation += 180;
+                }
+                
+                return `rotate(${angle}) translate(${y},0) rotate(${tangentialRotation})`;
             })
             .attr("dy", "0.35em")
             .text(d => d.data.name)
