@@ -657,15 +657,15 @@ const app = {
                 </div>
 
                 <div class="grid grid-cols-1 gap-16">
-                    <div class="bg-white p-12 rounded-[3.5rem] border border-stone-100 shadow-sm space-y-8">
+                    <div class="bg-white p-6 md:p-12 rounded-[2rem] md:rounded-[3.5rem] border border-stone-100 shadow-sm space-y-8">
                         <h3 class="text-sm font-bold text-stone-400 uppercase tracking-widest text-center">Complejidad Sensorial (Rueda)</h3>
                         <div id="sunburst-container" class="w-full relative py-4 flex justify-center">
                             <!-- SVG D3 se inyecta aquí -->
                         </div>
                     </div>
-                    <div class="bg-white p-12 rounded-[3.5rem] border border-stone-100 shadow-sm space-y-8">
+                    <div class="bg-white p-6 md:p-12 rounded-[2rem] md:rounded-[3.5rem] border border-stone-100 shadow-sm space-y-8">
                         <h3 class="text-sm font-bold text-stone-400 uppercase tracking-widest text-center">Análisis de Atributos</h3>
-                        <div class="aspect-square w-full max-w-[600px] mx-auto relative overflow-hidden">
+                        <div class="aspect-square w-full max-w-[600px] mx-auto relative">
                             <svg id="radar-analisis" class="w-full h-full"></svg>
                         </div>
                     </div>

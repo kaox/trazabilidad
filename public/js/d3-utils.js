@@ -13,11 +13,15 @@ function renderRadarChart(containerSelector, data, options = {}) {
     svg.selectAll("*").remove(); // Limpiar el contenedor previo
 
     const rect = svg.node().getBoundingClientRect();
+    const isMobile = window.innerWidth < 768;
+    
     const width = options.width || rect.width || 400;
     const height = options.height || rect.height || 400;
     
-    // Margins are important for labels. Increase right/left for long labels.
-    const margin = options.margin || { top: 60, right: 100, bottom: 60, left: 100 };
+    // Margins are important for labels. Responsive margins.
+    const margin = options.margin || (isMobile 
+        ? { top: 40, right: 60, bottom: 40, left: 60 }
+        : { top: 60, right: 100, bottom: 60, left: 100 });
     const radius = Math.min(width - margin.left - margin.right, height - margin.top - margin.bottom) / 2;
 
     svg.attr("width", "100%")
@@ -86,7 +90,7 @@ function renderRadarChart(containerSelector, data, options = {}) {
 
     axisGrid.append("text")
         .attr("class", "legend")
-        .style("font-size", "11px")
+        .style("font-size", isMobile ? "9px" : "11px")
         .style("font-family", "Inter, sans-serif")
         .attr("text-anchor", (d, i) => {
             const angle = angleSlice * i;
@@ -99,8 +103,8 @@ function renderRadarChart(containerSelector, data, options = {}) {
              if (Math.abs(angle - Math.PI) < 0.1) return "1.2em";
              return "0.35em";
         })
-        .attr("x", (d, i) => rScale(maxValue * 1.2) * Math.cos(angleSlice * i - Math.PI / 2))
-        .attr("y", (d, i) => rScale(maxValue * 1.2) * Math.sin(angleSlice * i - Math.PI / 2))
+        .attr("x", (d, i) => rScale(maxValue * (isMobile ? 1.15 : 1.2)) * Math.cos(angleSlice * i - Math.PI / 2))
+        .attr("y", (d, i) => rScale(maxValue * (isMobile ? 1.15 : 1.2)) * Math.sin(angleSlice * i - Math.PI / 2))
         .text(d => d)
         .style("fill", "#666666");
 
@@ -131,7 +135,7 @@ function renderRadarChart(containerSelector, data, options = {}) {
             .enter()
             .append("circle")
             .attr("class", "radarCircle")
-            .attr("r", 3.5)
+            .attr("r", isMobile ? 4.5 : 3.5)
             .attr("cx", (d, i) => rScale(d) * Math.cos(angleSlice * i - Math.PI / 2))
             .attr("cy", (d, i) => rScale(d) * Math.sin(angleSlice * i - Math.PI / 2))
             .style("fill", color)

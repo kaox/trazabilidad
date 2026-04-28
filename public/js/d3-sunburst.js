@@ -12,6 +12,7 @@ const SunburstChart = {
         const width = options.width || 600;
         const height = options.height || 600;
         const radius = Math.min(width, height) / 2;
+        const isMobile = window.innerWidth < 768;
         
         const selection = options.selection || []; // Array of selected node names
         const isWidget = options.isWidget || false; // If true, prune unselected nodes
@@ -133,10 +134,15 @@ const SunburstChart = {
         svg.append("g")
             .attr("pointer-events", "none")
             .attr("text-anchor", "middle")
-            .attr("font-size", "10px")
+            .attr("font-size", isMobile ? "12px" : "10px")
             .attr("font-family", "'Inter', sans-serif")
             .selectAll("text")
-            .data(root.descendants().filter(d => d.depth > 0 && (d.x1 - d.x0) * d.y0 > 12))
+            .data(root.descendants().filter(d => {
+                if (d.depth === 0) return false;
+                if (isWidget && !d.isVisible) return false;
+                // Threshold for label visibility based on arc length
+                return (d.x1 - d.x0) * d.y0 > (isMobile ? 18 : 12);
+            }))
             .enter()
             .append("text")
             .attr("transform", function(d) {
