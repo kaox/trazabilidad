@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Perfil Sensorial</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="/js/d3-utils.js"></script>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background-color: transparent;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        #radarChart {
+            width: 100%;
+            height: 100%;
+            max-width: 400px;
+            max-height: 400px;
+        }
+        .error-msg {
+            color: #ef4444;
+            font-size: 14px;
+            text-align: center;
+            padding: 20px;
+            background: #fef2f2;
+            border-radius: 8px;
+            border: 1px solid #fecaca;
+        }
+    </style>
+</head>
+<body>
+    <div id="container" style="width: 100%; height: 100%; display: flex; justify-content: center; align-items: center;">
+        <svg id="radarChart"></svg>
+    </div>
+
+    <!-- Data injected by controller -->
+    <script id="perfil-data" type="application/json">
+        {{{PERFIL_DATA_JSON}}}
+    </script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            try {
+                const dataStr = document.getElementById('perfil-data').textContent;
+                if (dataStr.trim() === '{{{PERFIL_DATA_JSON}}}') return; // Not injected
+                
+                const data = JSON.parse(dataStr);
+                if (data.error) {
+                    document.getElementById('container').innerHTML = `<div class="error-msg">${data.error}</div>`;
+                    return;
+                }
+
+                // Usamos la configuración dinámica enviada por el backend
+                const labels = data.config.map(attr => attr.label);
+                const values = data.config.map(attr => parseFloat(data.perfil_data[attr.id]) || 0);
+
+                const colors = {
+                    cafe: '#d97706',
+                    cacao: '#7c2d12',
+                    miel: '#fbbf24'
+                };
+
+                const config = {
+                    labels,
+                    datasets: [{
+                        data: values,
+                        color: colors[data.tipo] || '#3b82f6'
+                    }]
+                };
+
+                renderRadarChart('#radarChart', config, { maxValue: 10 });
+            } catch (e) {
+                console.error("Error rendering radar", e);
+            }
+        });
+    </script>
+</body>
+</html>
