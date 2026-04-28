@@ -547,7 +547,10 @@ document.addEventListener('DOMContentLoaded', () => {
             // Etiquetas de sabor (Max 3)
             let flavorBadges = '';
             if (p.sabores && Array.isArray(p.sabores)) {
-                const cats = [...new Set(p.sabores.map(n => n.category).filter(Boolean))].slice(0, 3);
+                const cats = [...new Set(p.sabores.map(n => {
+                    if (typeof n === 'string') return n;
+                    return n.category;
+                }).filter(Boolean))].slice(0, 3);
                 flavorBadges = cats.map(cat => {
                     return `<span class="px-2 py-0.5 bg-stone-100 text-stone-600 rounded-md text-[10px] font-bold uppercase tracking-wider">${cat}</span>`;
                 }).join('');

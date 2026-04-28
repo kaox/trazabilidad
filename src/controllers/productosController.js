@@ -311,7 +311,10 @@ const getMarketplaceProducts = async (req, res) => {
             const selectedCategories = Array.isArray(categorias) ? categorias : [categorias];
             if (selectedCategories.length > 0) {
                 products = products.filter(p => p.sabores && Array.isArray(p.sabores) &&
-                    selectedCategories.some(cat => p.sabores.some(n => n.category && n.category.toLowerCase() === cat.toLowerCase()))
+                    selectedCategories.some(cat => p.sabores.some(n => {
+                        const noteCat = (typeof n === 'string') ? n : n.category;
+                        return noteCat && noteCat.toLowerCase() === cat.toLowerCase();
+                    }))
                 );
             }
         }
@@ -320,7 +323,10 @@ const getMarketplaceProducts = async (req, res) => {
             const selectedSubnotes = Array.isArray(sabores) ? sabores : [sabores];
             if (selectedSubnotes.length > 0) {
                 products = products.filter(p => p.sabores && Array.isArray(p.sabores) &&
-                    selectedSubnotes.some(sub => p.sabores.some(n => n.subnote && n.subnote.toLowerCase() === sub.toLowerCase()))
+                    selectedSubnotes.some(sub => p.sabores.some(n => {
+                        const noteSub = (typeof n === 'string') ? n : n.subnote;
+                        return noteSub && noteSub.toLowerCase() === sub.toLowerCase();
+                    }))
                 );
             }
         }

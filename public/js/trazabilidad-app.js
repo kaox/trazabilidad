@@ -122,7 +122,7 @@ document.addEventListener('DOMContentLoaded', () => {
     async function loadPerfilesSensoriales() { try { state.perfilesSensoriales = await api('/api/perfiles'); } catch(e){} }
     async function loadFincas() { try { state.fincas = await api('/api/fincas'); } catch(e){} }
     async function loadProducts() { try { state.products = await api('/api/productos'); } catch(e){} }
-    async function loadRuedasSabor() { try { const r = await fetch('/data/flavor-wheels.json'); FLAVOR_WHEELS_DATA = await r.json(); state.ruedasSabor = await api('/api/ruedas-sabores'); } catch(e){} }
+    async function loadRuedasSabor() { try { const r = await fetch('/data/flavor-wheels.json'); FLAVOR_WHEELS_DATA = await r.json(); state.ruedasSabor = await api('/api/ruedas'); } catch(e){} }
 
     // --- GESTIÓN DE VISTAS ---
     function switchView(viewName) {
