@@ -2,14 +2,14 @@ const db = require('../config/db');
 
 // Obtener un producto especifico
 const getByIdAndUserId = async (id, userId) => {
-    const sql = `SELECT *, COALESCE(perfil_sensorial_id, perfil_id) as perfil_id FROM productos WHERE id = ? AND user_id = ? AND deleted_at IS NULL`;
+    const sql = `SELECT *, perfil_sensorial_id as perfil_id FROM productos WHERE id = ? AND user_id = ? AND deleted_at IS NULL`;
     return await db.get(sql, [id, userId]);
 };
 
 // Obtener productos activos de un usuario
 const getAllByUserId = async (userId) => {
     const sql = `
-        SELECT p.*, COALESCE(p.perfil_sensorial_id, p.perfil_id) as perfil_id,
+        SELECT p.*, p.perfil_sensorial_id as perfil_id,
                r.nombre as receta_nutricional_nombre,
                u.code as unit_code, c.symbol as currency_symbol,
                f.nombre_finca as finca_nombre,
