@@ -40,6 +40,10 @@ const getSuggestedCompanies = async () => {
     return await db.all(sql);
 };
 
+const getById = async (id) => {
+    return await db.get('SELECT * FROM users WHERE id = ?', [id]);
+};
+
 const getSuggestedById = async (id) => {
     return await db.get('SELECT * FROM suggested_companies WHERE id = ?', [id]);
 };
@@ -156,6 +160,7 @@ const findCompanyBySubdomainOrSlug = async (subdomain) => {
 module.exports = {
     getVerifiedCompaniesWithImmutable,
     getSuggestedCompanies,
+    getById,
     getSuggestedById,
     getVerifiedProfileByUserId,
     getFincaById,
