@@ -1,0 +1,244 @@
+:root {
+  --amber-deep: #78350f;
+  --cream: #fdfaf6;
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  background-color: var(--cream);
+  color: #292524;
+  margin: 0;
+}
+
+h1,
+h2,
+h3,
+.serif {
+  font-family: 'Playfair Display', Georgia, serif;
+}
+
+/* ── Scrollbar ───────────────────────── */
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* ── HERO ───────────────────────────── */
+.hero-bg {
+  background-image: linear-gradient(105deg, rgba(0, 0, 0, .88) 0%, rgba(0, 0, 0, .55) 55%, rgba(0, 0, 0, .15) 100%),
+    url('/images/hero_premium.webp');
+  background-size: cover;
+  background-position: center;
+  min-height: 100svh;
+}
+
+/* ── GLASS CARD ───────────────────── */
+.glass {
+  background: rgba(255, 255, 255, .06);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, .12);
+}
+
+/* ── GRADIENT TEXT ───────────────── */
+.grad-amber {
+  background: linear-gradient(135deg, #fbbf24 0%, #d97706 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ── FEATURE CARD ─────────────────── */
+.f-card {
+  background: #fff;
+  border: 1px solid #f0ede9;
+  border-radius: 2rem;
+  padding: 2.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  transition: transform .35s cubic-bezier(.22, 1, .36, 1), box-shadow .35s;
+  position: relative;
+  overflow: hidden;
+}
+
+.f-card::after {
+  content: attr(data-num);
+  position: absolute;
+  bottom: -1rem;
+  right: 1.5rem;
+  font-size: 6rem;
+  font-weight: 900;
+  color: rgba(0, 0, 0, .04);
+  line-height: 1;
+  user-select: none;
+}
+
+.f-card:hover {
+  transform: translateY(-10px);
+  box-shadow: 0 24px 48px rgba(0, 0, 0, .08);
+}
+
+.f-card .f-icon {
+  width: 3.25rem;
+  height: 3.25rem;
+  border-radius: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+}
+
+.f-card h3 {
+  font-size: 1.35rem;
+  margin: 0;
+  line-height: 1.25;
+}
+
+.f-card p {
+  font-size: .9rem;
+  color: #78716c;
+  line-height: 1.65;
+  margin: 0;
+}
+
+.f-card .f-link {
+  display: inline-flex;
+  align-items: center;
+  gap: .45rem;
+  font-size: .8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  text-decoration: none;
+  transition: gap .2s;
+}
+
+.f-card .f-link:hover {
+  gap: .7rem;
+}
+
+/* ── STEPPER ──────────────────────── */
+.chain-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: .6rem;
+  cursor: default;
+  flex: 1;
+}
+
+.chain-icon {
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  border: 2px solid #e7e5e4;
+  background: #fff;
+  color: #a8a29e;
+  transition: all .4s cubic-bezier(.22, 1, .36, 1);
+}
+
+.chain-step:hover .chain-icon {
+  background: var(--amber-deep);
+  color: #fff;
+  border-color: var(--amber-deep);
+  transform: scale(1.15);
+}
+
+.chain-label {
+  font-size: .7rem;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: #a8a29e;
+}
+
+.chain-connector {
+  flex: 1;
+  height: 2px;
+  background: #e7e5e4;
+  margin-top: -1.75rem;
+}
+
+/* ── BRAND SECTION ────────────────── */
+.mockup-device {
+  border-radius: 2.5rem;
+  overflow: hidden;
+  border: 6px solid #1c1917;
+  box-shadow: 0 40px 80px rgba(0, 0, 0, .25);
+}
+
+/* ── TESTIMONIAL STRIP ─────────────── */
+.testistrip .t-item {
+  border: 1px solid #e7e5e4;
+  border-radius: 1.5rem;
+  padding: 1.75rem;
+  background: #fff;
+  flex-shrink: 0;
+  width: 320px;
+}
+
+/* ── CTA FINAL ────────────────────── */
+.cta-dark {
+  background: #1c1917;
+}
+
+/* ── ANIMATION CLASSES ────────────── */
+@keyframes floatY {
+  0%, 100% { transform: translateY(0) }
+  50% { transform: translateY(-12px) }
+}
+
+.float-anim {
+  animation: floatY 4s ease-in-out infinite;
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(30px) }
+  to { opacity: 1; transform: none }
+}
+
+.reveal {
+  opacity: 0;
+}
+
+.revealed {
+  animation: fadeUp .7s cubic-bezier(.22, 1, .36, 1) forwards;
+}
+
+/* ── PILL BADGE ───────────────────── */
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: .5rem;
+  padding: .35rem 1rem;
+  border-radius: 9999px;
+  font-size: .7rem;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+/* ── FOOTER ───────────────────────── */
+footer {
+  background: #0c0a09;
+  color: #78716c;
+}
+
+footer a {
+  color: #a8a29e;
+  text-decoration: none;
+  transition: color .2s;
+}
+
+footer a:hover {
+  color: #fff;
+}

@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flavor Wheel - RuruLab</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="/js/d3-sunburst.js"></script>
+    <style>
+        body, html {
+            margin: 0; padding: 0; width: 100%; height: 100%;
+            background-color: transparent;
+            font-family: 'Inter', sans-serif;
+            display: flex; justify-content: center; align-items: center;
+            overflow: hidden;
+        }
+        #wheel-container {
+            width: 100%; height: 100%;
+            display: flex; justify-content: center; align-items: center;
+        }
+        #wheel-chart {
+            width: 90%; height: 90%;
+            max-width: 500px; max-height: 500px;
+        }
+        .loading { color: #a8a29e; font-size: 12px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.1em; }
+        .error { color: #ef4444; font-size: 12px; }
+    </style>
+</head>
+<body>
+    <div id="wheel-container">
+        <div class="loading">Loading Flavor Wheel...</div>
+        <svg id="wheel-chart" style="display:none;"></svg>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const pathParts = window.location.pathname.split('/');
+            const token = pathParts[pathParts.length - 1];
+            
+            const container = document.getElementById('wheel-container');
+            const svg = document.getElementById('wheel-chart');
+
+            try {
+                const response = await fetch(`/api/public/widgets/flavor-wheel/${token}`);
+                const result = await response.json();
+
+                if (!result.success || !result.data) {
+                    throw new Error(result.error || 'Data not found');
+                }
+
+                container.querySelector('.loading').style.display = 'none';
+                svg.style.display = 'block';
+
+                // Usar SunburstChart.render de d3-sunburst.js
+                // Preferir wheel_data si existe, sino usar perfil_data
+                const chartData = result.data.wheel_data || result.data.perfil_data;
+                
+                SunburstChart.render('#wheel-chart', chartData, {
+                    width: 500,
+                    height: 500,
+                    isWidget: false
+                });
+
+            } catch (err) {
+                console.error("Error:", err);
+                container.innerHTML = `<div class="error">Error: ${err.message}</div>`;
+            }
+        });
+    </script>
+</body>
+</html>

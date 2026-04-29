@@ -134,14 +134,15 @@ const SunburstChart = {
         svg.append("g")
             .attr("pointer-events", "none")
             .attr("text-anchor", "middle")
-            .attr("font-size", isMobile ? "14px" : "12px")
+            .attr("font-size", isMobile ? "14px" : "11px")
+            .attr("font-weight", "bold")
             .attr("font-family", "'Inter', sans-serif")
             .selectAll("text")
             .data(root.descendants().filter(d => {
                 if (d.depth === 0) return false;
                 if (isWidget && !d.isVisible) return false;
                 // Threshold for label visibility based on arc length
-                return (d.x1 - d.x0) * d.y0 > (isMobile ? 25 : 18);
+                return (d.x1 - d.x0) * d.y0 > (isMobile ? 15 : 10);
             }))
             .enter()
             .append("text")

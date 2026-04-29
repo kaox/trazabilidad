@@ -1,0 +1,78 @@
+{
+  "hero": {
+    "title": "La Historia de tu Origen, Validada por el Mundo.",
+    "subtitle": "Blockchain, Trazabilidad y Marketing de Especialidad para Productores de Cacao y Café que buscan diferenciar su marca.",
+    "cta_start": "Comenzar Gratis",
+    "cta_market": "Explorar el Marketplace",
+    "modules_label": "Módulos",
+    "inmutability_label": "Inmutabilidad",
+    "digital_link_label": "GS1 Digital Link"
+  },
+  "stepper": {
+    "title": "Un viaje de transparencia",
+    "subtitle": "Cada grano tiene una historia. Nosotros la hacemos inmutable, visible y rentable en 5 pasos.",
+    "finca": {
+      "title": "Finca",
+      "desc": "Registra tu origen"
+    },
+    "acopio": {
+      "title": "Acopio",
+      "desc": "Transparencia en campo"
+    },
+    "proceso": {
+      "title": "Proceso",
+      "desc": "Linaje inmutable"
+    },
+    "catacion": {
+      "title": "Catación",
+      "desc": "Ingeniería del sabor"
+    },
+    "mercado": {
+      "title": "Mercado",
+      "desc": "Pasaporte Digital"
+    }
+  },
+  "modules": {
+    "title": "Todo lo que tu Marca Necesita, en un solo lugar.",
+    "cta_view_platform": "Ver la plataforma →",
+    "m1_title": "Marketplace de Especialidad",
+    "m1_desc": "Conecta directo con importadores, tostadores y compradores sin intermediarios opacos. Tu producto, tu precio, tu narrativa.",
+    "m2_title": "Linaje Inmutable",
+    "m2_desc": "Cada transformación genera un hash blockchain. La autenticidad de tu lote es matemáticamente incuestionable.",
+    "m3_title": "Ingeniería del Sabor",
+    "m3_desc": "Diseña Ruedas de Sabor interactivas de la SCA y convierte las notas de cata en una experiencia visual para el consumidor.",
+    "m4_title": "Calidad Validada SCA/CoE",
+    "m4_desc": "Registra puntajes de taza profesionales. Valida la excelencia de cada lote antes de salir al mercado.",
+    "m5_title": "Acopio Inteligente",
+    "m5_desc": "Digitaliza el ingreso de materia prima en tiempo real. Pago justo, origen verificado y trazabilidad desde la primera pesada.",
+    "m6_title": "Gemelo Digital del Terroir",
+    "m6_desc": "Registra tus Fincas y Centros de Beneficio con coordenadas GPS, altitud, variedad y polígonos de validación EUDR.",
+    "m7_title": "Tu Marca, Tu Dominio",
+    "m7_desc": "Una Landing Page personalizada con tu subdominio único, catálogo, historia y chat de ventas directo. Gratis para todos los usuarios.",
+    "m8_title": "Pasaporte Digital GS1",
+    "m8_desc": "QR inteligente listo para Sunrise 2027. Un solo escaneo entrega la historia completa, certificaciones y notas de sabor.",
+    "m9_title": "Motor de Procesamiento",
+    "m9_desc": "Control total sobre las transformaciones productivas: rendimientos por etapa, costos por kg y análisis de rentabilidad en tiempo real."
+  },
+  "stats": {
+    "batches": "Lotes Verificados",
+    "companies": "Empresas",
+    "hectares": "Hectáreas",
+    "countries": "Países"
+  },
+  "nav": {
+    "origen": "Origen Único",
+    "marketplace": "Marketplace",
+    "tools": "Herramientas",
+    "track": "Descubrir Lote",
+    "start": "Empieza Ahora"
+  },
+  "widgets": {
+    "label": "Omnicanalidad",
+    "title": "Lleva tu Perfil Sensorial o Rueda de Sabores a tu propia tienda.",
+    "desc": "¿Vendes en Shopify, WooCommerce u otro eCommerce? Mejora tu conversión permitiendo que tus clientes exploren el perfil sensorial de tu café sin salir de tu sitio.",
+    "embed_label": "Código para embeber",
+    "copy_btn": "Copiar Código al Portapapeles",
+    "copied": "¡Copiado!"
+  }
+}

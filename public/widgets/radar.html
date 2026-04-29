@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sensory Profile - RuruLab</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="/js/d3-utils.js"></script>
+    <style>
+        body, html {
+            margin: 0; padding: 0; width: 100%; height: 100%;
+            background-color: transparent;
+            font-family: 'Inter', sans-serif;
+            display: flex; justify-content: center; align-items: center;
+            overflow: hidden;
+        }
+        #radar-container {
+            width: 100%; height: 100%;
+            display: flex; justify-content: center; align-items: center;
+        }
+        #radar-chart {
+            width: 90%; height: 90%;
+            max-width: 500px; max-height: 500px;
+        }
+        .loading { color: #a8a29e; font-size: 12px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.1em; }
+        .error { color: #ef4444; font-size: 12px; }
+    </style>
+</head>
+<body>
+    <div id="radar-container">
+        <div class="loading">Loading Profile...</div>
+        <svg id="radar-chart" style="display:none;"></svg>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const pathParts = window.location.pathname.split('/');
+            const token = pathParts[pathParts.length - 1];
+            
+            const container = document.getElementById('radar-container');
+            const svg = document.getElementById('radar-chart');
+
+            try {
+                // Reuse the same endpoint as flavor-wheel but we will use the radar renderer
+                const response = await fetch(`/api/public/widgets/flavor-wheel/${token}`);
+                const result = await response.json();
+
+                if (!result.success || !result.data) {
+                    throw new Error(result.error || 'Data not found');
+                }
+
+                const data = result.data;
+                container.querySelector('.loading').style.display = 'none';
+                svg.style.display = 'block';
+
+                // Map data for Radar
+                // Assuming result.data.perfil_data has the attributes
+                // and result.data.config has the labels
+                
+                const labels = data.config.map(attr => attr.label);
+                const values = data.config.map(attr => parseFloat(data.perfil_data[attr.id]) || 0);
+
+                const colors = {
+                    cafe: '#d97706',
+                    cacao: '#7c2d12',
+                    miel: '#fbbf24'
+                };
+
+                const config = {
+                    labels,
+                    datasets: [{
+                        data: values,
+                        color: colors[data.tipo] || '#78350f'
+                    }]
+                };
+
+                renderRadarChart('#radar-chart', config, { maxValue: 10 });
+
+            } catch (err) {
+                console.error("Error:", err);
+                container.innerHTML = `<div class="error">Error: ${err.message}</div>`;
+            }
+        });
+    </script>
+</body>
+</html>
