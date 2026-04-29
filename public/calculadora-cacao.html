@@ -1,34 +1,55 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Evaluador Sensorial de Cacao (CoEx) - Rurulab</title>
+    <meta name="description"
+        content="Calculadora interactiva basada en el protocolo Cacao of Excellence (CoEx). Genera perfiles de sabor, evalúa atributos sensoriales y calidad global de cacao y chocolate.">
+    <meta name="keywords"
+        content="evaluación sensorial cacao, protocolo CoEx, catación de chocolate, perfil de sabor cacao, atributos sensoriales, Cacao of Excellence, Ruru Lab">
+    <link rel="canonical" href="https://rurulab.com/evaluador-cacao-coex">
+
+    <meta property="og:title" content="Evaluador Sensorial de Cacao (Protocolo CoEx) - Ruru Lab">
+    <meta property="og:description"
+        content="Registra intensidades de sabor y genera gráficos de radar profesionales para tus muestras de cacao y chocolate.">
+    <meta property="og:image" content="https://rurulab.com/images/og-evaluador-cacao.jpg">
+    <meta property="og:type" content="website">
+
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Herramienta de Análisis Sensorial de Cacao">
+
     <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&family=Playfair+Display:wght@400;700&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&family=Playfair+Display:wght@400;700&display=swap"
+        rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
     <script src="/js/analytics-loader.js" defer></script>
     <style>
         input[type="range"] {
             @apply w-full h-2 bg-stone-200 rounded-lg appearance-none cursor-pointer;
         }
+
         /* Estilo del "thumb" (agarre) para Chrome/Safari */
         input[type="range"]::-webkit-slider-thumb {
             -webkit-appearance: none;
             appearance: none;
             width: 20px;
             height: 20px;
-            background: #8D6E63; /* Color Acento: Marrón Medio */
+            background: #8D6E63;
+            /* Color Acento: Marrón Medio */
             cursor: pointer;
             border-radius: 50%;
             border: 2px solid white;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
         }
+
         /* Estilo del "thumb" (agarre) para Firefox */
         input[type="range"]::-moz-range-thumb {
             width: 20px;
@@ -37,7 +58,7 @@
             cursor: pointer;
             border-radius: 50%;
             border: 2px solid white;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
         }
 
         /* --- Estilos Personalizados para Tooltips --- */
@@ -45,28 +66,34 @@
             position: relative;
             cursor: help;
         }
+
         [data-tooltip]::after {
             content: attr(data-tooltip);
             position: absolute;
-            bottom: 125%; /* Aparece arriba del icono */
+            bottom: 125%;
+            /* Aparece arriba del icono */
             left: 50%;
             transform: translateX(-50%);
-            background-color: #3E2723; /* Color Primario: Marrón Oscuro */
+            background-color: #3E2723;
+            /* Color Primario: Marrón Oscuro */
             color: white;
             padding: 0.5rem 1rem;
             border-radius: 8px;
             font-size: 0.875rem;
             font-family: 'Inter', sans-serif;
             font-weight: 400;
-            white-space: normal; /* Permite que el texto se divida */
-            width: 280px; /* Ancho fijo */
+            white-space: normal;
+            /* Permite que el texto se divida */
+            width: 280px;
+            /* Ancho fijo */
             opacity: 0;
             visibility: hidden;
             transition: opacity 0.2s ease-in-out, visibility 0.2s ease-in-out;
             pointer-events: none;
             z-index: 10;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
         }
+
         /* Flecha del tooltip */
         [data-tooltip]::before {
             content: '';
@@ -83,37 +110,62 @@
             pointer-events: none;
             z-index: 10;
         }
+
         [data-tooltip]:hover::after,
         [data-tooltip]:hover::before {
             opacity: 1;
             visibility: visible;
         }
     </style>
+    <script type="application/ld+json">
+    {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "Evaluador Sensorial de Cacao CoEx",
+    "url": "https://rurulab.com/calculadora-cacao.html",
+    "description": "Herramienta técnica para la generación de perfiles sensoriales de cacao basada en la metodología Cacao of Excellence.",
+    "applicationCategory": "EducationalApplication",
+    "operatingSystem": "All",
+    "author": {
+        "@type": "Organization",
+        "name": "Ruru Lab"
+    },
+    "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD"
+    }
+    }
+    </script>
 </head>
+
 <body class="text-[#4E342E] antialiased bg-[#F5F5F5]">
     <div id="public-nav-placeholder"></div>
 
     <main class="container mx-auto p-4 md:p-8">
         <header class="text-center mb-10 mt-4 max-w-3xl mx-auto">
-            <h1 class="text-4xl md:text-5xl font-bold font-display text-[#3E2723] mb-4">Evaluador Sensorial de Cacao (CoEx)</h1>
-            <p class="text-lg text-stone-600">Herramienta para registrar intensidades y generar perfiles de sabor de cacao y chocolate, basada en la metodología de Cacao of Excellence.</p>
+            <h1 class="text-4xl md:text-5xl font-bold font-display text-[#3E2723] mb-4">Evaluador Sensorial de Cacao
+                (CoEx)</h1>
+            <p class="text-lg text-stone-600">Herramienta para registrar intensidades y generar perfiles de sabor de
+                cacao y chocolate, basada en la metodología de Cacao of Excellence.</p>
         </header>
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            
+
             <!-- Columna de Atributos -->
             <div class="lg:col-span-2 bg-white p-6 rounded-2xl shadow-lg">
                 <div class="flex flex-col sm:flex-row justify-between sm:items-center mb-6">
                     <h2 class="text-2xl font-display text-[#3E2723] mb-4 sm:mb-0">Atributos Sensoriales</h2>
                     <div class="flex-shrink-0">
-                        <label for="sample-type" class="block text-sm font-medium text-stone-700 mb-1">Tipo de Muestra</label>
+                        <label for="sample-type" class="block text-sm font-medium text-stone-700 mb-1">Tipo de
+                            Muestra</label>
                         <select id="sample-type" class="p-3 border border-stone-300 rounded-xl bg-white">
                             <option value="masa">Masa de Cacao</option>
                             <option value="chocolate">Chocolate</option>
                         </select>
                     </div>
                 </div>
-                
+
                 <!-- Atributos Principales -->
                 <div class="mb-6">
                     <h3 class="font-bold text-lg text-amber-800 mb-3">Atributos Principales</h3>
@@ -137,7 +189,7 @@
                     <h2 class="text-2xl font-display text-[#3E2723] border-b pb-2 mb-6">Perfil de Sabor</h2>
                     <canvas id="coex-radar-chart"></canvas>
                 </div>
-                
+
                 <div class="bg-white p-6 rounded-2xl shadow-lg">
                     <h2 class="text-2xl font-display text-[#3E2723] border-b pb-2 mb-6">Calidad Global</h2>
                     <div id="global-quality-slider">
@@ -146,10 +198,12 @@
                 </div>
 
                 <div class="bg-white p-6 rounded-2xl shadow-lg space-y-4">
-                    <button id="export-btn" class="w-full bg-[#8D6E63] hover:bg-[#3E2723] text-white font-bold py-3 px-6 rounded-xl shadow-md transition">
+                    <button id="export-btn"
+                        class="w-full bg-[#8D6E63] hover:bg-[#3E2723] text-white font-bold py-3 px-6 rounded-xl shadow-md transition">
                         <i class="fas fa-download mr-2"></i>Descargar Perfil de Sabor
                     </button>
-                    <button id="reset-btn" class="w-full bg-stone-200 hover:bg-stone-300 text-stone-800 font-bold py-3 px-6 rounded-xl transition">
+                    <button id="reset-btn"
+                        class="w-full bg-stone-200 hover:bg-stone-300 text-stone-800 font-bold py-3 px-6 rounded-xl transition">
                         <i class="fas fa-sync-alt mr-2"></i>Resetear
                     </button>
                 </div>
@@ -157,55 +211,97 @@
         </div>
         <!-- ***** NUEVA SECCIÓN DE CONTENIDO ***** -->
         <section class="max-w-4xl mx-auto my-16 md:my-24">
-            <div class="bg-white p-8 md:p-12 rounded-2xl shadow-lg prose prose-stone max-w-none prose-h2:font-display prose-h2:text-amber-900 prose-h3:font-display prose-h3:text-amber-800 prose-h4:font-display prose-h4:font-bold prose-h4:text-amber-900 prose-h4:mt-6 prose-strong:text-stone-700">
+            <div
+                class="bg-white p-8 md:p-12 rounded-2xl shadow-lg prose prose-stone max-w-none prose-h2:font-display prose-h2:text-amber-900 prose-h3:font-display prose-h3:text-amber-800 prose-h4:font-display prose-h4:font-bold prose-h4:text-amber-900 prose-h4:mt-6 prose-strong:text-stone-700">
                 <h2 class="text-3xl">¿Qué estás midiendo? La ciencia del Sabor CoEx</h2>
-                
-                <p>El chocolate de especialidad no es solo un placer, es un diagnóstico científico. Si alguna vez te has preguntado por qué una barra de chocolate artesanal sabe intensamente a cerezas, nueces o jazmín, la respuesta se encuentra en un sistema de análisis sensorial riguroso: el protocolo de Cacao de Excelencia (CoEx).</p>
-                <p>Este sistema no fue creado únicamente para expertos; es la herramienta fundamental que garantiza que el chocolate que eliges es de la más alta calidad, logrando la diferenciación necesaria para que el cacao deje de ser un commodity agrícola básico y se convierta en un producto de especialidad.</p>
+
+                <p>El chocolate de especialidad no es solo un placer, es un diagnóstico científico. Si alguna vez te has
+                    preguntado por qué una barra de chocolate artesanal sabe intensamente a cerezas, nueces o jazmín, la
+                    respuesta se encuentra en un sistema de análisis sensorial riguroso: el protocolo de Cacao de
+                    Excelencia (CoEx).</p>
+                <p>Este sistema no fue creado únicamente para expertos; es la herramienta fundamental que garantiza que
+                    el chocolate que eliges es de la más alta calidad, logrando la diferenciación necesaria para que el
+                    cacao deje de ser un commodity agrícola básico y se convierta en un producto de especialidad.</p>
 
                 <h3>¿Qué es la Evaluación Sensorial CoEx?</h3>
-                <p>La evaluación sensorial es una disciplina científica que utiliza los sentidos humanos como instrumentos de medición para cuantificar y describir las características organolépticas de un producto. Para el cacao, el sistema CoEx está diseñado específicamente para diagnosticar el éxito de su transformación clave: la fermentación.</p>
-                <p>La ausencia de normas y de un lenguaje común históricamente ha dificultado la comunicación entre productores y compradores. CoEx resuelve esto al proporcionar una Guía detallada con protocolos y procedimientos estandarizados que garantizan que los profesionales de todo el mundo compartan un mismo entendimiento del sabor. El objetivo es que los consumidores de todo el mundo puedan saborear los productos de cacao más selectos y distintivos.</p>
+                <p>La evaluación sensorial es una disciplina científica que utiliza los sentidos humanos como
+                    instrumentos de medición para cuantificar y describir las características organolépticas de un
+                    producto. Para el cacao, el sistema CoEx está diseñado específicamente para diagnosticar el éxito de
+                    su transformación clave: la fermentación.</p>
+                <p>La ausencia de normas y de un lenguaje común históricamente ha dificultado la comunicación entre
+                    productores y compradores. CoEx resuelve esto al proporcionar una Guía detallada con protocolos y
+                    procedimientos estandarizados que garantizan que los profesionales de todo el mundo compartan un
+                    mismo entendimiento del sabor. El objetivo es que los consumidores de todo el mundo puedan saborear
+                    los productos de cacao más selectos y distintivos.</p>
 
                 <h3>Los Atributos que Definen la Calidad de tu Chocolate</h3>
-                <p>El perfil CoEx se basa en una Rueda de Sabor que proporciona un vocabulario universal. Cuando un experto prueba el licor (pasta) de cacao (la base de tu chocolate), evalúa los atributos en tres grupos en una escala de intensidad de 0 a 10.</p>
-                
+                <p>El perfil CoEx se basa en una Rueda de Sabor que proporciona un vocabulario universal. Cuando un
+                    experto prueba el licor (pasta) de cacao (la base de tu chocolate), evalúa los atributos en tres
+                    grupos en una escala de intensidad de 0 a 10.</p>
+
                 <h4>1. Atributos Principales: Los Fundamentos de la Fermentación</h4>
-                <p>Estos cinco atributos revelan la salud del grano y la precisión del proceso posterior a la cosecha:</p>
+                <p>Estos cinco atributos revelan la salud del grano y la precisión del proceso posterior a la cosecha:
+                </p>
                 <ul>
-                    <li><strong>Cacao:</strong> Es el sabor fundamental y típico de los granos que han sido bien fermentados, secados y tostados.</li>
-                    <li><strong>Acidez:</strong> Es un atributo principal de gestión. Mide el equilibrio químico de la fermentación (ácidos Acético, Láctico, Frutal). Un exceso de acidez acética (vinagre) es un defecto, mientras que una acidez balanceada es deseable.</li>
-                    <li><strong>Amargor:</strong> El sabor básico inherente del cacao (ej. cafeína). Se evalúa su intensidad y cómo se integra con otros sabores.</li>
-                    <li><strong>Astringencia:</strong> Esta sensación táctil es clave. El catador determina su calidad: si es un "fuerte efecto secante" (áspero, propio de granos inmaduros) o una "sensación aterciopelada" (placentera, típica de un buen cacao Nacional).</li>
-                    <li><strong>Grado de Tostado:</strong> Mide la intensidad del tueste aplicado, que influye directamente en el perfil de sabor.</li>
+                    <li><strong>Cacao:</strong> Es el sabor fundamental y típico de los granos que han sido bien
+                        fermentados, secados y tostados.</li>
+                    <li><strong>Acidez:</strong> Es un atributo principal de gestión. Mide el equilibrio químico de la
+                        fermentación (ácidos Acético, Láctico, Frutal). Un exceso de acidez acética (vinagre) es un
+                        defecto, mientras que una acidez balanceada es deseable.</li>
+                    <li><strong>Amargor:</strong> El sabor básico inherente del cacao (ej. cafeína). Se evalúa su
+                        intensidad y cómo se integra con otros sabores.</li>
+                    <li><strong>Astringencia:</strong> Esta sensación táctil es clave. El catador determina su calidad:
+                        si es un "fuerte efecto secante" (áspero, propio de granos inmaduros) o una "sensación
+                        aterciopelada" (placentera, típica de un buen cacao Nacional).</li>
+                    <li><strong>Grado de Tostado:</strong> Mide la intensidad del tueste aplicado, que influye
+                        directamente en el perfil de sabor.</li>
                 </ul>
 
                 <h4>2. Atributos Complementarios: El Carácter Único</h4>
-                <p>Estos son los sabores deseables que hacen que tu chocolate sea único. Una buena fermentación logra desbloquear estos precursores de sabor. Estos sobretonos son los que el consumidor experto utiliza para describir su experiencia:</p>
+                <p>Estos son los sabores deseables que hacen que tu chocolate sea único. Una buena fermentación logra
+                    desbloquear estos precursores de sabor. Estos sobretonos son los que el consumidor experto utiliza
+                    para describir su experiencia:</p>
                 <ul>
-                    <li><strong>Fruta Fresca:</strong> Como Bayas/Frutos Rojos, Cítricos (limón, naranja), Fruta Oscura (cereza), o Tropical (maracuyá).</li>
+                    <li><strong>Fruta Fresca:</strong> Como Bayas/Frutos Rojos, Cítricos (limón, naranja), Fruta Oscura
+                        (cereza), o Tropical (maracuyá).</li>
                     <li><strong>Floral:</strong> Como Flor de azahar, Jazmín o Rosa.</li>
                     <li><strong>Nuez:</strong> Incluye notas de Avellana, Almendra y Piel de nuez.</li>
-                    <li><strong>Caramelo / Panela:</strong> Aromas que recuerdan al azúcar moreno o al azúcar de caña sin refinar.</li>
+                    <li><strong>Caramelo / Panela:</strong> Aromas que recuerdan al azúcar moreno o al azúcar de caña
+                        sin refinar.</li>
                     <li><strong>Especia:</strong> Tonalidades como Nuez moscada, Canela o Tabaco.</li>
                 </ul>
-                <p>Además, en el perfil del chocolate oscuro (no la masa pura de cacao), se incluye un atributo crucial para el consumidor: el <strong>Dulzor</strong>.</p>
+                <p>Además, en el perfil del chocolate oscuro (no la masa pura de cacao), se incluye un atributo crucial
+                    para el consumidor: el <strong>Dulzor</strong>.</p>
 
                 <h4>La Puntuación Global de Calidad: Tu Garantía</h4>
-                <p>Para el consumidor, el resultado más significativo es la Puntuación de Calidad Global (también de 0 a 10). Esta puntuación es el resumen de la calidad, el carácter único, el equilibrio del sabor y la limpieza del acabado.</p>
+                <p>Para el consumidor, el resultado más significativo es la Puntuación de Calidad Global (también de 0 a
+                    10). Esta puntuación es el resumen de la calidad, el carácter único, el equilibrio del sabor y la
+                    limpieza del acabado.</p>
                 <p>Un chocolate que obtiene una puntuación alta (9 o 10) es una promesa de excelencia:</p>
                 <ul>
-                    <li><strong>9 (Excelente):</strong> Implica la ausencia de sabores atípicos (defectos). Los atributos básicos están bien balanceados, y hay muchos atributos complementarios sobresalientes que combinan complejidad, armonía y un final limpio.</li>
-                    <li><strong>10 (Extraordinario):</strong> Calidad rara vez vista. Perfecta armonía, complejidad, singularidad y brillo en el sabor general, con atributos básicos de intensidad baja a moderada.</li>
+                    <li><strong>9 (Excelente):</strong> Implica la ausencia de sabores atípicos (defectos). Los
+                        atributos básicos están bien balanceados, y hay muchos atributos complementarios sobresalientes
+                        que combinan complejidad, armonía y un final limpio.</li>
+                    <li><strong>10 (Extraordinario):</strong> Calidad rara vez vista. Perfecta armonía, complejidad,
+                        singularidad y brillo en el sabor general, con atributos básicos de intensidad baja a moderada.
+                    </li>
                 </ul>
 
                 <h4>Más Allá del Sabor: La Experiencia Final</h4>
-                <p>Aunque CoEx se enfoca en el licor de cacao, el proceso de evaluación reconoce que el chocolate final añade elementos sensoriales cruciales para el consumidor:</p>
+                <p>Aunque CoEx se enfoca en el licor de cacao, el proceso de evaluación reconoce que el chocolate final
+                    añade elementos sensoriales cruciales para el consumidor:</p>
                 <ul>
-                    <li><strong>Tacto y Oído:</strong> El perfil sensorial del chocolate sólido incluye atributos táctiles y auditivos que dependen del proceso de templado del chocolatero, como el Brillo (vista) y el Crujido o "snap" (oído) cuando se rompe la barra.</li>
-                    <li><strong>Pulcritud:</strong> Las puntuaciones altas premian la pulcritud del acabado, es decir, la ausencia de sabores extraños o contaminantes.</li>
+                    <li><strong>Tacto y Oído:</strong> El perfil sensorial del chocolate sólido incluye atributos
+                        táctiles y auditivos que dependen del proceso de templado del chocolatero, como el Brillo
+                        (vista) y el Crujido o "snap" (oído) cuando se rompe la barra.</li>
+                    <li><strong>Pulcritud:</strong> Las puntuaciones altas premian la pulcritud del acabado, es decir,
+                        la ausencia de sabores extraños o contaminantes.</li>
                 </ul>
-                <p>El análisis sensorial estandarizado como CoEx no solo es una herramienta de control de calidad, sino que es el motor que impulsa la conexión entre el productor y el consumidor final, valorando y preservando la calidad y diversidad del cacao. Al familiarizarte con este léxico, generas una demanda de mayor calidad y transparencia, asegurando que disfrutes del fruto de un trabajo excepcional.</p>
+                <p>El análisis sensorial estandarizado como CoEx no solo es una herramienta de control de calidad, sino
+                    que es el motor que impulsa la conexión entre el productor y el consumidor final, valorando y
+                    preservando la calidad y diversidad del cacao. Al familiarizarte con este léxico, generas una
+                    demanda de mayor calidad y transparencia, asegurando que disfrutes del fruto de un trabajo
+                    excepcional.</p>
             </div>
         </section>
     </main>
@@ -217,4 +313,5 @@
     <script src="/js/calculadora-cacao.js"></script>
     <script src="/js/public-nav-loader.js"></script>
 </body>
+
 </html>

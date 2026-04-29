@@ -1,48 +1,85 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Marketplace de Café y Cacao - Ruru Lab</title>
-    
+    <meta name="description"
+        content="Encuentra café y cacao de especialidad mediante perfiles sensoriales. Filtra por notas de sabor, acidez y dulzura en nuestro marketplace interactivo.">
+    <meta name="keywords"
+        content="café de especialidad, cacao fino de aroma, marketplace sensorial, notas de sabor café, ruru lab, comprar café online">
+    <link rel="canonical" href="https://rurulab.com/marketplace">
+
+    <meta name="robots" content="index, follow">
+
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://rurulab.com/marketplace">
+    <meta property="og:title" content="Marketplace Sensorial de Café y Cacao - Ruru Lab">
+    <meta property="og:description"
+        content="¿Buscas un sabor específico? Usa nuestra rueda de sabores interactiva para encontrar tu café o cacao ideal.">
+    <meta property="og:image" content="https://rurulab.com/images/og-marketplace.jpg">
+
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:title" content="Marketplace de Café y Cacao - Ruru Lab">
+    <meta property="twitter:description"
+        content="Explora la complejidad del café y cacao a través de datos sensoriales.">
+
     <link href="/css/styles.css" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
-    
+
     <script src="https://d3js.org/d3.v7.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
-    
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@700;800;900&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@700;800;900&display=swap"
+        rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
     <script src="/js/analytics-loader.js" defer></script>
-    
+
     <style>
-        body { font-family: 'Inter', sans-serif; background-color: #fcfaf8; }
-        .font-display { font-family: 'Playfair Display', serif; }
-        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #fcfaf8;
+        }
+
+        .font-display {
+            font-family: 'Playfair Display', serif;
+        }
+
         /* Ocultar scrollbars */
-        .hide-scrollbar::-webkit-scrollbar { display: none; }
-        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-        
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
         .filter-chip {
             transition: all 0.2s;
             border: 1px solid #e5e7eb;
             background-color: white;
             color: #4b5563;
         }
+
         .filter-chip.active {
             background-color: #78350f;
             color: white;
             border-color: #78350f;
             box-shadow: 0 4px 6px -1px rgba(120, 53, 15, 0.2);
         }
-        
+
         .product-card {
             transition: transform 0.2s, box-shadow 0.2s;
-            border-color: #f3f4f6; /* stone-100 */
+            border-color: #f3f4f6;
+            /* stone-100 */
         }
+
         .product-card:hover {
             transform: translateY(-4px);
             box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
@@ -62,14 +99,16 @@
             display: flex;
             align-items: center;
             gap: 4px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
             z-index: 20;
         }
+
         .score-badge {
             position: absolute;
             top: 12px;
             right: 12px;
-            background: #f59e0b; /* amber-500 */
+            background: #f59e0b;
+            /* amber-500 */
             padding: 4px 10px;
             border-radius: 8px;
             font-size: 11px;
@@ -78,29 +117,74 @@
             display: flex;
             align-items: center;
             gap: 4px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
             z-index: 20;
         }
 
         /* Sensory Bars */
-        .sensory-row { margin-bottom: 8px; }
-        .sensory-label { font-size: 11px; color: #6b7280; margin-bottom: 2px; font-weight: 500; }
-        .sensory-bar-bg { height: 6px; background: #f3f4f6; border-radius: 3px; overflow: hidden; width: 100%; position: relative; }
-        .sensory-bar-fill { height: 100%; border-radius: 3px; }
-        
+        .sensory-row {
+            margin-bottom: 8px;
+        }
+
+        .sensory-label {
+            font-size: 11px;
+            color: #6b7280;
+            margin-bottom: 2px;
+            font-weight: 500;
+        }
+
+        .sensory-bar-bg {
+            height: 6px;
+            background: #f3f4f6;
+            border-radius: 3px;
+            overflow: hidden;
+            width: 100%;
+            position: relative;
+        }
+
+        .sensory-bar-fill {
+            height: 100%;
+            border-radius: 3px;
+        }
+
         /* Bar Colors */
-        .bar-acidez { background: #84cc16; } /* lime-500 */
-        .bar-cuerpo { background: #92400e; } /* amber-900 */
-        .bar-sabor { background: #d97706; } /* amber-600 */
-        .bar-dulzura { background: #f97316; } /* orange-500 */
-        .bar-cacao { background: #451a03; } /* brown-900 */
-        .bar-amargor { background: #1e1b4b; } /* indigo-950 */
+        .bar-acidez {
+            background: #84cc16;
+        }
+
+        /* lime-500 */
+        .bar-cuerpo {
+            background: #92400e;
+        }
+
+        /* amber-900 */
+        .bar-sabor {
+            background: #d97706;
+        }
+
+        /* amber-600 */
+        .bar-dulzura {
+            background: #f97316;
+        }
+
+        /* orange-500 */
+        .bar-cacao {
+            background: #451a03;
+        }
+
+        /* brown-900 */
+        .bar-amargor {
+            background: #1e1b4b;
+        }
+
+        /* indigo-950 */
 
         /* Tooltip Radar */
         .radar-tooltip {
             position: relative;
             cursor: pointer;
         }
+
         .radar-tooltip .tooltip-content {
             visibility: hidden;
             width: 280px;
@@ -119,17 +203,20 @@
             transform: translateY(10px);
             pointer-events: none;
         }
+
         .radar-tooltip:hover .tooltip-content {
             visibility: visible;
             opacity: 1;
             transform: translateY(0);
         }
+
         /* Eliminamos el after (triangulito) para simplificar y evitar problemas de clipping */
         .product-card:hover {
             z-index: 40;
         }
     </style>
 </head>
+
 <body class="text-stone-800 antialiased min-h-screen flex flex-col">
 
     <!-- Nav -->
@@ -146,7 +233,7 @@
     </header>
 
     <main class="container mx-auto px-4 py-8 flex-grow flex flex-col md:flex-row gap-8">
-        
+
         <!-- Sidebar Filtros -->
         <aside class="w-full md:w-80 flex-shrink-0 space-y-6">
             <!-- Tipo de Producto -->
@@ -173,13 +260,14 @@
                 <h3 class="font-bold text-stone-800 mb-2">Filtrar por Notas de Sabor</h3>
                 <p class="text-xs text-stone-500 mb-4">Click en la rueda para filtrar</p>
                 <div id="flavor-wheel-chart" class="relative w-full aspect-square mx-auto"></div>
-                
+
                 <!-- Tooltip D3 -->
-                <div id="flavor-wheel-info" class="hidden absolute top-0 left-0 bg-white p-2 rounded-lg shadow border-l-4 pointer-events-none z-10">
+                <div id="flavor-wheel-info"
+                    class="hidden absolute top-0 left-0 bg-white p-2 rounded-lg shadow border-l-4 pointer-events-none z-10">
                     <h4 id="flavor-wheel-info-title" class="text-sm font-bold m-0">Sabor</h4>
                     <p id="flavor-wheel-info-path" class="text-xs text-stone-500 m-0">Categoría</p>
                 </div>
-                
+
                 <!-- Tags Seleccionados -->
                 <div id="selected-flavors" class="mt-4 flex flex-wrap gap-1"></div>
             </div>
@@ -187,11 +275,12 @@
             <!-- Perfil de Taza / Radar -->
             <div class="bg-white p-5 rounded-2xl shadow-sm border border-stone-100" id="perfil-container">
                 <h3 class="font-bold text-stone-800 mb-4">Perfil Mínimo</h3>
-                
+
                 <!-- Radar Chart Preview -->
                 <div class="mb-6 h-48 bg-stone-50 rounded-xl border border-stone-100 relative overflow-hidden">
                     <canvas id="perfil-radar-preview"></canvas>
-                    <div id="radar-empty-state" class="absolute inset-0 flex items-center justify-center text-[10px] text-stone-400 font-bold uppercase tracking-widest text-center px-8 pointer-events-none">
+                    <div id="radar-empty-state"
+                        class="absolute inset-0 flex items-center justify-center text-[10px] text-stone-400 font-bold uppercase tracking-widest text-center px-8 pointer-events-none">
                         Ajusta los sliders para ver el perfil
                     </div>
                 </div>
@@ -207,20 +296,22 @@
             <div class="flex justify-between items-center mb-6">
                 <h2 class="text-xl font-bold text-stone-800"><span id="results-count">0</span> resultados</h2>
             </div>
-            
+
             <div id="products-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 <!-- Se llena con JS -->
             </div>
-            
+
             <div id="loading-indicator" class="hidden flex justify-center py-12">
                 <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-800"></div>
             </div>
-            
-            <div id="empty-state" class="hidden text-center py-16 bg-white rounded-2xl border border-dashed border-stone-300">
+
+            <div id="empty-state"
+                class="hidden text-center py-16 bg-white rounded-2xl border border-dashed border-stone-300">
                 <i class="fas fa-search text-4xl text-stone-300 mb-4"></i>
                 <h3 class="text-lg font-bold text-stone-700">No hay resultados</h3>
                 <p class="text-stone-500">Intenta quitar algunos filtros para ver más productos.</p>
-                <button id="clear-filters-btn" class="mt-4 text-amber-700 font-medium hover:underline">Limpiar filtros</button>
+                <button id="clear-filters-btn" class="mt-4 text-amber-700 font-medium hover:underline">Limpiar
+                    filtros</button>
             </div>
         </section>
 
@@ -230,4 +321,5 @@
     <script src="/js/marketplace.js"></script>
     <script src="/js/public-nav-loader.js" defer></script>
 </body>
+
 </html>
