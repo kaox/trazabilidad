@@ -1,0 +1,78 @@
+{
+  "hero": {
+    "title": "Your Origin Story, Validated by the World.",
+    "subtitle": "Blockchain, Traceability and Specialty Marketing for Cocoa and Coffee Producers looking to differentiate their brand.",
+    "cta_start": "Start for Free",
+    "cta_market": "Explore Marketplace",
+    "modules_label": "Modules",
+    "inmutability_label": "Inmutability",
+    "digital_link_label": "GS1 Digital Link"
+  },
+  "stepper": {
+    "title": "A Journey of Transparency",
+    "subtitle": "Every bean has a story. We make it immutable, visible and profitable in 5 steps.",
+    "finca": {
+      "title": "Farm",
+      "desc": "Register your origin"
+    },
+    "acopio": {
+      "title": "Collection",
+      "desc": "Field transparency"
+    },
+    "proceso": {
+      "title": "Process",
+      "desc": "Immutable lineage"
+    },
+    "catacion": {
+      "title": "Cupping",
+      "desc": "Flavor engineering"
+    },
+    "mercado": {
+      "title": "Market",
+      "desc": "Digital Passport"
+    }
+  },
+  "modules": {
+    "title": "Everything your Brand Needs, in one place.",
+    "cta_view_platform": "View platform →",
+    "m1_title": "Specialty Marketplace",
+    "m1_desc": "Connect directly with importers, roasters and buyers without opaque intermediaries. Your product, your price, your narrative.",
+    "m2_title": "Immutable Lineage",
+    "m2_desc": "Each transformation generates a blockchain hash. Your batch's authenticity is mathematically unquestionable.",
+    "m3_title": "Flavor Engineering",
+    "m3_desc": "Design interactive SCA Flavor Wheels and turn cupping notes into a visual experience for the consumer.",
+    "m4_title": "SCA/CoE Validated Quality",
+    "m4_desc": "Record professional cupping scores. Validate each batch's excellence before hitting the market.",
+    "m5_title": "Smart Collection",
+    "m5_desc": "Digitize raw material entry in real-time. Fair payment, verified origin and traceability from the first weighing.",
+    "m6_title": "Terroir Digital Twin",
+    "m6_desc": "Register your Farms and Benefit Centers with GPS coordinates, altitude, variety and EUDR validation polygons.",
+    "m7_title": "Your Brand, Your Domain",
+    "m7_desc": "A personalized Landing Page with your unique subdomain, catalog, story and direct sales chat. Free for all users.",
+    "m8_title": "GS1 Digital Passport",
+    "m8_desc": "Smart QR ready for Sunrise 2027. A single scan delivers the full story, certifications and flavor notes.",
+    "m9_title": "Processing Engine",
+    "m9_desc": "Total control over production transformations: stage yields, costs per kg and real-time profitability analysis."
+  },
+  "stats": {
+    "batches": "Verified Batches",
+    "companies": "Companies",
+    "hectares": "Hectares",
+    "countries": "Countries"
+  },
+  "nav": {
+    "origen": "Single Origin",
+    "marketplace": "Marketplace",
+    "tools": "Tools",
+    "track": "Track Batch",
+    "start": "Get Started"
+  },
+  "widgets": {
+    "label": "Omnichannel",
+    "title": "Bring the Flavor Wheel to your own store.",
+    "desc": "Selling on Shopify or WooCommerce? Improve your conversion by letting your customers explore the sensory profile of your coffee without leaving your site.",
+    "embed_label": "Embed Code",
+    "copy_btn": "Copy Code to Clipboard",
+    "copied": "Copied!"
+  }
+}

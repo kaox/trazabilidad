@@ -310,6 +310,10 @@ app.post('/api/public/suggest', db.createSuggestion);
 app.get('/api/public/suggestions/:id', db.getSuggestionById);
 app.get('/api/public/companies/:id/logo', db.serveCompanyLogo);
 app.get('/api/public/products/:id/image', db.serveProductImage);
+app.get('/api/landing/stats', db.getLandingStats);
+app.get('/api/public/widgets/flavor-wheel/:token', db.getWidgetData);
+app.get('/widgets/flavor-wheel/:token', (req, res) => res.sendFile(path.join(__dirname, 'public/widgets/flavor-wheel.html')));
+app.get('/widgets/radar/:token', (req, res) => res.sendFile(path.join(__dirname, 'public/widgets/radar.html')));
 
 // 6. RUTAS PÚBLICAS (PÁGINAS Y SEO)
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));

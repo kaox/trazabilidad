@@ -1981,7 +1981,7 @@ const createSuggestion = async (req, res) => {
 
     try {
         let finalLogo = logo;
-        
+
         // Si el logo viene en base64, subirlo a Vercel Blob
         if (logo && logo.startsWith('data:image/')) {
             const filename = `suggestions/company-${id}`;
@@ -2091,8 +2091,122 @@ const serveCompanyLogo = async (req, res) => {
 
     } catch (err) {
         console.error("Error fetching logo:", err);
-        // Fallback a imagen por defecto en caso de error
-        res.redirect('https://rurulab.com/images/banner_1.png');
+    }
+};
+const getLandingStats = async (req, res) => {
+    try {
+        const stats = await get(`
+            SELECT 
+                (SELECT COUNT(*) FROM batches) as total_batches,
+                (SELECT COUNT(*) FROM company_profiles WHERE is_published = 1) + 
+                (SELECT COUNT(*) FROM suggested_companies) as total_companies,
+                (SELECT ROUND(SUM(COALESCE(superficie, 0)), 2) FROM fincas) as total_hectares,
+                (SELECT COUNT(DISTINCT pais) FROM fincas) as countries_covered
+        `);
+        res.status(200).json({ success: true, data: stats });
+    } catch (err) {
+        console.error("Error getLandingStats:", err);
+        res.status(500).json({ success: false, error: err.message });
+    }
+};
+
+const getWidgetData = async (req, res) => {
+    try {
+        const { token } = req.params;
+        const batchId = token;
+
+        // Soporte para DEMO_TOKEN en la landing
+        if (token === 'DEMO_TOKEN') {
+            return res.status(200).json({
+                success: true,
+                data: {
+                    id: 'DEMO',
+                    company_name: 'RuruLab Demo',
+                    pais: 'Perú',
+                    tipo: 'cafe',
+                    // Data para el radar
+                    perfil_data: { fragrancia: 8.5, sabor: 8.75, posgusto: 8.5, acidez: 8.25, cuerpo: 8.5, balance: 8.5 },
+                    // Data para la rueda (Sunburst)
+                    wheel_data: {
+                        name: "Sensory",
+                        children: [
+                            { 
+                                name: "Frutal", color: "#f43f5e", 
+                                children: [
+                                    { name: "Cítrico", color: "#fbbf24" },
+                                    { name: "Berries", color: "#e11d48" }
+                                ] 
+                            },
+                            { 
+                                name: "Dulce", color: "#ea580c", 
+                                children: [
+                                    { name: "Caramelo", color: "#92400e" },
+                                    { name: "Miel", color: "#f59e0b" }
+                                ] 
+                            },
+                            { 
+                                name: "Nueces", color: "#78350f", 
+                                children: [
+                                    { name: "Almendra", color: "#a16207" },
+                                    { name: "Cacao", color: "#451a03" }
+                                ] 
+                            }
+                        ]
+                    },
+                    config: [
+                        { id: 'fragrancia', label: 'Fragancia' },
+                        { id: 'sabor', label: 'Sabor' },
+                        { id: 'posgusto', label: 'Posgusto' },
+                        { id: 'acidez', label: 'Acidez' },
+                        { id: 'cuerpo', label: 'Cuerpo' },
+                        { id: 'balance', label: 'Balance' }
+                    ]
+                }
+            });
+        }
+
+        const batch = await get(`
+            SELECT b.id, b.user_id, b.perfil_sensorial_id,
+                   f.pais, cp.name as company_name
+            FROM batches b
+            LEFT JOIN fincas f ON b.user_id = f.user_id
+            LEFT JOIN company_profiles cp ON b.user_id = cp.user_id
+            WHERE b.id = ?
+            LIMIT 1
+        `, [batchId]);
+
+        if (!batch) {
+            return res.status(404).json({ success: false, error: 'Batch not found' });
+        }
+
+        // Buscar el perfil sensorial vinculado o el primero del usuario
+        let profile = null;
+        if (batch.perfil_sensorial_id) {
+            profile = await get('SELECT perfil_data, tipo FROM perfiles WHERE id = ?', [batch.perfil_sensorial_id]);
+        }
+
+        if (!profile) {
+            profile = await get('SELECT perfil_data, tipo FROM perfiles WHERE empresa_id = ? LIMIT 1', [batch.user_id]);
+        }
+
+        const data = {
+            ...batch,
+            perfil_data: profile ? safeJSONParse(profile.perfil_data) : {},
+            tipo: profile ? profile.tipo : 'cafe',
+            config: [
+                { id: 'fragrancia', label: 'Fragancia' },
+                { id: 'sabor', label: 'Sabor' },
+                { id: 'posgusto', label: 'Posgusto' },
+                { id: 'acidez', label: 'Acidez' },
+                { id: 'cuerpo', label: 'Cuerpo' },
+                { id: 'balance', label: 'Balance' }
+            ]
+        };
+
+        res.status(200).json({ success: true, data });
+    } catch (err) {
+        console.error("Error getWidgetData:", err);
+        res.status(500).json({ success: false, error: err.message });
     }
 };
 
@@ -2101,7 +2215,7 @@ module.exports = {
     getSucursales, createSucursal, updateSucursal, deleteSucursal,
     getPerfiles, createPerfil, updatePerfil, deletePerfil,
     getTemplates, createTemplate, updateTemplate, deleteTemplate,
-    getSystemTemplates, cloneTemplate, // <-- NUEVAS FUNCIONES EXPORTADAS
+    getSystemTemplates, cloneTemplate,
     getStagesForTemplate, createStage, updateStage, deleteStage,
     getTrazabilidad, getProductTraceability, getBatchMetadata, serveProductImage,
     getUserProfile, updateUserProfile, updateUserPassword,
@@ -2125,5 +2239,6 @@ module.exports = {
     createSuggestion, getSuggestionById, claimSuggestion,
     serveCompanyLogo,
     getPublishedBlogSlugs, getPublishedEventSlugs,
-    getBlogPostBySlugInternal, getEventBySlugInternal
+    getBlogPostBySlugInternal, getEventBySlugInternal,
+    getLandingStats, getWidgetData
 };
