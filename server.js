@@ -520,16 +520,23 @@ app.get('/origen-unico/:slug', async (req, res) => {
 
                 // JSON-LD server-side
                 let jsonLdTag = '';
+                let renderedContent = '';
+                let landingData = null;
                 try {
                     const pageUrl = `${protocol}://${host}${req.originalUrl}`;
-                    const landingData = await landingsController.getCompanyLandingDataInternal(company.id);
+                    landingData = await landingsController.getCompanyLandingDataInternal(company.id);
                     if (landingData) {
+                        const { renderLanding } = require('./src/utils/landingRenderer');
+                        renderedContent = renderLanding(landingData);
                         jsonLdTag = buildJsonLd({ ...landingData, pageUrl });
                     }
                 } catch (e) { console.error('JSON-LD slug error:', e); }
 
+                const dataScript = landingData ? `<script>window.INITIAL_DATA = ${JSON.stringify(landingData)};</script>` : '';
+
                 let injectedHtml = htmlData
-                    .replace('</head>', `${jsonLdTag}\n</head>`)
+                    .replace('</head>', `${jsonLdTag}\n${dataScript}\n</head>`)
+                    .replace('<div id="app-container" class="min-h-[400px]">', `<div id="app-container" class="min-h-[400px]">${renderedContent}`)
                     .replace('<title>Empresas con Origen Único - Ruru Lab</title>', `<title>${title}</title>`)
                     .replace(/content="RuruLab - Trazabilidad y Pasaporte Digital para Cacao y Café"/g, `content="${title}"`)
                     .replace(/content="Crea un pasaporte digital para tu producto..."/g, `content="${description}"`)

@@ -105,13 +105,20 @@ const app = {
     },
 
     loadLanding: async function (userId) {
-
         this.trackEvent('landing_view', userId);
 
         try {
-            const res = await fetch(`/api/public/companies/${userId}/landing`);
-            if (!res.ok) throw new Error('Error al cargar datos');
-            const data = await res.json();
+            let data;
+            if (window.INITIAL_DATA && (String(window.INITIAL_DATA.user?.id) === String(userId))) {
+                console.log("Usando INITIAL_DATA de SSR");
+                data = window.INITIAL_DATA;
+                // Limpiar para evitar problemas si se navega a otra empresa sin recargar (aunque sea raro en esta app)
+                // window.INITIAL_DATA = null; 
+            } else {
+                const res = await fetch(`/api/public/companies/${userId}/landing`);
+                if (!res.ok) throw new Error('Error al cargar datos');
+                data = await res.json();
+            }
 
             if (data.error) {
                 this.container.innerHTML = `<div class="text-center py-20"><h2 class="text-xl text-stone-600">${data.error}</h2><button onclick="app.loadCompanies(true)" class="text-amber-800 underline mt-4">Volver</button></div>`;

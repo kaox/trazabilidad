@@ -190,9 +190,10 @@ const getCompanyLandingDataInternal = async (userId) => {
         }
 
         // Usamos el nuevo método del modelo de productos
-        const productsPromise = ProductoModel.getBasicPublicProductsByUserId(userId);
+        const productsPromise = ProductoModel.getPublicProductsWithProfilesByUserId(userId);
+        const registryPromise = RegistroModel.getCompletedRegistriesByUserId(userId);
 
-        const [entityData, products] = await Promise.all([entityPromise, productsPromise]);
+        const [entityData, products, registryRows] = await Promise.all([entityPromise, productsPromise, registryPromise]);
 
         if (entityData && entityData.id) {
             entityData.imagenes = safeJSONParse(entityData.imagenes_json || '[]');
@@ -201,9 +202,38 @@ const getCompanyLandingDataInternal = async (userId) => {
             entityData.coordenadas = safeJSONParse(entityData.coordenadas || 'null');
         }
 
+        // Mapear los lotes a sus productos correspondientes
+        const batchesByProduct = {};
+        for (const row of (registryRows || [])) {
+            const snapshot = safeJSONParse(row.snapshot_data || '{}');
+            let prodId = snapshot.productoFinal?.id;
+
+            if (prodId) {
+                if (!batchesByProduct[prodId]) batchesByProduct[prodId] = [];
+                if (batchesByProduct[prodId].length < 5) {
+                    let fincaOrigen = 'Origen Verificado';
+                    if (snapshot.fincaData && snapshot.fincaData.nombre_finca) fincaOrigen = snapshot.fincaData.nombre_finca;
+                    else if (snapshot.acopioData && snapshot.acopioData.finca_origen) fincaOrigen = snapshot.acopioData.finca_origen;
+
+                    batchesByProduct[prodId].push({
+                        id: row.id,
+                        blockchain_hash: row.blockchain_hash,
+                        fecha_finalizacion: row.fecha_finalizacion,
+                        finca_origen: fincaOrigen,
+                        pais: snapshot.fincaData?.pais || '',
+                        departamento: snapshot.fincaData?.departamento || ''
+                    });
+                }
+            }
+        }
+
         const productsFormatted = products.map(p => ({
             ...p,
-            imagenes: safeJSONParse(p.imagenes_json || '[]')
+            imagenes: safeJSONParse(p.imagenes_json || '[]'),
+            premios: safeJSONParse(p.premios_json || '[]'),
+            perfil_data: safeJSONParse(p.perfil_data),
+            notas_rueda: safeJSONParse(p.notas_json),
+            recent_batches: batchesByProduct[p.id] || []
         }));
 
         return { user: companyData, entity: entityData || {}, products: productsFormatted };
