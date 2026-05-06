@@ -8,6 +8,7 @@ const jwt = require('jsonwebtoken');
 const cookieParser = require('cookie-parser');
 
 const db = require('./db');
+const { get: getDb } = require('./src/config/db.js');
 const gs1Resolver = require('./gs1-resolver');
 
 const app = express();
@@ -24,6 +25,7 @@ const empresasController = require('./src/controllers/empresasController');
 const landingsController = require('./src/controllers/landingsController');
 const acquisitionsController = require('./src/controllers/acquisitionsController');
 const batchesController = require('./src/controllers/batchesController');
+const { renderLanding } = require('./src/utils/landingRenderer');
 const perfilesRoutes = require('./src/routes/perfilesRoutes');
 const ruedasRoutes = require('./src/routes/ruedasRoutes');
 const widgetRoutes = require('./src/routes/widgetRoutes');
@@ -526,7 +528,6 @@ app.get('/origen-unico/:slug', async (req, res) => {
                     const pageUrl = `${protocol}://${host}${req.originalUrl}`;
                     landingData = await landingsController.getCompanyLandingDataInternal(company.id);
                     if (landingData) {
-                        const { renderLanding } = require('./src/utils/landingRenderer');
                         renderedContent = renderLanding(landingData);
                         jsonLdTag = buildJsonLd({ ...landingData, pageUrl });
                     }
@@ -556,14 +557,13 @@ app.get('/origen-unico/:slug', async (req, res) => {
     });
 });
 
-// --- RUTA SEO PARA DETALLES DE LOTE/PRODUCTO ---
+// --- RUTA SEO PARA DETALLES DE LOTE/PRODUCTO
 app.get('/lote/:slug', async (req, res) => {
-    const slugParam = req.params.slug;
-    const { get } = require('./src/config/db.js');
+    const { slug } = req.params;
 
     // Extraer UUID del final del slug
     const uuidPattern = /([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})$/i;
-    const match = slugParam.match(uuidPattern);
+    const match = slug.match(uuidPattern);
 
     const filePath = path.join(__dirname, 'public', 'producto-detalle.html');
 
@@ -579,7 +579,7 @@ app.get('/lote/:slug', async (req, res) => {
 
         try {
             // Obtener producto para los tags SEO
-            const product = await get('SELECT * FROM productos WHERE id = ?', [productId]);
+            const product = await getDb('SELECT * FROM productos WHERE id = ?', [productId]);
 
             if (product) {
                 const title = `${product.nombre} | Trazabilidad y Origen`;
