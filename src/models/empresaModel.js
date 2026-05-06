@@ -79,7 +79,7 @@ const getProcesadoraById = async (id) => {
 const getPublicCompaniesDataInternal = async () => {
     const sql = `
         SELECT 
-            cp.user_id AS id, 
+            CAST(cp.user_id AS TEXT) AS id, 
             cp.name AS empresa, 
             cp.logo_url AS company_logo,
             COALESCE(f.provincia, p.provincia) AS provincia,
