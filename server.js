@@ -475,8 +475,49 @@ app.get('/:loteId([A-Z]{3}-[A-Z0-9]{8})', async (req, res) => {
 app.get('/01/:gtin/10/:loteId', gs1Resolver.resolve);
 
 // 7. SECCIÓN ORIGEN ÚNICO (Con inyección de metadatos)
-app.get('/origen-unico', (req, res) => res.sendFile(path.join(__dirname, 'public', 'origen-unico.html')));
-app.get('/marketplace', (req, res) => res.sendFile(path.join(__dirname, 'public', 'marketplace.html')));
+app.get('/origen-unico', async (req, res) => {
+    const filePath = path.join(__dirname, 'public', 'origen-unico.html');
+    fs.readFile(filePath, 'utf8', async (err, htmlData) => {
+        if (err) return res.status(500).send('Error interno');
+
+        try {
+            // Obtener empresas públicas
+            const companies = await landingsController.getPublicCompaniesInternal();
+            const renderedContent = renderCompanyList(companies);
+            const dataScript = `<script>window.INITIAL_COMPANIES = ${JSON.stringify(companies)};</script>`;
+
+            let injectedHtml = htmlData
+                .replace('</head>', `${dataScript}\n</head>`)
+                .replace('<div id="app-container" class="min-h-[400px]">', `<div id="app-container" class="min-h-[400px]">${renderedContent}`);
+
+            res.send(injectedHtml);
+        } catch (e) {
+            console.error('Error SSR origen-unico:', e);
+            res.send(htmlData);
+        }
+    });
+});
+app.get('/marketplace', async (req, res) => {
+    const filePath = path.join(__dirname, 'public', 'marketplace.html');
+    fs.readFile(filePath, 'utf8', async (err, htmlData) => {
+        if (err) return res.status(500).send('Error interno');
+
+        try {
+            const products = await productosController.getMarketplaceProductsInternal('cafe');
+            const renderedContent = renderMarketplaceProducts(products.slice(0, 20)); // Limit to first 20 for SSR
+            const dataScript = `<script>window.INITIAL_PRODUCTS = ${JSON.stringify(products.slice(0, 20))};</script>`;
+
+            let injectedHtml = htmlData
+                .replace('</head>', `${dataScript}\n</head>`)
+                .replace('<div id="products-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">', `<div id="products-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">${renderedContent}`);
+
+            res.send(injectedHtml);
+        } catch (e) {
+            console.error('Error SSR marketplace:', e);
+            res.send(htmlData);
+        }
+    });
+});
 
 app.get('/origen-unico/:slug', async (req, res) => {
     const slugParam = req.params.slug;

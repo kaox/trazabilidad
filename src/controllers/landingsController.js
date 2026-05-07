@@ -244,4 +244,45 @@ const getCompanyLandingDataInternal = async (userId) => {
     }
 };
 
-module.exports = { getCompanyLandingData, getCompanyLandingDataInternal };
+const getPublicCompaniesInternal = async () => {
+    try {
+        const [verified, suggested] = await Promise.all([
+            EmpresaModel.getVerifiedCompaniesWithImmutable(),
+            EmpresaModel.getSuggestedCompanies()
+        ]);
+
+        let combined = [...verified, ...suggested].sort((a, b) => {
+            if (a.status === 'verified' && b.status !== 'verified') return -1;
+            if (a.status !== 'verified' && b.status === 'verified') return 1;
+            if (a.status === 'verified' && b.status === 'verified') {
+                if (b.lotes_count !== a.lotes_count) return b.lotes_count - a.lotes_count;
+            }
+            return a.name.localeCompare(b.name);
+        });
+
+        combined = combined.map(c => {
+            let parsedCoords = safeJSONParse(c.coordenadas || 'null');
+            if (Array.isArray(parsedCoords) && parsedCoords.length > 0) {
+                let sumLat = 0; let sumLng = 0; let validPoints = 0;
+                parsedCoords.forEach(point => {
+                    if (Array.isArray(point) && point.length >= 2) {
+                        sumLat += parseFloat(point[0]); sumLng += parseFloat(point[1]); validPoints++;
+                    } else if (point && point.lat && point.lng) {
+                        sumLat += parseFloat(point.lat); sumLng += parseFloat(point.lng); validPoints++;
+                    }
+                });
+                if (validPoints > 0) {
+                    parsedCoords = { lat: sumLat / validPoints, lng: sumLng / validPoints };
+                } else { parsedCoords = null; }
+            }
+            return { ...c, coordenadas: parsedCoords };
+        });
+
+        return combined;
+    } catch (e) {
+        console.error('Error getPublicCompaniesInternal:', e);
+        return [];
+    }
+};
+
+module.exports = { getCompanyLandingData, getCompanyLandingDataInternal, getPublicCompaniesInternal };

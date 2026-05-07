@@ -384,4 +384,135 @@ const renderLanding = (data) => {
     `;
 };
 
-module.exports = { renderLanding };
+const renderCompanyList = (companies) => {
+    if (!companies || companies.length === 0) {
+        return `<p class="text-center py-20 text-stone-400">No hay empresas registradas.</p>`;
+    }
+
+    const createSlug = text => (text || '').toString().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, '-').replace(/[^\w-]+/g, '').replace(/--+/g, '-').replace(/^-+/, '').replace(/-+$/, '');
+
+    let html = `<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 fade-in">`;
+
+    companies.forEach(c => {
+        const logoSrc = c.logo || c.logo_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(c.name)}&background=f5f5f4&color=78350f&size=128`;
+        const isFinca = c.type === 'finca';
+        const typeColor = isFinca ? 'amber' : 'blue';
+        const locationStr = [c.distrito, c.provincia, c.departamento, c.pais].filter(Boolean).map(p => toTitleCase(p)).join(', ') || 'Ubicación por verificar';
+
+        let tagsHtml = '';
+        let categories = [];
+        try { categories = typeof c.product_categories === 'string' ? JSON.parse(c.product_categories) : (c.product_categories || []); } catch (e) { }
+
+        if (categories.length > 0) {
+            const topTags = categories.slice(0, 2).map(cat => {
+                let icon = '';
+                if (cat === 'cafe') icon = '☕ ';
+                if (cat === 'cacao') icon = '🍫 ';
+                if (cat === 'miel') icon = '🍯 ';
+                return `<span class="text-[9px] font-bold bg-stone-100 text-stone-500 px-1.5 py-0.5 rounded border border-stone-200 capitalize">${icon}${cat}</span>`;
+            }).join(' ');
+            const moreTag = categories.length > 2 ? `<span class="text-[9px] font-bold text-stone-400">+${categories.length - 2}</span>` : '';
+            tagsHtml = `<div class="flex gap-1 mt-2">${topTags}${moreTag}</div>`;
+        }
+
+        const slug = createSlug(c.name) + '-' + c.id;
+        const linkUrl = `/origen-unico/${slug}`;
+        html += `
+            <a href="${linkUrl}" class="group relative bg-white rounded-3xl border border-stone-200 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-500 cursor-pointer overflow-hidden flex flex-col h-full text-left no-underline">
+                <div class="h-2 w-full bg-${typeColor}-600/20 group-hover:bg-${typeColor}-600 transition-colors duration-500"></div>
+                <div class="p-6 flex flex-col h-full">
+                    <div class="flex justify-between items-start mb-6">
+                        <img src="${logoSrc}" class="w-20 h-20 rounded-2xl object-cover border-2 border-white shadow-md bg-white">
+                        ${c.status === 'pending' ? '<span class="text-[10px] font-bold text-amber-600 bg-amber-50 px-2 py-1 rounded-full border border-amber-100">Sugerido</span>' : '<span class="text-[10px] font-bold text-green-700 bg-green-50 px-2 py-1 rounded-full border border-green-100"><i class="fas fa-check-circle"></i> Verificado</span>'}
+                    </div>
+                    <div class="flex-grow">
+                        <span class="text-[10px] font-black uppercase tracking-[0.15em] text-${typeColor}-600 mb-1 block">${isFinca ? '<i class="fas fa-leaf mr-1"></i> Productor' : '<i class="fas fa-industry mr-1"></i> Procesadora'}</span>
+                        <h3 class="text-2xl font-display font-black text-stone-900 leading-tight group-hover:text-amber-900 transition-colors line-clamp-2">${c.name}</h3>
+                        <p class="text-sm text-stone-500 mt-1 flex items-center gap-2 font-medium"><i class="fas fa-map-marker-alt text-stone-300 group-hover:text-amber-600 transition-colors"></i> ${locationStr}</p>
+                        ${tagsHtml}
+                    </div>
+                    <div class="mt-6 pt-5 border-t border-stone-100 flex items-center justify-between">
+                        <div class="flex flex-col"><span class="text-[10px] font-bold text-stone-400 uppercase"></span><span class="text-lg font-black text-stone-800"></span></div>
+                        <div class="text-sm font-bold text-amber-800 opacity-0 group-hover:opacity-100 transition-all transform -translate-x-2 group-hover:translate-x-0">Ver Perfil <i class="fas fa-arrow-right ml-1"></i></div>
+                    </div>
+                </div>
+            </a>`;
+    });
+
+    // Tarjeta "Tu Marca Aquí"
+    html += `
+        <div class="flex flex-col items-center justify-center p-8 rounded-3xl border-2 border-dashed border-amber-200 bg-amber-50/30 hover:bg-amber-50 hover:border-amber-400 cursor-pointer transition-all duration-500 min-h-[280px]">
+            <div class="w-16 h-16 rounded-2xl bg-white border border-amber-100 flex items-center justify-center mb-4 shadow-sm"><i class="fas fa-plus text-3xl text-amber-500"></i></div>
+            <h3 class="text-xl font-display font-bold text-amber-900 mb-2">¿Tu Marca Aquí?</h3>
+            <p class="text-sm text-stone-600 text-center mb-6 max-w-[200px]">Únete a la red de transparencia global.</p>
+            <span class="bg-amber-800 text-white text-xs font-bold px-6 py-3 rounded-xl shadow-lg hover:bg-amber-900 transition-all">Sugerir Empresa</span>
+        </div></div>`;
+
+    return html;
+};
+
+const renderMarketplaceProducts = (products) => {
+    if (!products || products.length === 0) {
+        return `<div class="col-span-full text-center py-16 bg-white rounded-2xl border border-dashed border-stone-300">
+                    <i class="fas fa-search text-4xl text-stone-300 mb-4"></i>
+                    <h3 class="text-lg font-bold text-stone-700">No hay productos disponibles</h3>
+                </div>`;
+    }
+
+    const createSlug = text => (text || '').toString().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, '-').replace(/[^\w-]+/g, '').replace(/--+/g, '-').replace(/^-+/, '').replace(/-+$/, '');
+
+    let html = '';
+    products.forEach(p => {
+        const images = safeJSONParse(p.imagenes_json || '[]');
+        const image = images.length > 0 ? images[0] : 'https://rurulab.com/images/placeholder-product.jpg';
+        const type = p.tipo || 'cafe';
+        const typeIcon = type === 'cafe' ? 'fa-mug-hot' : (type === 'cacao' ? 'fa-cookie-bite' : 'fa-jar');
+        const score = p.puntuacion_taza || p.puntuacion_total || null;
+        
+        const slug = createSlug(p.nombre) + '-' + p.id;
+        const linkUrl = `/lote/${slug}`;
+
+        html += `
+            <div class="product-card bg-white rounded-2xl border border-stone-100 shadow-sm overflow-hidden flex flex-col relative group">
+                <a href="${linkUrl}" class="block overflow-hidden relative aspect-square">
+                    <img src="${image}" alt="${p.nombre}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+                    <div class="type-badge">
+                        <i class="fas ${typeIcon}"></i>
+                        <span class="capitalize">${type}</span>
+                    </div>
+                    ${score ? `<div class="score-badge">
+                        <i class="fas fa-star"></i>
+                        <span>${score}</span>
+                    </div>` : ''}
+                </a>
+                
+                <div class="p-4 flex flex-col flex-grow">
+                    <div class="mb-3">
+                        <p class="text-[10px] font-bold text-stone-400 uppercase tracking-wider mb-1">${p.empresa || 'Productor Directo'}</p>
+                        <h3 class="text-base font-bold text-stone-900 leading-tight line-clamp-2 min-h-[2.5rem]">
+                            <a href="${linkUrl}" class="hover:text-amber-800 transition-colors">${p.nombre}</a>
+                        </h3>
+                    </div>
+
+                    <!-- Perfil Sensorial Mini -->
+                    <div class="mt-auto pt-3 border-t border-stone-50">
+                        <div class="flex flex-wrap gap-1 mb-3">
+                            ${(safeJSONParse(p.perfil_data || '{}').notas || []).slice(0, 3).map(nota => 
+                                `<span class="text-[9px] font-bold bg-amber-50 text-amber-800 px-2 py-0.5 rounded-full border border-amber-100">${nota}</span>`
+                            ).join('')}
+                        </div>
+                        
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm font-black text-stone-900">${p.precio ? `${p.moneda || 'S/'} ${p.precio}` : 'Consultar'}</span>
+                            <a href="${linkUrl}" class="text-xs font-bold text-amber-800 hover:underline">Detalles &rarr;</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+
+    return html;
+};
+
+module.exports = { renderLanding, renderCompanyList, renderMarketplaceProducts };

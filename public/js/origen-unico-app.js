@@ -226,6 +226,16 @@ const app = {
 
     // --- NIVEL 1: LISTADO DE EMPRESAS (DISEÑO MEJORADO) ---
     loadCompanies: async function () {
+        // Hydration: si ya vienen datos del servidor, usarlos directamente
+        if (window.INITIAL_COMPANIES) {
+            this.state.companies = window.INITIAL_COMPANIES;
+            // Opcional: limpiar para no duplicar si el usuario navega
+            // window.INITIAL_COMPANIES = null;
+            this.renderCompanies();
+            this.renderMap();
+            return;
+        }
+
         if (this.state.companies.length > 0) { 
             this.renderCompanies(); 
             this.renderMap();

@@ -386,6 +386,15 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function fetchProducts() {
+        // Hydration: si ya vienen datos del servidor y no hay filtros activos
+        const hasFilters = state.selectedFlavors.length > 0 || Object.keys(state.perfilMin).length > 0;
+        if (window.INITIAL_PRODUCTS && !hasFilters && state.tipo === 'cafe' && state.products.length === 0) {
+            state.products = window.INITIAL_PRODUCTS;
+            resultsCount.textContent = state.products.length;
+            renderProductCards();
+            return;
+        }
+
         showLoading(true);
         try {
             const params = new URLSearchParams();
