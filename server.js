@@ -656,7 +656,7 @@ app.get('/lote/:slug', async (req, res) => {
                 // URL canónica y Open Graph URL
                 const protocol = req.headers['x-forwarded-proto'] || req.protocol;
                 const host = req.get('host');
-                const pageUrl = `${protocol}://${host}/lote/${slugParam}`;
+                const pageUrl = `${protocol}://${host}/lote/${slug}`;
                 finalHtml = finalHtml.replace(/<meta property="og:url" content=".*?">/gi, `<meta property="og:url" content="${pageUrl}">`)
                     .replace(/<meta name="twitter:url" content=".*?">/gi, `<meta name="twitter:url" content="${pageUrl}">`);
 
