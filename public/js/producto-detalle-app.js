@@ -284,7 +284,7 @@ const app = {
 
         const farmImages = this.parseJSON(finca.imagenes) || [];
         const bannerImg = (farmImages && farmImages.length > 0) ? farmImages[0] : 'https://images.unsplash.com/photo-1542618837-56455cc6326e?q=80&w=2670&auto=format&fit=crop';
-        
+
         const locationParts = [finca.distrito, finca.provincia, finca.departamento].filter(p => p && p.trim() !== "");
         const locationStr = locationParts.join(', ');
 
@@ -345,19 +345,19 @@ const app = {
                         </div>` : ''}
 
                         ${(() => {
-                            const images = this.parseJSON(finca.imagenes);
-                            return Array.isArray(images) && images.length > 0 ? `
+                const images = this.parseJSON(finca.imagenes);
+                return Array.isArray(images) && images.length > 0 ? `
                             <div class="pt-6">
                                 <p class="text-xs font-bold text-stone-400 uppercase tracking-widest mb-4">Galería de la Finca</p>
                                 <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
                                     ${images.map(img => `
                                         <div class="aspect-square rounded-2xl overflow-hidden border border-stone-100 shadow-sm group">
-                                            <img src="${img}" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500 cursor-zoom-in" onclick="window.open(this.src, '_blank')">
+                                            <img src="${img}" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500 cursor-zoom-in" >
                                         </div>
                                     `).join('')}
                                 </div>
                             </div>` : '';
-                        })()}
+            })()}
                     </div>
                     <div class="space-y-4">
                         <p class="text-sm font-bold text-stone-800 flex items-center gap-2">
@@ -692,7 +692,7 @@ const app = {
         if (rawNotes) {
             try {
                 selectedNotes = typeof rawNotes === 'string' ? JSON.parse(rawNotes) : rawNotes;
-            } catch (e) {}
+            } catch (e) { }
         }
         const hasSabores = Array.isArray(selectedNotes) && selectedNotes.length > 0;
 
