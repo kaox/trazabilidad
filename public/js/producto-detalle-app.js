@@ -686,6 +686,16 @@ const app = {
     },
 
     renderAnalisis() {
+        const hasPerfil = this.product.perfil && Object.keys(this.product.perfil).length > 0;
+        const rawNotes = this.product.sabores || this.product.rueda_notas;
+        let selectedNotes = [];
+        if (rawNotes) {
+            try {
+                selectedNotes = typeof rawNotes === 'string' ? JSON.parse(rawNotes) : rawNotes;
+            } catch (e) {}
+        }
+        const hasSabores = Array.isArray(selectedNotes) && selectedNotes.length > 0;
+
         const html = `
             <div class="space-y-12 animate-in fade-in duration-500">
                 <div class="flex items-center gap-3">
@@ -694,28 +704,41 @@ const app = {
                 </div>
 
                 <div class="grid grid-cols-1 gap-16">
+                    <!-- Rueda de Sabores -->
                     <div class="bg-white p-6 md:p-12 rounded-[2rem] md:rounded-[3.5rem] border border-stone-100 shadow-sm space-y-8">
                         <h3 class="text-sm font-bold text-stone-400 uppercase tracking-widest text-center">Complejidad Sensorial (Rueda)</h3>
-                        <div id="sunburst-container" class="w-full relative py-4 flex justify-center">
-                            <!-- SVG D3 se inyecta aquí -->
+                        <div id="sunburst-container" class="w-full relative py-4 flex justify-center min-h-[300px] flex items-center">
+                            ${hasSabores ? '<!-- SVG D3 se inyecta aquí -->' : `
+                                <div class="text-center py-10">
+                                    <i class="fas fa-certificate text-stone-100 text-6xl mb-4"></i>
+                                    <p class="text-stone-300 italic">Sin notas de sabor registradas</p>
+                                </div>
+                            `}
                         </div>
                     </div>
+
+                    <!-- Radar de Atributos -->
                     <div class="bg-white p-6 md:p-12 rounded-[2rem] md:rounded-[3.5rem] border border-stone-100 shadow-sm space-y-8">
                         <h3 class="text-sm font-bold text-stone-400 uppercase tracking-widest text-center">Análisis de Atributos</h3>
-                        <div class="aspect-square w-full max-w-[600px] mx-auto relative">
-                            <svg id="radar-analisis" class="w-full h-full"></svg>
+                        <div class="aspect-square w-full max-w-[600px] mx-auto relative flex items-center justify-center">
+                            ${hasPerfil ? '<svg id="radar-analisis" class="w-full h-full"></svg>' : `
+                                <div class="text-center py-10">
+                                    <i class="fas fa-chart-area text-stone-100 text-6xl mb-4"></i>
+                                    <p class="text-stone-300 italic">Análisis de atributos no disponible</p>
+                                </div>
+                            `}
                         </div>
                     </div>
                 </div>
             </div>
         `;
         document.getElementById('tab-content').innerHTML = html;
-        this.initCharts();
+        this.initCharts(hasPerfil, hasSabores);
     },
 
-    initCharts() {
+    initCharts(hasPerfil, hasSabores) {
         // Radar Chart
-        if (this.product.perfil && this.sensoryConfig) {
+        if (hasPerfil && this.product.perfil && this.sensoryConfig) {
             const configList = this.sensoryConfig[this.product.tipo];
             if (configList) {
                 const labels = configList.map(attr => attr.label);
@@ -742,7 +765,9 @@ const app = {
         }
 
         // Sunburst D3
-        this.renderSunburst();
+        if (hasSabores) {
+            this.renderSunburst();
+        }
     },
 
     renderSunburst() {
