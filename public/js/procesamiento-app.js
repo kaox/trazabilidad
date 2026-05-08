@@ -591,16 +591,16 @@ document.addEventListener('DOMContentLoaded', () => {
         // Filtrar opciones por tipo de producto (Cacao/Cafe/Miel)
         const tmpl = state.userTemplates.find(t => t.id === rootBatch.plantilla_id);
         const prodName = (tmpl?.nombre_producto || '').toLowerCase();
-        
+
         let tipoProd = 'otro';
         if (prodName.includes('cafe') || prodName.includes('café')) tipoProd = 'cafe';
         else if (prodName.includes('cacao')) tipoProd = 'cacao';
         else if (prodName.includes('miel')) tipoProd = 'miel';
 
         // Filtrar listas por tipo
-        const filteredProducts = state.products.filter(p => p.tipo === tipoProd);
-        const filteredProfiles = state.perfilesSensoriales.filter(p => p.tipo === tipoProd);
-        const filteredWheels = state.ruedasSabor.filter(r => r.tipo === tipoProd);
+        const filteredProducts = state.products.filter(p => p.tipo_producto === tipoProd);
+        const filteredProfiles = state.perfilesSensoriales.filter(p => p.tipo_producto === tipoProd);
+        const filteredWheels = state.ruedasSabor.filter(r => r.tipo_producto === tipoProd);
 
         const currentSkuId = rootBatch.producto_id || "";
         const currentProfileId = rootBatch.data.target_profile_id?.value || "";
