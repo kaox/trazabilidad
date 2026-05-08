@@ -167,6 +167,17 @@ const app = {
         document.getElementById('product-title').textContent = this.product.nombre;
         document.getElementById('product-description').textContent = this.product.descripcion || 'Sin descripción disponible.';
 
+        // Brand Header
+        const brandHeader = document.getElementById('brand-header');
+        const brandLogo = document.getElementById('brand-logo');
+        const brandName = document.getElementById('brand-name');
+
+        if (this.product.empresa) {
+            brandName.textContent = this.product.empresa.nombre || 'Productor';
+            brandLogo.src = this.product.empresa.logo || 'https://placehold.co/100/f5f5f5/999?text=Logo';
+            brandHeader.classList.remove('hidden');
+        }
+
         // Precio
         const priceEl = document.getElementById('product-price');
         if (this.product.precio) {
@@ -209,17 +220,19 @@ const app = {
             `).join('');
         }
 
-        const awards = document.getElementById('awards-container');
+        const awards = document.getElementById('awards-overlay');
         if (this.product.premios && this.product.premios.length > 0) {
-            awards.innerHTML = this.product.premios.map((prem, index) => {
-                const year = 2025 - index;
+            awards.innerHTML = this.product.premios.map((prem) => {
+                const year = prem.year || '';
                 return `
-                <div class="bg-white p-2 rounded-2xl shadow-sm border border-stone-100 flex flex-col items-center gap-0.5 w-20 transform hover:scale-105 transition-transform">
-                    <img src="${prem.logo_url || 'https://placehold.co/80/f5f5f5/999'}" class="w-10 h-10 object-contain mb-1">
-                    <span class="text-[9px] font-bold text-stone-900">${year}</span>
+                <div class="bg-white/95 backdrop-blur p-2 rounded-xl shadow-lg border border-white/50 flex flex-col items-center gap-0.5 w-16 md:w-20 transform hover:scale-110 transition-transform">
+                    <img src="${prem.logo_url || 'https://placehold.co/80/f5f5f5/999'}" class="w-8 h-8 md:w-10 md:h-10 object-contain">
+                    ${year ? `<span class="text-[8px] md:text-[10px] font-bold text-stone-900">${year}</span>` : ''}
                 </div>
                 `;
             }).join('');
+        } else {
+            awards.innerHTML = '';
         }
     },
 
@@ -257,7 +270,6 @@ const app = {
         const finca = this.product.finca || {};
         const farmImages = this.parseJSON(finca.imagenes) || [];
         const bannerImg = (farmImages && farmImages.length > 0) ? farmImages[0] : 'https://images.unsplash.com/photo-1542618837-56455cc6326e?q=80&w=2670&auto=format&fit=crop';
-
         const html = `
             <div class="space-y-12 animate-in fade-in duration-500">
                 <div class="bg-stone-50 p-1 rounded-[2rem]">
@@ -271,7 +283,7 @@ const app = {
 
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-12">
                     <div class="lg:col-span-2 space-y-6">
-                        <h3 class="text-2xl font-bold text-stone-800">${finca.nombre || 'Finca Sin Nombre'}</h3>
+                        <h3 class="text-2xl font-bold text-stone-800">Finca ${finca.nombre || 'Finca Sin Nombre'}</h3>
                         <p class="text-xs font-bold text-stone-400 uppercase tracking-widest flex items-center gap-2">
                             <i class="fas fa-map-marker-alt text-amber-700"></i> ${finca.distrito || 'Satipo'}, ${finca.provincia || 'Satipo'} - ${finca.departamento || 'Junín'}
                         </p>
