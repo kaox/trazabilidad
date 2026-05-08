@@ -628,14 +628,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     <label class="block text-xs font-bold text-stone-600 mb-1 uppercase">Producto Final (SKU)</label>
                     ${productsInput}
                 </div>
-                <div>
-                    <label class="block text-xs font-bold text-stone-600 mb-1 uppercase">Perfil Sensorial Objetivo</label>
-                    ${profilesInput}
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-stone-600 mb-1 uppercase">Rueda de Sabor</label>
-                    ${wheelsInput}
-                </div>
 
                 <div class="flex justify-end gap-3 mt-6 pt-4 border-t">
                     <button type="button" onclick="document.getElementById('form-modal').close()" class="px-4 py-2 text-stone-500 font-bold hover:bg-stone-100 rounded-lg">Cancelar</button>

@@ -48,7 +48,7 @@ const createAsRoot = async (data) => {
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
     const params = [
-        data.id, data.userId, data.plantilla_id, data.etapa_id, null, 
+        data.id, data.userId, data.plantilla_id, data.etapa_id, null,
         data.dataString, data.producto_id, data.acquisition_id, data.input_quantity
     ];
     return await db.run(sql, params);
@@ -63,7 +63,7 @@ const createWithParent = async (data) => {
         ) VALUES (?, ?, ?, ?, ?, ?, ?)
     `;
     const params = [
-        data.id, data.plantilla_id, data.etapa_id, data.parent_id, 
+        data.id, data.plantilla_id, data.etapa_id, data.parent_id,
         data.dataString, data.producto_id, data.input_quantity
     ];
     return await db.run(sql, params);
@@ -84,10 +84,10 @@ const update = async (id, updateData) => {
         params.push(updateData.input_quantity);
     }
 
-    if (updateData.perfil_sensorial_id !== undefined) {
-        sql += ', perfil_sensorial_id = ?';
-        params.push(updateData.perfil_sensorial_id);
-    }
+    //if (updateData.perfil_sensorial_id !== undefined) {
+    //    sql += ', perfil_sensorial_id = ?';
+    //    params.push(updateData.perfil_sensorial_id);
+    //}
 
     sql += ' WHERE id = ?';
     params.push(id);
@@ -147,7 +147,7 @@ const createBatchOutput = async (data) => {
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `;
     const params = [
-        data.id, data.batchId, data.productType, data.quantity, 
+        data.id, data.batchId, data.productType, data.quantity,
         data.outputCategory, data.unitId, data.unitCost, data.currencyId
     ];
     return await db.run(sql, params);
@@ -180,7 +180,7 @@ const upsertTraceabilityRegistry = async (data) => {
             blockchain_hash = excluded.blockchain_hash
     `;
     return await db.run(sql, [
-        data.id, data.batch_id, data.user_id, data.nombre_producto, 
+        data.id, data.batch_id, data.user_id, data.nombre_producto,
         data.gtin, data.fecha_finalizacion, data.snapshot_data, data.blockchain_hash
     ]);
 };
@@ -279,14 +279,14 @@ const getLatestImmutableBatchByProductId = async (productId) => {
 };
 
 module.exports = {
-    getAll, getById, getRootOwnerByAncestry, checkIdExists, 
-    getStageName, updateAcquisitionStatus, createAsRoot, 
-    createWithParent, update, deleteById, 
-    getTemplateByProduct, createTemplate, createTemplateStage, getStageByNameAndOrder, 
+    getAll, getById, getRootOwnerByAncestry, checkIdExists,
+    getStageName, updateAcquisitionStatus, createAsRoot,
+    createWithParent, update, deleteById,
+    getTemplateByProduct, createTemplate, createTemplateStage, getStageByNameAndOrder,
     getStageConfig, deleteBatchOutputs, createBatchOutput,
-    getBatchLineage, getTemplateInfo, getTemplateStagesConfig, getOwnerInfo, 
+    getBatchLineage, getTemplateInfo, getTemplateStagesConfig, getOwnerInfo,
     getAcquisitionById, getProductById, getProcesadorasByUserId, getNutritionalRecipeById,
     getRecipeIngredients, getFincaByNameAndUser, getSensoryProfileById, getSensoryProfileByNameAndUser,
-    getCoffeeProfilesByUser, getTasteWheelById, upsertTraceabilityRegistry, lockBatchAndSetHash, 
+    getCoffeeProfilesByUser, getTasteWheelById, upsertTraceabilityRegistry, lockBatchAndSetHash,
     lockBatch, getParentId, getImmutableBatchesByUserId, getLatestImmutableBatchByProductId
 };
