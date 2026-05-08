@@ -267,9 +267,27 @@ const app = {
     // --- TAB RENDERERS ---
 
     renderOrigen() {
-        const finca = this.product.finca || {};
+        const finca = this.product.finca;
+
+        if (!finca || !finca.nombre) {
+            document.getElementById('tab-content').innerHTML = `
+                <div class="py-16 md:py-24 text-center animate-in fade-in slide-in-from-bottom-4 duration-700">
+                    <div class="w-20 h-20 md:w-24 md:h-24 bg-stone-50 rounded-full flex items-center justify-center mx-auto mb-8 border border-stone-100 shadow-sm">
+                        <i class="fas fa-mountain-sun text-stone-200 text-3xl md:text-4xl"></i>
+                    </div>
+                    <h3 class="text-xl md:text-2xl font-display font-bold text-stone-300">Sin información de origen</h3>
+                    <p class="text-stone-400 mt-2 max-w-sm mx-auto px-6 text-sm md:text-base">Este producto aún no tiene vinculada la información detallada de la finca de origen.</p>
+                </div>
+            `;
+            return;
+        }
+
         const farmImages = this.parseJSON(finca.imagenes) || [];
         const bannerImg = (farmImages && farmImages.length > 0) ? farmImages[0] : 'https://images.unsplash.com/photo-1542618837-56455cc6326e?q=80&w=2670&auto=format&fit=crop';
+        
+        const locationParts = [finca.distrito, finca.provincia, finca.departamento].filter(p => p && p.trim() !== "");
+        const locationStr = locationParts.join(', ');
+
         const html = `
             <div class="space-y-12 animate-in fade-in duration-500">
                 <div class="bg-stone-50 p-1 rounded-[2rem]">
@@ -283,32 +301,39 @@ const app = {
 
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-12">
                     <div class="lg:col-span-2 space-y-6">
-                        <h3 class="text-2xl font-bold text-stone-800">Finca ${finca.nombre || 'Finca Sin Nombre'}</h3>
+                        <h3 class="text-2xl font-bold text-stone-800">Finca ${finca.nombre}</h3>
+                        ${locationStr ? `
                         <p class="text-xs font-bold text-stone-400 uppercase tracking-widest flex items-center gap-2">
-                            <i class="fas fa-map-marker-alt text-amber-700"></i> ${finca.distrito || 'Satipo'}, ${finca.provincia || 'Satipo'} - ${finca.departamento || 'Junín'}
-                        </p>
+                            <i class="fas fa-map-marker-alt text-amber-700"></i> ${locationStr}
+                        </p>` : ''}
+                        
+                        ${finca.historia ? `
                         <p class="text-stone-600 leading-relaxed text-lg italic">
-                            "${finca.historia || 'Fundada con dedicación, esta finca se enfoca en procesos sostenibles para ofrecer productos de alta calidad manteniendo la armonía con la naturaleza de la región.'}"
-                        </p>
+                            "${finca.historia}"
+                        </p>` : ''}
+                        
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4">
+                            ${finca.productor ? `
                             <div class="bg-white p-5 rounded-2xl border border-stone-100 flex items-center gap-4 shadow-sm">
                                 <div class="w-12 h-12 rounded-full bg-orange-50 flex items-center justify-center shrink-0">
                                     <i class="fas fa-user-tie text-orange-600 text-xl"></i>
                                 </div>
                                 <div>
                                     <p class="text-[10px] font-bold text-stone-400 uppercase tracking-widest">Agricultor</p>
-                                    <p class="font-bold text-stone-800 text-lg">${finca.productor || 'Luis Samaniego'}</p>
+                                    <p class="font-bold text-stone-800 text-lg">${finca.productor}</p>
                                 </div>
-                            </div>
+                            </div>` : ''}
+                            
+                            ${finca.altura ? `
                             <div class="bg-white p-5 rounded-2xl border border-stone-100 flex items-center gap-4 shadow-sm">
                                 <div class="w-12 h-12 rounded-full bg-emerald-50 flex items-center justify-center shrink-0">
                                     <i class="fas fa-mountain-sun text-emerald-600 text-xl"></i>
                                 </div>
                                 <div>
                                     <p class="text-[10px] font-bold text-stone-400 uppercase tracking-widest">Altitud</p>
-                                    <p class="font-bold text-stone-800 text-lg">${finca.altura || '850'} msnm</p>
+                                    <p class="font-bold text-stone-800 text-lg">${finca.altura} msnm</p>
                                 </div>
-                            </div>
+                            </div>` : ''}
                         </div>
 
                         ${finca.video ? `
@@ -320,8 +345,8 @@ const app = {
                         </div>` : ''}
 
                         ${(() => {
-                const images = this.parseJSON(finca.imagenes);
-                return Array.isArray(images) && images.length > 0 ? `
+                            const images = this.parseJSON(finca.imagenes);
+                            return Array.isArray(images) && images.length > 0 ? `
                             <div class="pt-6">
                                 <p class="text-xs font-bold text-stone-400 uppercase tracking-widest mb-4">Galería de la Finca</p>
                                 <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
@@ -332,7 +357,7 @@ const app = {
                                     `).join('')}
                                 </div>
                             </div>` : '';
-            })()}
+                        })()}
                     </div>
                     <div class="space-y-4">
                         <p class="text-sm font-bold text-stone-800 flex items-center gap-2">
