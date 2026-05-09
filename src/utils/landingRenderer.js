@@ -86,9 +86,12 @@ const renderProductList = (products, phone, userId) => {
                     <div class="flex justify-between items-start mb-1">
                         <div>
                             <h4 class="text-xl font-bold text-stone-900 leading-tight">${prod.nombre}</h4>
-                            <p class="text-xs text-stone-500 font-bold mt-1 bg-stone-50 inline-block px-2 py-0.5 rounded border border-stone-100">
-                                ${prod.peso || ''}
-                            </p>
+                            <div class="flex items-center gap-2 mt-1">
+                                <span class="text-lg font-black text-amber-900">${prod.moneda || 'S/'} ${prod.precio || '0.00'}</span>
+                                <p class="text-xs text-stone-400 font-bold bg-stone-50 inline-block px-2 py-0.5 rounded border border-stone-100">
+                                    ${prod.peso || ''}
+                                </p>
+                            </div>
                         </div>
                         <div class="flex flex-wrap gap-1.5 justify-end ml-2">
                             ${(prod.premios || []).map(pr => `
@@ -126,13 +129,10 @@ const renderProductList = (products, phone, userId) => {
                         </div>
                     </div>` : ''}
 
-                    <!-- TAB 3: RUEDA SABOR (Placeholder for client-side Chart.js) -->
+                    <!-- TAB 3: RUEDA SABOR (Placeholder for client-side D3 Sunburst) -->
                     ${hasWheel ? `
                     <div id="wheel-${prod.id}" class="tab-content hidden opacity-0 h-auto w-full flex flex-col items-center justify-center">
-                        <div class="w-full h-full max-w-md relative">
-                            <canvas id="canvas-wheel-${prod.id}-l1"></canvas>
-                        </div>
-                        <div id="canvas-wheel-${prod.id}-legend" class="mt-4 w-full"></div>
+                        <div id="sunburst-${prod.id}" class="w-full h-[300px] flex items-center justify-center"></div>
                     </div>` : ''}
                 </div>
                 

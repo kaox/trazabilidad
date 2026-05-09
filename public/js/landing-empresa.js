@@ -501,7 +501,6 @@ const app = {
             const detailLink = `/lote/${productName}-${fincaName}-${prod.id}`;
 
             const showTabs = hasSensory || hasWheel;
-
             const cardClasses = hasTraceability
                 ? 'border-2 border-emerald-500/30 shadow-xl hover:shadow-2xl ring-1 ring-emerald-50/50'
                 : 'border border-stone-200 shadow-sm hover:shadow-lg';
@@ -554,9 +553,12 @@ const app = {
                         <div class="flex justify-between items-start mb-1">
                             <div>
                                 <h4 class="text-xl font-bold text-stone-900 leading-tight">${prod.nombre}</h4>
-                                <p class="text-xs text-stone-500 font-bold mt-1 bg-stone-50 inline-block px-2 py-0.5 rounded border border-stone-100">
-                                    ${prod.peso}
-                                </p>
+                                <div class="flex items-center gap-2 mt-1">
+                                    <span class="text-lg font-black text-amber-900">${prod.moneda || 'S/'} ${prod.precio || '0.00'}</span>
+                                    <p class="text-xs text-stone-400 font-bold mt-1 bg-stone-50 inline-block px-2 py-0.5 rounded border border-stone-100">
+                                        ${prod.peso || ''} ${prod.unidad || ''}
+                                    </p>
+                                </div>
                             </div>
                             <div class="flex flex-wrap gap-1.5 justify-end ml-2">
                                 ${(prod.premios || []).map(pr => `
@@ -594,13 +596,10 @@ const app = {
                             </div>
                         </div>` : ''}
 
-                        <!-- TAB 3: RUEDA SABOR SCA Cacao of Excellence -->
+                        <!-- TAB 3: RUEDA SABOR (Placeholder for client-side D3 Sunburst) -->
                         ${hasWheel ? `
                         <div id="wheel-${prod.id}" class="tab-content hidden opacity-0 h-auto w-full flex flex-col items-center justify-center">
-                            <div class="w-full h-full max-w-md relative">
-                                <canvas id="canvas-wheel-${prod.id}-l1"></canvas>
-                            </div>
-                            <div id="canvas-wheel-${prod.id}-legend" class="mt-4 w-full"></div>
+                            <div id="sunburst-${prod.id}" class="w-full h-[300px] flex items-center justify-center"></div>
                         </div>` : ''}
                     </div>
                     
@@ -670,27 +669,31 @@ const app = {
         }
     },
 
-    // --- GRÁFICOS CHART.JS ---
+    // --- GRÁFICOS ---
     initProductCharts: function (products) {
-        if (typeof ChartUtils === 'undefined') {
-            console.error("ChartUtils no está cargado.");
-            return;
-        }
-
-        productChartInstances = ChartUtils.instances || {};
-
         products.forEach(p => {
-            // Radar
+            // Radar (Chart.js)
             if (p.perfil_data && document.getElementById(`canvas-radar-${p.id}`)) {
-                ChartUtils.initializePerfilChart(`canvas-radar-${p.id}`, p.perfil_data, p.tipo_producto);
+                if (typeof ChartUtils !== 'undefined') {
+                    ChartUtils.initializePerfilChart(`canvas-radar-${p.id}`, p.perfil_data, p.tipo_producto);
+                }
             }
-            // Wheel (Usando baseId compatible con estructura de ChartUtils)
-            if (p.notas_rueda && document.getElementById(`canvas-wheel-${p.id}-l1`)) {
-                // Preparamos objeto compatible con ChartUtils
-                const ruedaData = { notas_json: p.notas_rueda, tipo: p.tipo_producto };
-                // Pasamos "canvas-wheel-{id}" como baseId. 
-                // ChartUtils buscará "{baseId}-l1" para el canvas y "{baseId}-legend" para la leyenda.
-                ChartUtils.initializeRuedaChart(`canvas-wheel-${p.id}`, ruedaData, this.state.flavorWheelsData);
+
+            // Flavor Wheel (D3 Sunburst - Tastify Style)
+            if (p.notas_rueda && document.getElementById(`sunburst-${p.id}`)) {
+                if (typeof SunburstChart !== 'undefined' && this.state.flavorWheelsData) {
+                    const type = (p.tipo_producto || '').toLowerCase();
+                    const wheelData = this.state.flavorWheelsData[type] || this.state.flavorWheelsData['cacao'];
+
+                    if (wheelData) {
+                        SunburstChart.render(`#sunburst-${p.id}`, wheelData, {
+                            selection: p.notas_rueda,
+                            isWidget: true, // ESTILO TASTIFY: Poda jerárquica
+                            width: 300,
+                            height: 300
+                        });
+                    }
+                }
             }
         });
     },

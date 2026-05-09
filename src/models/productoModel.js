@@ -220,10 +220,14 @@ const getMarketplaceBaseProducts = async (tipo) => {
 const getPublicProductsWithProfilesByUserId = async (userId) => {
     const sql = `
         SELECT 
-            p.id, p.nombre, p.descripcion, p.imagenes_json, p.tipo_producto, p.premios_json, p.peso,
+            p.id, p.nombre, p.descripcion, p.imagenes_json, p.tipo_producto, p.premios_json, 
+            p.peso, u.code as unidad, 
+            p.precio, cur.symbol as moneda,
             perf.perfil_data, 
             rueda.notas_json, rueda.nombre_rueda
         FROM productos p
+        LEFT JOIN currencies cur ON p.currency_id = cur.id
+        LEFT JOIN units_of_measure u ON p.unit_id = u.id
         LEFT JOIN perfiles perf ON p.perfil_sensorial_id = perf.id
         LEFT JOIN ruedas_sabores rueda ON p.rueda_id = rueda.id
         WHERE p.user_id = ? 
