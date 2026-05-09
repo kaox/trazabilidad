@@ -164,14 +164,91 @@ const SunburstChart = {
                 return `rotate(${angle}) translate(${y},0) rotate(${tangentialRotation})`;
             })
             .attr("dy", "0.35em")
-            .text(d => d.data.name)
+            .attr("font-size", d => {
+                const angle = d.x1 - d.x0;
+                const radius = (d.y0 + d.y1) / 2;
+                const arcLength = angle * radius;
+                let size = Math.round(arcLength / (isMobile ? 5 : 6));
+                const maxSize = d.depth === 1 ? 24 : (d.depth === 2 ? 18 : 14);
+                const minSize = isMobile ? 10 : 8;
+                size = Math.min(maxSize, Math.max(minSize, size));
+                return `${size}px`;
+            })
+            .attr("font-weight", d => d.depth === 1 ? "900" : "700")
+            .each(function (d) {
+                const el = d3.select(this);
+                const text = d.data.name;
+                const angle = d.x1 - d.x0;
+                const r = (d.y0 + d.y1) / 2;
+                const arcLength = angle * r;
+                
+                el.text(""); // Limpiar
+
+                let parts = [];
+                if (text.includes('/')) {
+                    const split = text.split('/');
+                    parts = split.map((p, i) => i < split.length - 1 ? p + '/' : p);
+                } else if (text.length > 10 && text.includes(' ') && arcLength < text.length * 6) {
+                    parts = text.split(' ');
+                } else {
+                    parts = [text];
+                }
+
+                if (parts.length > 1) {
+                    parts.forEach((p, i) => {
+                        el.append("tspan")
+                            .attr("x", 0)
+                            .attr("dy", i === 0 ? (parts.length === 2 ? "-0.15em" : "-0.6em") : "1.1em")
+                            .text(p);
+                    });
+                } else {
+                    el.text(text);
+                }
+            })
             .style("fill", "#fff")
-            .style("font-weight", "500")
-            .style("text-shadow", "0px 1px 2px rgba(0,0,0,0.5)")
+            .style("text-shadow", "0px 1px 3px rgba(0,0,0,0.4)")
             .style("opacity", d => {
                 if (selection.length === 0) return isWidget ? 0 : 1;
                 return d.isVisible ? 1 : 0.1;
             });
+
+        if (isWidget && selection.length > 0) {
+            const centerTextGroup = svg.append("g")
+                .attr("class", "center-label")
+                .style("opacity", 0.8);
+
+            const brandName = "Rurulab";
+            // Asegurar que no se salga del centro (y0 del primer nivel)
+            const innerHoleRadius = root.children ? root.children[0].y0 : radius * 0.3;
+            let centerFontSize = radius * 0.15;
+            
+            const maxTextWidth = innerHoleRadius * 1.7;
+            const estimatedWidth = brandName.length * (centerFontSize * 0.55);
+            
+            if (estimatedWidth > maxTextWidth) {
+                centerFontSize = (maxTextWidth / (brandName.length * 0.55));
+            }
+
+            centerTextGroup.append("text")
+                .attr("text-anchor", "middle")
+                .attr("dy", "-0.1em")
+                .attr("font-size", `${centerFontSize}px`)
+                .attr("font-weight", "400")
+                .attr("font-style", "italic")
+                .attr("font-family", "'Playfair Display', serif")
+                .style("fill", "#78350f")
+                .text(brandName);
+
+            centerTextGroup.append("text")
+                .attr("text-anchor", "middle")
+                .attr("dy", "1.4em")
+                .attr("font-size", `${centerFontSize * 0.3}px`)
+                .attr("font-weight", "bold")
+                .attr("font-family", "'Inter', sans-serif")
+                .style("fill", "#a8a29e")
+                .style("letter-spacing", "0.2em")
+                .text("TM");
+        }
 
         // Interactivity
         if (options.onClick) {

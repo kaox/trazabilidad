@@ -271,11 +271,26 @@ const ChartUtils = {
                     datalabels: {
                         color: '#444444',
                         font: function (context) {
-                            var width = context.chart.width;
-                            var size = Math.round(width / 50);
-                            if (size > 12) size = 12;
-                            if (size < 7) size = 7;
-                            return { size: size, family: 'Arial', weight: 'bold' };
+                            const arc = context.element;
+                            const angle = arc.endAngle - arc.startAngle;
+                            const radius = (arc.innerRadius + arc.outerRadius) / 2;
+                            const arcLength = angle * radius;
+
+                            let size = Math.round(arcLength / 6);
+                            const dsIdx = context.datasetIndex;
+                            const dsCount = context.chart.data.datasets.length;
+                            
+                            let level = 1;
+                            if (dsCount === 3) { // Café
+                                if (dsIdx === 0) level = 3; else if (dsIdx === 1) level = 2; else level = 1;
+                            } else { // Cacao / Otros
+                                if (dsIdx === 0) level = 2; else level = 1;
+                            }
+
+                            const maxSize = level === 1 ? 16 : (level === 2 ? 12 : 9);
+                            size = Math.min(maxSize, Math.max(7, size));
+
+                            return { size: size, family: "'Inter', sans-serif", weight: level === 1 ? '900' : 'bold' };
                         },
                         formatter: function (value, context) {
                             const dsIdx = context.datasetIndex;
