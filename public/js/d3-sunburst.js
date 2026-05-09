@@ -130,86 +130,128 @@ const SunburstChart = {
                 d3.select(this).style("stroke", "#fff").style("stroke-width", "1px");
             });
 
-        // Add labels
-        svg.append("g")
+        // --- ETIQUETAS CURVAS (Text on Path) ---
+        
+        // 1. Crear paths invisibles para las etiquetas
+        const labelPathsGroup = svg.append("g")
+            .attr("class", "label-paths")
+            .style("display", "none");
+
+        const labelData = root.descendants().filter(d => {
+            if (d.depth === 0) return false;
+            if (isWidget && !d.isVisible) return false;
+            const angle = d.x1 - d.x0;
+            const radius = (d.y0 + d.y1) / 2;
+            return (angle * radius) > (isMobile ? 12 : 8);
+        });
+
+        labelData.forEach((d, i) => {
+            const r = (d.y0 + d.y1) / 2;
+            const startAngle = d.x0 - Math.PI / 2;
+            const endAngle = d.x1 - Math.PI / 2;
+            const midAngle = (startAngle + endAngle) / 2;
+            
+            let pathData = "";
+            // Si está en la parte inferior (entre 0 y PI en radianes de SVG), invertimos el path
+            // para que el texto no salga de cabeza.
+            if (midAngle > 0 && midAngle < Math.PI) {
+                pathData = `M ${r * Math.cos(endAngle)},${r * Math.sin(endAngle)} 
+                            A ${r},${r} 0 0 0 ${r * Math.cos(startAngle)},${r * Math.sin(startAngle)}`;
+            } else {
+                pathData = `M ${r * Math.cos(startAngle)},${r * Math.sin(startAngle)} 
+                            A ${r},${r} 0 0 1 ${r * Math.cos(endAngle)},${r * Math.sin(endAngle)}`;
+            }
+
+            labelPathsGroup.append("path")
+                .attr("id", `path-${selector.replace(/[^a-zA-Z]/g, "")}-${i}`)
+                .attr("d", pathData);
+        });
+
+        // 2. Renderizar los textos siguiendo los paths
+        const labels = svg.append("g")
             .attr("pointer-events", "none")
             .attr("text-anchor", "middle")
-            .attr("font-size", isMobile ? "14px" : "11px")
-            .attr("font-weight", "bold")
             .attr("font-family", "'Inter', sans-serif")
             .selectAll("text")
-            .data(root.descendants().filter(d => {
-                if (d.depth === 0) return false;
-                if (isWidget && !d.isVisible) return false;
-                // Threshold for label visibility based on arc length
-                return (d.x1 - d.x0) * d.y0 > (isMobile ? 15 : 10);
-            }))
+            .data(labelData)
             .enter()
             .append("text")
-            .attr("transform", function (d) {
-                const x = (d.x0 + d.x1) / 2 * 180 / Math.PI;
-                const y = (d.y0 + d.y1) / 2;
-
-                // Rotación tangencial (estilo Tastify)
-                // x-90 nos posiciona en el ángulo, translate nos aleja del centro
-                // 90 grados adicionales nos hace tangenciales al arco
-                let angle = x - 90;
-                let tangentialRotation = 90;
-
-                // Si está en la parte inferior, giramos 180 para que el texto no esté invertido
-                if (x > 90 && x < 270) {
-                    tangentialRotation += 180;
-                }
-
-                return `rotate(${angle}) translate(${y},0) rotate(${tangentialRotation})`;
-            })
-            .attr("dy", "0.35em")
             .attr("font-size", d => {
                 const angle = d.x1 - d.x0;
                 const radius = (d.y0 + d.y1) / 2;
                 const arcLength = angle * radius;
-                let size = Math.round(arcLength / (isMobile ? 5 : 6));
-                const maxSize = d.depth === 1 ? 24 : (d.depth === 2 ? 18 : 14);
-                const minSize = isMobile ? 10 : 8;
-                size = Math.min(maxSize, Math.max(minSize, size));
-                return `${size}px`;
-            })
-            .attr("font-weight", d => d.depth === 1 ? "900" : "700")
-            .each(function (d) {
-                const el = d3.select(this);
                 const text = d.data.name;
-                const angle = d.x1 - d.x0;
-                const r = (d.y0 + d.y1) / 2;
-                const arcLength = angle * r;
-                
-                el.text(""); // Limpiar
 
+                // Determinar si habrá salto de línea para ajustar el cálculo de tamaño
                 let parts = [];
                 if (text.includes('/')) {
-                    const split = text.split('/');
-                    parts = split.map((p, i) => i < split.length - 1 ? p + '/' : p);
-                } else if (text.length > 10 && text.includes(' ') && arcLength < text.length * 6) {
+                    parts = text.split('/');
+                } else if (text.length > 12 && text.includes(' ') && arcLength < text.length * 6) {
                     parts = text.split(' ');
                 } else {
                     parts = [text];
                 }
 
-                if (parts.length > 1) {
-                    parts.forEach((p, i) => {
-                        el.append("tspan")
-                            .attr("x", 0)
-                            .attr("dy", i === 0 ? (parts.length === 2 ? "-0.15em" : "-0.6em") : "1.1em")
-                            .text(p);
-                    });
-                } else {
-                    el.text(text);
+                const comparisonText = parts.reduce((a, b) => a.length > b.length ? a : b, "");
+                
+                let size = Math.round(arcLength / (comparisonText.length * 0.55));
+                const maxSize = d.depth === 1 ? 22 : (d.depth === 2 ? 16 : 13);
+                const minSize = isMobile ? 8 : 7;
+                
+                size = Math.min(maxSize, Math.max(minSize, size));
+                
+                const estimatedWidth = comparisonText.length * (size * 0.5);
+                if (estimatedWidth > arcLength * 0.95) {
+                    size = (arcLength * 0.95) / (comparisonText.length * 0.5);
                 }
+
+                return `${Math.max(7, size)}px`;
             })
+            .attr("font-weight", d => d.depth === 1 ? "900" : "700")
             .style("fill", "#fff")
             .style("text-shadow", "0px 1px 3px rgba(0,0,0,0.4)")
             .style("opacity", d => {
                 if (selection.length === 0) return isWidget ? 0 : 1;
-                return d.isVisible ? 1 : 0.1;
+                return d.isVisible ? 1 : 0.15;
+            })
+            .each(function (d, i) {
+                const el = d3.select(this);
+                const text = d.data.name;
+                const angle = d.x1 - d.x0;
+                const radius = (d.y0 + d.y1) / 2;
+                const arcLength = angle * radius;
+                
+                const midAngle = ((d.x0 + d.x1) / 2) - Math.PI / 2;
+                const isFlipped = midAngle > 0 && midAngle < Math.PI;
+
+                let parts = [];
+                if (text.includes('/')) {
+                    const split = text.split('/');
+                    parts = split.map((p, ix) => ix < split.length - 1 ? p + '/' : p);
+                } else if (text.length > 12 && text.includes(' ') && arcLength < text.length * 6) {
+                    parts = text.split(' ');
+                } else {
+                    parts = [text];
+                }
+
+                const pathId = `#path-${selector.replace(/[^a-zA-Z]/g, "")}-${i}`;
+                
+                parts.forEach((p, lineIdx) => {
+                    const tp = el.append("textPath")
+                        .attr("startOffset", "50%")
+                        .attr("xlink:href", pathId);
+                    
+                    // Cálculo de dy para centrar múltiples líneas verticalmente
+                    let dyBase = isFlipped ? 0.75 : 0.25;
+                    if (parts.length > 1) {
+                        const offset = (lineIdx - (parts.length - 1) / 2) * 1.1;
+                        dyBase += isFlipped ? -offset : offset;
+                    }
+
+                    tp.append("tspan")
+                        .attr("dy", `${dyBase}em`)
+                        .text(p);
+                });
             });
 
         if (isWidget && selection.length > 0) {
