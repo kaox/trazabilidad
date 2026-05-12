@@ -131,7 +131,7 @@ const SunburstChart = {
             });
 
         // --- ETIQUETAS CURVAS (Text on Path) ---
-        
+
         // 1. Crear paths invisibles para las etiquetas
         const labelPathsGroup = svg.append("g")
             .attr("class", "label-paths")
@@ -150,7 +150,7 @@ const SunburstChart = {
             const startAngle = d.x0 - Math.PI / 2;
             const endAngle = d.x1 - Math.PI / 2;
             const midAngle = (startAngle + endAngle) / 2;
-            
+
             let pathData = "";
             // Si está en la parte inferior (entre 0 y PI en radianes de SVG), invertimos el path
             // para que el texto no salga de cabeza.
@@ -193,13 +193,13 @@ const SunburstChart = {
                 }
 
                 const comparisonText = parts.reduce((a, b) => a.length > b.length ? a : b, "");
-                
+
                 let size = Math.round(arcLength / (comparisonText.length * 0.55));
                 const maxSize = d.depth === 1 ? 22 : (d.depth === 2 ? 16 : 13);
                 const minSize = isMobile ? 8 : 7;
-                
+
                 size = Math.min(maxSize, Math.max(minSize, size));
-                
+
                 const estimatedWidth = comparisonText.length * (size * 0.5);
                 if (estimatedWidth > arcLength * 0.95) {
                     size = (arcLength * 0.95) / (comparisonText.length * 0.5);
@@ -220,7 +220,7 @@ const SunburstChart = {
                 const angle = d.x1 - d.x0;
                 const radius = (d.y0 + d.y1) / 2;
                 const arcLength = angle * radius;
-                
+
                 const midAngle = ((d.x0 + d.x1) / 2) - Math.PI / 2;
                 const isFlipped = midAngle > 0 && midAngle < Math.PI;
 
@@ -235,12 +235,12 @@ const SunburstChart = {
                 }
 
                 const pathId = `#path-${selector.replace(/[^a-zA-Z]/g, "")}-${i}`;
-                
+
                 parts.forEach((p, lineIdx) => {
                     const tp = el.append("textPath")
                         .attr("startOffset", "50%")
                         .attr("xlink:href", pathId);
-                    
+
                     // Cálculo de dy para centrar múltiples líneas verticalmente
                     let dyBase = isFlipped ? 0.75 : 0.25;
                     if (parts.length > 1) {
@@ -263,15 +263,20 @@ const SunburstChart = {
             // Asegurar que no se salga del centro (y0 del primer nivel)
             const innerHoleRadius = root.children ? root.children[0].y0 : radius * 0.3;
             let centerFontSize = radius * 0.15;
-            
+
             const maxTextWidth = innerHoleRadius * 1.7;
             const estimatedWidth = brandName.length * (centerFontSize * 0.55);
-            
+
             if (estimatedWidth > maxTextWidth) {
                 centerFontSize = (maxTextWidth / (brandName.length * 0.55));
             }
 
-            centerTextGroup.append("text")
+            const mainAnchor = centerTextGroup.append("a")
+                .attr("href", "https://rurulab.com")
+                .attr("target", "_blank")
+                .style("cursor", "pointer");
+
+            mainAnchor.append("text")
                 .attr("text-anchor", "middle")
                 .attr("dy", "-0.1em")
                 .attr("font-size", `${centerFontSize}px`)
@@ -281,7 +286,7 @@ const SunburstChart = {
                 .style("fill", "#78350f")
                 .text(brandName);
 
-            centerTextGroup.append("text")
+            mainAnchor.append("text")
                 .attr("text-anchor", "middle")
                 .attr("dy", "1.4em")
                 .attr("font-size", `${centerFontSize * 0.3}px`)
@@ -289,7 +294,7 @@ const SunburstChart = {
                 .attr("font-family", "'Inter', sans-serif")
                 .style("fill", "#a8a29e")
                 .style("letter-spacing", "0.2em")
-                .text("TM");
+                .text(".com");
         }
 
         // Interactivity
