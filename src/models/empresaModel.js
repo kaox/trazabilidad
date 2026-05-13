@@ -57,7 +57,7 @@ const getVerifiedProfileByUserId = async (userId) => {
             cp.name as cp_name, cp.company_type as cp_type, cp.company_id as cp_company_id,
             cp.logo_url, cp.cover_image_url, cp.history_text, cp.contact_email,
             cp.contact_phone, cp.social_instagram as cp_ig, cp.social_facebook as cp_fb,
-            cp.website_url, cp.is_published
+            cp.website_url, cp.is_published, cp.white_label_config
         FROM users u
         LEFT JOIN company_profiles cp ON u.id = cp.user_id
         WHERE u.id = ?
@@ -121,8 +121,8 @@ const getPublicCompaniesDataInternal = async () => {
 // 8. (NUEVO) Búsqueda optimizada por subdominio o slug
 const findCompanyBySubdomainOrSlug = async (subdomain) => {
     // 1. Intento de búsqueda directa por la columna subdomain (Muy rápido)
-    const sqlDirect = `
-        SELECT cp.user_id AS id, cp.name AS empresa, cp.logo_url AS company_logo, cp.subdomain
+        const sqlDirect = `
+        SELECT cp.user_id AS id, cp.name AS empresa, cp.logo_url AS company_logo, cp.subdomain, cp.white_label_config
         FROM company_profiles cp 
         WHERE LOWER(cp.subdomain) = ? AND cp.is_published IS TRUE
         LIMIT 1

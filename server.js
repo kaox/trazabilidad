@@ -52,9 +52,10 @@ app.use(async (req, res, next) => {
     }
 
     // --- ES UN SUBDOMINIO DE CLIENTE ---
-    // Importante: Solo interceptar si es la raíz (/) o no es un archivo estático.
-    // Esto evita que intentemos servir el HTML de la landing para los scripts/css.
-    if (req.path !== '/') {
+    // Interceptar todos los paths que no sean API, assets estáticos o archivos con extensión
+    const isAsset = req.path.includes('.') || req.path.startsWith('/api/') || req.path.startsWith('/js/') || req.path.startsWith('/css/') || req.path.startsWith('/images/');
+    
+    if (isAsset) {
         return next();
     }
 
@@ -91,12 +92,30 @@ app.use(async (req, res, next) => {
                 </script>
             `;
 
+            // 🎨 Inyección de CSS Variables dinámicas (White Label)
+            let dynamicStyles = '';
+            let landingData = null;
+            try {
+                landingData = await landingsController.getCompanyLandingDataInternal(company.id);
+                if (landingData && landingData.white_label_config) {
+                    const cfg = landingData.white_label_config;
+                    if (cfg.accent_color) {
+                        dynamicStyles = `
+                        <style>
+                            :root {
+                                --accent-color: ${cfg.accent_color};
+                                --accent-hover: ${cfg.accent_hover || cfg.accent_color};
+                            }
+                        </style>`;
+                    }
+                }
+            } catch (e) { console.error('Error inyectando estilos:', e); }
+
             // JSON-LD server-side
             let jsonLdTag = '';
             try {
                 const protocol = req.headers['x-forwarded-proto'] || req.protocol;
                 const host = req.get('host');
-                const landingData = await landingsController.getCompanyLandingDataInternal(company.id);
                 if (landingData) {
                     jsonLdTag = buildJsonLd({
                         ...landingData,
@@ -105,12 +124,14 @@ app.use(async (req, res, next) => {
                 }
             } catch (e) { console.error('JSON-LD subdominio error:', e); }
 
+            const dataScript = landingData ? `<script>window.INITIAL_DATA = ${JSON.stringify(landingData)};</script>` : '';
+
             // Reemplazar en el HTML
             let injectedHtml = htmlData
-                .replace('<head>', `<head>${injectionScript}${jsonLdTag}`) // Inyectar script ID + JSON-LD
-                .replace('<title>Detalle de Empresa - Ruru Lab</title>', `<title>${title}</title>`)
+                .replace('<head>', `<head>${injectionScript}${dynamicStyles}${jsonLdTag}${dataScript}`) 
+                .replace('<title>Empresas con Origen Único - Ruru Lab</title>', `<title>${title}</title>`)
                 .replace(/content="Descubre el origen y trazabilidad."/g, `content="${description}"`)
-                .replace(/content="RuruLab - Trazabilidad y Pasaporte Digital para Café y Cacao"/g, `content="${title}"`);
+                .replace(/content="RuruLab - Trazabilidad y Pasaporte Digital para Cacao y Café"/g, `content="${title}"`);
 
             // Servir el HTML modificado
             res.send(injectedHtml);
@@ -574,10 +595,29 @@ app.get('/origen-unico/:slug', async (req, res) => {
                     }
                 } catch (e) { console.error('JSON-LD slug error:', e); }
 
-                const dataScript = landingData ? `<script>window.INITIAL_DATA = ${JSON.stringify(landingData)};</script>` : '';
+                const dataScript = landingData ? `
+                    <script>
+                        window.IS_SUBDOMAIN = false;
+                        window.INITIAL_DATA = ${JSON.stringify(landingData)};
+                    </script>` : '';
+
+                // 🎨 Inyección de CSS Variables dinámicas (White Label)
+                let dynamicStyles = '';
+                if (landingData && landingData.white_label_config) {
+                    const cfg = landingData.white_label_config;
+                    if (cfg.accent_color) {
+                        dynamicStyles = `
+                        <style>
+                            :root {
+                                --accent-color: ${cfg.accent_color};
+                                --accent-hover: ${cfg.accent_hover || cfg.accent_color};
+                            }
+                        </style>`;
+                    }
+                }
 
                 let injectedHtml = htmlData
-                    .replace('</head>', `${jsonLdTag}\n${dataScript}\n</head>`)
+                    .replace('<head>', `<head>${dynamicStyles}${jsonLdTag}${dataScript}`)
                     .replace('<div id="app-container" class="min-h-[400px]">', `<div id="app-container" class="min-h-[400px]">${renderedContent}`)
                     .replace('<title>Empresas con Origen Único - Ruru Lab</title>', `<title>${title}</title>`)
                     .replace(/content="RuruLab - Trazabilidad y Pasaporte Digital para Cacao y Café"/g, `content="${title}"`)
@@ -772,6 +812,7 @@ app.get('/api/public/companies/:userId/products', productosController.getPublicP
 app.get('/api/public/products/:productId/batches', db.getPublicBatchesForProduct);
 app.get('/api/public/products/:productId/traceability', db.getProductTraceability);
 app.get('/api/public/companies/:userId/landing', landingsController.getCompanyLandingData);
+app.post('/api/public/contact', db.saveContactLead);
 app.get('/api/public/marketplace/products', productosController.getMarketplaceProducts);
 
 // 8. RUTAS PROTEGIDAS (VISTAS APP)

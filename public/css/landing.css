@@ -1,11 +1,14 @@
 :root {
-  --amber-deep: #78350f;
+  --accent-color: #78350f;
+  --accent-hover: #92400e;
+  --primary-color: #1c1917;
+  --bg-warm: #fdfaf6;
   --cream: #fdfaf6;
 }
 
 body {
   font-family: 'Inter', sans-serif;
-  background-color: var(--cream);
+  background-color: var(--bg-warm);
   color: #292524;
   margin: 0;
 }
@@ -147,9 +150,9 @@ h3,
 }
 
 .chain-step:hover .chain-icon {
-  background: var(--amber-deep);
+  background: var(--accent-color);
   color: #fff;
-  border-color: var(--amber-deep);
+  border-color: var(--accent-color);
   transform: scale(1.15);
 }
 
@@ -241,4 +244,126 @@ footer a {
 
 footer a:hover {
   color: #fff;
+}
+
+/* ── WHITE LABEL UTILS ──────────────── */
+.text-accent { color: var(--accent-color); }
+.bg-accent { background-color: var(--accent-color); }
+.border-accent { border-color: var(--accent-color); }
+
+.btn-accent {
+    background-color: var(--accent-color);
+    color: white;
+    transition: all 0.2s;
+}
+.btn-accent:hover {
+    background-color: var(--accent-hover);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+.btn-accent-outline {
+    border: 2px solid var(--accent-color);
+    color: var(--accent-color);
+    background: transparent;
+    transition: all 0.2s;
+}
+.btn-accent-outline:hover {
+    background-color: var(--accent-color);
+    color: white;
+}
+
+.wl-nav-link {
+    position: relative;
+    color: #57534e;
+    font-weight: 600;
+    font-size: 0.875rem;
+    padding: 0.5rem 0;
+    transition: color 0.2s;
+}
+.wl-nav-link:hover,
+.wl-nav-link.active {
+    color: var(--accent-color);
+}
+.wl-nav-link.active::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: var(--accent-color);
+    border-radius: 1px;
+}
+
+.product-grid {
+    display: grid;
+    grid-template-columns: repeat(1, 1fr);
+    gap: 1.5rem;
+}
+@media (min-width: 640px) {
+    .product-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (min-width: 1024px) {
+    .product-grid { grid-template-columns: repeat(3, 1fr); }
+}
+@media (min-width: 1280px) {
+    .product-grid { grid-template-columns: repeat(4, 1fr); }
+}
+
+.product-card {
+    background: white;
+    border-radius: 1rem;
+    overflow: hidden;
+    border: 1px solid #e7e5e4;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    transition: all 0.3s;
+    display: flex;
+    flex-direction: column;
+}
+.product-card:hover {
+    box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+    transform: translateY(-2px);
+}
+
+.contact-input {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 1px solid #d6d3d1;
+    border-radius: 0.75rem;
+    font-size: 0.875rem;
+    transition: all 0.2s;
+    background: white;
+}
+.contact-input:focus {
+    outline: none;
+    border-color: var(--accent-color);
+    box-shadow: 0 0 0 3px rgba(120, 53, 15, 0.1);
+}
+
+.about-section {
+    position: relative;
+}
+.about-section::before {
+    content: '"';
+    position: absolute;
+    top: -20px;
+    left: 10px;
+    font-size: 6rem;
+    color: var(--accent-color);
+    opacity: 0.08;
+    font-family: 'Playfair Display', serif;
+    line-height: 1;
+}
+
+.cert-card {
+    background: white;
+    border-radius: 1rem;
+    padding: 1.5rem;
+    border: 1px solid #e7e5e4;
+    text-align: center;
+    transition: all 0.3s;
+}
+.cert-card:hover {
+    box-shadow: 0 8px 25px rgba(0,0,0,0.08);
+    transform: translateY(-2px);
 }

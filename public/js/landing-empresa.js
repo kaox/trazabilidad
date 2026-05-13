@@ -11,6 +11,10 @@ const app = {
 
     container: document.getElementById('app-container'),
     breadcrumbs: document.getElementById('breadcrumbs'),
+    wlHeader: document.getElementById('wl-header'),
+    wlLogo: document.getElementById('wl-logo'),
+    wlBrandName: document.getElementById('wl-brand-name'),
+    footerBrand: document.getElementById('footer-brand'),
 
     init: async function () {
 
@@ -27,19 +31,21 @@ const app = {
             if (e.key === 'Escape') this.closeGallery();
         });
 
+        // Escuchar cambios de hash para el router SPA
+        window.addEventListener('hashchange', () => this.handleRouting());
+
         // CASO A: Subdominio (ej: finca-esperanza.rurulab.com)
         if (window.IS_SUBDOMAIN && window.CURRENT_COMPANY_ID) {
-
-            // Ocultar la navegación de "Volver al directorio" para que parezca web propia
+            // Ocultar la navegación de RuruLab
             if (this.breadcrumbs) this.breadcrumbs.style.display = 'none';
-            const backBtn = document.querySelector('nav a[href="/origen-unico"]');
-            if (backBtn) backBtn.style.display = 'none'; // Ocultar botón volver del header
+            const navPlaceholder = document.getElementById('public-nav-placeholder');
+            if (navPlaceholder) navPlaceholder.style.display = 'none';
 
-            // Cargar datos directamente
+            // Cargar datos
             await this.loadLanding(window.CURRENT_COMPANY_ID);
         } else {
             const pathSegments = window.location.pathname.split('/').filter(Boolean);
-            if (pathSegments.length > 1) {
+            if (pathSegments.length > 1 && pathSegments[0] === 'origen-unico') {
                 const slug = pathSegments[pathSegments.length - 1];
                 await this.resolveSlugAndLoad(slug);
             } else {
@@ -50,6 +56,35 @@ const app = {
         if (typeof ChartDataLabels !== 'undefined' && typeof Chart !== 'undefined') {
             Chart.register(ChartDataLabels);
         }
+    },
+
+    handleRouting: function () {
+        const hash = window.location.hash || '#inicio';
+        const page = hash.substring(1);
+        
+        // Actualizar links activos en el header
+        document.querySelectorAll('.wl-nav-link').forEach(link => {
+            if (link.getAttribute('data-page') === page) {
+                link.classList.add('active');
+            } else {
+                link.classList.remove('active');
+            }
+        });
+
+        // Renderizar la página correspondiente
+        if (this.state.landingData) {
+            this.renderPage(page);
+        }
+    },
+
+    toggleMobileMenu: function () {
+        const menu = document.getElementById('mobile-menu');
+        menu.classList.toggle('open');
+    },
+
+    closeMobileMenu: function () {
+        const menu = document.getElementById('mobile-menu');
+        menu.classList.remove('open');
     },
 
     // --- UTILS ---
@@ -115,8 +150,6 @@ const app = {
                 // Limpiar para evitar problemas si se navega a otra empresa sin recargar (aunque sea raro en esta app)
                 // window.INITIAL_DATA = null; 
             } else {
-                const res = await fetch(`/api/public/companies/${userId}/landing`);
-                if (!res.ok) throw new Error('Error al cargar datos');
                 data = await res.json();
             }
 
@@ -125,262 +158,407 @@ const app = {
                 return;
             }
 
-            const { user, entity, products } = data;
-            const compSpan = document.getElementById('breadcrumb-company');
-            if (compSpan) compSpan.textContent = user.name || 'Empresa';
+            // Guardar datos en el estado para navegación SPA
+            this.state.landingData = data;
 
-            // Datos de la empresa
-            const isSuggested = user.is_suggested;
+            // 1. Activar UI White Label (si corresponde)
+            this.applyWhiteLabelBranding(data.user);
+
+            // 2. Renderizar la página inicial (según el hash)
+            this.handleRouting();
+
+            // 3. Inyectar JSON-LD
+            const { user, entity, products } = data;
             const isFinca = user.type === 'finca';
             const entityName = isFinca ? (entity.nombre_finca || user.name) : (entity.nombre_comercial || user.name);
-            const typeLabel = isFinca ? 'Finca de Origen' : 'Planta de Procesamiento';
             const locationStr = [entity.distrito, entity.provincia, entity.departamento, entity.pais].filter(Boolean).map(p => this.toTitleCase(p)).join(', ') || 'Ubicación no registrada';
-            const historyText = user.history || entity.historia || 'Comprometidos con la calidad y la transparencia en cada grano.';
-
-            const instagram = user.instagram || entity.social_instagram;
-            const facebook = user.facebook || entity.social_facebook;
-
-            let coverImage = 'https://images.unsplash.com/photo-1511537632536-b7a4896848a5?auto=format&fit=crop&q=80&w=1000';
-
-            const mediaItems = [];
-            // 1. Agregar imágenes
-            if (!isSuggested) {
-                if (user.cover && user.cover !== '') {
-                    coverImage = user.cover;
-                } else {
-                    coverImage = entity.imagenes[0];
-                }
-            }
-
-            if (entity.imagenes && entity.imagenes.length > 0) {
-                entity.imagenes.forEach(img => mediaItems.push({ type: 'image', src: img }));
-            } else {
-                // Imagen por defecto si no hay ninguna
-                mediaItems.push({ type: 'image', src: coverImage });
-            }
-
-            // 2. Agregar video si existe
-            if (entity.video_link) {
-                const videoId = this.extractYoutubeId(entity.video_link);
-                if (videoId) {
-                    mediaItems.push({
-                        type: 'video',
-                        src: entity.video_link,
-                        videoId: videoId,
-                        thumb: `https://img.youtube.com/vi/${videoId}/hqdefault.jpg` // Miniatura de YT
-                    });
-                }
-            }
-
-            // Serializar para pasar al evento onclick
-            const mediaJson = JSON.stringify(mediaItems).replace(/"/g, '&quot;');
-
-            // 3. Renderizar Miniaturas (Debajo de la portada)
-            let galleryHtml = '';
-            // Excluimos el item 0 (que ya está de portada) y mostramos los siguientes 3
-            // Si hay video, queremos que salga.
-            const thumbnailsToShow = mediaItems.slice(1, 4);
-
-            if (thumbnailsToShow.length > 0) {
-                galleryHtml = `<div class="grid grid-cols-3 gap-2 mt-4">` +
-                    thumbnailsToShow.map((item, idx) => {
-                        // El índice real en el array 'mediaItems' es idx + 1 porque hicimos slice(1)
-                        const realIndex = idx + 1;
-                        if (item.type === 'video') {
-                            return `
-                            <div class="relative group cursor-pointer overflow-hidden rounded-lg border border-stone-100 h-20" onclick="app.openGallery(${realIndex}, ${mediaJson})">
-                                <img src="${item.thumb}" class="w-full h-full object-cover group-hover:scale-110 transition duration-500 filter brightness-75">
-                                <div class="absolute inset-0 flex items-center justify-center">
-                                    <i class="fas fa-play-circle text-white text-3xl shadow-sm"></i>
-                                </div>
-                            </div>`;
-                        } else {
-                            return `
-                            <div class="relative group cursor-pointer overflow-hidden rounded-lg border border-stone-100 h-20" onclick="app.openGallery(${realIndex}, ${mediaJson})">
-                                <img src="${item.src}" class="w-full h-full object-cover group-hover:scale-110 transition duration-500">
-                                <div class="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors"></div>
-                            </div>`;
-                        }
-                    }).join('') +
-                    `</div>`;
-            }
-
-            const cleanPhone = user.celular ? user.celular.replace(/\D/g, '') : '';
-            const waBase = cleanPhone ? `https://wa.me/${cleanPhone}` : '#';
-
-            let socialHtml = '';
-            if (instagram || facebook) {
-                socialHtml += `<div class="flex gap-3 justify-center mt-6 pt-4 border-t border-stone-100">`;
-                if (instagram) {
-                    const instaUrl = instagram.startsWith('http') ? instagram : `https://instagram.com/${instagram.replace('@', '')}`;
-                    socialHtml += `<a href="${instaUrl}" target="_blank" class="w-10 h-10 rounded-full bg-pink-50 text-pink-600 flex items-center justify-center hover:bg-pink-100 transition shadow-sm" title="Instagram"><i class="fab fa-instagram text-xl"></i></a>`;
-                }
-                if (facebook) {
-                    const fbUrl = facebook.startsWith('http') ? facebook : `https://facebook.com/${facebook}`;
-                    socialHtml += `<a href="${fbUrl}" target="_blank" class="w-10 h-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center hover:bg-blue-100 transition shadow-sm" title="Facebook"><i class="fab fa-facebook text-xl"></i></a>`;
-                }
-                socialHtml += `</div>`;
-            }
-
-            let claimBanner = '';
-            if (isSuggested) {
-                claimBanner = `
-                    <div class="bg-amber-100 border-l-4 border-amber-500 text-amber-900 p-4 mb-8 rounded shadow-sm flex flex-col md:flex-row justify-between items-center gap-4">
-                        <div class="flex items-center gap-3">
-                            <i class="fas fa-exclamation-circle text-2xl text-amber-600"></i>
-                            <div>
-                                <p class="font-bold">Perfil Sugerido por la Comunidad</p>
-                                <p class="text-sm text-amber-800">Esta información ha sido generada por usuarios. ¿Eres el dueño de ${entityName}?</p>
-                            </div>
-                        </div>
-                        <a href="/onboarding.html?claim_id=${user.id}" class="bg-amber-800 text-white px-6 py-2 rounded-lg font-bold hover:bg-amber-900 transition whitespace-nowrap shadow-md">Reclamar Perfil</a>
-                    </div>`;
-            }
-
-            const unverifiedStyle = isSuggested ? 'opacity-80 grayscale-[0.2]' : '';
-
-            // --- NUEVO BLOQUE: DIRECCIÓN Y BOTÓN CÓMO LLEGAR (Solo procesadoras) ---
-            let fullAddressHtml = '';
-            let mapButtonHtml = '';
-
-            if (!isFinca) {
-                if (entity.direccion) {
-                    fullAddressHtml = `<p class="text-center text-xs text-stone-500 mb-4 px-2 leading-tight">${entity.direccion}</p>`;
-                }
-
-                let mapQuery = '';
-                if (entity.coordenadas) {
-                    let lat, lng;
-                    if (Array.isArray(entity.coordenadas) && entity.coordenadas.length > 0) {
-                        if (Array.isArray(entity.coordenadas[0])) { lat = entity.coordenadas[0][0]; lng = entity.coordenadas[0][1]; }
-                    } else if (entity.coordenadas.lat) {
-                        lat = entity.coordenadas.lat; lng = entity.coordenadas.lng;
-                    }
-                    if (lat && lng) mapQuery = `${lat},${lng}`;
-                }
-
-                if (!mapQuery && entity.direccion) {
-                    mapQuery = encodeURIComponent(`${entity.direccion}, ${locationStr}`);
-                }
-
-                if (mapQuery) {
-                    mapButtonHtml = `
-                        <a href="https://www.google.com/maps/dir/?api=1&destination=${mapQuery}" target="_blank" class="block w-full text-center bg-white border border-stone-300 text-stone-700 font-bold py-2 rounded-lg text-sm hover:bg-stone-50 transition mb-4 shadow-sm group/btn">
-                            <i class="fas fa-location-arrow mr-2 text-red-500 group-hover/btn:animate-pulse"></i> Cómo llegar
-                        </a>`;
-                }
-            }
-
-            let html = `
-                ${claimBanner}
-                
-                <!-- HERO SECTION -->
-                <div class="relative w-full h-64 md:h-80 rounded-3xl overflow-hidden mb-8 shadow-xl group ${unverifiedStyle} cursor-pointer" onclick="app.openGallery(0, ${JSON.stringify(entity.imagenes || [coverImage]).replace(/"/g, '&quot;')})">
-                   <img src="${coverImage}" class="w-full h-full object-cover transform group-hover:scale-105 transition duration-700">
-                   <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent"></div>
-                   <div class="absolute bottom-0 left-0 w-full p-6 md:p-8 flex items-end gap-6">
-                       <img src="${user.logo || 'https://placehold.co/100x100?text=Logo'}" class="w-24 h-24 md:w-32 md:h-32 rounded-xl border-4 border-white shadow-lg bg-white object-contain">
-                       <div class="text-white mb-2">
-                           <span class="bg-amber-500 text-amber-900 text-xs font-bold px-2 py-1 rounded uppercase tracking-wider mb-2 inline-block shadow-sm">${typeLabel}</span>
-                           <h1 class="text-3xl md:text-5xl font-display font-bold leading-tight">${entityName}</h1>
-                           <p class="text-amber-100 flex items-center gap-2 text-sm md:text-base opacity-90"><i class="fas fa-map-marker-alt"></i> ${locationStr}</p>
-                       </div>
-                   </div>
-                   <div class="absolute top-4 right-4 bg-black/50 backdrop-blur px-3 py-1.5 rounded-full text-white text-[10px] font-bold uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity">
-                       <i class="fas fa-expand-alt mr-1"></i> Ver Galería
-                   </div>
-                </div>
-
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 ${unverifiedStyle}">
-                    
-                    <!-- COLUMNA IZQUIERDA: IDENTIDAD -->
-                    <div class="lg:col-span-1 space-y-8">
-                        <div class="bg-white p-6 rounded-2xl shadow-sm border border-stone-100">
-                            <h3 class="text-xl font-display font-bold text-amber-900 mb-4 border-b pb-2">Identidad</h3>
-                            <div class="prose prose-sm text-stone-600 mb-4"><p class="italic">"${historyText}"</p></div>
-                            ${galleryHtml}
-                            ${socialHtml}
-                            <div class="flex gap-2 mt-6">
-                                <button onclick="if(navigator.share) navigator.share({title: '${entityName}', url: window.location.href}); else alert('URL: ' + window.location.href);" class="flex-1 bg-stone-100 hover:bg-stone-200 text-stone-600 font-bold py-2 rounded-lg transition flex items-center justify-center gap-2 text-sm"><i class="fas fa-share-alt"></i> Compartir</button>
-                                ${waBase !== '#' ? `<a href="${waBase}" target="_blank" onclick="app.trackEvent('buy_click', '${userId}')" class="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-2 rounded-lg text-center transition flex items-center justify-center gap-2 text-sm"><i class="fab fa-whatsapp text-lg"></i> Contactar</a>` : ''}
-                            </div>
-                        </div>
-
-                        <!-- FICHA TÉCNICA -->
-                        <div class="bg-stone-50 p-6 rounded-2xl border border-stone-200">
-                            <h3 class="text-lg font-bold text-stone-700 mb-4 flex items-center gap-2">
-                                <i class="fas fa-mountain text-amber-600"></i> ${isFinca ? 'Terroir & Origen' : 'Ubicación & Calidad'}
-                            </h3>
-                            <div id="mini-map" class="w-full h-48 bg-stone-200 rounded-xl mb-3 relative"></div>
-
-                            <p class="text-center font-bold text-stone-800 text-sm ${fullAddressHtml ? 'mb-1' : 'mb-4'}">
-                                <i class="fas fa-map-pin text-red-500 mr-1"></i> ${locationStr}
-                            </p>
-                            
-                            <!-- Dirección y Botón (NUEVO) -->
-                            ${fullAddressHtml}
-                            ${mapButtonHtml}
-
-                            <ul class="space-y-3 text-sm">
-                                ${isFinca && entity.altura ? `<li class="flex justify-between border-b border-stone-200 pb-2"><span class="text-stone-500">Altitud</span><span class="font-bold text-stone-800">${entity.altura} msnm</span></li>` : ''}
-                            </ul>
-                            
-                            <div class="mt-4">
-                                <span class="text-xs font-bold text-stone-400 uppercase block mb-2">Certificaciones</span>
-                                <div class="flex flex-wrap gap-2">
-                                    ${(entity.certificaciones || []).map(c => `<div class="bg-white p-1.5 rounded border border-stone-200 shadow-sm" title="${c.nombre}"><img src="${c.logo_url}" class="h-8 w-8 object-contain"></div>`).join('')}
-                                    ${(!entity.certificaciones?.length) ? '<span class="text-stone-400 text-xs italic">--</span>' : ''}
-                                </div>
-                            </div>
-
-                            <!-- SECCIÓN RESTAURADA: PREMIOS -->
-                            <div class="mt-4">
-                                <span class="text-xs font-bold text-stone-400 uppercase block mb-2">Premios</span>
-                                <div class="flex flex-wrap gap-3">
-                                    ${(entity.premios || []).map(p => `
-                                        <div class="flex flex-col items-center">
-                                            <div class="bg-white p-1.5 rounded-lg border border-stone-200 shadow-sm mb-1" title="${p.nombre}">
-                                                <img src="${p.logo_url}" class="h-8 w-8 object-contain" alt="${p.nombre}">
-                                            </div>
-                                            <span class="text-[10px] font-bold text-amber-700 bg-amber-50 px-1.5 rounded">${p.ano || p.year || ''}</span>
-                                        </div>
-                                    `).join('')}
-                                    ${(!entity.premios?.length) ? '<span class="text-stone-400 text-xs italic">--</span>' : ''}
-                                </div>
-                            </div>
-
-                             ${isFinca ? `
-                            <!--div class="mt-6 bg-green-100 border border-green-200 p-3 rounded-xl flex items-center gap-3">
-                                <div class="bg-white p-1.5 rounded-full text-green-600 border border-green-100"><i class="fas fa-satellite"></i></div>
-                                <div>
-                                    <p class="text-xs font-bold text-green-800 uppercase">Monitoreo Satelital</p>
-                                    <p class="text-[10px] text-green-700 leading-tight">Predio verificado EUDR Ready</p>
-                                </div>
-                            </div-->` : ''}
-                        </div>
-                    </div>
-
-                    <!-- COLUMNA DERECHA: CATÁLOGO ACTUALIZADO -->
-                    <div class="lg:col-span-2">
-                        <h3 class="text-2xl font-display font-bold text-stone-800 mb-6 flex items-center gap-2"><i class="fas fa-store text-amber-600"></i> Catálogo Disponible</h3>
-                        <div class="space-y-6">
-                            ${this.renderProductList(products, user.phone, userId)}
-                        </div>
-                    </div>
-                </div>
-            `;
-
-            this.container.innerHTML = html;
-            window.scrollTo(0, 0);
-
-            // Inyectar JSON-LD con datos reales de la empresa
+            let coverImage = user.cover || (entity.imagenes && entity.imagenes.length > 0 ? entity.imagenes[0] : 'https://images.unsplash.com/photo-1511537632536-b7a4896848a5?auto=format&fit=crop&q=80&w=1000');
+            
             this.injectJsonLd({ user, entity, products, isFinca, entityName, locationStr, coverImage });
 
-            if (entity.coordenadas) setTimeout(() => this.initMiniMap(entity.coordenadas), 500);
-
-            setTimeout(() => this.initProductCharts(products), 100);
-
         } catch (e) { console.error(e); }
+    },
+
+    applyWhiteLabelBranding: function (user) {
+        const navPlaceholder = document.getElementById('public-nav-placeholder');
+        const breadcrumbs = document.getElementById('breadcrumbs');
+        const wlHeader = document.getElementById('wl-header');
+
+        if (wlHeader) {
+            wlHeader.classList.remove('hidden');
+            if (this.wlLogo) this.wlLogo.src = user.logo || 'https://placehold.co/100x100?text=Logo';
+            if (this.wlBrandName) this.wlBrandName.textContent = user.name || 'Empresa';
+            if (this.footerBrand) this.footerBrand.textContent = user.name || 'Empresa';
+
+            // Ajustar posición si el menú de RuruLab está visible
+            if (!window.IS_SUBDOMAIN) {
+                wlHeader.style.position = 'relative';
+                wlHeader.style.top = '0';
+                document.documentElement.style.setProperty('--nav-offset', '0px');
+            } else {
+                wlHeader.style.position = 'sticky';
+                wlHeader.style.top = '0';
+                document.documentElement.style.setProperty('--nav-offset', '0px');
+            }
+        }
+
+        if (window.IS_SUBDOMAIN) {
+            if (navPlaceholder) navPlaceholder.style.display = 'none';
+            if (breadcrumbs) breadcrumbs.style.display = 'none';
+        } else {
+            if (navPlaceholder) navPlaceholder.style.display = 'block';
+            if (breadcrumbs) breadcrumbs.style.display = 'flex';
+        }
+    },
+
+    renderPage: function (page) {
+        window.scrollTo(0, 0);
+        this.container.innerHTML = ''; // Limpiar contenedor
+
+        switch (page) {
+            case 'inicio':
+                this.renderInicio();
+                break;
+            case 'tienda':
+                this.renderTienda();
+                break;
+            case 'contacto':
+                this.renderContacto();
+                break;
+            default:
+                this.renderInicio();
+        }
+    },
+
+    renderInicio: function () {
+        const { user, entity, products } = this.state.landingData;
+        const isSuggested = user.is_suggested;
+        const isFinca = user.type === 'finca';
+        const entityName = isFinca ? (entity.nombre_finca || user.name) : (entity.nombre_comercial || user.name);
+        const typeLabel = isFinca ? 'Finca de Origen' : 'Planta de Procesamiento';
+        const locationStr = [entity.distrito, entity.provincia, entity.departamento, entity.pais].filter(Boolean).map(p => this.toTitleCase(p)).join(', ') || 'Ubicación no registrada';
+        const historyText = user.history || entity.historia || 'Comprometidos con la calidad y la transparencia en cada grano.';
+
+        const instagram = user.instagram || entity.social_instagram;
+        const facebook = user.facebook || entity.social_facebook;
+
+        let coverImage = user.cover || (entity.imagenes && entity.imagenes.length > 0 ? entity.imagenes[0] : 'https://images.unsplash.com/photo-1511537632536-b7a4896848a5?auto=format&fit=crop&q=80&w=1000');
+
+        const mediaItems = [];
+        if (entity.imagenes && entity.imagenes.length > 0) {
+            entity.imagenes.forEach(img => mediaItems.push({ type: 'image', src: img }));
+        } else {
+            mediaItems.push({ type: 'image', src: coverImage });
+        }
+        if (entity.video_link) {
+            const videoId = this.extractYoutubeId(entity.video_link);
+            if (videoId) mediaItems.push({ type: 'video', src: entity.video_link, videoId: videoId, thumb: `https://img.youtube.com/vi/${videoId}/hqdefault.jpg` });
+        }
+
+        const mediaJson = JSON.stringify(mediaItems).replace(/"/g, '&quot;');
+        const thumbnailsToShow = mediaItems.slice(1, 4);
+
+        let galleryHtml = '';
+        if (thumbnailsToShow.length > 0) {
+            galleryHtml = `<div class="grid grid-cols-3 gap-2 mt-4">` +
+                thumbnailsToShow.map((item, idx) => {
+                    const realIndex = idx + 1;
+                    const thumbImg = item.type === 'video' ? item.thumb : item.src;
+                    return `
+                    <div class="relative group cursor-pointer overflow-hidden rounded-lg border border-stone-100 h-20" onclick="app.openGallery(${realIndex}, ${mediaJson})">
+                        <img src="${thumbImg}" class="w-full h-full object-cover group-hover:scale-110 transition duration-500 ${item.type === 'video' ? 'filter brightness-75' : ''}">
+                        ${item.type === 'video' ? '<div class="absolute inset-0 flex items-center justify-center"><i class="fas fa-play-circle text-white text-3xl"></i></div>' : ''}
+                    </div>`;
+                }).join('') + `</div>`;
+        }
+
+        const cleanPhone = user.phone ? user.phone.replace(/\D/g, '') : (user.contact_phone ? user.contact_phone.replace(/\D/g, '') : '');
+        const waBase = cleanPhone ? `https://wa.me/${cleanPhone}` : '#';
+
+        let socialHtml = '';
+        if (instagram || facebook) {
+            socialHtml += `<div class="flex gap-3 justify-center mt-6 pt-4 border-t border-stone-100">`;
+            if (instagram) socialHtml += `<a href="${instagram.startsWith('http') ? instagram : 'https://instagram.com/' + instagram.replace('@', '')}" target="_blank" class="w-10 h-10 rounded-full bg-pink-50 text-pink-600 flex items-center justify-center hover:bg-pink-100 transition shadow-sm"><i class="fab fa-instagram text-xl"></i></a>`;
+            if (facebook) socialHtml += `<a href="${facebook.startsWith('http') ? facebook : 'https://facebook.com/' + facebook}" target="_blank" class="w-10 h-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center hover:bg-blue-100 transition shadow-sm"><i class="fab fa-facebook text-xl"></i></a>`;
+            socialHtml += `</div>`;
+        }
+
+        let claimBanner = '';
+        if (isSuggested) {
+            claimBanner = `
+                <div class="bg-amber-100 border-l-4 border-amber-500 text-amber-900 p-4 mb-8 rounded shadow-sm flex flex-col md:flex-row justify-between items-center gap-4">
+                    <div class="flex items-center gap-3">
+                        <i class="fas fa-exclamation-circle text-2xl text-amber-600"></i>
+                        <div>
+                            <p class="font-bold">Perfil Sugerido</p>
+                            <p class="text-sm">Esta información ha sido generada por usuarios.</p>
+                        </div>
+                    </div>
+                    <a href="/onboarding.html?claim_id=${user.id}" class="btn-accent px-6 py-2 rounded-lg font-bold">Reclamar Perfil</a>
+                </div>`;
+        }
+
+        // Ubicación y Botón de Mapa
+        let mapQuery = entity.direccion ? encodeURIComponent(entity.direccion + ', ' + locationStr) : '';
+        if (entity.coordenadas) {
+             const lat = Array.isArray(entity.coordenadas) ? entity.coordenadas[0] : (entity.coordenadas.lat || null);
+             const lng = Array.isArray(entity.coordenadas) ? entity.coordenadas[1] : (entity.coordenadas.lng || null);
+             if (lat && lng) mapQuery = `${lat},${lng}`;
+        }
+
+        const fullAddressHtml = `
+            <div class="text-center mt-4">
+                <p class="font-bold text-stone-800 text-sm mb-1 flex items-center justify-center gap-2">
+                    <i class="fas fa-map-marker-alt text-red-500"></i> ${locationStr}
+                </p>
+                ${entity.direccion ? `<p class="text-[11px] text-stone-500 uppercase tracking-tight">${entity.direccion}</p>` : ''}
+            </div>
+        `;
+
+        let mapButtonHtml = '';
+        if (mapQuery) {
+            mapButtonHtml = `
+                <a href="https://www.google.com/maps/dir/?api=1&destination=${mapQuery}" target="_blank" class="mt-6 block w-full text-center bg-white border border-stone-200 text-stone-800 font-bold py-3 rounded-2xl text-base hover:bg-stone-50 transition shadow-sm flex items-center justify-center gap-3 group">
+                    <i class="fas fa-location-arrow text-red-500 group-hover:animate-pulse"></i> Cómo llegar
+                </a>`;
+        }
+
+        let html = `
+            <div class="container mx-auto px-6 py-8 fade-in">
+                ${claimBanner}
+                
+                <!-- HERO -->
+                <div class="relative w-full h-64 md:h-96 rounded-3xl overflow-hidden mb-12 shadow-2xl group cursor-pointer" onclick="app.openGallery(0, ${mediaJson})">
+                   <img src="${coverImage}" class="w-full h-full object-cover transform group-hover:scale-105 transition duration-700">
+                   <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent"></div>
+                   <div class="absolute bottom-0 left-0 w-full p-8 flex items-end gap-6">
+                       <img src="${user.logo || 'https://placehold.co/100x100?text=Logo'}" class="w-24 h-24 md:w-32 md:h-32 rounded-2xl border-4 border-white shadow-lg bg-white object-contain">
+                       <div class="text-white mb-2">
+                           <span class="bg-accent text-white text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider mb-3 inline-block shadow-lg">${typeLabel}</span>
+                           <h1 class="text-3xl md:text-5xl font-display font-bold leading-tight">${entityName}</h1>
+                           <p class="text-white/80 flex items-center gap-2 text-sm md:text-base"><i class="fas fa-map-marker-alt text-accent"></i> ${locationStr}</p>
+                       </div>
+                   </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-12">
+                    <div class="lg:col-span-1 space-y-8">
+                        <div class="bg-white p-8 rounded-3xl shadow-sm border border-stone-100 about-section">
+                            <h3 class="text-2xl font-display font-bold text-stone-900 mb-6 border-b border-stone-100 pb-4">Nuestra Historia</h3>
+                            <div class="prose prose-sm text-stone-600 mb-6 italic leading-relaxed text-lg">"${historyText}"</div>
+                            ${galleryHtml}
+                            ${socialHtml}
+                        </div>
+
+                        <div class="bg-stone-50 p-8 rounded-3xl border border-stone-200">
+                            <h3 class="text-xl font-bold text-stone-800 mb-6 flex items-center gap-3">
+                                <i class="fas fa-mountain text-accent"></i> ${isFinca ? 'Terroir & Origen' : 'Ubicación'}
+                            </h3>
+                            <div id="mini-map" class="w-full h-56 bg-stone-200 rounded-2xl mb-6 shadow-inner"></div>
+                            ${fullAddressHtml}
+                            ${mapButtonHtml}
+                        </div>
+
+                        <!-- Certificaciones & Premios Section -->
+                        ${(entity.certificaciones?.length > 0 || entity.premios?.length > 0) ? `
+                        <div class="space-y-6">
+                            <h3 class="text-2xl font-display font-bold text-stone-900 border-b border-stone-100 pb-4">Reconocimientos</h3>
+                            <div class="grid grid-cols-1 gap-4">
+                                ${(entity.certificaciones || []).map(c => `
+                                    <div class="flex items-center gap-4 bg-white p-5 rounded-3xl border border-stone-100 shadow-sm hover:shadow-md transition">
+                                        <div class="w-16 h-16 flex-shrink-0 bg-stone-50 rounded-2xl p-2 flex items-center justify-center">
+                                            <img src="${c.logo_url}" class="max-w-full max-h-full object-contain">
+                                        </div>
+                                        <div>
+                                            <h4 class="font-bold text-stone-900">${c.nombre}</h4>
+                                            <p class="text-xs text-stone-500 leading-tight">${c.descripcion || 'Certificación de calidad garantizada.'}</p>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                                ${(entity.premios || []).map(p => `
+                                    <div class="flex items-center gap-4 bg-white p-5 rounded-3xl border border-stone-100 shadow-sm hover:shadow-md transition">
+                                        <div class="w-16 h-16 flex-shrink-0 bg-amber-50 rounded-2xl p-2 flex items-center justify-center">
+                                            ${p.logo_url ? `<img src="${p.logo_url}" class="max-w-full max-h-full object-contain">` : `<i class="fas fa-medal text-amber-500 text-2xl"></i>`}
+                                        </div>
+                                        <div>
+                                            <div class="flex items-center gap-2">
+                                                <h4 class="font-bold text-stone-900">${p.nombre}</h4>
+                                                <span class="text-[10px] font-black bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full">${p.ano || p.year || ''}</span>
+                                            </div>
+                                            <p class="text-xs text-stone-500 leading-tight">${p.descripcion || 'Reconocimiento a la excelencia y consistencia.'}</p>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>` : ''}
+                    </div>
+
+                    <div class="lg:col-span-2">
+                        <div class="flex items-center justify-between mb-8">
+                            <h3 class="text-3xl font-display font-bold text-stone-900">Productos Destacados</h3>
+                            <a href="#tienda" class="text-accent font-bold hover:underline">Ver todo el catálogo <i class="fas fa-arrow-right ml-1"></i></a>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            ${this.renderProductCards(products.slice(0, 4), user.phone || user.contact_phone, user.id)}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        this.container.innerHTML = html;
+        if (entity.coordenadas) setTimeout(() => this.initMiniMap(entity.coordenadas), 500);
+        setTimeout(() => this.initProductCharts(products.slice(0, 4)), 100);
+    },
+
+    renderTienda: function () {
+        const { products, user } = this.state.landingData;
+        const html = `
+            <div class="container mx-auto px-6 py-12 fade-in">
+                <div class="max-w-3xl mb-12">
+                    <h1 class="text-4xl md:text-5xl font-display font-bold text-stone-900 mb-4">Nuestra Tienda</h1>
+                    <p class="text-lg text-stone-600">Explora nuestra selección exclusiva de productos con trazabilidad garantizada directamente desde el origen.</p>
+                </div>
+                
+                <div class="product-grid">
+                    ${this.renderProductCards(products, user.phone || user.contact_phone, user.id)}
+                </div>
+            </div>
+        `;
+        this.container.innerHTML = html;
+        setTimeout(() => this.initProductCharts(products), 100);
+    },
+
+    renderContacto: function () {
+        const { user, entity } = this.state.landingData;
+        const cleanPhone = user.phone ? user.phone.replace(/\D/g, '') : (user.contact_phone ? user.contact_phone.replace(/\D/g, '') : '');
+        const waBase = cleanPhone ? `https://wa.me/${cleanPhone}` : '#';
+
+        const html = `
+            <div class="container mx-auto px-6 py-16 fade-in">
+                <div class="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-16">
+                    <div>
+                        <h1 class="text-4xl md:text-5xl font-display font-bold text-stone-900 mb-6">Ponte en contacto</h1>
+                        <p class="text-lg text-stone-600 mb-10">¿Tienes dudas sobre nuestros procesos o te gustaría realizar un pedido especial? Estamos aquí para ayudarte.</p>
+                        
+                        <div class="space-y-6">
+                            <div class="flex items-start gap-4">
+                                <div class="w-12 h-12 rounded-2xl bg-accent/10 text-accent flex items-center justify-center flex-shrink-0"><i class="fas fa-envelope text-xl"></i></div>
+                                <div>
+                                    <h4 class="font-bold text-stone-900">Email</h4>
+                                    <p class="text-stone-600">${user.email || 'contacto@empresa.com'}</p>
+                                </div>
+                            </div>
+                            <div class="flex items-start gap-4">
+                                <div class="w-12 h-12 rounded-2xl bg-green-50 text-green-600 flex items-center justify-center flex-shrink-0"><i class="fab fa-whatsapp text-2xl"></i></div>
+                                <div>
+                                    <h4 class="font-bold text-stone-900">WhatsApp</h4>
+                                    <p class="text-stone-600">${user.phone || user.contact_phone || 'N/A'}</p>
+                                    <a href="${waBase}" target="_blank" class="text-green-600 font-bold hover:underline text-sm">Enviar mensaje directo</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-8 md:p-10 rounded-3xl shadow-2xl border border-stone-100">
+                        <form id="contact-form" class="space-y-6" onsubmit="app.handleContactSubmit(event)">
+                            <div class="space-y-2">
+                                <label class="text-sm font-bold text-stone-700">Nombre completo</label>
+                                <input type="text" name="name" required class="contact-input" placeholder="Ej. Juan Pérez">
+                            </div>
+                            <div class="space-y-2">
+                                <label class="text-sm font-bold text-stone-700">Correo electrónico</label>
+                                <input type="email" name="email" required class="contact-input" placeholder="juan@ejemplo.com">
+                            </div>
+                            <div class="space-y-2">
+                                <label class="text-sm font-bold text-stone-700">Mensaje</label>
+                                <textarea name="message" required rows="5" class="contact-input" placeholder="¿En qué podemos ayudarte?"></textarea>
+                            </div>
+                            <button type="submit" class="w-full btn-accent py-4 rounded-xl font-bold text-lg shadow-lg">Enviar mensaje</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        `;
+        this.container.innerHTML = html;
+    },
+
+    handleContactSubmit: async function (e) {
+        e.preventDefault();
+        const btn = e.target.querySelector('button');
+        const originalText = btn.textContent;
+        btn.textContent = 'Enviando...';
+        btn.disabled = true;
+
+        const formData = new FormData(e.target);
+        const payload = {
+            company_id: this.state.landingData.user.id,
+            name: formData.get('name'),
+            email: formData.get('email'),
+            message: formData.get('message')
+        };
+
+        try {
+            const res = await fetch('/api/public/contact', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (res.ok) {
+                this.container.innerHTML = `
+                    <div class="container mx-auto px-6 py-24 text-center fade-in">
+                        <div class="w-20 h-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-6"><i class="fas fa-check text-4xl"></i></div>
+                        <h1 class="text-4xl font-display font-bold text-stone-900 mb-4">¡Mensaje enviado!</h1>
+                        <p class="text-lg text-stone-600 mb-8">Gracias por contactarnos. Nos comunicaremos contigo a la brevedad.</p>
+                        <a href="#inicio" class="btn-accent px-8 py-3 rounded-xl font-bold inline-block">Volver al inicio</a>
+                    </div>
+                `;
+            } else {
+                throw new Error('Error al enviar');
+            }
+        } catch (err) {
+            alert('Hubo un problema al enviar tu mensaje. Por favor intenta de nuevo.');
+            btn.textContent = originalText;
+            btn.disabled = false;
+        }
+    },
+
+    renderProductCards: function (products, phone, userId) {
+        if (!products || products.length === 0) {
+            return `<div class="col-span-full text-center py-12 bg-stone-50 rounded-2xl border border-dashed border-stone-200"><p class="text-stone-500 italic">No hay productos disponibles.</p></div>`;
+        }
+
+        return products.map(prod => {
+            const prodImage = (prod.imagenes && prod.imagenes.length > 0) ? prod.imagenes[0] : 'https://placehold.co/400x300/f5f5f4/a8a29e?text=Producto';
+            const hasTraceability = prod.recent_batches && prod.recent_batches.length > 0;
+            const buyLink = phone ? `https://wa.me/${phone.replace(/\D/g, '')}?text=Hola, me interesa: ${encodeURIComponent(prod.nombre)}` : '#';
+            const detailLink = `/lote/${this.createSlug(prod.nombre)}-${prod.id}`;
+
+            return `
+            <div class="product-card fade-in">
+                <div class="h-56 relative overflow-hidden group">
+                    <img src="${prodImage}" class="w-full h-full object-cover transition duration-500 group-hover:scale-110">
+                    <div class="absolute top-3 right-3">
+                        ${hasTraceability ? '<span class="bg-emerald-500 text-white text-[9px] font-black px-2 py-1 rounded shadow-lg flex items-center gap-1"><i class="fas fa-check-circle"></i> TRAZABLE</span>' : ''}
+                    </div>
+                </div>
+                <div class="p-6 flex-grow flex flex-col">
+                    <div class="mb-4">
+                        <h4 class="text-lg font-bold text-stone-900 leading-tight mb-1 line-clamp-1">${prod.nombre}</h4>
+                        <p class="text-accent font-black text-xl">${prod.moneda || 'S/'} ${prod.precio || '0.00'}</p>
+                    </div>
+                    <div class="mt-auto space-y-3">
+                        <a href="${buyLink}" target="_blank" class="block w-full text-center btn-accent py-2.5 rounded-xl font-bold text-sm shadow-sm flex items-center justify-center gap-2"><i class="fab fa-whatsapp"></i> Comprar</a>
+                        <a href="${detailLink}" class="block w-full text-center bg-stone-100 hover:bg-stone-200 text-stone-700 py-2.5 rounded-xl font-bold text-sm transition">Ver detalles</a>
+                    </div>
+                </div>
+            </div>`;
+        }).join('');
+    },
+
+    createSlug: function (text) {
+        return (text || '').toString().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, '-').replace(/[^\w-]+/g, '').replace(/--+/g, '-').replace(/^-+/, '').replace(/-+$/, '');
     },
 
     // --- JSON-LD ---

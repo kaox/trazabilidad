@@ -1,3 +1,4 @@
+const crypto = require('crypto');
 const environment = process.env.NODE_ENV || 'development';
 
 let get, all, run;
@@ -70,7 +71,28 @@ const generateUniqueBatchId = async (prefix) => {
     return id;
 };
 
+const saveContactLead = async (req, res) => {
+    const { company_id, name, email, message } = req.body;
+    
+    if (!company_id || !name || !email || !message) {
+        return res.status(400).json({ error: 'Faltan campos obligatorios' });
+    }
+
+    try {
+        const id = crypto.randomUUID();
+        await run(
+            'INSERT INTO contact_leads (id, company_id, name, email, message) VALUES (?, ?, ?, ?, ?)',
+            [id, company_id, name, email, message]
+        );
+        res.status(201).json({ success: true, id });
+    } catch (err) {
+        console.error('Error al guardar lead:', err);
+        res.status(500).json({ error: 'Error interno al guardar contacto' });
+    }
+};
+
 module.exports = {
     get, all, run,
-    generateUniqueBatchId
+    generateUniqueBatchId,
+    saveContactLead
 };

@@ -2210,6 +2210,26 @@ const getWidgetData = async (req, res) => {
     }
 };
 
+const saveContactLead = async (req, res) => {
+    const { name, email, message, companyId } = req.body;
+
+    if (!name || !email || !message || !companyId) {
+        return res.status(400).json({ error: "Todos los campos son obligatorios" });
+    }
+
+    try {
+        const id = crypto.randomUUID();
+        await run(
+            'INSERT INTO contact_leads (id, company_id, name, email, message) VALUES (?, ?, ?, ?, ?)',
+            [id, companyId, name, email, message]
+        );
+        res.status(201).json({ success: true, message: "Mensaje enviado exitosamente" });
+    } catch (err) {
+        console.error("Error saving lead:", err);
+        res.status(500).json({ error: "Error interno del servidor" });
+    }
+};
+
 module.exports = {
     registerUser, loginUser, logoutUser, handleGoogleLogin,
     getSucursales, createSucursal, updateSucursal, deleteSucursal,
@@ -2240,5 +2260,5 @@ module.exports = {
     serveCompanyLogo,
     getPublishedBlogSlugs, getPublishedEventSlugs,
     getBlogPostBySlugInternal, getEventBySlugInternal,
-    getLandingStats, getWidgetData
+    getLandingStats, getWidgetData, saveContactLead
 };

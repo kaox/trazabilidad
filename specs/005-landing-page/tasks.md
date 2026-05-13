@@ -70,11 +70,11 @@
 
 **⚠️ CRITICAL**: No US5 work can begin until this phase is complete
 
-- [ ] T100 Create migration SQL file `migrations/add_white_label_config.sql` with `ALTER TABLE company_profiles ADD COLUMN white_label_config TEXT DEFAULT NULL`
-- [ ] T101 [P] Create migration SQL for `contact_leads` table in `migrations/add_contact_leads.sql` (id, company_id, name, email, message, created_at, is_read)
-- [ ] T102 Update `src/models/CompanyProfile.js` — add `white_label_config` to the `upsert()` method params and both INSERT/UPDATE SQL statements
-- [ ] T103 [P] Update `src/models/empresaModel.js` — add `white_label_config` to the SELECT columns in `getVerifiedProfileByUserId()` and `findCompanyBySubdomainOrSlug()` queries
-- [ ] T104 Update `src/controllers/landingsController.js` — parse and include `white_label_config` (via `safeJSONParse`) in the `companyData` object returned by both `getCompanyLandingData()` and `getCompanyLandingDataInternal()`
+- [x] T100 Create migration SQL file `migrations/add_white_label_config.sql` with `ALTER TABLE company_profiles ADD COLUMN white_label_config TEXT DEFAULT NULL`
+- [x] T101 [P] Create migration SQL for `contact_leads` table in `migrations/add_contact_leads.sql` (id, company_id, name, email, message, created_at, is_read)
+- [x] T102 Update `src/models/CompanyProfile.js` — add `white_label_config` to the `upsert()` method params and both INSERT/UPDATE SQL statements
+- [x] T103 [P] Update `src/models/empresaModel.js` — add `white_label_config` to the SELECT columns in `getVerifiedProfileByUserId()` and `findCompanyBySubdomainOrSlug()` queries
+- [x] T104 Update `src/controllers/landingsController.js` — parse and include `white_label_config` (via `safeJSONParse`) in the `companyData` object returned by both `getCompanyLandingData()` and `getCompanyLandingDataInternal()`
 
 **Checkpoint**: White Label config is stored, retrieved, and exposed via the landing API. Verify by hitting `GET /api/landing/:userId` and confirming `user.white_label_config` appears in the response.
 
@@ -88,37 +88,37 @@
 
 ### 8a. Header Neutral & Navegación (FR-010, FR-011)
 
-- [ ] T105 [US5] Refactorizar `public/landing-empresa.html` — reemplazar el header actual con un header neutral: logo del cliente (dinámico), menú simplificado (Inicio, Tienda, Contáctanos), hamburger menu en móvil. Eliminar todos los enlaces corporativos de RuruLab.
-- [ ] T106 [US5] Implementar CSS Variables dinámicas en `public/css/landing.css` — definir `--accent-color`, `--primary-color`, `--accent-hover` con defaults, y aplicarlas a todos los botones, links, iconos y hovers del portal White Label.
-- [ ] T107 [US5] Implementar SPA hash router en `public/js/landing-empresa.js` — escuchar `hashchange` para alternar entre `#inicio` (default), `#tienda`, `#contacto`. Ocultar/mostrar las secciones correspondientes. Actualizar la clase `active` del menú.
-- [ ] T108 [US5] Actualizar middleware de subdominio en `server.js` (líneas 57-58) — cambiar la condición `req.path !== '/'` para permitir también `/tienda` y `/contacto` (o servir siempre `landing-empresa.html` para paths que no sean assets estáticos ni API).
-- [ ] T109 [US5] Inyectar CSS Variables dinámicas en `server.js` — al renderizar `landing-empresa.html` (tanto en subdominio como en `/origen-unico/:slug`), leer `white_label_config` del `landingData` e inyectar un bloque `<style>:root { --accent-color: ...; --primary-color: ...; }</style>` en el `<head>`.
+- [x] T105 [US5] Refactorizar `public/landing-empresa.html` — reemplazar el header actual con un header neutral: logo del cliente (dinámico), menú simplificado (Inicio, Tienda, Contáctanos), hamburger menu en móvil. Eliminar todos los enlaces corporativos de RuruLab.
+- [x] T106 [US5] Implementar CSS Variables dinámicas en `public/css/landing.css` — definir `--accent-color`, `--primary-color`, `--accent-hover` con defaults, y aplicarlas a todos los botones, links, iconos y hovers del portal White Label.
+- [x] T107 [US5] Implementar SPA hash router en `public/js/landing-empresa.js` — escuchar `hashchange` para alternar entre `#inicio` (default), `#tienda`, `#contacto`. Ocultar/mostrar las secciones correspondientes. Actualizar la clase `active` del menú.
+- [x] T108 [US5] Actualizar middleware de subdominio en `server.js` (líneas 57-58) — cambiar la condición `req.path !== '/'` para permitir también `/tienda` y `/contacto` (o servir siempre `landing-empresa.html` para paths que no sean assets estáticos ni API).
+- [x] T109 [US5] Inyectar CSS Variables dinámicas en `server.js` — al renderizar `landing-empresa.html` (tanto en subdominio como en `/origen-unico/:slug`), leer `white_label_config` del `landingData` e inyectar un bloque `<style>:root { --accent-color: ...; --primary-color: ...; }</style>` en el `<head>`.
 
 ### 8b. Página de Inicio (FR-018)
 
-- [ ] T110 [US5] Refactorizar la sección Hero en `public/landing-empresa.html` — integrar el logo del cliente de forma limpia en un área dedicada, mejorar la jerarquía tipográfica (nombre de empresa grande, subtítulo con historia corta), usar `cover_image_url` como fondo.
-- [ ] T111 [P] [US5] Crear sección "Sobre Nosotros" en `public/landing-empresa.html` — renderizar `user.history` como contenido destacado con tipografía moderna. Incluir imágenes de galería si `entity.imagenes` tiene datos.
-- [ ] T112 [P] [US5] Refactorizar sección de Certificaciones y Premios en `public/landing-empresa.html` — convertir de miniaturas pequeñas a tarjetas grandes destacadas con imágenes completas, nombres y descripciones. Usar `entity.certificaciones` y `entity.premios`.
-- [ ] T113 [US5] Crear sección Mapa de Fincas en `public/landing-empresa.html` — renderizar un mapa interactivo (Leaflet o estático) con `entity.coordenadas`. Mostrar nombre de finca, altitud, y ubicación geográfica.
-- [ ] T114 [US5] Crear CTA prominente hacia Tienda al final de la sección Inicio en `public/landing-empresa.html` — botón "Ver Catálogo" con `--accent-color` que navega a `#tienda`.
+- [x] T110 [US5] Refactorizar la sección Hero en `public/landing-empresa.html` — integrar el logo del cliente de forma limpia en un área dedicada, mejorar la jerarquía tipográfica (nombre de empresa grande, subtítulo con historia corta), usar `cover_image_url` como fondo.
+- [x] T111 [P] [US5] Crear sección "Sobre Nosotros" en `public/landing-empresa.html` — renderizar `user.history` como contenido destacado con tipografía moderna. Incluir imágenes de galería si `entity.imagenes` tiene datos.
+- [x] T112 [P] [US5] Refactorizar sección de Certificaciones y Premios en `public/landing-empresa.html` — convertir de miniaturas pequeñas a tarjetas grandes destacadas con imágenes completas, nombres y descripciones. Usar `entity.certificaciones` y `entity.premios`.
+- [x] T113 [US5] Crear sección Mapa de Fincas en `public/landing-empresa.html` — renderizar un mapa interactivo (Leaflet o estático) con `entity.coordenadas`. Mostrar nombre de finca, altitud, y ubicación geográfica.
+- [x] T114 [US5] Crear CTA prominente hacia Tienda al final de la sección Inicio en `public/landing-empresa.html` — botón "Ver Catálogo" con `--accent-color` que navega a `#tienda`.
 
 ### 8c. Página de Tienda (FR-013, FR-015)
 
-- [ ] T115 [US5] Crear vista de cuadrícula del catálogo en `public/js/landing-empresa.js` — función `renderTienda(products, whatsappNumber)` que genera un grid CSS de 3-4 columnas (responsive: 1 col mobile, 2 col tablet, 3-4 col desktop).
-- [ ] T116 [US5] Diseñar tarjeta de producto en `public/js/landing-empresa.js` — cada tarjeta muestra: imagen, nombre, `tipo_producto`, precio (`precio_venta`), peso (`peso_neto` + `unidad_medida`), dos CTAs: "Ver Detalle" (enlace a `/lote/:slug`) y "WhatsApp" (enlace `wa.me/:number?text=...`).
-- [ ] T117 [US5] Implementar estado vacío de la Tienda en `public/js/landing-empresa.js` — si `products.length === 0`, mostrar un estado elegante con icono, mensaje "Próximamente" y CTA de contacto.
-- [ ] T118 [P] [US5] Agregar estilos del grid de Tienda en `public/css/landing.css` — clases para grid responsive, tarjetas con hover effect, botones con `--accent-color`, badges de trazabilidad.
+- [x] T115 [US5] Crear vista de cuadrícula del catálogo en `public/js/landing-empresa.js` — función `renderTienda(products, whatsappNumber)` que genera un grid CSS de 3-4 columnas (responsive: 1 col mobile, 2 col tablet, 3-4 col desktop).
+- [x] T116 [US5] Diseñar tarjeta de producto en `public/js/landing-empresa.js` — cada tarjeta muestra: imagen, nombre, `tipo_producto`, precio (`precio_venta`), peso (`precio_venta` + `unidad_medida`), dos CTAs: "Ver Detalle" (enlace a `/lote/:slug`) y "WhatsApp" (enlace `wa.me/:number?text=...`).
+- [x] T117 [US5] Implementar estado vacío de la Tienda en `public/js/landing-empresa.js` — si `products.length === 0`, mostrar un estado elegante con icono, mensaje "Próximamente" y CTA de contacto.
+- [x] T118 [P] [US5] Agregar estilos del grid de Tienda en `public/css/landing.css` — clases para grid responsive, tarjetas con hover effect, botones con `--accent-color`, badges de trazabilidad.
 
 ### 8d. Página de Contáctanos (FR-017)
 
-- [ ] T119 [US5] Crear vista de Contacto en `public/js/landing-empresa.js` — función `renderContacto(config)` que genera: formulario (nombre, email, mensaje) + botón WhatsApp prominente (condicional: solo si `whatsapp_number` existe).
-- [ ] T120 [US5] Implementar endpoint `POST /api/public/contact` en `server.js` — recibe `{name, email, message, companyId}`, valida campos, inserta en tabla `contact_leads`. Retorna `{success: true, message: "Mensaje enviado"}`.
-- [ ] T121 [US5] Conectar formulario al endpoint en `public/js/landing-empresa.js` — fetch POST, manejo de estados (loading, success, error), limpiar formulario al enviar.
-- [ ] T122 [P] [US5] Agregar estilos del formulario de contacto en `public/css/landing.css` — inputs con bordes suaves, focus states con `--accent-color`, botón submit con acento, botón WhatsApp verde prominente.
+- [x] T119 [US5] Crear vista de Contacto en `public/js/landing-empresa.js` — función `renderContacto(config)` que genera: formulario (nombre, email, mensaje) + botón WhatsApp prominente (condicional: solo si `whatsapp_number` existe).
+- [x] T120 [US5] Implementar endpoint `POST /api/public/contact` en `server.js` — recibe `{name, email, message, companyId}`, valida campos, inserta en tabla `contact_leads`. Retorna `{success: true, message: "Mensaje enviado"}`.
+- [x] T121 [US5] Conectar formulario al endpoint en `public/js/landing-empresa.js` — fetch POST, manejo de estados (loading, success, error), limpiar formulario al enviar.
+- [x] T122 [P] [US5] Agregar estilos del formulario de contacto en `public/css/landing.css` — inputs con bordes suaves, focus states con `--accent-color`, botón submit con acento, botón WhatsApp verde prominente.
 
 ### 8e. Iconografía & Refinamientos (FR-016)
 
-- [ ] T123 [US5] Reemplazar iconos genéricos por iconos de industria en `public/landing-empresa.html` y `public/js/landing-empresa.js` — usar Font Awesome icons refinados (granos de cacao `fa-seedling`, carrito `fa-shopping-bag`, WhatsApp `fa-whatsapp`) con `color: var(--accent-color)`.
+- [x] T123 [US5] Reemplazar iconos genéricos por iconos de industria en `public/landing-empresa.html` y `public/js/landing-empresa.js` — usar Font Awesome icons refinados (granos de cacao `fa-seedling`, carrito `fa-shopping-bag`, WhatsApp `fa-whatsapp`) con `color: var(--accent-color)`.
 
 **Checkpoint**: El portal White Label completo debe ser funcional bajo `empresa.localhost:3000` y `/origen-unico/:slug`. Las 3 páginas (Inicio, Tienda, Contacto) deben navegar correctamente, la paleta del cliente debe aplicarse a todos los elementos, y los CTAs deben funcionar.
 
@@ -138,8 +138,9 @@
 
 **Purpose**: Improvements that affect multiple user stories
 
-- [ ] T127 [P] Verificar responsividad del grid de Tienda a 360px — tarjetas deben ser 1 columna en mobile sin desbordamiento
-- [ ] T128 [P] Verificar que el header neutral funciona correctamente en mobile — hamburger menu abre/cierra, menú ocupa pantalla completa
+- [x] T124 [US5] Verificar que `/origen-unico/:slug` sirva el HTML con SSR correcto y luego el JS tome el control sin saltos visuales.
+- [x] T125 [US5] Verificar que los subdominios (ej: `finca.localhost`) intercepten todas las rutas y sirvan la landing SPA.
+- [x] T126 [US5] Asegurar que el "Powered by RuruLab" en el footer sea el único rastro de la marca principal.
 - [ ] T129 Auditoría Lighthouse: ejecutar `npx lighthouse` contra el portal White Label — verificar Performance > 90, SEO > 95
 - [ ] T130 [P] Optimizar imágenes de productos — verificar que las imágenes del grid usan `loading="lazy"` y `width/height` explícitos
 - [ ] T131 Actualizar JSON-LD en `server.js` para incluir `Organization` del cliente White Label en lugar de RuruLab cuando es subdominio

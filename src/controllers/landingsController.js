@@ -61,7 +61,8 @@ const getCompanyLandingData = async (req, res) => {
             instagram: userRow.cp_ig || userRow.u_ig || '',
             facebook: userRow.cp_fb || userRow.u_fb || '',
             website: userRow.website_url || '',
-            is_suggested: false
+            is_suggested: false,
+            white_label_config: safeJSONParse(userRow.white_label_config || 'null')
         };
 
         const actualCompanyId = userRow.cp_company_id || userRow.u_company_id;
@@ -177,7 +178,8 @@ const getCompanyLandingDataInternal = async (userId) => {
             email: userRow.contact_email || userRow.u_email || '',
             instagram: userRow.cp_ig || userRow.u_ig || '',
             facebook: userRow.cp_fb || userRow.u_fb || '',
-            is_suggested: false
+            is_suggested: false,
+            white_label_config: safeJSONParse(userRow.white_label_config || 'null')
         };
 
         const actualCompanyId = userRow.cp_company_id || userRow.u_company_id;

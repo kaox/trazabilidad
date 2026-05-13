@@ -18,7 +18,7 @@
         rel="stylesheet" crossorigin>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
 
-    <!-- AGREGADO: D3 y Sunburst para los gráficos sensoriales -->
+    <!-- D3 y Sunburst para los gráficos sensoriales -->
     <script src="https://d3js.org/d3.v7.min.js"></script>
     <script src="/js/d3-utils.js"></script>
     <script src="/js/d3-sunburst.js"></script>
@@ -30,75 +30,248 @@
         src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAM37iJTRcIoSAxESlDzB2DxlNJWKasW5U&libraries=geometry,drawing,places&v=weekly"
         defer></script>
     <script src="/js/analytics-loader.js" defer></script>
+
     <style>
+        /* === CSS Variables dinámicas (inyectadas por el servidor o defaults) === */
+        :root {
+            --accent-color: #78350f;
+            --accent-hover: #92400e;
+            --primary-color: #1c1917;
+            --bg-warm: #fdfaf6;
+        }
+
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #fdfaf6;
+            background-color: var(--bg-warm);
         }
 
         .font-display {
             font-family: 'Playfair Display', serif;
         }
 
+        /* === Header White Label === */
+        .wl-header {
+            background: rgba(255,255,255,0.92);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(0,0,0,0.06);
+            position: sticky;
+            top: var(--nav-offset, 0);
+            z-index: 40; /* Menos que el z-50 del nav de RuruLab */
+        }
+        .wl-nav-link {
+            position: relative;
+            color: #57534e;
+            font-weight: 600;
+            font-size: 0.875rem;
+            padding: 0.5rem 0;
+            transition: color 0.2s;
+        }
+        .wl-nav-link:hover,
+        .wl-nav-link.active {
+            color: var(--accent-color);
+        }
+        .wl-nav-link.active::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: var(--accent-color);
+            border-radius: 1px;
+        }
+
+        /* === Botones con acento dinámico === */
+        .btn-accent {
+            background-color: var(--accent-color);
+            color: white;
+            transition: all 0.2s;
+        }
+        .btn-accent:hover {
+            background-color: var(--accent-hover);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        .btn-accent-outline {
+            border: 2px solid var(--accent-color);
+            color: var(--accent-color);
+            background: transparent;
+            transition: all 0.2s;
+        }
+        .btn-accent-outline:hover {
+            background-color: var(--accent-color);
+            color: white;
+        }
+        .text-accent { color: var(--accent-color); }
+        .bg-accent { background-color: var(--accent-color); }
+        .border-accent { border-color: var(--accent-color); }
+
+        /* === Tienda: Grid de productos === */
+        .product-grid {
+            display: grid;
+            grid-template-columns: repeat(1, 1fr);
+            gap: 1.5rem;
+        }
+        @media (min-width: 640px) {
+            .product-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+        @media (min-width: 1024px) {
+            .product-grid { grid-template-columns: repeat(3, 1fr); }
+        }
+        @media (min-width: 1280px) {
+            .product-grid { grid-template-columns: repeat(4, 1fr); }
+        }
+
+        .product-card {
+            background: white;
+            border-radius: 1rem;
+            overflow: hidden;
+            border: 1px solid #e7e5e4;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+            transition: all 0.3s;
+            display: flex;
+            flex-direction: column;
+        }
+        .product-card:hover {
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            transform: translateY(-2px);
+        }
+
+        /* === Animaciones === */
         .fade-in {
             animation: fadeIn 0.5s ease-in-out;
         }
-
         @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(10px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
-        .hide-scrollbar::-webkit-scrollbar {
-            display: none;
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        .tab-content { display: none; opacity: 0; transition: opacity 0.3s ease-in; }
+        .tab-content.active { display: block; opacity: 1; }
+        .tab-btn.active { background-color: var(--accent-color); color: white; border-color: var(--accent-color); }
+
+        /* === Formulario de contacto === */
+        .contact-input {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 1px solid #d6d3d1;
+            border-radius: 0.75rem;
+            font-size: 0.875rem;
+            transition: all 0.2s;
+            background: white;
+        }
+        .contact-input:focus {
+            outline: none;
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 3px rgba(120, 53, 15, 0.1);
         }
 
-        .hide-scrollbar {
-            -ms-overflow-style: none;
-            scrollbar-width: none;
+        /* === Sección sobre nosotros === */
+        .about-section {
+            position: relative;
+        }
+        .about-section::before {
+            content: '"';
+            position: absolute;
+            top: -20px;
+            left: 10px;
+            font-size: 6rem;
+            color: var(--accent-color);
+            opacity: 0.08;
+            font-family: 'Playfair Display', serif;
+            line-height: 1;
         }
 
-        .tab-content {
-            display: none;
-            opacity: 0;
-            transition: opacity 0.3s ease-in;
+        /* === Certificaciones cards === */
+        .cert-card {
+            background: white;
+            border-radius: 1rem;
+            padding: 1.5rem;
+            border: 1px solid #e7e5e4;
+            text-align: center;
+            transition: all 0.3s;
+        }
+        .cert-card:hover {
+            box-shadow: 0 8px 25px rgba(0,0,0,0.08);
+            transform: translateY(-2px);
         }
 
-        .tab-content.active {
-            display: block;
-            opacity: 1;
+        /* Hamburger menu para mobile */
+        .mobile-menu {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
         }
-
-        .tab-btn.active {
-            background-color: #78350f;
-            color: white;
-            border-color: #78350f;
+        .mobile-menu.open {
+            max-height: 200px;
         }
     </style>
 </head>
 
 <body class="text-stone-800 antialiased min-h-screen flex flex-col">
 
+    <!-- Header original de RuruLab (para modo NO white label) -->
     <div id="public-nav-placeholder"></div>
 
-    <main class="flex-grow container mx-auto px-6 py-8">
+    <!-- HEADER WHITE LABEL (neutral, sin branding RuruLab) -->
+    <header id="wl-header" class="wl-header hidden">
+        <div class="container mx-auto px-6">
+            <div class="flex items-center justify-between h-16">
+                <!-- Logo del cliente -->
+                <a href="#inicio" class="flex items-center gap-3">
+                    <img id="wl-logo" src="" alt="Logo" class="h-10 w-10 rounded-lg object-contain bg-white border border-stone-100">
+                    <span id="wl-brand-name" class="font-display font-bold text-lg text-stone-900 hidden md:inline"></span>
+                </a>
 
-        <!-- Breadcrumbs -->
-        <div id="breadcrumbs" class="flex items-center gap-2 text-sm text-stone-500 mb-6">
+                <!-- Navegación desktop -->
+                <nav class="hidden md:flex items-center gap-8">
+                    <a href="#inicio" class="wl-nav-link active" data-page="inicio">
+                        <i class="fas fa-home mr-1 text-xs"></i> Inicio
+                    </a>
+                    <a href="#tienda" class="wl-nav-link" data-page="tienda">
+                        <i class="fas fa-shopping-bag mr-1 text-xs"></i> Tienda
+                    </a>
+                    <a href="#contacto" class="wl-nav-link" data-page="contacto">
+                        <i class="fas fa-envelope mr-1 text-xs"></i> Contáctanos
+                    </a>
+                </nav>
+
+                <!-- Hamburger mobile -->
+                <button id="mobile-menu-btn" class="md:hidden p-2 text-stone-600 hover:text-stone-900" onclick="app.toggleMobileMenu()">
+                    <i class="fas fa-bars text-xl"></i>
+                </button>
+            </div>
+
+            <!-- Menú mobile -->
+            <div id="mobile-menu" class="mobile-menu md:hidden border-t border-stone-100">
+                <div class="py-3 space-y-1">
+                    <a href="#inicio" class="block px-4 py-2 rounded-lg text-stone-600 hover:bg-stone-50 font-medium" onclick="app.closeMobileMenu()">
+                        <i class="fas fa-home mr-2 text-xs"></i> Inicio
+                    </a>
+                    <a href="#tienda" class="block px-4 py-2 rounded-lg text-stone-600 hover:bg-stone-50 font-medium" onclick="app.closeMobileMenu()">
+                        <i class="fas fa-shopping-bag mr-2 text-xs"></i> Tienda
+                    </a>
+                    <a href="#contacto" class="block px-4 py-2 rounded-lg text-stone-600 hover:bg-stone-50 font-medium" onclick="app.closeMobileMenu()">
+                        <i class="fas fa-envelope mr-2 text-xs"></i> Contáctanos
+                    </a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-grow">
+
+        <!-- Breadcrumbs (solo en modo directorio, oculto en White Label) -->
+        <div id="breadcrumbs" class="container mx-auto px-6 py-4 flex items-center gap-2 text-sm text-stone-500">
             <a href="/origen-unico" class="hover:text-amber-800 hover:underline font-medium">Empresas</a>
             <i class="fas fa-chevron-right text-xs text-stone-300"></i>
             <span id="breadcrumb-company" class="font-bold text-stone-800">Cargando...</span>
         </div>
 
-        <!-- Contenedor del Landing -->
-        <!-- ID específico para que el JS sepa que estamos en modo landing -->
+        <!-- Contenedor del Landing (todas las páginas se renderizan aquí) -->
         <div id="landing-view">
             <div id="app-container" class="min-h-[400px]">
                 <div class="flex justify-center py-20">
@@ -109,9 +282,11 @@
 
     </main>
 
-    <footer class="bg-stone-950 text-stone-500 py-12 border-t border-stone-800 mt-auto">
+    <!-- Footer (se actualiza dinámicamente) -->
+    <footer id="wl-footer" class="bg-stone-950 text-stone-500 py-12 border-t border-stone-800 mt-auto">
         <div class="container mx-auto px-6 text-center">
-            <p class="text-sm font-medium">&copy; 2025 Ruru Lab. Trazabilidad que genera confianza.</p>
+            <p class="text-sm font-medium">&copy; 2025 <span id="footer-brand">Ruru Lab</span>. Trazabilidad que genera confianza.</p>
+            <p class="text-xs text-stone-600 mt-2">Potenciado por <a href="https://rurulab.com" target="_blank" class="text-stone-400 hover:text-white transition">RuruLab</a></p>
         </div>
     </footer>
 

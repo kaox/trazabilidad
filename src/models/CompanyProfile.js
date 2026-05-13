@@ -60,6 +60,11 @@ const CompanyProfile = {
             // Convertimos el array de categorías a un String JSON para guardarlo
             const productCategoriesJson = data.product_categories ? JSON.stringify(data.product_categories) : '[]';
 
+            // Serializar white_label_config como JSON si viene como objeto
+            const whiteLabelConfig = data.white_label_config
+                ? (typeof data.white_label_config === 'string' ? data.white_label_config : JSON.stringify(data.white_label_config))
+                : null;
+
             const params = [
                 data.company_type || null,
                 data.company_id || null,
@@ -75,6 +80,7 @@ const CompanyProfile = {
                 isPublished, 
                 productCategoriesJson,
                 subdomain,
+                whiteLabelConfig,
                 userId 
             ];
 
@@ -96,6 +102,7 @@ const CompanyProfile = {
                         is_published = ?,
                         product_categories = ?,
                         subdomain = ?,
+                        white_label_config = ?,
                         updated_at = CURRENT_TIMESTAMP
                     WHERE user_id = ?
                 `;
@@ -109,8 +116,8 @@ const CompanyProfile = {
                         id, company_type, company_id, name, logo_url, cover_image_url, 
                         history_text, contact_email, contact_phone, 
                         social_instagram, social_facebook, website_url, is_published, 
-                        product_categories, subdomain, user_id
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        product_categories, subdomain, white_label_config, user_id
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 `;
                 const insertParams = [newId, ...params];
                 await run(sql, insertParams);
