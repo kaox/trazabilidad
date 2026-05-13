@@ -1,34 +1,34 @@
-# Implementation Plan: RuruLab Landing Page (Public Index)
+# Implementation Plan: White Label Landing Page
 
-**Branch**: `005-landing-page` | **Date**: 2026-04-28 | **Spec**: [spec.md](spec.md)
+**Branch**: `main` | **Date**: 2026-05-13 | **Spec**: [spec.md](spec.md)
 **Input**: Feature specification from `/specs/005-landing-page/spec.md`
 
 ## Summary
 
-Desarrollo de una Landing Page de alto impacto y conversión para RuruLab, centrada en el storytelling ("del árbol a la taza") y optimizada para SEO. La solución incluye un Stepper interactivo de la cadena de valor, integración de widgets embebibles (Iframe) para perfiles sensoriales, y soporte multilingüe (ES/EN). Técnicamente se basa en Node.js/Express con renderizado híbrido (estadísticas dinámicas + contenido estático optimizado) y visualizaciones avanzadas con D3.js.
+Evolución del portal de empresa existente (`landing-empresa.html`) hacia un sistema de **Marca Blanca multipágina** con navegación dedicada (Inicio, Tienda, Contáctanos), paleta de colores dinámica heredada del cliente, catálogo en cuadrícula, y CTAs comerciales (WhatsApp). Se reutiliza la infraestructura existente de detección de subdominio, SSR con `landingRenderer.js`, y el middleware de `server.js`. El cambio principal es la adición de `white_label_config` (JSONB) a `company_profiles`, la conversión a SPA con routing client-side, y la neutralización del header corporativo de RuruLab.
 
 ## Technical Context
 
-**Language/Version**: Node.js 18+ (CommonJS)  
-**Primary Dependencies**: Express, D3.js, Knex.js, Tailwind CSS 3+  
-**Storage**: SQLite (Local) / PostgreSQL (Production)  
-**Testing**: Jest (Unit & Integration)  
+**Language/Version**: Node.js 18+ (CommonJS)
+**Primary Dependencies**: Express, D3.js, Knex/Raw SQL, Tailwind CSS 3+
+**Storage**: SQLite (Local) / PostgreSQL (Production) / Vercel Blob (Images)
+**Testing**: Jest (Unit & Integration), Lighthouse (Performance)
 **Target Platform**: Vercel (Hybrid SSR/Static)
-**Project Type**: Web Application  
-**Performance Goals**: FCP < 1.2s, Lighthouse Performance > 90, Page Weight < 1MB  
-**Constraints**: < 3s load on 3G, responsive design down to 360px  
-**Scale/Scope**: Public landing, 9-module showcase, 5-stage stepper, external widgets
+**Project Type**: Web Application (Omnichannel Branding B2B2C)
+**Performance Goals**: FCP < 1.2s, Lighthouse Performance > 90, Page Weight < 1MB
+**Constraints**: < 3s load on 3G, responsive design down to 360px
+**Scale/Scope**: Public White Label portals, multi-page navigation, dynamic design system per client
 
 ## Constitution Check
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-- [x] **Traceability First**: Integra Pasaporte Digital QR y visualización de cadena de custodia.
-- [x] **Sensory Excellence**: Utiliza D3.js para Rueda de Sabores y Radar de Atributos en widgets.
-- [x] **Premium "Wow" Experience**: Implementa glassmorfismo, micro-animaciones y tipografía moderna (Inter/Outfit).
-- [x] **Resilient Hybrid Architecture**: Compatible con SQLite/PostgreSQL; usa JSON para configuración flexible.
-- [x] **Vercel Ecosystem Optimization**: Diseñado para despliegue en Vercel con optimización de assets.
-- [x] **Language Consistency**: Documentación y UI principal en Español, con soporte Multilingüe (EN).
+- [x] **Traceability First**: Integra Pasaporte Digital QR en el enlace "Ver Detalle" de cada producto → `/lote/:slug`.
+- [x] **Sensory Excellence**: Los perfiles sensoriales D3 (Sunburst y Radar) se mantienen intactos en la página de detalle del producto.
+- [x] **Premium "Wow" Experience**: Header neutral con logo del cliente, paleta dinámica con CSS Variables, catálogo en grid de 3-4 columnas, certificaciones destacadas.
+- [x] **Resilient Hybrid Architecture**: Nuevo campo JSONB `white_label_config` compatible SQLite/PostgreSQL. Sin cambios al motor de base de datos.
+- [x] **Vercel Ecosystem Optimization**: Sigue el despliegue actual en Vercel. Sin nueva infraestructura.
+- [x] **Language Consistency**: Documentación y UI en Español. Código en Inglés.
 
 ## Project Structure
 
@@ -37,71 +37,75 @@ Desarrollo de una Landing Page de alto impacto y conversión para RuruLab, centr
 ```text
 specs/005-landing-page/
 ├── plan.md              # This file
-├── research.md          # Research findings and decisions
-├── data-model.md        # Entity definitions and relationships
-├── quickstart.md        # Setup and development instructions
-├── checklists/          # Quality checklists
-│   └── requirements.md  # Spec validation results
+├── research.md          # Phase 0 output
+├── data-model.md        # Phase 1 output
+├── quickstart.md        # Phase 1 output
 └── spec.md              # Feature specification
 ```
 
 ### Source Code (repository root)
 
 ```text
-public/
-├── css/
-│   └── landing.css      # Specific styles (glassmorphism, animations)
-├── js/
-│   ├── landing-app.js   # Main logic (stepper, i18n, stats fetch)
-│   ├── d3-sunburst.js   # Reusable sunburst logic (shared)
-│   └── d3-utils.js      # Reusable radar logic (shared)
-├── widgets/
-│   ├── flavor-wheel.html # Sunburst chart widget
-│   └── radar.html        # Sensory profile (radar) widget
-└── locales/
-    ├── es.json          # Spanish marketing content
-    └── en.json          # English marketing content
+# Archivos EXISTENTES a MODIFICAR
+server.js                          # Agregar rutas /tienda y /contacto al handler de subdominio
+src/utils/landingRenderer.js       # Agregar renderizado de Tienda (grid) y Contacto
+src/controllers/landingsController.js  # Sin cambios necesarios (ya devuelve products, entity)
+src/models/CompanyProfile.js       # Agregar white_label_config al upsert
+src/models/empresaModel.js         # Exponer white_label_config en queries de landing
 
-views/
-└── landing.html         # Main landing template (Semantic HTML5)
+public/landing-empresa.html        # Agregar navegación multi-página y estructura de secciones
+public/js/landing-empresa.js       # SPA router client-side, renderizado de Tienda/Contacto
+public/css/landing.css             # CSS Variables dinámicas (--accent-color, --primary-color)
 
-routes/
-└── landing.js           # Routes for landing and widget stats
-
-server.js                # Express entry point (register new routes)
+# Archivos NUEVOS
+migrations/add_white_label_config.sql  # ALTER TABLE company_profiles ADD COLUMN white_label_config
 ```
 
-**Structure Decision**: Se opta por una estructura integrada (Single Project) siguiendo el patrón actual del repositorio, separando la lógica de widgets en un directorio dedicado dentro de `public/` para facilitar su servicio vía Iframe independiente.
+**Structure Decision**: Reutilización completa del stack existente. No se crean nuevos proyectos, controladores ni modelos. Se extiende `landing-empresa.html` como SPA con routing basado en hash o secciones dinámicas. El catálogo (Tienda) y Contacto se renderizan client-side con datos ya disponibles en `window.INITIAL_DATA`.
 
 ## Implementation Phases
 
-### Phase 1: Foundation & SEO
-- Configuración de `public/index.html` con SEO meta-tags y estructura semántica.
-- Implementación de `landing-app.js` para manejo de i18n y estadísticas dinámicas (`/api/landing/stats`).
+### Phase 1: White Label Config & DB Migration
+- Crear migración SQL para agregar columna `white_label_config` (JSONB/TEXT) a `company_profiles`.
+- Actualizar `CompanyProfile.upsert()` para persistir `white_label_config`.
+- Actualizar queries en `empresaModel.js` para exponer `white_label_config` en las respuestas del landing.
+- Actualizar `landingsController.getCompanyLandingDataInternal()` para incluir el campo en la respuesta.
 
-### Phase 2: Interactive Storytelling (US1 & US2)
-- Desarrollo del **Value Chain Stepper** interactivo (D3/CSS).
-- Creación de la sección de **Impact Modules** (9 módulos) y el **DNA Mockup** (Packaging interactivo).
+### Phase 2: Header Neutral & Navegación Multi-Página
+- Modificar `landing-empresa.html`: Reemplazar el header actual con uno neutral que muestre logo del cliente + menú (Inicio, Tienda, Contáctanos).
+- Implementar CSS Variables dinámicas en `landing.css` (`--accent-color`, `--primary-color`) inyectadas desde `white_label_config`.
+- Implementar SPA router en `landing-empresa.js` para alternar entre las 3 vistas sin recarga de página.
+- Actualizar el middleware de subdominio en `server.js` para servir rutas adicionales (`/tienda`, `/contacto`).
 
-### Phase 3: Widget Ecosystem (US3)
-- **Engine**: Refactorización de `public/widgets/flavor-wheel.html` para consumo externo.
-- **API**: Endpoint robusto `/api/public/widgets/flavor-wheel/:token`.
-- **Landing UI**: Sección "Herramientas para tu Marca" en la landing page con un visualizador de widgets y botón "Copiar Código" (Embed code generator).
+### Phase 3: Página de Inicio (FR-018)
+- Refactorizar la vista actual de `landing-empresa.html` para mostrar solo: Hero + Sobre Nosotros + Certificaciones/Premios + Mapa de Fincas + CTA a Tienda.
+- Mejorar la jerarquía tipográfica del Hero con el logo del cliente integrado limpiamente.
+- Dar visibilidad prominente a Certificaciones y Premios (tarjetas grandes en lugar de miniaturas).
 
-### Phase 4: Conversion & Polish (US4)
-- Optimización de CTAs y navegación multilingüe.
-- Auditoría Lighthouse para asegurar rendimiento > 90.
+### Phase 4: Página de Tienda (FR-013, FR-015)
+- Implementar vista de cuadrícula 3-4 columnas para el catálogo de productos.
+- Cada tarjeta: imagen, nombre, precio, peso, dos CTAs ("Ver Detalle" → `/lote/:slug`, "WhatsApp" → `wa.me/`).
+- Manejar estado vacío elegante ("Próximamente").
+- Aplicar color de acento del cliente a botones e iconos.
+
+### Phase 5: Página de Contáctanos (FR-017)
+- Formulario simple (nombre, email, mensaje) que envía al `contact_email` de `white_label_config`.
+- Botón prominente de WhatsApp (condicional: se oculta si `whatsapp_number` no está configurado).
+- Información de redes sociales si están disponibles.
+
+### Phase 6: Polish & Dual-Route Support
+- Asegurar que `/origen-unico/:slug` sirva el mismo contenido White Label que `empresa.rurulab.com`.
+- Optimización de iconografía (granos de cacao, carrito) con color de acento.
+- Auditoría Lighthouse y optimización de rendimiento.
+- Pruebas de responsividad en móvil (360px).
 
 ## Dependencies & Execution Order
-1. **Foundational (Phase 1)**: Bloquea el resto.
-2. **Storytelling (Phase 2)**: Puede desarrollarse en paralelo con US3.
-3. **Widgets (Phase 3)**: Requiere US1/US2 si se desea mostrar ejemplos reales.
+
+1. **Phase 1 (DB/Config)**: Bloquea el resto — sin `white_label_config` no hay paleta dinámica.
+2. **Phase 2 (Header/Navigation)**: Bloquea Phase 3-5 — la estructura de páginas debe existir antes de llenarlas.
+3. **Phases 3, 4, 5**: Pueden ejecutarse en paralelo una vez que la navegación esté lista.
+4. **Phase 6 (Polish)**: Depende de todas las fases anteriores.
 
 ## Complexity Tracking
 
-> **Fill ONLY if Constitution Check has violations that must be justified**
-
-| Violation | Why Needed | Simpler Alternative Rejected Because |
-|-----------|------------|-------------------------------------|
-| [e.g., 4th project] | [current need] | [why 3 projects insufficient] |
-| [e.g., Repository pattern] | [specific problem] | [why direct DB access insufficient] |
+> No hay violaciones constitucionales que justificar. Todos los gates pasan.
