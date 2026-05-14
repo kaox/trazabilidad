@@ -531,8 +531,9 @@ const app = {
         return products.map(prod => {
             const prodImage = (prod.imagenes && prod.imagenes.length > 0) ? prod.imagenes[0] : 'https://placehold.co/400x300/f5f5f4/a8a29e?text=Producto';
             const hasTraceability = prod.recent_batches && prod.recent_batches.length > 0;
-            const buyLink = phone ? `https://wa.me/${phone.replace(/\D/g, '')}?text=Hola, me interesa: ${encodeURIComponent(prod.nombre)}` : '#';
             const detailLink = `/lote/${this.createSlug(prod.nombre)}-${prod.id}`;
+            const fullDetailLink = window.location.origin + detailLink;
+            const buyLink = phone ? `https://wa.me/${phone.replace(/\D/g, '')}?text=${encodeURIComponent(`Hola, me interesa este producto: ${prod.nombre}. Link: ${fullDetailLink}`)}` : '#';
 
             const tipo = (prod.tipo_producto || '').toLowerCase();
             const typeIcon = tipo === 'cafe' ? 'fa-mug-hot' : (tipo === 'cacao' ? 'fa-cookie-bite' : 'fa-jar');

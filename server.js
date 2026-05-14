@@ -588,9 +588,10 @@ app.get('/origen-unico/:slug', async (req, res) => {
                 let landingData = null;
                 try {
                     const pageUrl = `${protocol}://${host}${req.originalUrl}`;
+                    const hostUrl = `${protocol}://${host}`;
                     landingData = await landingsController.getCompanyLandingDataInternal(company.id);
                     if (landingData) {
-                        renderedContent = renderLanding(landingData);
+                        renderedContent = renderLanding(landingData, hostUrl);
                         jsonLdTag = buildJsonLd({ ...landingData, pageUrl });
                     }
                 } catch (e) { console.error('JSON-LD slug error:', e); }

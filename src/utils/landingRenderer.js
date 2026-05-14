@@ -15,7 +15,7 @@ const extractYoutubeId = (url) => {
     return (match && match[2].length === 11) ? match[2] : null;
 };
 
-const renderProductCards = (products, phone, userId) => {
+const renderProductCards = (products, phone, userId, hostUrl = '') => {
     if (!products || products.length === 0) {
         return `<div class="col-span-full text-center py-12 bg-stone-50 rounded-2xl border border-dashed border-stone-200"><p class="text-stone-500 italic">No hay productos disponibles.</p></div>`;
     }
@@ -25,8 +25,9 @@ const renderProductCards = (products, phone, userId) => {
     return products.map(prod => {
         const prodImage = (prod.imagenes && prod.imagenes.length > 0) ? prod.imagenes[0] : 'https://placehold.co/400x300/f5f5f4/a8a29e?text=Producto';
         const hasTraceability = prod.recent_batches && prod.recent_batches.length > 0;
-        const buyLink = phone ? `https://wa.me/${phone.replace(/\D/g, '')}?text=Hola, me interesa: ${encodeURIComponent(prod.nombre)}` : '#';
         const detailLink = `/lote/${createSlug(prod.nombre)}-${prod.id}`;
+        const fullDetailLink = hostUrl + detailLink;
+        const buyLink = phone ? `https://wa.me/${phone.replace(/\D/g, '')}?text=${encodeURIComponent(`Hola, me interesa este producto: ${prod.nombre}. Link: ${fullDetailLink}`)}` : '#';
 
         const tipo = (prod.tipo_producto || '').toLowerCase();
         const typeIcon = tipo === 'cafe' ? 'fa-mug-hot' : (tipo === 'cacao' ? 'fa-cookie-bite' : 'fa-jar');
@@ -122,7 +123,7 @@ const renderProductCards = (products, phone, userId) => {
     }).join('');
 };
 
-const renderLanding = (data) => {
+const renderLanding = (data, hostUrl = '') => {
     const { user, entity, products } = data;
     const isSuggested = user.is_suggested;
     const isFinca = user.type === 'finca';
@@ -296,7 +297,7 @@ const renderLanding = (data) => {
                         <a href="#tienda" class="text-accent font-bold hover:underline">Ver todo el catálogo <i class="fas fa-arrow-right ml-1"></i></a>
                     </div>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        ${renderProductCards(products.slice(0, 4), user.phone || user.contact_phone, user.id)}
+                        ${renderProductCards(products.slice(0, 4), cleanPhone, user.id, hostUrl)}
                     </div>
                 </div>
             </div>
