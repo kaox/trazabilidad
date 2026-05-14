@@ -9,14 +9,14 @@ const app = {
         selectedCompany: null
     },
 
-    container: document.getElementById('app-container'),
-    breadcrumbs: document.getElementById('breadcrumbs'),
-    wlHeader: document.getElementById('wl-header'),
-    wlLogo: document.getElementById('wl-logo'),
-    wlBrandName: document.getElementById('wl-brand-name'),
-    footerBrand: document.getElementById('footer-brand'),
-
     init: async function () {
+        // Inicializar referencias DOM
+        this.container = document.getElementById('app-container');
+        this.breadcrumbs = document.getElementById('breadcrumbs');
+        this.wlHeader = document.getElementById('wl-header');
+        this.wlLogo = document.getElementById('wl-logo');
+        this.wlBrandName = document.getElementById('wl-brand-name');
+        this.footerBrand = document.getElementById('footer-brand');
 
         try {
             const res = await fetch('/data/flavor-wheels.json');
@@ -78,13 +78,13 @@ const app = {
     },
 
     toggleMobileMenu: function () {
-        const menu = document.getElementById('mobile-menu');
-        menu.classList.toggle('open');
+        const menu = document.getElementById('wl-mobile-menu');
+        if (menu) menu.classList.toggle('open');
     },
 
     closeMobileMenu: function () {
-        const menu = document.getElementById('mobile-menu');
-        menu.classList.remove('open');
+        const menu = document.getElementById('wl-mobile-menu');
+        if (menu) menu.classList.remove('open');
     },
 
     // --- UTILS ---
@@ -1025,7 +1025,8 @@ const app = {
     }
 };
 
+window.app = app;
+
 document.addEventListener('DOMContentLoaded', () => {
     app.init();
-    window.app = app;
 });
