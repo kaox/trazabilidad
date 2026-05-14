@@ -534,21 +534,93 @@ const app = {
             const buyLink = phone ? `https://wa.me/${phone.replace(/\D/g, '')}?text=Hola, me interesa: ${encodeURIComponent(prod.nombre)}` : '#';
             const detailLink = `/lote/${this.createSlug(prod.nombre)}-${prod.id}`;
 
+            const tipo = (prod.tipo_producto || '').toLowerCase();
+            const typeIcon = tipo === 'cafe' ? 'fa-mug-hot' : (tipo === 'cacao' ? 'fa-cookie-bite' : 'fa-jar');
+            const typeLabel = this.toTitleCase(prod.tipo_producto || 'Producto');
+            const score = prod.puntaje_sca || null;
+
+            const perf = prod.perfil_data || {};
+            const weight = `${prod.peso || ''} ${prod.unidad || 'G'}`;
+
+            // Atributos específicos según tipo
+            let attrHtml = '';
+            if (tipo === 'cafe') {
+                attrHtml = `
+                    <div class="flex flex-wrap gap-x-4 gap-y-2 mt-4 text-[11px] font-bold text-stone-500 uppercase tracking-wider">
+                        ${perf.variedad ? `<span class="flex items-center gap-1.5"><i class="fas fa-seedling text-stone-400"></i> ${perf.variedad}</span>` : ''}
+                        ${perf.proceso ? `<span class="flex items-center gap-1.5"><i class="fas fa-sync text-stone-400"></i> ${perf.proceso}</span>` : ''}
+                        ${perf.tueste ? `<span class="flex items-center gap-1.5"><i class="fas fa-fire text-stone-400"></i> ${perf.tueste}</span>` : ''}
+                    </div>
+                `;
+            } else if (tipo === 'cacao') {
+                attrHtml = `
+                    <div class="flex flex-wrap gap-x-4 gap-y-2 mt-4 text-[11px] font-bold text-stone-500 uppercase tracking-wider">
+                        ${perf.genetica ? `<span class="flex items-center gap-1.5"><i class="fas fa-dna text-stone-400"></i> ${perf.genetica}</span>` : ''}
+                        ${perf.porcentaje_cacao ? `<span class="flex items-center gap-1.5"><i class="fas fa-percent text-stone-400"></i> ${perf.porcentaje_cacao}% CACAO</span>` : ''}
+                    </div>
+                `;
+            }
+
+            // Información de Origen (Finca)
+            const fincaName = prod.nombre_finca || 'Origen Verificado';
+            const fincaLoc = [prod.finca_distrito, prod.finca_provincia, prod.finca_departamento].filter(Boolean).map(p => this.toTitleCase(p)).join(', ');
+            const fincaAltura = prod.finca_altura ? `${prod.finca_altura} msnm` : '';
+
             return `
             <div class="product-card fade-in">
-                <div class="h-56 relative overflow-hidden group">
+                <div class="h-64 relative overflow-hidden group">
                     <img src="${prodImage}" class="w-full h-full object-cover transition duration-500 group-hover:scale-110">
-                    <div class="absolute top-3 right-3">
-                        ${hasTraceability ? '<span class="bg-emerald-500 text-white text-[9px] font-black px-2 py-1 rounded shadow-lg flex items-center gap-1"><i class="fas fa-check-circle"></i> TRAZABLE</span>' : ''}
+                    
+                    <!-- Badges superiores -->
+                    <div class="absolute top-4 left-4">
+                        <span class="bg-white/95 backdrop-blur shadow-sm text-stone-800 text-[11px] font-bold px-3 py-1.5 rounded-full flex items-center gap-2">
+                            <i class="fas ${typeIcon} text-amber-800"></i> ${typeLabel}
+                        </span>
                     </div>
+                    ${score ? `
+                    <div class="absolute top-4 right-4">
+                        <span class="bg-amber-500 text-white text-[11px] font-black px-3 py-1.5 rounded-full flex items-center gap-1.5 shadow-lg">
+                            <i class="fas fa-star text-[9px]"></i> ${score} PTS
+                        </span>
+                    </div>` : ''}
+                    
+                    <!-- Traceability Badge (Overlay inferior) -->
+                    ${hasTraceability ? `
+                    <div class="absolute bottom-4 left-4">
+                        <span class="bg-emerald-500/90 backdrop-blur text-white text-[9px] font-black px-2 py-1 rounded shadow-lg flex items-center gap-1">
+                            <i class="fas fa-check-circle"></i> TRAZABLE
+                        </span>
+                    </div>` : ''}
                 </div>
+
                 <div class="p-6 flex-grow flex flex-col">
                     <div class="mb-4">
-                        <h4 class="text-lg font-bold text-stone-900 leading-tight mb-1 line-clamp-1">${prod.nombre}</h4>
-                        <p class="text-accent font-black text-xl">${prod.moneda || 'S/'} ${prod.precio || '0.00'}</p>
+                        <h4 class="text-2xl font-display font-bold text-stone-900 leading-tight mb-1">${prod.nombre}</h4>
+                        <div class="flex items-baseline gap-2">
+                            <p class="text-stone-900 font-black text-2xl">${prod.moneda || 'S/'} ${prod.precio || '0.00'}</p>
+                            <span class="text-stone-400 font-bold text-sm uppercase">${weight}</span>
+                        </div>
+                        ${attrHtml}
                     </div>
-                    <div class="mt-auto space-y-3">
-                        <a href="${buyLink}" target="_blank" class="block w-full text-center btn-accent py-2.5 rounded-xl font-bold text-sm shadow-sm flex items-center justify-center gap-2"><i class="fab fa-whatsapp"></i> Comprar</a>
+
+                    <!-- Finca Card -->
+                    <div class="bg-stone-50 rounded-2xl p-4 border border-stone-100 mb-6">
+                        <div class="flex items-start gap-3">
+                            <div class="w-8 h-8 rounded-lg bg-white border border-stone-200 flex items-center justify-center flex-shrink-0 text-stone-400">
+                                <i class="fas fa-map-marker-alt text-red-500/70 text-xs"></i>
+                            </div>
+                            <div>
+                                <h5 class="font-bold text-stone-800 text-sm leading-tight">${fincaName}</h5>
+                                <p class="text-[10px] text-stone-500 mt-0.5 line-clamp-1">${fincaLoc || 'Perú'}</p>
+                                ${fincaAltura ? `<p class="text-[10px] font-bold text-amber-900 mt-1 flex items-center gap-1"><i class="fas fa-mountain text-[8px]"></i> ${fincaAltura}</p>` : ''}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-auto flex flex-col gap-3">
+                        <a href="${buyLink}" target="_blank" class="btn-accent py-3 rounded-2xl font-bold text-sm shadow-sm flex items-center justify-center gap-2">
+                            <i class="fab fa-whatsapp"></i> Comprar ahora
+                        </a>
                         <a href="${detailLink}" class="block w-full text-center bg-stone-100 hover:bg-stone-200 text-stone-700 py-2.5 rounded-xl font-bold text-sm transition">Ver detalles</a>
                     </div>
                 </div>

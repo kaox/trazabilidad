@@ -223,13 +223,16 @@ const getPublicProductsWithProfilesByUserId = async (userId) => {
             p.id, p.nombre, p.descripcion, p.imagenes_json, p.tipo_producto, p.premios_json, 
             p.peso, u.code as unidad, 
             p.precio, cur.symbol as moneda,
-            perf.perfil_data, 
-            rueda.notas_json, rueda.nombre_rueda
+            perf.perfil_data, perf.puntaje_sca,
+            rueda.notas_json, rueda.nombre_rueda,
+            f.nombre_finca, f.pais as finca_pais, f.departamento as finca_departamento, 
+            f.provincia as finca_provincia, f.distrito as finca_distrito, f.altura as finca_altura
         FROM productos p
         LEFT JOIN currencies cur ON p.currency_id = cur.id
         LEFT JOIN units_of_measure u ON p.unit_id = u.id
         LEFT JOIN perfiles perf ON p.perfil_sensorial_id = perf.id
         LEFT JOIN ruedas_sabores rueda ON p.rueda_id = rueda.id
+        LEFT JOIN fincas f ON p.finca_id = f.id
         WHERE p.user_id = ? 
           AND p.deleted_at IS NULL
           AND (p.is_published IS TRUE OR p.is_published IS NULL)
