@@ -61,7 +61,7 @@ const app = {
     handleRouting: function () {
         const hash = window.location.hash || '#inicio';
         const page = hash.substring(1);
-        
+
         // Actualizar links activos en el header
         document.querySelectorAll('.wl-nav-link').forEach(link => {
             if (link.getAttribute('data-page') === page) {
@@ -173,7 +173,7 @@ const app = {
             const entityName = isFinca ? (entity.nombre_finca || user.name) : (entity.nombre_comercial || user.name);
             const locationStr = [entity.distrito, entity.provincia, entity.departamento, entity.pais].filter(Boolean).map(p => this.toTitleCase(p)).join(', ') || 'Ubicación no registrada';
             let coverImage = user.cover || (entity.imagenes && entity.imagenes.length > 0 ? entity.imagenes[0] : 'https://images.unsplash.com/photo-1511537632536-b7a4896848a5?auto=format&fit=crop&q=80&w=1000');
-            
+
             this.injectJsonLd({ user, entity, products, isFinca, entityName, locationStr, coverImage });
 
         } catch (e) { console.error(e); }
@@ -271,8 +271,7 @@ const app = {
                     </div>`;
                 }).join('') + `</div>`;
         }
-
-        const cleanPhone = user.phone ? user.phone.replace(/\D/g, '') : (user.contact_phone ? user.contact_phone.replace(/\D/g, '') : '');
+        const cleanPhone = user.celular ? user.celular.replace(/\D/g, '') : (user.contact_phone ? user.contact_phone.replace(/\D/g, '') : '');
         const waBase = cleanPhone ? `https://wa.me/${cleanPhone}` : '#';
 
         let socialHtml = '';
@@ -301,9 +300,9 @@ const app = {
         // Ubicación y Botón de Mapa
         let mapQuery = entity.direccion ? encodeURIComponent(entity.direccion + ', ' + locationStr) : '';
         if (entity.coordenadas) {
-             const lat = Array.isArray(entity.coordenadas) ? entity.coordenadas[0] : (entity.coordenadas.lat || null);
-             const lng = Array.isArray(entity.coordenadas) ? entity.coordenadas[1] : (entity.coordenadas.lng || null);
-             if (lat && lng) mapQuery = `${lat},${lng}`;
+            const lat = Array.isArray(entity.coordenadas) ? entity.coordenadas[0] : (entity.coordenadas.lat || null);
+            const lng = Array.isArray(entity.coordenadas) ? entity.coordenadas[1] : (entity.coordenadas.lng || null);
+            if (lat && lng) mapQuery = `${lat},${lng}`;
         }
 
         const fullAddressHtml = `
@@ -399,7 +398,7 @@ const app = {
                             <a href="#tienda" class="text-accent font-bold hover:underline">Ver todo el catálogo <i class="fas fa-arrow-right ml-1"></i></a>
                         </div>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            ${this.renderProductCards(products.slice(0, 4), user.phone || user.contact_phone, user.id)}
+                            ${this.renderProductCards(products.slice(0, 4), user.celular || user.contact_phone, user.id)}
                         </div>
                     </div>
                 </div>
@@ -421,7 +420,7 @@ const app = {
                 </div>
                 
                 <div class="product-grid">
-                    ${this.renderProductCards(products, user.phone || user.contact_phone, user.id)}
+                    ${this.renderProductCards(products, user.celular || user.contact_phone, user.id)}
                 </div>
             </div>
         `;
@@ -431,7 +430,7 @@ const app = {
 
     renderContacto: function () {
         const { user, entity } = this.state.landingData;
-        const cleanPhone = user.phone ? user.phone.replace(/\D/g, '') : (user.contact_phone ? user.contact_phone.replace(/\D/g, '') : '');
+        const cleanPhone = user.celular ? user.celular.replace(/\D/g, '') : (user.contact_phone ? user.contact_phone.replace(/\D/g, '') : '');
         const waBase = cleanPhone ? `https://wa.me/${cleanPhone}` : '#';
 
         const html = `
@@ -453,7 +452,7 @@ const app = {
                                 <div class="w-12 h-12 rounded-2xl bg-green-50 text-green-600 flex items-center justify-center flex-shrink-0"><i class="fab fa-whatsapp text-2xl"></i></div>
                                 <div>
                                     <h4 class="font-bold text-stone-900">WhatsApp</h4>
-                                    <p class="text-stone-600">${user.phone || user.contact_phone || 'N/A'}</p>
+                                    <p class="text-stone-600">${user.celular || user.contact_phone || 'N/A'}</p>
                                     <a href="${waBase}" target="_blank" class="text-green-600 font-bold hover:underline text-sm">Enviar mensaje directo</a>
                                 </div>
                             </div>
