@@ -45,7 +45,11 @@ const getById = async (id) => {
 };
 
 const getSuggestedById = async (id) => {
-    return await db.get('SELECT * FROM suggested_companies WHERE id = ?', [id]);
+    return await db.get(`
+        SELECT id, name, type, pais, departamento, provincia, distrito, 
+               altura, superficie, coordenadas, social_instagram, social_facebook, logo
+        FROM suggested_companies WHERE id = ?
+    `, [id]);
 };
 
 const getVerifiedProfileByUserId = async (userId) => {
@@ -67,12 +71,22 @@ const getVerifiedProfileByUserId = async (userId) => {
 
 // 5. (NUEVO) Obtener los datos físicos de una Finca
 const getFincaById = async (id) => {
-    return await db.get('SELECT * FROM fincas WHERE id = ?', [id]);
+    return await db.get(`
+        SELECT id, nombre_finca, pais, departamento, provincia, distrito, 
+               altura, superficie, coordenadas, imagenes_json, certificaciones_json, 
+               premios_json, historia, video_link
+        FROM fincas WHERE id = ?
+    `, [id]);
 };
 
 // 6. (NUEVO) Obtener los datos físicos de una Procesadora
 const getProcesadoraById = async (id) => {
-    return await db.get('SELECT * FROM procesadoras WHERE id = ?', [id]);
+    return await db.get(`
+        SELECT id, nombre_comercial, pais, departamento, provincia, distrito, 
+               coordenadas, imagenes_json, certificaciones_json, premios_json, 
+               historia, direccion, video_link
+        FROM procesadoras WHERE id = ?
+    `, [id]);
 };
 
 // 7. (NUEVO) Obtener lista básica de todas las empresas (Verificadas + Sugeridas) para uso interno
@@ -121,7 +135,7 @@ const getPublicCompaniesDataInternal = async () => {
 // 8. (NUEVO) Búsqueda optimizada por subdominio o slug
 const findCompanyBySubdomainOrSlug = async (subdomain) => {
     // 1. Intento de búsqueda directa por la columna subdomain (Muy rápido)
-        const sqlDirect = `
+    const sqlDirect = `
         SELECT cp.user_id AS id, cp.name AS empresa, cp.logo_url AS company_logo, cp.subdomain, cp.white_label_config
         FROM company_profiles cp 
         WHERE LOWER(cp.subdomain) = ? AND cp.is_published IS TRUE
