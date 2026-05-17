@@ -12,7 +12,7 @@ const getById = async (id, empresaId) => {
 };
 
 const getByToken = async (token) => {
-    const sql = `SELECT * FROM ruedas_sabores WHERE public_token = ?`;
+    const sql = `SELECT nombre_rueda, tipo, notas_json FROM ruedas_sabores WHERE public_token = ?`;
     return await db.get(sql, [token]);
 };
 

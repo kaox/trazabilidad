@@ -11,7 +11,7 @@ const getById = async (id, empresa_id) => {
 };
 
 const getByPublicToken = async (public_token) => {
-    return await db.get('SELECT * FROM perfiles WHERE public_token = ?', [public_token]);
+    return await db.get('SELECT empresa_id, nombre_perfil, tipo, perfil_data FROM perfiles WHERE public_token = ?', [public_token]);
 };
 
 const create = async (perfilData) => {
