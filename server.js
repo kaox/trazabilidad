@@ -55,7 +55,7 @@ app.use(async (req, res, next) => {
     // --- ES UN SUBDOMINIO DE CLIENTE ---
     // Interceptar todos los paths que no sean API, assets estáticos o archivos con extensión
     const isAsset = req.path.includes('.') || req.path.startsWith('/api/') || req.path.startsWith('/js/') || req.path.startsWith('/css/') || req.path.startsWith('/images/');
-    
+
     if (isAsset) {
         return next();
     }
@@ -139,7 +139,7 @@ app.use(async (req, res, next) => {
 
             // Reemplazar en el HTML
             let injectedHtml = htmlData
-                .replace('<head>', `<head>${injectionScript}${dynamicStyles}${jsonLdTag}${dataScript}`) 
+                .replace('<head>', `<head>${injectionScript}${dynamicStyles}${jsonLdTag}${dataScript}`)
                 .replace('<title>Empresas con Origen Único - Ruru Lab</title>', `<title>${title}</title>`)
                 .replace(/content="Descubre el origen y trazabilidad."/g, `content="${description}"`)
                 .replace(/content="RuruLab - Trazabilidad y Pasaporte Digital para Cacao y Café"/g, `content="${title}"`);

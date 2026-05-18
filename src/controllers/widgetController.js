@@ -21,9 +21,9 @@ const serveWidget = async (req, res) => {
         } else {
             console.log(`⚡ Cache HIT para ${cacheKey}`);
         }
-        
+
         let html = fs.readFileSync(path.join(__dirname, '../../views/widget-radar.html'), 'utf8');
-        
+
         if (!perfil) {
             html = html.replace('{{{PERFIL_DATA_JSON}}}', JSON.stringify({ error: 'Perfil no encontrado' }));
             return res.send(html);
@@ -31,7 +31,7 @@ const serveWidget = async (req, res) => {
 
         // Validate subscription
         const empresa = await EmpresaModel.getById(perfil.empresa_id);
-        const isActive = empresa && (!empresa.trial_ends_at || new Date(empresa.trial_ends_at) > new Date()); 
+        const isActive = empresa && (!empresa.trial_ends_at || new Date(empresa.trial_ends_at) > new Date());
 
         if (!isActive) {
             html = html.replace('{{{PERFIL_DATA_JSON}}}', JSON.stringify({ error: 'Suscripción inactiva' }));
@@ -58,7 +58,7 @@ const serveWidget = async (req, res) => {
 const serveRuedaWidget = async (req, res) => {
     try {
         const { public_token } = req.params;
-        
+
         const cacheKey = `widget:rueda:${public_token}`;
         let rueda = await getCache(cacheKey);
 
@@ -68,9 +68,9 @@ const serveRuedaWidget = async (req, res) => {
         } else {
             console.log(`⚡ Cache HIT para ${cacheKey}`);
         }
-        
+
         let html = fs.readFileSync(path.join(__dirname, '../../views/widget-rueda.html'), 'utf8');
-        
+
         if (!rueda) {
             html = html.replace('{{{RUEDA_DATA_JSON}}}', JSON.stringify({ error: 'Rueda no encontrada' }));
             return res.send(html);

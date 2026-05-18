@@ -194,18 +194,16 @@ const SunburstChart = {
 
                 const comparisonText = parts.reduce((a, b) => a.length > b.length ? a : b, "");
 
-                let size = Math.round(arcLength / (comparisonText.length * 0.55));
-                const maxSize = d.depth === 1 ? 22 : (d.depth === 2 ? 16 : 13);
-                const minSize = isMobile ? 8 : 7;
+                // Ajustamos el factor para que intente ocupar el 90% del ancho del arco (contenedor)
+                let size = (arcLength * 0.90) / (comparisonText.length * 0.5);
+
+                // Aumentamos los tamaños máximos y mínimos, dándole más libertad en móvil
+                const maxSize = d.depth === 1 ? (isMobile ? 28 : 22) : (d.depth === 2 ? (isMobile ? 26 : 16) : (isMobile ? 24 : 13));
+                const minSize = isMobile ? 10 : 8;
 
                 size = Math.min(maxSize, Math.max(minSize, size));
 
-                const estimatedWidth = comparisonText.length * (size * 0.5);
-                if (estimatedWidth > arcLength * 0.95) {
-                    size = (arcLength * 0.95) / (comparisonText.length * 0.5);
-                }
-
-                return `${Math.max(7, size)}px`;
+                return `${size}px`;
             })
             .attr("font-weight", d => d.depth === 1 ? "900" : "700")
             .style("fill", "#fff")
@@ -241,11 +239,11 @@ const SunburstChart = {
                         .attr("startOffset", "50%")
                         .attr("xlink:href", pathId);
 
-                    // Cálculo de dy para centrar múltiples líneas verticalmente
-                    let dyBase = isFlipped ? 0.75 : 0.25;
+                    // Cálculo de dy para centrar verticalmente sobre el path (radius central)
+                    let dyBase = 0.35; // 0.35em centra perfectamente el medio del texto sobre la línea
                     if (parts.length > 1) {
                         const offset = (lineIdx - (parts.length - 1) / 2) * 1.1;
-                        dyBase += isFlipped ? -offset : offset;
+                        dyBase += offset;
                     }
 
                     tp.append("tspan")
