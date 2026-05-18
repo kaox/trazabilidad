@@ -1,5 +1,6 @@
 const ProductoModel = require('../models/productoModel');
 const crypto = require('crypto');
+const { getCache, setCache } = require('../utils/cache');
 // Importar nuestra librería de Storage agnóstica
 const { processImagesArray, deleteImagesArray } = require('../utils/storage');
 // Ajusta la ruta a donde tengas tus helpers
@@ -246,8 +247,18 @@ const getMarketplaceProducts = async (req, res) => {
         const { tipo, categorias, sabores, premios: premiosFiltro, limit = 20, offset = 0 } = req.query;
         const perfilMin = req.query.perfil_min || {};
 
-        // 1. Delegamos al Modelo la tarea de traer los datos (Data Access)
-        const rows = await ProductoModel.getMarketplaceBaseProducts(tipo);
+        // 1. Delegamos al Modelo la tarea de traer los datos (con Caché de Upstash)
+        const cacheKey = `marketplace_base:${tipo || 'all'}`;
+        let rows = await getCache(cacheKey);
+
+        if (!rows) {
+            rows = await ProductoModel.getMarketplaceBaseProducts(tipo);
+            if (rows && rows.length > 0) {
+                await setCache(cacheKey, rows, 600); // 10 minutos
+            }
+        } else {
+            console.log(`⚡ Cache HIT para marketplace_base:${tipo || 'all'}`);
+        }
 
         // 2. Lógica de negocio: Formateo y Normalización
         let products = rows.map(row => {

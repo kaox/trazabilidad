@@ -4,6 +4,7 @@ const RegistroModel = require('../models/registroModel');
 const FincaModel = require('../models/fincaModel');
 const ProcesadoraModel = require('../models/procesadoraModel');
 const { safeJSONParse } = require('../utils/helpers');
+const { getCache, setCache } = require('../utils/cache');
 
 const getCompanyLandingData = async (req, res) => {
     const { userId } = req.params;
@@ -138,7 +139,7 @@ const getCompanyLandingData = async (req, res) => {
     }
 };
 
-const getCompanyLandingDataInternal = async (userId) => {
+const _fetchCompanyLandingDataFromDB = async (userId) => {
     try {
         const isSuggested = String(userId).startsWith('SUG-');
 
@@ -244,6 +245,22 @@ const getCompanyLandingDataInternal = async (userId) => {
         console.error('Error getCompanyLandingDataInternal:', e);
         return null;
     }
+};
+
+const getCompanyLandingDataInternal = async (userId) => {
+    const cacheKey = `landingData:${userId}`;
+    let data = await getCache(cacheKey);
+
+    if (!data) {
+        data = await _fetchCompanyLandingDataFromDB(userId);
+        if (data) {
+            await setCache(cacheKey, data, 300); // Cache por 5 minutos
+        }
+    } else {
+        console.log(`⚡ Cache HIT para landingData: ${userId}`);
+    }
+
+    return data;
 };
 
 const getPublicCompaniesInternal = async () => {

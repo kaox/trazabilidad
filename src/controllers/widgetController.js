@@ -5,12 +5,22 @@ const PerfilModel = require('../models/perfilModel');
 const RuedaModel = require('../models/ruedaModel');
 const EmpresaModel = require('../models/empresaModel');
 const { safeJSONParse } = require('../utils/helpers');
+const { getCache, setCache } = require('../utils/cache');
 
 const serveWidget = async (req, res) => {
     try {
         const { public_token } = req.params;
         const { getSensoryProfilesConfig } = require('../utils/helpers');
-        const perfil = await PerfilModel.getByPublicToken(public_token);
+
+        const cacheKey = `widget:perfil:${public_token}`;
+        let perfil = await getCache(cacheKey);
+
+        if (!perfil) {
+            perfil = await PerfilModel.getByPublicToken(public_token);
+            if (perfil) await setCache(cacheKey, perfil, 3600); // 1 hora
+        } else {
+            console.log(`⚡ Cache HIT para ${cacheKey}`);
+        }
         
         let html = fs.readFileSync(path.join(__dirname, '../../views/widget-radar.html'), 'utf8');
         
@@ -48,7 +58,16 @@ const serveWidget = async (req, res) => {
 const serveRuedaWidget = async (req, res) => {
     try {
         const { public_token } = req.params;
-        const rueda = await RuedaModel.getByToken(public_token);
+        
+        const cacheKey = `widget:rueda:${public_token}`;
+        let rueda = await getCache(cacheKey);
+
+        if (!rueda) {
+            rueda = await RuedaModel.getByToken(public_token);
+            if (rueda) await setCache(cacheKey, rueda, 3600); // 1 hora
+        } else {
+            console.log(`⚡ Cache HIT para ${cacheKey}`);
+        }
         
         let html = fs.readFileSync(path.join(__dirname, '../../views/widget-rueda.html'), 'utf8');
         

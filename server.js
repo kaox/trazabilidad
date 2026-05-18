@@ -10,6 +10,7 @@ const cookieParser = require('cookie-parser');
 const db = require('./db');
 const { get: getDb } = require('./src/config/db.js');
 const gs1Resolver = require('./gs1-resolver');
+const { getCache, setCache } = require('./src/utils/cache');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -62,8 +63,18 @@ app.use(async (req, res, next) => {
     try {
         console.log(`🔍 Detectado subdominio: ${subdomain}`);
 
-        // Buscar empresa cuyo subdominio personalizado o slug coincida con el subdominio de forma optimizada
-        const company = await EmpresaModel.findCompanyBySubdomainOrSlug(subdomain);
+        const cacheKey = `subdomain:${subdomain}`;
+        let company = await getCache(cacheKey);
+
+        if (!company) {
+            // Buscar empresa cuyo subdominio personalizado o slug coincida con el subdominio de forma optimizada
+            company = await EmpresaModel.findCompanyBySubdomainOrSlug(subdomain);
+            if (company) {
+                await setCache(cacheKey, company, 3600); // Cache por 1 hora
+            }
+        } else {
+            console.log(`⚡ Cache HIT para subdominio: ${subdomain}`);
+        }
 
         console.log(company);
 
