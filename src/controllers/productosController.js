@@ -54,6 +54,17 @@ const createProducto = async (req, res) => {
 
     const procesadasImagenes = await processImagesArray(imagenes_json, 'productos', userId, provider);
 
+    // Interceptar Base64 en premios_json
+    let procesadosPremios = premios_json || [];
+    for (let i = 0; i < procesadosPremios.length; i++) {
+        if (procesadosPremios[i].logo_url && procesadosPremios[i].logo_url.startsWith('data:image/')) {
+            try {
+                const fname = `productos/premio-${id}-${Date.now()}-${i}`;
+                procesadosPremios[i].logo_url = await uploadImageBase64(procesadosPremios[i].logo_url, fname, provider);
+            } catch (err) { console.error("Error subiendo logo de premio:", err); }
+        }
+    }
+
     try {
         // Preparamos el objeto para el modelo (JSONs convertidos a String aquí)
         await ProductoModel.create({
@@ -67,7 +78,7 @@ const createProducto = async (req, res) => {
             ingredientes,
             tipo_producto,
             peso,
-            premios_json: JSON.stringify(premios_json || []),
+            premios_json: JSON.stringify(procesadosPremios),
             receta_nutricional_id: recetaId,
             is_published: published,
             perfil_id: perfilId,
@@ -113,6 +124,17 @@ const updateProducto = async (req, res) => {
     // Procesamiento de imágenes
     const procesadasImagenes = await processImagesArray(imagenes_json, 'productos', userId, provider);
 
+    // Interceptar Base64 en premios_json
+    let procesadosPremios = premios_json || [];
+    for (let i = 0; i < procesadosPremios.length; i++) {
+        if (procesadosPremios[i].logo_url && procesadosPremios[i].logo_url.startsWith('data:image/')) {
+            try {
+                const fname = `productos/premio-${id}-${Date.now()}-${i}`;
+                procesadosPremios[i].logo_url = await uploadImageBase64(procesadosPremios[i].logo_url, fname, provider);
+            } catch (err) { console.error("Error subiendo logo de premio en update:", err); }
+        }
+    }
+
     try {
         const oldProduct = await ProductoModel.getByIdAndUserId(id, userId);
         let oldImages = oldProduct && oldProduct.imagenes_json ? safeJSONParse(oldProduct.imagenes_json || '[]') : [];
@@ -131,7 +153,7 @@ const updateProducto = async (req, res) => {
             ingredientes,
             tipo_producto,
             peso,
-            premios_json: JSON.stringify(premios_json || []),
+            premios_json: JSON.stringify(procesadosPremios),
             receta_nutricional_id: recetaId,
             is_published,
             perfil_id: perfilId,

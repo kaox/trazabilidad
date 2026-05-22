@@ -118,6 +118,14 @@ const companyProfileController = {
                 }
             }
 
+            // Procesamos la imagen de portada si es base64
+            if (profileData.cover_image_url && profileData.cover_image_url.startsWith('data:image/')) {
+                const uploadResult = await processImagesArray([profileData.cover_image_url], 'company-covers', userId, PROVIDER);
+                if (uploadResult && uploadResult.length > 0) {
+                    profileData.cover_image_url = uploadResult[0]; 
+                }
+            }
+
             // Ejecutamos el Upsert en el modelo
             const profileId = await CompanyProfile.upsert(userId, profileData);
 

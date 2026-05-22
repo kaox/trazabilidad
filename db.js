@@ -60,9 +60,19 @@ const registerUser = async (req, res) => {
         const trialEndDate = new Date();
         trialEndDate.setDate(trialEndDate.getDate() + 30);
 
+        let finalLogo = company_logo;
+        if (company_logo && company_logo.startsWith('data:image/')) {
+            try {
+                const filenameBase = `users/logo-${usuario}-${Date.now()}`;
+                finalLogo = await uploadImageBase64(company_logo, filenameBase, 'vercel');
+            } catch (err) {
+                console.error("Error subiendo logo de usuario en registro:", err);
+            }
+        }
+
         await run(
             'INSERT INTO users (usuario, password, nombre, apellido, dni, ruc, empresa, company_logo, celular, correo, subscription_tier, trial_ends_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)',
-            [usuario, hashedPassword, nombre, apellido, dni, ruc, empresa, company_logo, celular, correo, 'artesano', trialEndDate.toISOString()]
+            [usuario, hashedPassword, nombre, apellido, dni, ruc, empresa, finalLogo, celular, correo, 'artesano', trialEndDate.toISOString()]
         );
         res.status(201).json({ message: "Usuario registrado exitosamente." });
     } catch (err) {
@@ -173,6 +183,16 @@ const updateUserProfile = async (req, res) => {
     } = req.body;
 
     try {
+        let finalLogo = company_logo;
+        if (company_logo && company_logo.startsWith('data:image/')) {
+            try {
+                const filenameBase = `users/logo-${userId}-${Date.now()}`;
+                finalLogo = await uploadImageBase64(company_logo, filenameBase, 'vercel');
+            } catch (err) {
+                console.error("Error subiendo logo de usuario en perfil:", err);
+            }
+        }
+
         // 2. Preparamos la consulta base
         let sql = `UPDATE users SET 
             nombre = ?, apellido = ?, dni = ?, ruc = ?, empresa = ?, 
@@ -182,7 +202,7 @@ const updateUserProfile = async (req, res) => {
 
         const params = [
             nombre, apellido, dni, ruc, empresa,
-            company_logo, celular, correo, default_currency,
+            finalLogo, celular, correo, default_currency,
             default_unit, company_type, company_id,
             social_instagram, social_facebook
         ];
@@ -1381,6 +1401,17 @@ const createBlogPost = async (req, res) => {
             finalCoverImage = await uploadImageBase64(cover_image, filename);
         }
 
+        // Interceptar imágenes base64 en event_companies
+        let procesadosCompanies = event_companies || [];
+        for (let i = 0; i < procesadosCompanies.length; i++) {
+            if (procesadosCompanies[i].logo_url && procesadosCompanies[i].logo_url.startsWith('data:image/')) {
+                try {
+                    const fname = `blog/event-${id}-${Date.now()}-${i}`;
+                    procesadosCompanies[i].logo_url = await uploadImageBase64(procesadosCompanies[i].logo_url, fname, 'vercel');
+                } catch (err) { console.error("Error subiendo logo de company:", err); }
+            }
+        }
+
         await run(
             `INSERT INTO blog_posts
              (id, title, slug, content, summary, cover_image, author_id, is_published,
@@ -1390,7 +1421,7 @@ const createBlogPost = async (req, res) => {
             [id, title, slug, content, summary, finalCoverImage, userId, is_published,
                 !!is_event, event_start_date || null, event_end_date || null,
                 event_city || null, event_department || null, event_country || null,
-                event_companies ? JSON.stringify(event_companies) : null]
+                procesadosCompanies.length > 0 ? JSON.stringify(procesadosCompanies) : null]
         );
         res.status(201).json({ message: "Artículo creado", slug });
     } catch (err) {
@@ -1415,6 +1446,17 @@ const updateBlogPost = async (req, res) => {
             finalCoverImage = await uploadImageBase64(cover_image, filename);
         }
 
+        // Interceptar imágenes base64 en event_companies
+        let procesadosCompanies = event_companies || [];
+        for (let i = 0; i < procesadosCompanies.length; i++) {
+            if (procesadosCompanies[i].logo_url && procesadosCompanies[i].logo_url.startsWith('data:image/')) {
+                try {
+                    const fname = `blog/event-${id}-${Date.now()}-${i}`;
+                    procesadosCompanies[i].logo_url = await uploadImageBase64(procesadosCompanies[i].logo_url, fname, 'vercel');
+                } catch (err) { console.error("Error subiendo logo de company en update:", err); }
+            }
+        }
+
         const result = await run(
             `UPDATE blog_posts
              SET title = ?, content = ?, summary = ?, cover_image = ?, is_published = ?,
@@ -1424,7 +1466,7 @@ const updateBlogPost = async (req, res) => {
             [title, content, summary, finalCoverImage, is_published,
                 !!is_event, event_start_date || null, event_end_date || null,
                 event_city || null, event_department || null, event_country || null,
-                event_companies ? JSON.stringify(event_companies) : null,
+                procesadosCompanies.length > 0 ? JSON.stringify(procesadosCompanies) : null,
                 id]
         );
         if (result.changes === 0) return res.status(404).json({ error: "Artículo no encontrado." });
