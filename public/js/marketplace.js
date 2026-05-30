@@ -435,10 +435,13 @@ document.addEventListener('DOMContentLoaded', () => {
         const html = state.products.map(p => {
             const companySlug = p.empresa.slug || p.empresa.id;
 
-            // Construir Ruta SEO
+            // Construir Ruta SEO canónica
             const productName = createSlug(p.nombre) || 'producto';
-            const fincaName = p.finca && p.finca.nombre ? createSlug(p.finca.nombre) : 'origen';
-            const seoUrl = `/lote/${productName}-${fincaName}-${p.id}`;
+            const compSlugBase = createSlug(p.empresa.nombre || '');
+            const compId = p.empresa.id || '';
+            const seoUrl = compId
+                ? `/origen-unico/${compSlugBase}-${compId}/${productName}-${(p.id || '').toString().substring(0, 8)}`
+                : `/lote/${productName}-${p.id}`;
 
             // Badge de Tipo
             let typeBadge = '';

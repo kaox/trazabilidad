@@ -27,6 +27,8 @@ const landingsController = require('./src/controllers/landingsController');
 const acquisitionsController = require('./src/controllers/acquisitionsController');
 const batchesController = require('./src/controllers/batchesController');
 const { renderLanding, renderCompanyList, renderMarketplaceProducts } = require('./src/utils/landingRenderer');
+const { buildProductUrl, extractShortId, toSlug } = require('./src/utils/productSlug');
+const ProductoModel = require('./src/models/productoModel');
 const perfilesRoutes = require('./src/routes/perfilesRoutes');
 const ruedasRoutes = require('./src/routes/ruedasRoutes');
 const widgetRoutes = require('./src/routes/widgetRoutes');
@@ -650,81 +652,112 @@ app.get('/origen-unico/:slug', async (req, res) => {
     });
 });
 
-// --- RUTA SEO PARA DETALLES DE LOTE/PRODUCTO
+// --- RUTA LEGACY: redirect 301 a la nueva URL SEO canónica
 app.get('/lote/:slug', async (req, res) => {
     const { slug } = req.params;
 
-    // Extraer UUID del final del slug
+    // Extraer UUID completo del final del slug (formato antiguo)
     const uuidPattern = /([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})$/i;
     const match = slug.match(uuidPattern);
 
-    const filePath = path.join(__dirname, 'public', 'producto-detalle.html');
-
     if (!match) {
-        // Fallback si no hay UUID válido
-        return res.sendFile(filePath);
+        // Fallback: no hay UUID reconocible, servir la página sin redirigir
+        return res.sendFile(path.join(__dirname, 'public', 'producto-detalle.html'));
     }
 
     const productId = match[1];
+
+    try {
+        const product = await ProductoModel.getByShortId(productId.substring(0, 8));
+        if (product) {
+            const companyName = product.company_comercial || product.company_name || 'empresa';
+            const newUrl = buildProductUrl(companyName, product.company_id || product.user_id, product.nombre, product.id);
+            return res.redirect(301, newUrl);
+        }
+    } catch (e) {
+        console.error('Error en redirect /lote/:slug:', e);
+    }
+
+    // Si no encontramos el producto, servir la página base
+    return res.sendFile(path.join(__dirname, 'public', 'producto-detalle.html'));
+});
+
+// --- NUEVA RUTA SEO CANÓNICA: /origen-unico/:companySlug/:productSlug
+app.get('/origen-unico/:companySlug/:productSlug', async (req, res) => {
+    const { companySlug, productSlug } = req.params;
+
+    // Extraer el short ID (últimos 8 chars hex) del segmento de producto
+    const shortId = extractShortId(productSlug);
+    const filePath = path.join(__dirname, 'public', 'producto-detalle.html');
+
+    if (!shortId) {
+        return res.sendFile(filePath);
+    }
 
     fs.readFile(filePath, 'utf8', async (err, htmlData) => {
         if (err) return res.status(500).send('Error interno');
 
         try {
-            // Obtener producto para los tags SEO
-            const product = await getDb('SELECT * FROM productos WHERE id = ?', [productId]);
+            const product = await ProductoModel.getByShortId(shortId);
 
             if (product) {
                 const title = `${product.nombre} | Trazabilidad y Origen`;
-                const description = product.descripcion ? product.descripcion.replace(/"/g, '&quot;') : `Descubre la trazabilidad completa, perfil sensorial y origen de ${product.nombre} en Ruru Lab.`;
+                const description = product.descripcion
+                    ? product.descripcion.replace(/"/g, '&quot;')
+                    : `Descubre la trazabilidad completa, perfil sensorial y origen de ${product.nombre} en Ruru Lab.`;
 
                 let imageUrl = '';
                 if (product.imagenes_json) {
                     try {
-                        const images = typeof product.imagenes_json === 'string' ? JSON.parse(product.imagenes_json) : product.imagenes_json;
-                        if (images && images.length > 0) {
-                            imageUrl = images[0];
-                        }
-                    } catch (e) { }
+                        const images = typeof product.imagenes_json === 'string'
+                            ? JSON.parse(product.imagenes_json)
+                            : product.imagenes_json;
+                        if (images && images.length > 0) imageUrl = images[0];
+                    } catch (e) { /* imagen no crítica */ }
                 }
+                if (!imageUrl) imageUrl = 'https://rurulab.com/images/banner_1.png';
 
-                if (!imageUrl) {
-                    imageUrl = 'https://rurulab.com/images/banner_1.png'; // Imagen de fallback
-                }
+                // URL canónica (self-referencing para og:url y <link rel="canonical">)
+                const protocol = req.headers['x-forwarded-proto'] || req.protocol;
+                const host = req.get('host');
+                const canonicalUrl = buildProductUrl(
+                    product.company_comercial || product.company_name || 'empresa',
+                    product.company_id || product.user_id,
+                    product.nombre,
+                    product.id
+                );
+                const pageUrl = `${protocol}://${host}${canonicalUrl}`;
 
-                // Inyectar meta tags para Open Graph
-                let finalHtml = htmlData.replace(/<title>.*?<\/title>/gi, `<title>${title}</title>`)
+                let finalHtml = htmlData
+                    .replace(/<title>.*?<\/title>/gi, `<title>${title}</title>`)
                     .replace(/<meta name="description" content=".*?">/gi, `<meta name="description" content="${description}">`)
                     .replace(/<meta property="og:title" content=".*?">/gi, `<meta property="og:title" content="${title}">`)
                     .replace(/<meta property="og:description" content=".*?">/gi, `<meta property="og:description" content="${description}">`)
                     .replace(/<meta name="twitter:title" content=".*?">/gi, `<meta name="twitter:title" content="${title}">`)
-                    .replace(/<meta name="twitter:description" content=".*?">/gi, `<meta name="twitter:description" content="${description}">`);
+                    .replace(/<meta name="twitter:description" content=".*?">/gi, `<meta name="twitter:description" content="${description}">`)
+                    .replace(/<meta property="og:url" content=".*?">/gi, `<meta property="og:url" content="${canonicalUrl}">`)
+                    .replace(/<meta name="twitter:url" content=".*?">/gi, `<meta name="twitter:url" content="${canonicalUrl}">`);
 
                 if (imageUrl) {
-                    finalHtml = finalHtml.replace(/<meta property="og:image" content=".*?">/gi, `<meta property="og:image" content="${imageUrl}">`)
+                    finalHtml = finalHtml
+                        .replace(/<meta property="og:image" content=".*?">/gi, `<meta property="og:image" content="${imageUrl}">`)
                         .replace(/<meta name="twitter:image" content=".*?">/gi, `<meta name="twitter:image" content="${imageUrl}">`);
                 }
 
-                // URL canónica y Open Graph URL
-                const protocol = req.headers['x-forwarded-proto'] || req.protocol;
-                const host = req.get('host');
-                const pageUrl = `${protocol}://${host}/lote/${slug}`;
-                finalHtml = finalHtml.replace(/<meta property="og:url" content=".*?">/gi, `<meta property="og:url" content="${pageUrl}">`)
-                    .replace(/<meta name="twitter:url" content=".*?">/gi, `<meta name="twitter:url" content="${pageUrl}">`);
-
-                // Inyectar el ID de producto en window.PRODUCT_ID para el JS frontend
-                finalHtml = finalHtml.replace('</head>', `<script>window.PRODUCT_ID = "${productId}";</script>\n</head>`);
+                // Inyectar el ID completo para el JS frontend + URL canónica
+                finalHtml = finalHtml.replace('</head>', `<script>window.PRODUCT_ID = "${product.id}";window.PRODUCT_CANONICAL_URL = "${canonicalUrl}";</script>\n</head>`);
 
                 res.send(finalHtml);
             } else {
                 res.send(htmlData);
             }
         } catch (e) {
-            console.error('Error en ruta SEO /lote/:slug:', e);
+            console.error('Error en ruta SEO /origen-unico/:companySlug/:productSlug:', e);
             res.send(htmlData);
         }
     });
 });
+
 
 // --- SITEMAP DINÁMICO PARA ORIGEN ÚNICO ---
 app.get('/sitemap-origen-unico.xml', async (req, res) => {

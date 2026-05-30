@@ -3,6 +3,8 @@
  * Genera el HTML de la landing page en el servidor para mejorar el SEO.
  */
 
+const { buildProductUrl } = require('./productSlug');
+
 const toTitleCase = (str) => {
     if (!str) return '';
     return str.toLowerCase().split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
@@ -15,7 +17,7 @@ const extractYoutubeId = (url) => {
     return (match && match[2].length === 11) ? match[2] : null;
 };
 
-const renderProductCards = (products, phone, userId, hostUrl = '') => {
+const renderProductCards = (products, phone, userId, hostUrl = '', companyName = '') => {
     if (!products || products.length === 0) {
         return `<div class="col-span-full text-center py-12 bg-stone-50 rounded-2xl border border-dashed border-stone-200"><p class="text-stone-500 italic">No hay productos disponibles.</p></div>`;
     }
@@ -25,7 +27,7 @@ const renderProductCards = (products, phone, userId, hostUrl = '') => {
     return products.map(prod => {
         const prodImage = (prod.imagenes && prod.imagenes.length > 0) ? prod.imagenes[0] : 'https://placehold.co/400x300/f5f5f4/a8a29e?text=Producto';
         const hasTraceability = prod.recent_batches && prod.recent_batches.length > 0;
-        const detailLink = `/lote/${createSlug(prod.nombre)}-${prod.id}`;
+        const detailLink = buildProductUrl(companyName, userId, prod.nombre, prod.id);
         const fullDetailLink = hostUrl + detailLink;
         const buyLink = phone ? `https://wa.me/${phone.replace(/\D/g, '')}?text=${encodeURIComponent(`Hola, me interesa este producto: ${prod.nombre}. Link: ${fullDetailLink}`)}` : '#';
 
@@ -62,7 +64,7 @@ const renderProductCards = (products, phone, userId, hostUrl = '') => {
         const fincaAltura = prod.finca_altura ? `${prod.finca_altura} msnm` : '';
 
         return `
-        <div class="product-card fade-in">
+    <div class="product-card fade-in">
             <div class="h-64 relative overflow-hidden group">
                 <img src="${prodImage}" class="w-full h-full object-cover transition duration-500 group-hover:scale-110">
                 
@@ -297,7 +299,7 @@ const renderLanding = (data, hostUrl = '') => {
                         <a href="#tienda" class="text-accent font-bold hover:underline">Ver todo el catálogo <i class="fas fa-arrow-right ml-1"></i></a>
                     </div>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        ${renderProductCards(products.slice(0, 4), cleanPhone, user.id, hostUrl)}
+                        ${renderProductCards(products.slice(0, 4), cleanPhone, user.id, hostUrl, entityName)}
                     </div>
                 </div>
             </div>
@@ -390,8 +392,12 @@ const renderMarketplaceProducts = (products) => {
         const typeIcon = type === 'cafe' ? 'fa-mug-hot' : (type === 'cacao' ? 'fa-cookie-bite' : 'fa-jar');
         const score = p.puntuacion_taza || p.puntuacion_total || null;
 
-        const slug = createSlug(p.nombre) + '-' + p.id;
-        const linkUrl = `/lote/${slug}`;
+        const slug = createSlug(p.nombre) + '-' + p.id.substring(0, 8);
+        const compName = p.empresa?.nombre || p.empresa || 'empresa';
+        const compId = p.empresa?.id || '';
+        const linkUrl = compId
+            ? buildProductUrl(compName, compId, p.nombre, p.id)
+            : `/lote/${createSlug(p.nombre)}-${p.id}`;
 
         html += `
             <div class="product-card bg-white rounded-2xl border border-stone-100 shadow-sm overflow-hidden flex flex-col relative group">

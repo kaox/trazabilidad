@@ -253,6 +253,28 @@ const getBasicPublicProductsByUserId = async (userId) => {
     return await db.all(sql, [userId]);
 };
 
+/**
+ * Busca un producto por los primeros 8 caracteres de su UUID.
+ * Se usa para el lookup desde la nueva URL SEO: /origen-unico/:companySlug/:productSlug
+ * @param {string} shortId - Primeros 8 chars del UUID (p.ej. "402f6653")
+ * @returns {Promise<object|null>}
+ */
+const getByShortId = async (shortId) => {
+    const sql = `
+        SELECT
+            p.*,
+            u.id as company_id,
+            u.empresa as company_name,
+            cp.name as company_comercial
+        FROM productos p
+        JOIN users u ON p.user_id = u.id
+        LEFT JOIN company_profiles cp ON u.id = cp.user_id
+        WHERE p.id LIKE ? AND p.deleted_at IS NULL
+        LIMIT 1
+    `;
+    return await db.get(sql, [shortId + '%']);
+};
+
 module.exports = {
     getByIdAndUserId,
     getAllByUserId,
@@ -263,5 +285,6 @@ module.exports = {
     getPublicProductsWithImmutable,
     getMarketplaceBaseProducts,
     getPublicProductsWithProfilesByUserId,
-    getBasicPublicProductsByUserId
+    getBasicPublicProductsByUserId,
+    getByShortId
 };

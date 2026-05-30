@@ -398,7 +398,7 @@ const app = {
                             <a href="#tienda" class="text-accent font-bold hover:underline">Ver todo el catálogo <i class="fas fa-arrow-right ml-1"></i></a>
                         </div>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            ${this.renderProductCards(products.slice(0, 4), user.celular || user.contact_phone, user.id)}
+                            ${this.renderProductCards(products.slice(0, 4), user.celular || user.contact_phone, user.id, user.name)}
                         </div>
                     </div>
                 </div>
@@ -420,7 +420,7 @@ const app = {
                 </div>
                 
                 <div class="product-grid">
-                    ${this.renderProductCards(products, user.celular || user.contact_phone, user.id)}
+                    ${this.renderProductCards(products, user.celular || user.contact_phone, user.id, user.name)}
                 </div>
             </div>
         `;
@@ -523,7 +523,7 @@ const app = {
         }
     },
 
-    renderProductCards: function (products, phone, userId) {
+    renderProductCards: function (products, phone, userId, companyName) {
         if (!products || products.length === 0) {
             return `<div class="col-span-full text-center py-12 bg-stone-50 rounded-2xl border border-dashed border-stone-200"><p class="text-stone-500 italic">No hay productos disponibles.</p></div>`;
         }
@@ -531,7 +531,9 @@ const app = {
         return products.map(prod => {
             const prodImage = (prod.imagenes && prod.imagenes.length > 0) ? prod.imagenes[0] : 'https://placehold.co/400x300/f5f5f4/a8a29e?text=Producto';
             const hasTraceability = prod.recent_batches && prod.recent_batches.length > 0;
-            const detailLink = `/lote/${this.createSlug(prod.nombre)}-${prod.id}`;
+            const compSlug = `${this.createSlug(companyName || '')}-${userId}`;
+            const prodSlug = `${this.createSlug(prod.nombre)}-${(prod.id || '').substring(0, 8)}`;
+            const detailLink = `/origen-unico/${compSlug}/${prodSlug}`;
             const fullDetailLink = window.location.origin + detailLink;
             const buyLink = phone ? `https://wa.me/${phone.replace(/\D/g, '')}?text=${encodeURIComponent(`Hola, me interesa este producto: ${prod.nombre}. Link: ${fullDetailLink}`)}` : '#';
 
@@ -747,8 +749,10 @@ const app = {
 
             const createSlug = text => (text || '').toString().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, '-').replace(/[^\w-]+/g, '').replace(/--+/g, '-').replace(/^-+/, '').replace(/-+$/, '');
             const productName = createSlug(prod.nombre) || 'producto';
-            const fincaName = prod.finca && prod.finca.nombre ? createSlug(prod.finca.nombre) : 'origen';
-            const detailLink = `/lote/${productName}-${fincaName}-${prod.id}`;
+            const fincaSlug = prod.finca && prod.finca.nombre ? createSlug(prod.finca.nombre) : 'origen';
+            const { user } = this.state.landingData;
+            const compSlug = `${createSlug(user.name || '')}-${user.id}`;
+            const detailLink = `/origen-unico/${compSlug}/${productName}-${(prod.id || '').substring(0, 8)}`;
 
             const showTabs = hasSensory || hasWheel;
             const cardClasses = hasTraceability
