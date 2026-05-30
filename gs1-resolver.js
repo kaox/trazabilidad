@@ -94,4 +94,56 @@ const resolve = async (req, res) => {
     }
 };
 
-module.exports = { resolve };
+const ProductoModel = require('./src/models/productoModel');
+const { buildProductUrl } = require('./src/utils/productSlug');
+
+/**
+ * Resolver GS1 Digital Link para Productos
+ * Estructura: /01/{gtin}
+ */
+const resolveProduct = async (req, res) => {
+    const { gtin } = req.params;
+
+    try {
+        const product = await ProductoModel.getByGtin(gtin);
+        
+        if (!product) {
+            console.warn(`[GS1 404] No se encontró producto con GTIN ${gtin}`);
+            return res.status(404).send(`
+                <!DOCTYPE html>
+                <html lang="es">
+                <head>
+                    <meta charset="UTF-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <title>Producto No Encontrado</title>
+                    <link href="/css/styles.css" rel="stylesheet">
+                    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+                </head>
+                <body class="bg-gray-50 flex flex-col items-center justify-center h-screen text-center p-4 font-sans">
+                    <div class="bg-white p-8 rounded-2xl shadow-xl max-w-md w-full border border-gray-100">
+                        <div class="text-red-500 text-6xl mb-6"><i class="fas fa-search-minus"></i></div>
+                        <h1 class="text-2xl font-bold text-gray-800 mb-2">Producto no encontrado</h1>
+                        <p class="text-gray-500 mb-6 text-sm">
+                            El código GTIN <span class="font-mono bg-gray-100 px-1 rounded text-gray-700">${gtin}</span> 
+                            no está registrado en nuestro sistema.
+                        </p>
+                        <a href="/" class="block w-full bg-stone-800 text-white px-6 py-3 rounded-xl font-bold hover:bg-black transition shadow-lg">
+                            Ir al Inicio
+                        </a>
+                    </div>
+                </body>
+                </html>
+            `);
+        }
+
+        const companyName = product.company_comercial || product.company_name || 'empresa';
+        let targetUrl = buildProductUrl(companyName, product.company_id || product.user_id, product.nombre, product.id);
+
+        res.redirect(302, targetUrl);
+    } catch (error) {
+        console.error("GS1 Resolver Product Error:", error);
+        res.status(500).send("Error interno del sistema de resolución.");
+    }
+};
+
+module.exports = { resolve, resolveProduct };

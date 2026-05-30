@@ -390,7 +390,10 @@ async function loadProducts() {
                 
                 <div class="flex-grow">
                     <div class="flex items-center justify-between mb-2">
-                        <span class="text-[10px] font-mono bg-stone-100 px-2 py-1 rounded text-stone-500 border border-stone-200"><i class="fas fa-barcode mr-1"></i> ${p.gtin || 'Pendiente'}</span>
+                        <div class="flex items-center gap-2">
+                            <span class="text-[10px] font-mono bg-stone-100 px-2 py-1 rounded text-stone-500 border border-stone-200"><i class="fas fa-barcode mr-1"></i> ${p.gtin || 'Pendiente'}</span>
+                            ${p.gtin ? `<button onclick="showGs1Qr('${p.gtin}', '${p.nombre.replace(/'/g, "\\'")}')" class="text-[10px] bg-stone-800 text-white px-2 py-1 rounded hover:bg-stone-900 transition flex items-center gap-1"><i class="fas fa-qrcode"></i> GS1 QR</button>` : ''}
+                        </div>
                         ${p.receta_nutricional_nombre ? `<span class="text-[10px] text-green-700 bg-green-50 px-2 py-0.5 rounded border border-green-100" title="Receta: ${p.receta_nutricional_nombre}"><i class="fas fa-utensils"></i></span>` : ''}
                     </div>
                     
@@ -516,6 +519,40 @@ window.deleteProduct = async (id) => {
         await api(`/api/productos/${id}`, { method: 'DELETE' });
         loadProducts();
     } catch (e) { alert(e.message); }
+};
+
+window.showGs1Qr = (gtin, productName) => {
+    const modal = document.getElementById('qr-modal');
+    const container = document.getElementById('qr-container');
+    const downloadBtn = document.getElementById('qr-download-btn');
+    
+    container.innerHTML = ''; // Limpiar anterior
+    
+    // URL de resolución GS1
+    const gs1Url = `${window.location.origin}/01/${gtin}`;
+    
+    try {
+        const typeNumber = 0;
+        const errorCorrectionLevel = 'M';
+        const qr = qrcode(typeNumber, errorCorrectionLevel);
+        qr.addData(gs1Url);
+        qr.make();
+        
+        container.innerHTML = qr.createImgTag(5, 10);
+        
+        const img = container.querySelector('img');
+        if(img) {
+            img.classList.add('rounded-lg');
+            // Configurar botón de descarga
+            downloadBtn.href = img.src;
+            downloadBtn.download = `QR_GS1_${productName.replace(/\\s+/g, '_')}_${gtin}.png`;
+        }
+        
+        modal.showModal();
+    } catch (e) {
+        console.error("Error generando QR:", e);
+        alert("Hubo un error al generar el código QR.");
+    }
 };
 
 // --- PDF GENERATION (FICHA TÉCNICA) ---

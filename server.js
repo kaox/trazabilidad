@@ -505,8 +505,11 @@ app.get('/:loteId([A-Z]{3}-[A-Z0-9]{8})', async (req, res) => {
     });
 });
 
-// GS1 Digital Link
+// Endpoint para resolver GS1 Digital Link (Batch)
 app.get('/01/:gtin/10/:loteId', gs1Resolver.resolve);
+
+// Endpoint para resolver GS1 Digital Link (Product Only)
+app.get('/01/:gtin', gs1Resolver.resolveProduct);
 
 // 7. SECCIÓN ORIGEN ÚNICO (Con inyección de metadatos)
 app.get('/origen-unico', async (req, res) => {

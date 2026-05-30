@@ -275,6 +275,27 @@ const getByShortId = async (shortId) => {
     return await db.get(sql, [shortId + '%']);
 };
 
+/**
+ * Busca un producto por su GTIN.
+ * @param {string} gtin - GTIN del producto
+ * @returns {Promise<object|null>}
+ */
+const getByGtin = async (gtin) => {
+    const sql = `
+        SELECT
+            p.*,
+            u.id as company_id,
+            u.empresa as company_name,
+            cp.name as company_comercial
+        FROM productos p
+        JOIN users u ON p.user_id = u.id
+        LEFT JOIN company_profiles cp ON u.id = cp.user_id
+        WHERE p.gtin = ? AND p.deleted_at IS NULL
+        LIMIT 1
+    `;
+    return await db.get(sql, [gtin]);
+};
+
 module.exports = {
     getByIdAndUserId,
     getAllByUserId,
@@ -286,5 +307,6 @@ module.exports = {
     getMarketplaceBaseProducts,
     getPublicProductsWithProfilesByUserId,
     getBasicPublicProductsByUserId,
-    getByShortId
+    getByShortId,
+    getByGtin
 };
