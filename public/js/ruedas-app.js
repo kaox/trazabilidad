@@ -66,6 +66,9 @@ function renderRuedasGrid() {
                     <button onclick="showSnippet('${rueda.public_token}')" title="Widget" class="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center hover:bg-blue-600 hover:text-white transition-colors">
                         <i class="fas fa-code text-sm"></i>
                     </button>
+                    <button onclick="downloadSvg('${rueda.id}')" title="Descargar SVG" class="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center hover:bg-purple-600 hover:text-white transition-colors">
+                        <i class="fas fa-download text-sm"></i>
+                    </button>
                     <button onclick="editRueda('${rueda.id}')" title="Editar" class="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center hover:bg-amber-600 hover:text-white transition-colors">
                         <i class="fas fa-edit text-sm"></i>
                     </button>
@@ -281,6 +284,69 @@ function closeRuedaModal() {
     document.getElementById('ruedaModal').classList.add('hidden');
 }
 
+function downloadSvg(id) {
+    const rueda = userRuedas.find(r => r.id === id);
+    if (!rueda) return;
+
+    const data = allFlavorWheels[rueda.tipo];
+    if (!data) return;
+
+    // Usar el contenedor temporal para renderizar el SVG completo
+    const tempContainer = document.getElementById('temp-svg-container');
+    tempContainer.style.display = 'block'; // d3 a veces necesita que esté visible para calcular tamaños, aunque viewBox salva esto.
+    
+    // Opciones para SVG descargable
+    const options = {
+        selection: rueda.notas_json,
+        isWidget: true, // Para el branding central
+        width: 800,
+        height: 800
+    };
+
+    // Renderizar
+    SunburstChart.render('#temp-svg-container', data, options);
+
+    // Pequeño delay por si d3 hace transiciones (aunque con animation=false no debería)
+    setTimeout(() => {
+        const svgEl = tempContainer.querySelector('svg');
+        if (!svgEl) {
+            tempContainer.style.display = 'none';
+            return;
+        }
+
+        // Asegurar namespaces XML para SVG puro y compatible con Canva/Illustrator
+        if (!svgEl.getAttribute('xmlns')) {
+            svgEl.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+        }
+        if (!svgEl.getAttribute('xmlns:xlink')) {
+            svgEl.setAttribute('xmlns:xlink', 'http://www.w3.org/1999/xlink');
+        }
+
+        // Canva a veces necesita width y height explícitos
+        svgEl.setAttribute('width', options.width);
+        svgEl.setAttribute('height', options.height);
+
+        let svgData = new XMLSerializer().serializeToString(svgEl);
+        
+        // Fix para algunos navegadores que reemplazan xmlns:xlink
+        svgData = svgData.replace(/NS\\d+:href/gi, 'xlink:href');
+
+        const blob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `rueda_sabor_${rueda.nombre_rueda.replace(/\s+/g, '_')}.svg`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+
+        URL.revokeObjectURL(url);
+        tempContainer.innerHTML = '';
+        tempContainer.style.display = 'none';
+    }, 50);
+}
+
 // Global Event Listeners
 document.getElementById('ruedaForm').addEventListener('submit', handleSave);
 
@@ -289,5 +355,6 @@ window.toggleNote = toggleNote;
 window.editRueda = editRueda;
 window.deleteRueda = deleteRueda;
 window.showSnippet = showSnippet;
+window.downloadSvg = downloadSvg;
 
 init();
