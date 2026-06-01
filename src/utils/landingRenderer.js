@@ -5,6 +5,15 @@
 
 const { buildProductUrl } = require('./productSlug');
 
+const safeJSONParse = (str, fallback = []) => {
+    if (!str) return fallback;
+    try {
+        return JSON.parse(str);
+    } catch (e) {
+        return fallback;
+    }
+};
+
 const toTitleCase = (str) => {
     if (!str) return '';
     return str.toLowerCase().split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
