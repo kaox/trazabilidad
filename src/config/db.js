@@ -4,15 +4,21 @@ const environment = process.env.NODE_ENV || 'development';
 let get, all, run;
 
 if (environment === 'production') {
-    const { neon } = require('@neondatabase/serverless');
-    const sqlClient = neon(process.env.POSTGRES_URL);
+    // 1. Usamos el Pool de conexiones de 'pg' en lugar de Neon
+    const { Pool } = require('pg');
+
+    // Asegúrate de cambiar el nombre de la variable en Vercel a DATABASE_URL
+    const pool = new Pool({
+        connectionString: process.env.DATABASE_URL,
+    });
 
     const queryAdapter = async (sql, params = []) => {
         let paramIndex = 1;
         const pgSql = sql.replace(/\?/g, () => `$${paramIndex++}`);
         try {
-            const result = await sqlClient(pgSql, params);
-            return { rows: result, rowCount: result.length };
+            // 2. Ejecutamos la consulta en el pool de Supabase
+            const result = await pool.query(pgSql, params);
+            return { rows: result.rows, rowCount: result.rowCount };
         } catch (err) {
             console.error("--> [HTTP DB ERROR]", err);
             throw err;
@@ -36,9 +42,9 @@ if (environment === 'production') {
             sqlToRun = `${sql} RETURNING id`;
         }
         const result = await queryAdapter(sqlToRun, params);
-        return { 
-            changes: result.rows.length, 
-            lastID: (result.rows[0] && result.rows[0].id) ? result.rows[0].id : null 
+        return {
+            changes: result.rowCount,
+            lastID: (result.rows[0] && result.rows[0].id) ? result.rows[0].id : null
         };
     };
 
@@ -52,12 +58,11 @@ if (environment === 'production') {
 
     all = (sql, params = []) => new Promise((resolve, reject) => db.all(sql, params, (err, rows) => err ? reject(err) : resolve(rows)));
     get = (sql, params = []) => new Promise((resolve, reject) => db.get(sql, params, (err, row) => err ? reject(err) : resolve(row)));
-    run = (sql, params = []) => new Promise((resolve, reject) => db.run(sql, params, function(err) { err ? reject(err) : resolve({ changes: this.changes, lastID: this.lastID }); }));
+    run = (sql, params = []) => new Promise((resolve, reject) => db.run(sql, params, function (err) { err ? reject(err) : resolve({ changes: this.changes, lastID: this.lastID }); }));
 }
 
 /**
  * Lógica compartida que requiere acceso a la DB
- * Se mantiene aquí o en una capa de servicios
  */
 const generateUniqueBatchId = async (prefix) => {
     let id;
@@ -73,7 +78,7 @@ const generateUniqueBatchId = async (prefix) => {
 
 const saveContactLead = async (req, res) => {
     const { company_id, name, email, message } = req.body;
-    
+
     if (!company_id || !name || !email || !message) {
         return res.status(400).json({ error: 'Faltan campos obligatorios' });
     }
