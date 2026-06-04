@@ -109,10 +109,11 @@ const SunburstChart = {
             .append("path")
             .attr("d", arc)
             .style("fill", d => {
-                // Inherit color from parent if not defined
+                // Resolve colour: prefer own colour/color, else inherit from ancestor
+                const nodeColor = nd => nd.data.colour || nd.data.color || null;
                 let curr = d;
-                while (curr && !curr.data.color) curr = curr.parent;
-                return (curr && curr.data.color) ? curr.data.color : "#ccc";
+                while (curr && !nodeColor(curr)) curr = curr.parent;
+                return nodeColor(curr) || "#ccc";
             })
             .style("stroke", "#fff")
             .style("stroke-width", "1px")

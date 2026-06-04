@@ -6,22 +6,27 @@
       "children": [
         {
           "name": "Té Negro",
+          "color": "#975E6D",
           "icon": "fa-solid fa-leaf"
         },
         {
           "name": "Floral",
+          "color": "#E0719C",
           "icon": "fa-solid fa-flower",
           "children": [
             {
               "name": "Manzanilla",
+              "color": "#F99E1B",
               "icon": "fa-solid fa-spa"
             },
             {
               "name": "Rosa",
+              "color": "#EF5A78",
               "icon": "fa-solid fa-mound"
             },
             {
               "name": "Jazmín",
+              "color": "#F7F1BD",
               "icon": "fa-solid fa-sun"
             }
           ]
@@ -38,19 +43,23 @@
           "children": [
             {
               "name": "Mora",
-              "icon": "fa-solid fa-circle"
+              "icon": "fa-solid fa-circle",
+              "color": "#3E0317"
             },
             {
               "name": "Frambuesa",
-              "icon": "fa-solid fa-braille"
+              "icon": "fa-solid fa-braille",
+              "color": "#E52968"
             },
             {
               "name": "Arándano",
-              "icon": "fa-solid fa-circle-dot"
+              "icon": "fa-solid fa-circle-dot",
+              "color": "#6469B0"
             },
             {
               "name": "Fresa",
-              "icon": "fa-solid fa-apple-whole"
+              "icon": "fa-solid fa-apple-whole",
+              "color": "#EF2D36"
             }
           ]
         },
@@ -60,13 +69,16 @@
           "children": [
             {
               "name": "Pasa",
-              "icon": "fa-solid fa-ellipsis"
+              "icon": "fa-solid fa-ellipsis",
+              "color": "#B53B54"
             },
             {
               "name": "Ciruela Pasa",
-              "icon": "fa-solid fa-circle"
+              "icon": "fa-solid fa-circle",
+              "color": "#A5446F"
             }
-          ]
+          ],
+          "color": "#C94A44"
         },
         {
           "name": "Otras Frutas",
@@ -74,37 +86,46 @@
           "children": [
             {
               "name": "Coco",
-              "icon": "fa-solid fa-circle-notch"
+              "icon": "fa-solid fa-circle-notch",
+              "color": "#D07C36"
             },
             {
               "name": "Cereza",
-              "icon": "fa-solid fa-cherries"
+              "icon": "fa-solid fa-cherries",
+              "color": "#E73451"
             },
             {
               "name": "Granada",
-              "icon": "fa-solid fa-bullseye"
+              "icon": "fa-solid fa-bullseye",
+              "color": "#E65656"
             },
             {
               "name": "Piña",
-              "icon": "fa-solid fa-apple-whole"
+              "icon": "fa-solid fa-apple-whole",
+              "color": "#F89A1C"
             },
             {
               "name": "Uva",
-              "icon": "fa-solid fa-grapes"
+              "icon": "fa-solid fa-grapes",
+              "color": "#AEB92C"
             },
             {
               "name": "Manzana",
-              "icon": "fa-solid fa-apple-whole"
+              "icon": "fa-solid fa-apple-whole",
+              "color": "#4EB947"
             },
             {
               "name": "Durazno",
-              "icon": "fa-solid fa-peach"
+              "icon": "fa-solid fa-peach",
+              "color": "#F68A5C"
             },
             {
               "name": "Pera",
-              "icon": "fa-solid fa-pear"
+              "icon": "fa-solid fa-pear",
+              "color": "#BAA635"
             }
-          ]
+          ],
+          "color": "#F2684C"
         },
         {
           "name": "Cítricos",
@@ -112,21 +133,26 @@
           "children": [
             {
               "name": "Toronja",
-              "icon": "fa-solid fa-circle"
+              "icon": "fa-solid fa-circle",
+              "color": "#F26355"
             },
             {
               "name": "Naranja",
-              "icon": "fa-solid fa-sun"
+              "icon": "fa-solid fa-sun",
+              "color": "#E2631E"
             },
             {
               "name": "Limón",
-              "icon": "fa-solid fa-lemon"
+              "icon": "fa-solid fa-lemon",
+              "color": "#FDE402"
             },
             {
               "name": "Lima",
-              "icon": "fa-solid fa-lemon"
+              "icon": "fa-solid fa-lemon",
+              "color": "#7EB138"
             }
-          ]
+          ],
+          "color": "#F7A129"
         }
       ]
     },
@@ -140,29 +166,36 @@
           "children": [
             {
               "name": "Ácido Agrio",
-              "icon": "fa-solid fa-flask"
+              "icon": "fa-solid fa-flask",
+              "color": "#9EA718"
             },
             {
               "name": "Ácido Acético",
-              "icon": "fa-solid fa-droplet"
+              "icon": "fa-solid fa-droplet",
+              "color": "#94A770"
             },
             {
               "name": "Ácido Butírico",
-              "icon": "fa-solid fa-droplet"
+              "icon": "fa-solid fa-droplet",
+              "color": "#D0B34F"
             },
             {
               "name": "Ácido Isovalérico",
-              "icon": "fa-solid fa-droplet"
+              "icon": "fa-solid fa-droplet",
+              "color": "#8EB646"
             },
             {
               "name": "Ácido Cítrico",
-              "icon": "fa-solid fa-lemon"
+              "icon": "fa-solid fa-lemon",
+              "color": "#FAEF08"
             },
             {
               "name": "Ácido Málico",
-              "icon": "fa-solid fa-apple-whole"
+              "icon": "fa-solid fa-apple-whole",
+              "color": "#C1BA09"
             }
-          ]
+          ],
+          "color": "#E1C315"
         },
         {
           "name": "Alcohol/Fermentado",
@@ -170,21 +203,26 @@
           "children": [
             {
               "name": "Vino",
-              "icon": "fa-solid fa-wine-glass"
+              "icon": "fa-solid fa-wine-glass",
+              "color": "#8F1B53"
             },
             {
               "name": "Whisky",
-              "icon": "fa-solid fa-glass-whiskey"
+              "icon": "fa-solid fa-glass-whiskey",
+              "color": "#B34039"
             },
             {
               "name": "Fermentado",
-              "icon": "fa-solid fa-vial"
+              "icon": "fa-solid fa-vial",
+              "color": "#BA9232"
             },
             {
               "name": "Sobre-maduro",
-              "icon": "fa-solid fa-pepper-hot"
+              "icon": "fa-solid fa-pepper-hot",
+              "color": "#8B6439"
             }
-          ]
+          ],
+          "color": "#B09733"
         }
       ]
     },
@@ -194,11 +232,13 @@
       "children": [
         {
           "name": "Aceite de Oliva",
-          "icon": "fa-solid fa-oil-can"
+          "icon": "fa-solid fa-oil-can",
+          "color": "#A2B028"
         },
         {
           "name": "Crudo",
-          "icon": "fa-solid fa-seedling"
+          "icon": "fa-solid fa-seedling",
+          "color": "#708933"
         },
         {
           "name": "Verde/Vegetal",
@@ -206,33 +246,41 @@
           "children": [
             {
               "name": "Sub-maduro",
-              "icon": "fa-solid fa-seedling"
+              "icon": "fa-solid fa-seedling",
+              "color": "#A2BC2B"
             },
             {
               "name": "Vaina de Guisante",
-              "icon": "fa-solid fa-ellipsis-v"
+              "icon": "fa-solid fa-ellipsis-v",
+              "color": "#62AA3C"
             },
             {
               "name": "Fresco",
-              "icon": "fa-solid fa-leaf"
+              "icon": "fa-solid fa-leaf",
+              "color": "#03A653"
             },
             {
               "name": "Verde Oscuro",
-              "icon": "fa-solid fa-tree"
+              "icon": "fa-solid fa-tree",
+              "color": "#048549"
             },
             {
               "name": "Heno/Seco",
-              "icon": "fa-solid fa-wheat-awn"
+              "icon": "fa-solid fa-wheat-awn",
+              "color": "#A3A830"
             },
             {
               "name": "Hierba",
-              "icon": "fa-solid fa-grass"
+              "icon": "fa-solid fa-grass",
+              "color": "#7AC141"
             }
-          ]
+          ],
+          "color": "#3AA255"
         },
         {
           "name": "Frijol",
-          "icon": "fa-solid fa-circle"
+          "icon": "fa-solid fa-circle",
+          "color": "#5E9A80"
         }
       ]
     },
@@ -246,29 +294,36 @@
           "children": [
             {
               "name": "Rancio",
-              "icon": "fa-solid fa-biohazard"
+              "icon": "fa-solid fa-biohazard",
+              "color": "#8B8C90"
             },
             {
               "name": "Cartón",
-              "icon": "fa-solid fa-box"
+              "icon": "fa-solid fa-box",
+              "color": "#BDB175"
             },
             {
               "name": "Papel",
-              "icon": "fa-solid fa-file"
+              "icon": "fa-solid fa-file",
+              "color": "#FEFEF4"
             },
             {
               "name": "Madera",
-              "icon": "fa-solid fa-tree"
+              "icon": "fa-solid fa-tree",
+              "color": "#744F02"
             },
             {
               "name": "Mohoso/Polvoso",
-              "icon": "fa-solid fa-wind"
+              "icon": "fa-solid fa-wind",
+              "color": "#C9B583"
             },
             {
               "name": "Mohoso/Húmedo",
-              "icon": "fa-solid fa-droplet-slash"
+              "icon": "fa-solid fa-droplet-slash",
+              "color": "#A3A36F"
             }
-          ]
+          ],
+          "color": "#9DB2B7"
         },
         {
           "name": "Químico",
@@ -276,29 +331,36 @@
           "children": [
             {
               "name": "Amargo",
-              "icon": "fa-solid fa-citrus"
+              "icon": "fa-solid fa-citrus",
+              "color": "#80A89D"
             },
             {
               "name": "Salado",
-              "icon": "fa-solid fa-salt-shaker"
+              "icon": "fa-solid fa-salt-shaker",
+              "color": "#DEF2FD"
             },
             {
               "name": "Medicinal",
-              "icon": "fa-solid fa-pills"
+              "icon": "fa-solid fa-pills",
+              "color": "#7A9BAE"
             },
             {
               "name": "Petróleo",
-              "icon": "fa-solid fa-gas-pump"
+              "icon": "fa-solid fa-gas-pump",
+              "color": "#039FB8"
             },
             {
               "name": "Zorrillo",
-              "icon": "fa-solid fa-paw"
+              "icon": "fa-solid fa-paw",
+              "color": "#5E777B"
             },
             {
               "name": "Caucho",
-              "icon": "fa-solid fa-compact-disc"
+              "icon": "fa-solid fa-compact-disc",
+              "color": "#120C0C"
             }
-          ]
+          ],
+          "color": "#76C0CB"
         }
       ]
     },
@@ -308,11 +370,13 @@
       "children": [
         {
           "name": "Tabaco de Pipa",
-          "icon": "fa-solid fa-smoking"
+          "icon": "fa-solid fa-smoking",
+          "color": "#CAA465"
         },
         {
           "name": "Tabaco",
-          "icon": "fa-solid fa-leaf"
+          "icon": "fa-solid fa-leaf",
+          "color": "#DFBD7E"
         },
         {
           "name": "Quemado",
@@ -320,21 +384,26 @@
           "children": [
             {
               "name": "Acre",
-              "icon": "fa-solid fa-wind"
+              "icon": "fa-solid fa-wind",
+              "color": "#B9A449"
             },
             {
               "name": "Ceniza",
-              "icon": "fa-solid fa-volcano"
+              "icon": "fa-solid fa-volcano",
+              "color": "#899893"
             },
             {
               "name": "Humo",
-              "icon": "fa-solid fa-smog"
+              "icon": "fa-solid fa-smog",
+              "color": "#A1743B"
             },
             {
               "name": "Marrón/Asado",
-              "icon": "fa-solid fa-cookie"
+              "icon": "fa-solid fa-cookie",
+              "color": "#894810"
             }
-          ]
+          ],
+          "color": "#BE8663"
         },
         {
           "name": "Cereal",
@@ -342,13 +411,16 @@
           "children": [
             {
               "name": "Grano",
-              "icon": "fa-solid fa-wheat-awn"
+              "icon": "fa-solid fa-wheat-awn",
+              "color": "#B7906F"
             },
             {
               "name": "Malta",
-              "icon": "fa-solid fa-beer-mug-empty"
+              "icon": "fa-solid fa-beer-mug-empty",
+              "color": "#EB9D5E"
             }
-          ]
+          ],
+          "color": "#DDAF61"
         }
       ]
     },
@@ -358,11 +430,13 @@
       "children": [
         {
           "name": "Picante",
-          "icon": "fa-solid fa-pepper-hot"
+          "icon": "fa-solid fa-pepper-hot",
+          "color": "#794652"
         },
         {
           "name": "Pimienta",
-          "icon": "fa-solid fa-circle-dot"
+          "icon": "fa-solid fa-circle-dot",
+          "color": "#CC3C42"
         },
         {
           "name": "Especias Dulces",
@@ -370,21 +444,26 @@
           "children": [
             {
               "name": "Clavo",
-              "icon": "fa-solid fa-seedling"
+              "icon": "fa-solid fa-seedling",
+              "color": "#A16C5A"
             },
             {
               "name": "Canela",
-              "icon": "fa-solid fa-lines-leaning"
+              "icon": "fa-solid fa-lines-leaning",
+              "color": "#E5762E"
             },
             {
               "name": "Nuez Moscada",
-              "icon": "fa-solid fa-circle"
+              "icon": "fa-solid fa-circle",
+              "color": "#8C292C"
             },
             {
               "name": "Anís",
-              "icon": "fa-solid fa-asterisk"
+              "icon": "fa-solid fa-asterisk",
+              "color": "#C78935"
             }
-          ]
+          ],
+          "color": "#B14D57"
         }
       ]
     },
@@ -398,17 +477,21 @@
           "children": [
             {
               "name": "Maní",
-              "icon": "fa-solid fa-circle"
+              "icon": "fa-solid fa-circle",
+              "color": "#D4AD13"
             },
             {
               "name": "Avellana",
-              "icon": "fa-solid fa-circle"
+              "icon": "fa-solid fa-circle",
+              "color": "#9D5433"
             },
             {
               "name": "Almendra",
-              "icon": "fa-solid fa-leaf"
+              "icon": "fa-solid fa-leaf",
+              "color": "#C89F83"
             }
-          ]
+          ],
+          "color": "#C78869"
         },
         {
           "name": "Cacao",
@@ -416,7 +499,8 @@
           "children": [
             {
               "name": "Chocolate Amargo",
-              "icon": "fa-solid fa-box"
+              "icon": "fa-solid fa-box",
+              "color": "#470603"
             },
             {
               "name": "Chocolate de Leche",
@@ -426,7 +510,8 @@
               "name": "Cacao en Polvo",
               "icon": "fa-solid fa-wind"
             }
-          ]
+          ],
+          "color": "#BB764C"
         }
       ]
     },
@@ -440,33 +525,41 @@
           "children": [
             {
               "name": "Melaza",
-              "icon": "fa-solid fa-droplet"
+              "icon": "fa-solid fa-droplet",
+              "color": "#310C0F"
             },
             {
               "name": "Jarabe de Maple",
-              "icon": "fa-solid fa-leaf"
+              "icon": "fa-solid fa-leaf",
+              "color": "#AE341F"
             },
             {
               "name": "Azúcar Caramelizada",
-              "icon": "fa-solid fa-candy-cane"
+              "icon": "fa-solid fa-candy-cane",
+              "color": "#D78823"
             },
             {
               "name": "Miel",
-              "icon": "fa-solid fa-jar"
+              "icon": "fa-solid fa-jar",
+              "color": "#DA5C1F"
             }
-          ]
+          ],
+          "color": "#D45A59"
         },
         {
           "name": "Vainilla",
-          "icon": "fa-solid fa-star"
+          "icon": "fa-solid fa-star",
+          "color": "#F89A80"
         },
         {
           "name": "Dulce General",
-          "icon": "fa-solid fa-cookie-bite"
+          "icon": "fa-solid fa-cookie-bite",
+          "color": "#E75B68"
         },
         {
           "name": "Aromas Dulces",
-          "icon": "fa-solid fa-droplet"
+          "icon": "fa-solid fa-droplet",
+          "color": "#D0545F"
         }
       ]
     }
