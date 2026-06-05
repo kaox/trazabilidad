@@ -567,135 +567,149 @@
   "cacao": {
     "Fruta Fresca": {
       "icon": "fa-solid fa-apple-whole",
-      "color": "#ef4444",
+      "color": "#F7D70C",
       "children": [
         {
           "name": "Bayas/Frutos Rojos",
-          "icon": "fa-solid fa-gem"
+          "icon": "fa-solid fa-gem",
+          "color": "#FEF2B6"
         },
         {
           "name": "Cítricos",
-          "icon": "fa-solid fa-lemon"
+          "icon": "fa-solid fa-lemon",
+          "color": "#FEF2B6"
         },
         {
           "name": "Oscura",
-          "icon": "fa-solid fa-cloud-moon"
+          "icon": "fa-solid fa-cloud-moon",
+          "color": "#FEF2B6"
         },
         {
           "name": "Pulpa Amarilla/Naranja/Blanca",
-          "icon": "fa-solid fa-sun"
+          "icon": "fa-solid fa-sun",
+          "color": "#FEF2B6"
         },
         {
           "name": "Tropical",
-          "icon": "fa-solid fa-fan"
+          "icon": "fa-solid fa-fan",
+          "color": "#FEF2B6"
         }
       ]
     },
     "Fruta Marrón": {
       "icon": "fa-solid fa-box-archive",
-      "color": "#92400e",
+      "color": "#431613",
       "children": [
         {
           "name": "Seca (Pasa, Higo)",
-          "icon": "fa-solid fa-sun"
+          "icon": "fa-solid fa-sun",
+          "color": "#C9B8BA"
         },
         {
           "name": "Marrón",
-          "icon": "fa-solid fa-box"
+          "icon": "fa-solid fa-box",
+          "color": "#C9B8BA"
         },
         {
           "name": "Sobre Madura",
-          "icon": "fa-solid fa-hourglass-end"
+          "icon": "fa-solid fa-hourglass-end",
+          "color": "#C9B8BA"
         }
       ]
     },
     "Vegetal": {
       "icon": "fa-solid fa-leaf",
-      "color": "#22c55e",
+      "color": "#006161",
       "children": [
         {
           "name": "Pasto/Vegetal verde/Hierba",
-          "icon": "fa-solid fa-hashtag"
+          "icon": "fa-solid fa-hashtag",
+          "color": "#B2D0D0"
         },
         {
           "name": "Terroso/Hongo/Musgo/Bosque",
-          "icon": "fa-solid fa-mountain"
+          "icon": "fa-solid fa-mountain",
+          "color": "#B2D0D0"
         }
       ]
     },
     "Floral": {
       "icon": "fa-solid fa-fan",
-      "color": "#ec4899",
+      "color": "#8EC541",
       "children": [
         {
           "name": "Flor de Azahar",
-          "icon": "fa-solid fa-sun"
+          "icon": "fa-solid fa-sun",
+          "color": "#DDEDC6"
         },
         {
           "name": "Flores",
-          "icon": "fa-solid fa-flower"
+          "icon": "fa-solid fa-flower",
+          "color": "#DDEDC6"
         }
       ]
     },
     "Madera": {
       "icon": "fa-solid fa-tree",
-      "color": "#6b46c1",
+      "color": "#AA7D50",
       "children": [
         {
           "name": "Madera Clara",
-          "icon": "fa-solid fa-tree-city"
+          "icon": "fa-solid fa-tree-city",
+          "color": "#E5D7CA"
         },
         {
           "name": "Madera Oscura",
-          "icon": "fa-solid fa-bed"
+          "icon": "fa-solid fa-bed",
+          "color": "#E5D7CA"
         },
         {
           "name": "Resina",
-          "icon": "fa-solid fa-flask"
+          "icon": "fa-solid fa-flask",
+          "color": "#E5D7CA"
         }
       ]
     },
     "Especia": {
       "icon": "fa-solid fa-mortar-pestle",
-      "color": "#f59e0b",
+      "color": "#C43C34",
       "children": [
         {
           "name": "Especias",
-          "icon": "fa-solid fa-cookie-bite"
+          "icon": "fa-solid fa-cookie-bite",
+          "color": "#EDC6C1"
         },
         {
           "name": "Tabaco",
-          "icon": "fa-solid fa-leaf"
+          "icon": "fa-solid fa-leaf",
+          "color": "#EDC6C1"
         },
         {
           "name": "Salado/Umami",
-          "icon": "fa-solid fa-fish"
+          "icon": "fa-solid fa-fish",
+          "color": "#EDC6C1"
         }
       ]
     },
     "Nuez": {
       "icon": "fa-solid fa-stroopwafel",
-      "color": "#964b00",
+      "color": "#9FA368",
       "children": [
         {
           "name": "Parte Interna",
-          "icon": "fa-solid fa-seedling"
+          "icon": "fa-solid fa-seedling",
+          "color": "#E3E4D1"
         },
         {
           "name": "Piel",
-          "icon": "fa-solid fa-ring"
+          "icon": "fa-solid fa-ring",
+          "color": "#E3E4D1"
         }
       ]
     },
     "Caramelo / Panela": {
       "icon": "fa-solid fa-candy-cane",
-      "color": "#f97316",
-      "children": [
-        {
-          "name": "Caramelo / Panela",
-          "icon": "fa-solid fa-cube"
-        }
-      ]
+      "color": "#BE7846"
     }
   },
   "miel": {
