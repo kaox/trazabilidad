@@ -27,8 +27,6 @@
     <link
         href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Playfair+Display:wght@700;900&display=swap"
         rel="stylesheet" crossorigin>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
-        crossorigin />
 
     <script
         src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAM37iJTRcIoSAxESlDzB2DxlNJWKasW5U&libraries=geometry,drawing,places&v=weekly"
@@ -170,7 +168,8 @@
                 </div>
             </div>
             <!-- FILTRO 3: SUBTIPO (Depende del tipo de entidad) -->
-            <div id="subtypes-filter" class="mt-4 flex items-center gap-2 overflow-x-auto hide-scrollbar pt-4 border-t border-stone-200 hidden">
+            <div id="subtypes-filter"
+                class="mt-4 flex items-center gap-2 overflow-x-auto hide-scrollbar pt-4 border-t border-stone-200 hidden">
                 <span class="text-xs font-bold text-stone-400 uppercase tracking-widest mr-2">Subtipo:</span>
                 <button onclick="app.setSubtypeFilter('all')" data-subtype-filter="all"
                     class="subtype-filter-btn active whitespace-nowrap px-4 py-1.5 rounded-full border border-stone-200 bg-white text-stone-600 font-bold text-xs transition-all">
@@ -202,7 +201,7 @@
                     📦 Otros
                 </button>
             </div>
-            
+
         </div>
 
         <!-- Contenedor Mapa -->
