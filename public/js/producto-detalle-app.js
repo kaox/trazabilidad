@@ -178,6 +178,36 @@ const app = {
             brandHeader.classList.remove('hidden');
         }
 
+        // Breadcrumb
+        const breadcrumb = document.getElementById('product-breadcrumb');
+        const breadcrumbStore = document.getElementById('breadcrumb-store');
+        const breadcrumbStoreName = document.getElementById('breadcrumb-store-name');
+        const breadcrumbStoreProducts = document.getElementById('breadcrumb-store-products');
+        const breadcrumbProduct = document.getElementById('breadcrumb-product');
+
+        if (breadcrumb && breadcrumbStore && breadcrumbProduct) {
+            const companyName = this.product.empresa?.nombre || 'Tienda';
+            breadcrumbProduct.textContent = this.product.nombre;
+
+            // Derive the store URL: take the first two path segments of the canonical URL
+            // e.g. /origen-unico/burgos-chocolate-1  from /origen-unico/burgos-chocolate-1/blend-satipo-07b5ec9a
+            let storeHref = '#';
+            const canonical = window.PRODUCT_CANONICAL_URL || window.location.pathname;
+            const segments = canonical.split('/').filter(Boolean);
+            if (segments.length >= 2) {
+                storeHref = '/' + segments[0] + '/' + segments[1];
+            }
+
+            breadcrumbStore.href = storeHref;
+            if (breadcrumbStoreName) breadcrumbStoreName.textContent = companyName;
+            
+            if (breadcrumbStoreProducts) {
+                breadcrumbStoreProducts.href = storeHref + '#tienda';
+            }
+            
+            breadcrumb.classList.remove('hidden');
+        }
+
         // Precio
         const priceEl = document.getElementById('product-price');
         if (this.product.precio) {

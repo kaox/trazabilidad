@@ -327,12 +327,40 @@
 
     <main class="flex-grow">
 
-        <!-- Breadcrumbs (solo en modo directorio, oculto en White Label) -->
-        <div id="breadcrumbs" class="container mx-auto px-6 py-4 flex items-center gap-2 text-sm text-stone-500">
-            <a href="/origen-unico" class="hover:text-amber-800 hover:underline font-medium">Empresas</a>
-            <i class="fas fa-chevron-right text-xs text-stone-300"></i>
-            <span id="breadcrumb-company" class="font-bold text-stone-800"></span>
-        </div>
+        <!-- Breadcrumbs dinámicos por página -->
+        <nav id="breadcrumbs" aria-label="Migas de pan"
+            class="container mx-auto px-6 py-3 flex items-center gap-1.5 text-xs font-medium text-stone-400 flex-wrap hidden">
+
+            <!-- Inicio: Nombre tienda -->
+            <span id="bc-inicio" class="hidden items-center gap-1 text-amber-800 font-semibold">
+                <i class="fas fa-store text-[10px]"></i> <span class="bc-store-name">Tienda</span>
+            </span>
+
+            <!-- Tienda: Nombre tienda › Productos -->
+            <span id="bc-tienda" class="hidden items-center gap-1.5">
+                <a href="#inicio" class="hover:text-stone-600 transition-colors flex items-center gap-1">
+                    <i class="fas fa-store text-[10px]"></i> <span class="bc-store-name">Tienda</span>
+                </a>
+                <i class="fas fa-chevron-right text-[8px] text-stone-300"></i>
+                <span class="text-amber-800 font-semibold">Productos</span>
+            </span>
+
+            <!-- Contáctanos: Nombre tienda › Contactenos -->
+            <span id="bc-contacto" class="hidden items-center gap-1.5">
+                <a href="#inicio" class="hover:text-stone-600 transition-colors flex items-center gap-1">
+                    <i class="fas fa-store text-[10px]"></i> <span class="bc-store-name">Tienda</span>
+                </a>
+                <i class="fas fa-chevron-right text-[8px] text-stone-300"></i>
+                <span class="text-amber-800 font-semibold">Contactenos</span>
+            </span>
+
+            <!-- Modo directorio (no White Label): Empresas › NombreEmpresa -->
+            <span id="bc-directorio" class="hidden items-center gap-1.5">
+                <i class="fas fa-store text-[10px]"></i>
+                <span id="breadcrumb-company" class="font-bold text-stone-800"></span>
+            </span>
+        </nav>
+
 
         <!-- Contenedor del Landing (todas las páginas se renderizan aquí) -->
         <div id="landing-view">

@@ -7,6 +7,13 @@ let redisClient = null;
 const getRedisClient = () => {
     if (redisClient !== null) return redisClient;
 
+    // Caché desactivada fuera de producción
+    const environment = process.env.NODE_ENV || 'development';
+    if (environment !== 'production') {
+        redisClient = false;
+        return false;
+    }
+
     if (!process.env.UPSTASH_REDIS_KV_REST_API_URL || !process.env.UPSTASH_REDIS_KV_REST_API_TOKEN) {
         console.warn('⚠️ Upstash Redis credentials not found in environment variables. Caching is disabled.');
         redisClient = false; // Marcamos como false para no intentar reconectar en cada llamada

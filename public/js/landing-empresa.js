@@ -71,9 +71,52 @@ const app = {
             }
         });
 
+        // Actualizar breadcrumb según la página activa
+        this.updateBreadcrumb(page);
+
         // Renderizar la página correspondiente
         if (this.state.landingData) {
             this.renderPage(page);
+        }
+    },
+
+    updateBreadcrumb: function (page) {
+        // Ocultar todos los slots
+        ['bc-inicio', 'bc-tienda', 'bc-contacto', 'bc-directorio'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.classList.replace('flex', 'hidden') || el.classList.add('hidden');
+        });
+
+        const isSubdomain = !!window.IS_SUBDOMAIN;
+
+        if (isSubdomain) {
+            // Subdominio: solo slots White Label (sin enlace a directorio)
+            const slotId = page === 'tienda' ? 'bc-tienda'
+                : page === 'contacto' ? 'bc-contacto'
+                : 'bc-inicio';
+            const slot = document.getElementById(slotId);
+            if (slot) {
+                slot.classList.remove('hidden');
+                slot.classList.add('flex');
+            }
+        } else {
+            // Ruta /origen-unico/:slug: en Inicio mostramos directorio, en otras los slots WL
+            if (page === 'inicio') {
+                const slot = document.getElementById('bc-directorio');
+                if (slot) { slot.classList.remove('hidden'); slot.classList.add('flex'); }
+            } else {
+                const slotId = page === 'tienda' ? 'bc-tienda' : 'bc-contacto';
+                const slot = document.getElementById(slotId);
+                if (slot) { slot.classList.remove('hidden'); slot.classList.add('flex'); }
+            }
+        }
+
+        // Rellenar label con nombre de la empresa
+        if (this.state.landingData) {
+            const companyName = this.state.landingData.user?.name || 'Tienda';
+            document.querySelectorAll('.bc-store-name').forEach(el => {
+                el.textContent = companyName;
+            });
         }
     },
 
@@ -204,10 +247,18 @@ const app = {
 
         if (window.IS_SUBDOMAIN) {
             if (navPlaceholder) navPlaceholder.style.display = 'none';
-            if (breadcrumbs) breadcrumbs.style.display = 'none';
+            // Subdomain: breadcrumb visible con slots White Label
+            if (breadcrumbs) breadcrumbs.classList.remove('hidden');
         } else {
             if (navPlaceholder) navPlaceholder.style.display = 'block';
-            if (breadcrumbs) breadcrumbs.style.display = 'flex';
+            // Ruta /origen-unico/:slug: breadcrumb visible
+            if (breadcrumbs) breadcrumbs.classList.remove('hidden');
+            // Rellenar slot directorio con el nombre de la empresa
+            const bcDirectorio = document.getElementById('bc-directorio');
+            const bcCompany = document.getElementById('breadcrumb-company');
+            if (bcCompany) bcCompany.textContent = user.name || '';
+            // El slot directorio se mostrará en handleRouting() para 'inicio'
+            // pero en las páginas internas se oculta y se usan los slots WL
         }
     },
 

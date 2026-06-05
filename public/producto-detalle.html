@@ -5,20 +5,23 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Detalle de Producto - Ruru Lab</title>
-    <meta name="description" content="Descubre la trazabilidad completa, perfil sensorial y origen de este producto en Ruru Lab. Transparencia desde la finca hasta tu mesa.">
-    
+    <meta name="description"
+        content="Descubre la trazabilidad completa, perfil sensorial y origen de este producto en Ruru Lab. Transparencia desde la finca hasta tu mesa.">
+
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="product">
     <meta property="og:url" content="">
     <meta property="og:title" content="Detalle de Producto - Ruru Lab">
-    <meta property="og:description" content="Descubre la trazabilidad completa, perfil sensorial y origen de este producto en Ruru Lab.">
+    <meta property="og:description"
+        content="Descubre la trazabilidad completa, perfil sensorial y origen de este producto en Ruru Lab.">
     <meta property="og:image" content="">
 
     <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:url" content="">
     <meta name="twitter:title" content="Detalle de Producto - Ruru Lab">
-    <meta name="twitter:description" content="Descubre la trazabilidad completa, perfil sensorial y origen de este producto en Ruru Lab.">
+    <meta name="twitter:description"
+        content="Descubre la trazabilidad completa, perfil sensorial y origen de este producto en Ruru Lab.">
     <meta name="twitter:image" content="">
 
     <!-- Structured Data -->
@@ -138,9 +141,11 @@
     <div id="public-nav-placeholder"></div>
 
     <main class="container mx-auto px-6 py-6">
+
         <!-- Brand Header -->
         <div id="brand-header" class="flex items-center gap-4 mb-8 pb-6 border-b border-stone-200 hidden">
-            <div class="w-16 h-16 rounded-2xl bg-white shadow-sm border border-stone-100 p-2 flex items-center justify-center overflow-hidden">
+            <div
+                class="w-16 h-16 rounded-2xl bg-white shadow-sm border border-stone-100 p-2 flex items-center justify-center overflow-hidden">
                 <img id="brand-logo" src="" alt="Logo" class="max-w-full max-h-full object-contain">
             </div>
             <div>
@@ -148,6 +153,19 @@
                 <h2 id="brand-name" class="text-2xl font-display font-bold text-stone-900"></h2>
             </div>
         </div>
+
+        <!-- Breadcrumb -->
+        <nav id="product-breadcrumb" aria-label="Migas de pan"
+            class="flex items-center gap-1.5 text-xs font-medium text-stone-400 mb-6 flex-wrap hidden">
+            <a id="breadcrumb-store" href="#" class="hover:text-amber-700 transition-colors flex items-center gap-1">
+                <i class="fas fa-store text-[10px]"></i>
+                <span id="breadcrumb-store-name" class="truncate max-w-[160px]">Empresa</span>
+            </a>
+            <i class="fas fa-chevron-right text-[8px] text-stone-300"></i>
+            <a id="breadcrumb-store-products" href="#" class="hover:text-amber-700 transition-colors">Productos</a>
+            <i class="fas fa-chevron-right text-[8px] text-stone-300"></i>
+            <span id="breadcrumb-product" class="text-amber-800 font-semibold truncate max-w-[200px]"></span>
+        </nav>
 
         <!-- Parte Superior: Galería, Premios e Info -->
         <div class="flex flex-col lg:flex-row gap-12 mb-12">
@@ -157,8 +175,9 @@
                 <div class="relative group">
                     <!-- Imagen Principal -->
                     <div class="product-gallery-main flex items-center justify-center overflow-hidden relative">
-                        <img id="main-product-image" src="" alt="Producto" class="max-w-full max-h-full object-contain z-10">
-                        
+                        <img id="main-product-image" src="" alt="Producto"
+                            class="max-w-full max-h-full object-contain z-10">
+
                         <!-- Premios Overlaid (Esquina superior derecha de la imagen) -->
                         <div id="awards-overlay" class="absolute top-4 right-4 z-20 flex flex-col gap-2">
                             <!-- Se llenan con JS -->
@@ -175,7 +194,8 @@
             <div class="w-full lg:w-7/12">
                 <!-- Header -->
                 <div class="mb-8">
-                    <div class="flex items-center gap-2 text-xs font-bold text-stone-400 uppercase tracking-widest mb-3">
+                    <div
+                        class="flex items-center gap-2 text-xs font-bold text-stone-400 uppercase tracking-widest mb-3">
                         <a href="/marketplace" class="hover:text-stone-600">Marketplace</a>
                         <i class="fas fa-chevron-right text-[8px]"></i>
                         <span id="breadcrumb-category" class="text-amber-800">Cacao</span>
