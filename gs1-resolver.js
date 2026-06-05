@@ -10,9 +10,9 @@ const resolve = async (req, res) => {
 
     // 1. Recolección de Variables de Contexto (Context-Awareness)
     // Vercel proporciona headers de geolocalización automáticamente
-    const userCountry = req.headers['x-vercel-ip-country'] || 'XX'; 
+    const userCountry = req.headers['x-vercel-ip-country'] || 'XX';
     const userRegion = req.headers['x-vercel-ip-city'] || 'Unknown';
-    
+
     // Idioma preferido del navegador (ej: 'es-ES,es;q=0.9,en;q=0.8')
     const acceptLanguage = req.headers['accept-language'] || '';
     const userLang = acceptLanguage.split(',')[0].split('-')[0] || 'es'; // 'es', 'en', etc.
@@ -23,7 +23,7 @@ const resolve = async (req, res) => {
         // 2. Consulta a Base de Datos (Validación Cruzada)
         // Buscamos el lote y verificamos que pertenezca a un producto con ese GTIN
         const batchData = await db.getBatchByGtinAndLot(gtin, loteId);
-        
+
         if (!batchData) {
             console.warn(`[GS1 404] No se encontró lote ${loteId} con GTIN ${gtin}`);
             // Podrías redirigir a una página de "Producto no encontrado" o búsqueda genérica
@@ -56,7 +56,7 @@ const resolve = async (req, res) => {
         }
 
         // 3. Gestión de Redirección por Estado (Safety Valve)
-        
+
         // CASO A: RECALL (Retiro de producto) - Prioridad Máxima
         if (batchData.status === 'recall') {
             // Redirigir a pantalla de advertencia roja
@@ -67,10 +67,10 @@ const resolve = async (req, res) => {
         // CASO B: EXPIRADO (Opcional)
         // Podríamos redirigir a una versión diferente o añadir un flag a la URL normal
         const isExpired = batchData.status === 'expired';
-        
+
         // 4. Construcción de la URL de Destino (Resolver)
         // Por defecto, vamos a la página de trazabilidad pública que ya creaste
-        let targetUrl = `/${loteId}`; 
+        let targetUrl = `/${loteId}`;
 
         // Inyección de variables de contexto en la URL
         // Esto permite que tu frontend (tracking.html) adapte el contenido si es necesario
@@ -78,7 +78,7 @@ const resolve = async (req, res) => {
         const queryParams = new URLSearchParams();
         if (userLang !== 'es') queryParams.append('lang', userLang);
         if (isExpired) queryParams.append('alert', 'expired');
-        
+
         // Si hay params, los añadimos
         const queryString = queryParams.toString();
         if (queryString) targetUrl += `?${queryString}`;
@@ -106,7 +106,7 @@ const resolveProduct = async (req, res) => {
 
     try {
         const product = await ProductoModel.getByGtin(gtin);
-        
+
         if (!product) {
             console.warn(`[GS1 404] No se encontró producto con GTIN ${gtin}`);
             return res.status(404).send(`

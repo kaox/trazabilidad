@@ -1,24 +1,36 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestión de Existencias - Rurulab</title>
     <link href="/css/styles.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
     <script src="/auth.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@700;800&display=swap"
+        rel="stylesheet">
     <script src="/js/analytics-loader.js" defer></script>
     <style>
-        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
-        h1, h2, h3, .font-display { font-family: 'Playfair Display', serif; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc;
+        }
+
+        h1,
+        h2,
+        h3,
+        .font-display {
+            font-family: 'Playfair Display', serif;
+        }
     </style>
 </head>
+
 <body class="text-slate-800 antialiased">
     <div id="nav-placeholder"></div>
-    
+
     <div class="container mx-auto px-4 md:px-8 py-8 max-w-7xl">
-        
+
         <!-- Header -->
         <header class="mb-10">
             <h1 class="text-3xl md:text-4xl font-bold text-slate-900 font-display mb-2">Almacén Central</h1>
@@ -60,19 +72,28 @@
 
         <!-- Filtros y Tabla -->
         <div class="bg-white rounded-2xl shadow-lg border border-slate-200 overflow-hidden">
-            
+
             <!-- Barra de Herramientas -->
             <div class="p-6 border-b border-slate-100 flex flex-col md:flex-row justify-between items-center gap-4">
                 <div class="flex gap-2 p-1 bg-slate-100 rounded-xl">
-                    <button class="filter-tab active px-4 py-2 rounded-lg text-sm font-bold text-white bg-slate-800 shadow-sm transition" data-status="all">Todo</button>
-                    <button class="filter-tab px-4 py-2 rounded-lg text-sm font-bold text-slate-600 hover:bg-white hover:shadow-sm transition" data-status="acopio">Acopio (Materia Prima)</button>
-                    <button class="filter-tab px-4 py-2 rounded-lg text-sm font-bold text-slate-600 hover:bg-white hover:shadow-sm transition" data-status="proceso">En Proceso</button>
-                    <button class="filter-tab px-4 py-2 rounded-lg text-sm font-bold text-slate-600 hover:bg-white hover:shadow-sm transition" data-status="terminado">Terminado</button>
+                    <button
+                        class="filter-tab active px-4 py-2 rounded-lg text-sm font-bold text-white bg-slate-800 shadow-sm transition"
+                        data-status="all">Todo</button>
+                    <button
+                        class="filter-tab px-4 py-2 rounded-lg text-sm font-bold text-slate-600 hover:bg-white hover:shadow-sm transition"
+                        data-status="acopio">Acopio (Materia Prima)</button>
+                    <button
+                        class="filter-tab px-4 py-2 rounded-lg text-sm font-bold text-slate-600 hover:bg-white hover:shadow-sm transition"
+                        data-status="proceso">En Proceso</button>
+                    <button
+                        class="filter-tab px-4 py-2 rounded-lg text-sm font-bold text-slate-600 hover:bg-white hover:shadow-sm transition"
+                        data-status="terminado">Terminado</button>
                 </div>
-                
+
                 <div class="relative">
                     <i class="fas fa-search absolute left-3 top-3 text-slate-400 text-sm"></i>
-                    <input type="text" id="search-inventory" placeholder="Buscar lote, producto..." class="pl-9 pr-4 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-amber-500 outline-none w-64">
+                    <input type="text" id="search-inventory" placeholder="Buscar lote, producto..."
+                        class="pl-9 pr-4 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-amber-500 outline-none w-64">
                 </div>
             </div>
 
@@ -92,12 +113,15 @@
                         </tr>
                     </thead>
                     <tbody id="inventory-table-body" class="text-sm text-slate-700 divide-y divide-slate-100">
-                        <tr><td colspan="8" class="p-8 text-center text-slate-400">Cargando inventario...</td></tr>
+                        <tr>
+                            <td colspan="8" class="p-8 text-center text-slate-400">Cargando inventario...</td>
+                        </tr>
                     </tbody>
                 </table>
             </div>
-            
-            <div class="p-4 border-t border-slate-100 bg-slate-50 text-xs text-slate-500 flex justify-between items-center">
+
+            <div
+                class="p-4 border-t border-slate-100 bg-slate-50 text-xs text-slate-500 flex justify-between items-center">
                 <span>* El Costo Promedio Ponderado (CPP) se calcula en base a las compras/acopios históricos.</span>
                 <button id="export-btn" class="flex items-center gap-2 text-amber-700 font-bold hover:underline">
                     <i class="fas fa-file-excel"></i> Exportar Reporte
@@ -111,4 +135,5 @@
     <script src="/js/existencias-app.js"></script>
     <script src="/js/help-menu.js"></script>
 </body>
+
 </html>

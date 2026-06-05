@@ -1,26 +1,57 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestor de Ruedas de Sabor - Ruru Lab</title>
     <script src="/auth.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Playfair+Display:wght@700&display=swap"
+        rel="stylesheet">
     <script src="https://d3js.org/d3.v7.min.js"></script>
     <script src="/js/d3-sunburst.js"></script>
+    <script src="/js/analytics-loader.js" defer></script>
     <style>
-        body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
-        .glass-panel { background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(10px); }
-        .note-chip { animation: fadeIn 0.3s ease; }
-        @keyframes fadeIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
-        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+        }
+
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(10px);
+        }
+
+        .note-chip {
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: scale(0.9);
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
         /* Custom radio buttons styling */
-        input[type="radio"]:checked + span { color: #b45309; }
-        input[type="radio"]:checked ~ .radio-bg { border-color: #b45309; background-color: #fef3c7; }
+        input[type="radio"]:checked+span {
+            color: #b45309;
+        }
+
+        input[type="radio"]:checked~.radio-bg {
+            border-color: #b45309;
+            background-color: #fef3c7;
+        }
     </style>
 </head>
+
 <body class="text-gray-800">
     <div id="nav-placeholder"></div>
 
@@ -36,7 +67,8 @@
                         <p class="text-xs text-gray-500">Configuración sensorial SCA / CoE</p>
                     </div>
                 </div>
-                <button onclick="openRuedaModal()" class="bg-amber-600 hover:bg-amber-700 text-white font-bold py-2.5 px-5 rounded-xl transition text-sm flex items-center gap-2 shadow-lg shadow-amber-100">
+                <button onclick="openRuedaModal()"
+                    class="bg-amber-600 hover:bg-amber-700 text-white font-bold py-2.5 px-5 rounded-xl transition text-sm flex items-center gap-2 shadow-lg shadow-amber-100">
                     <i class="fas fa-plus"></i> Nueva Rueda
                 </button>
             </div>
@@ -55,39 +87,54 @@
 
     <!-- Modal Form -->
     <div id="ruedaModal" class="fixed inset-0 bg-black/60 hidden flex items-center justify-center z-50 overflow-y-auto">
-        <div class="bg-white rounded-3xl shadow-2xl max-w-6xl w-full mx-4 my-8 relative flex flex-col lg:flex-row overflow-hidden border border-white/20">
-            <button onclick="closeRuedaModal()" class="absolute top-6 right-6 text-gray-400 hover:text-gray-600 z-20 w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100 transition">
+        <div
+            class="bg-white rounded-3xl shadow-2xl max-w-6xl w-full mx-4 my-8 relative flex flex-col lg:flex-row overflow-hidden border border-white/20">
+            <button onclick="closeRuedaModal()"
+                class="absolute top-6 right-6 text-gray-400 hover:text-gray-600 z-20 w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100 transition">
                 <i class="fas fa-times text-xl"></i>
             </button>
 
             <!-- Panel Izquierdo: Configuración -->
             <div class="lg:w-2/5 p-8 border-r border-gray-100 flex flex-col bg-white">
                 <h3 class="text-2xl font-bold text-gray-900 mb-8" id="modal-title">Configurar Perfil</h3>
-                
+
                 <form id="ruedaForm" class="space-y-8 flex-grow">
                     <input type="hidden" id="rueda-id">
-                    
+
                     <div>
-                        <label class="block text-[11px] font-bold text-gray-400 uppercase mb-2 tracking-widest">Identificador del Perfil</label>
-                        <input type="text" id="rueda-nombre" required class="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-4 focus:ring-amber-500/10 focus:border-amber-500 outline-none transition font-medium" placeholder="Ej. Lote Especial Finca La Esperanza">
+                        <label
+                            class="block text-[11px] font-bold text-gray-400 uppercase mb-2 tracking-widest">Identificador
+                            del Perfil</label>
+                        <input type="text" id="rueda-nombre" required
+                            class="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-4 focus:ring-amber-500/10 focus:border-amber-500 outline-none transition font-medium"
+                            placeholder="Ej. Lote Especial Finca La Esperanza">
                     </div>
-                    
+
                     <div>
-                        <label class="block text-[11px] font-bold text-gray-400 uppercase mb-3 tracking-widest">Módulo Sensorial</label>
+                        <label class="block text-[11px] font-bold text-gray-400 uppercase mb-3 tracking-widest">Módulo
+                            Sensorial</label>
                         <div class="grid grid-cols-2 gap-4">
                             <label class="relative group cursor-pointer">
-                                <input type="radio" name="rueda-tipo" value="cafe" checked class="absolute opacity-0" onchange="switchTipo('cafe')">
-                                <div class="radio-bg absolute inset-0 border-2 border-gray-100 rounded-2xl transition-all group-hover:border-amber-200"></div>
+                                <input type="radio" name="rueda-tipo" value="cafe" checked class="absolute opacity-0"
+                                    onchange="switchTipo('cafe')">
+                                <div
+                                    class="radio-bg absolute inset-0 border-2 border-gray-100 rounded-2xl transition-all group-hover:border-amber-200">
+                                </div>
                                 <div class="relative flex flex-col items-center p-4">
-                                    <i class="fas fa-mug-hot text-2xl mb-2 text-gray-400 group-hover:text-amber-500 transition"></i>
+                                    <i
+                                        class="fas fa-mug-hot text-2xl mb-2 text-gray-400 group-hover:text-amber-500 transition"></i>
                                     <span class="text-sm font-bold text-gray-500 transition">Café</span>
                                 </div>
                             </label>
                             <label class="relative group cursor-pointer">
-                                <input type="radio" name="rueda-tipo" value="cacao" class="absolute opacity-0" onchange="switchTipo('cacao')">
-                                <div class="radio-bg absolute inset-0 border-2 border-gray-100 rounded-2xl transition-all group-hover:border-amber-200"></div>
+                                <input type="radio" name="rueda-tipo" value="cacao" class="absolute opacity-0"
+                                    onchange="switchTipo('cacao')">
+                                <div
+                                    class="radio-bg absolute inset-0 border-2 border-gray-100 rounded-2xl transition-all group-hover:border-amber-200">
+                                </div>
                                 <div class="relative flex flex-col items-center p-4">
-                                    <i class="fas fa-seedling text-2xl mb-2 text-gray-400 group-hover:text-amber-500 transition"></i>
+                                    <i
+                                        class="fas fa-seedling text-2xl mb-2 text-gray-400 group-hover:text-amber-500 transition"></i>
                                     <span class="text-sm font-bold text-gray-500 transition">Cacao</span>
                                 </div>
                             </label>
@@ -95,35 +142,45 @@
                     </div>
 
                     <div class="flex-grow flex flex-col">
-                        <label class="block text-[11px] font-bold text-gray-400 uppercase mb-3 tracking-widest">Descriptor Sensorial (Seleccionado)</label>
-                        <div id="selected-notes" class="flex flex-wrap gap-2.5 min-h-[160px] p-4 bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200 overflow-y-auto">
+                        <label
+                            class="block text-[11px] font-bold text-gray-400 uppercase mb-3 tracking-widest">Descriptor
+                            Sensorial (Seleccionado)</label>
+                        <div id="selected-notes"
+                            class="flex flex-wrap gap-2.5 min-h-[160px] p-4 bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200 overflow-y-auto">
                             <!-- Chips de notas -->
                             <div class="w-full flex flex-col items-center justify-center text-center py-6 opacity-40">
                                 <i class="fas fa-plus-circle text-2xl mb-2"></i>
-                                <p class="text-[11px] font-bold uppercase tracking-tight">Haz clic en el gráfico para añadir descriptores</p>
+                                <p class="text-[11px] font-bold uppercase tracking-tight">Haz clic en el gráfico para
+                                    añadir descriptores</p>
                             </div>
                         </div>
                     </div>
 
                     <div class="pt-8 flex gap-4 border-t border-gray-100">
-                        <button type="button" onclick="closeRuedaModal()" class="flex-1 px-6 py-4 text-gray-500 font-bold hover:bg-gray-100 rounded-2xl transition text-sm">Cancelar</button>
-                        <button type="submit" class="flex-[1.5] px-8 py-4 bg-amber-600 text-white hover:bg-amber-700 rounded-2xl font-bold shadow-xl shadow-amber-200 transition text-sm">Guardar Configuración</button>
+                        <button type="button" onclick="closeRuedaModal()"
+                            class="flex-1 px-6 py-4 text-gray-500 font-bold hover:bg-gray-100 rounded-2xl transition text-sm">Cancelar</button>
+                        <button type="submit"
+                            class="flex-[1.5] px-8 py-4 bg-amber-600 text-white hover:bg-amber-700 rounded-2xl font-bold shadow-xl shadow-amber-200 transition text-sm">Guardar
+                            Configuración</button>
                     </div>
                 </form>
             </div>
 
             <!-- Panel Derecho: Visualizador D3 -->
             <div class="lg:w-3/5 bg-gray-50 p-12 flex flex-col items-center justify-center relative min-h-[500px]">
-                <div class="absolute top-10 left-10 flex items-center gap-3 bg-white/80 backdrop-blur-sm px-4 py-2 rounded-full border border-gray-100 shadow-sm">
+                <div
+                    class="absolute top-10 left-10 flex items-center gap-3 bg-white/80 backdrop-blur-sm px-4 py-2 rounded-full border border-gray-100 shadow-sm">
                     <span class="w-2 h-2 bg-amber-500 rounded-full animate-ping"></span>
-                    <span class="text-[10px] font-extrabold text-gray-500 uppercase tracking-widest">Visualizador Interactivo</span>
+                    <span class="text-[10px] font-extrabold text-gray-500 uppercase tracking-widest">Visualizador
+                        Interactivo</span>
                 </div>
 
                 <div id="sunburst-container" class="w-full aspect-square max-w-[540px] drop-shadow-2xl"></div>
-                
+
                 <div class="mt-12 text-center max-w-sm">
                     <h4 class="text-xs font-bold text-gray-400 uppercase mb-2 tracking-widest">Navegación Radial</h4>
-                    <p class="text-sm text-gray-500 leading-relaxed font-medium">Explora la jerarquía desde el centro (Categorías) hacia el exterior (Descriptores específicos).</p>
+                    <p class="text-sm text-gray-500 leading-relaxed font-medium">Explora la jerarquía desde el centro
+                        (Categorías) hacia el exterior (Descriptores específicos).</p>
                 </div>
             </div>
         </div>
@@ -133,22 +190,30 @@
     <div id="snippetModal" class="fixed inset-0 bg-black/70 hidden flex items-center justify-center z-50 p-4">
         <div class="bg-white p-10 rounded-[2.5rem] shadow-2xl max-w-xl w-full relative">
             <div class="text-center mb-8">
-                <div class="w-20 h-20 bg-amber-50 text-amber-600 rounded-3xl flex items-center justify-center mx-auto mb-6 text-3xl shadow-inner">
+                <div
+                    class="w-20 h-20 bg-amber-50 text-amber-600 rounded-3xl flex items-center justify-center mx-auto mb-6 text-3xl shadow-inner">
                     <i class="fas fa-share-nodes"></i>
                 </div>
                 <h3 class="text-3xl font-black text-gray-900 tracking-tight">Publicar Widget</h3>
-                <p class="text-gray-500 mt-3 font-medium">Inserta este gráfico interactivo en tu página web o descripción de producto.</p>
+                <p class="text-gray-500 mt-3 font-medium">Inserta este gráfico interactivo en tu página web o
+                    descripción de producto.</p>
             </div>
 
             <div class="relative group mb-8">
-                <div class="absolute -top-3 left-6 bg-white px-3 py-1 rounded-full border border-gray-100 text-[10px] font-black text-amber-600 uppercase tracking-widest z-10">Código HTML</div>
-                <textarea id="snippet-code" class="w-full h-44 bg-gray-900 text-amber-200/90 p-8 pt-10 rounded-3xl font-mono text-sm leading-relaxed resize-none focus:ring-4 focus:ring-amber-500/20 outline-none border-none shadow-2xl" readonly></textarea>
-                <button onclick="copySnippet()" class="absolute top-4 right-4 bg-gray-800/50 hover:bg-amber-600 text-white p-3 rounded-2xl transition backdrop-blur-md">
+                <div
+                    class="absolute -top-3 left-6 bg-white px-3 py-1 rounded-full border border-gray-100 text-[10px] font-black text-amber-600 uppercase tracking-widest z-10">
+                    Código HTML</div>
+                <textarea id="snippet-code"
+                    class="w-full h-44 bg-gray-900 text-amber-200/90 p-8 pt-10 rounded-3xl font-mono text-sm leading-relaxed resize-none focus:ring-4 focus:ring-amber-500/20 outline-none border-none shadow-2xl"
+                    readonly></textarea>
+                <button onclick="copySnippet()"
+                    class="absolute top-4 right-4 bg-gray-800/50 hover:bg-amber-600 text-white p-3 rounded-2xl transition backdrop-blur-md">
                     <i class="fas fa-copy"></i>
                 </button>
             </div>
 
-            <button onclick="document.getElementById('snippetModal').classList.add('hidden')" class="w-full bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold py-5 rounded-[1.5rem] transition text-lg tracking-tight">
+            <button onclick="document.getElementById('snippetModal').classList.add('hidden')"
+                class="w-full bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold py-5 rounded-[1.5rem] transition text-lg tracking-tight">
                 Entendido
             </button>
         </div>
@@ -158,4 +223,5 @@
     <script src="/js/nav-loader.js" defer></script>
     <script src="/js/ruedas-app.js"></script>
 </body>
+
 </html>

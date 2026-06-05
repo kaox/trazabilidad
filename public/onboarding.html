@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -11,38 +12,74 @@
     <link href="/css/styles.css" rel="stylesheet">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
-    
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Playfair+Display:wght@700;800&display=swap"
+        rel="stylesheet">
+
     <!-- Librería Intl-Tel-Input (Restaurada) -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/intl-tel-input@25.3.0/build/css/intlTelInput.css">
-    
+
     <script src="/js/analytics-loader.js" defer></script>
     <style>
-        body { font-family: 'Inter', sans-serif; background-color: #fdfaf6; }
-        h1, h2, h3, .font-display { font-family: 'Playfair Display', serif; }
-        .fade-in { animation: fadeIn 0.5s ease-in-out; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #fdfaf6;
+        }
+
+        h1,
+        h2,
+        h3,
+        .font-display {
+            font-family: 'Playfair Display', serif;
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
         /* Ajustes para intl-tel-input */
-        .iti { width: 100%; }
+        .iti {
+            width: 100%;
+        }
+
         /* Override para asegurar que las banderas carguen desde el CDN correcto */
-        .iti__flag { background-image: url("https://cdn.jsdelivr.net/npm/intl-tel-input@25.3.0/build/img/flags.png"); }
-        @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
-          .iti__flag { background-image: url("https://cdn.jsdelivr.net/npm/intl-tel-input@25.3.0/build/img/flags@2x.png"); }
+        .iti__flag {
+            background-image: url("https://cdn.jsdelivr.net/npm/intl-tel-input@25.3.0/build/img/flags.png");
+        }
+
+        @media (-webkit-min-device-pixel-ratio: 2),
+        (min-resolution: 192dpi) {
+            .iti__flag {
+                background-image: url("https://cdn.jsdelivr.net/npm/intl-tel-input@25.3.0/build/img/flags@2x.png");
+            }
         }
     </style>
 </head>
+
 <body class="text-stone-800 antialiased flex items-center justify-center min-h-screen py-12 px-4">
-    
+
     <div class="w-full max-w-3xl bg-white rounded-3xl shadow-2xl overflow-hidden fade-in">
         <!-- Banner de Bienvenida (Solo visible si viene por Magic Link) -->
         <div id="welcome-banner" class="bg-gradient-to-r from-amber-700 to-amber-900 p-8 text-white text-center hidden">
-            <div class="w-16 h-16 bg-white/20 backdrop-blur rounded-full flex items-center justify-center mx-auto mb-4 text-3xl">
+            <div
+                class="w-16 h-16 bg-white/20 backdrop-blur rounded-full flex items-center justify-center mx-auto mb-4 text-3xl">
                 ✨
             </div>
             <h1 class="text-3xl font-display font-bold mb-2">¡Hola! Tu perfil ya está casi listo</h1>
-            <p class="text-amber-100 max-w-lg mx-auto">Gracias por reclamar tu espacio en Ruru Lab. Hemos precargado la información de tu empresa. Solo confirma los datos y asegura tu cuenta.</p>
+            <p class="text-amber-100 max-w-lg mx-auto">Gracias por reclamar tu espacio en Ruru Lab. Hemos precargado la
+                información de tu empresa. Solo confirma los datos y asegura tu cuenta.</p>
         </div>
 
         <!-- Encabezado Estándar (Si no es Magic Link) -->
@@ -50,19 +87,21 @@
             <h1 class="text-3xl font-display font-bold text-amber-900">Configuración Inicial</h1>
             <p class="text-stone-500 mt-2">Completa tu perfil para comenzar a trazar.</p>
         </div>
-        
+
         <div class="p-8 md:p-12">
             <form id="onboarding-form" class="space-y-8">
                 <!-- 1. Identidad de la Empresa -->
                 <section>
-                    <h3 class="text-lg font-bold text-stone-700 border-b border-stone-100 pb-2 mb-4 flex items-center gap-2">
+                    <h3
+                        class="text-lg font-bold text-stone-700 border-b border-stone-100 pb-2 mb-4 flex items-center gap-2">
                         <i class="fas fa-building text-amber-600"></i> Tu Empresa / Finca
                     </h3>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                         <div>
                             <label class="block text-sm font-medium text-stone-700 mb-1">Tipo de Entidad</label>
-                            <select id="company_type" name="company_type" class="w-full p-3 border border-stone-300 rounded-xl bg-white focus:ring-2 focus:ring-amber-500 outline-none h-[3.5rem]">
+                            <select id="company_type" name="company_type"
+                                class="w-full p-3 border border-stone-300 rounded-xl bg-white focus:ring-2 focus:ring-amber-500 outline-none h-[3.5rem]">
                                 <option value="finca">Finca / Productor</option>
                                 <option value="procesadora">Procesadora / Empresa</option>
                             </select>
@@ -70,38 +109,51 @@
                         <div>
                             <label class="block text-sm font-medium text-stone-700 mb-1">WhatsApp de Contacto *</label>
                             <!-- inputmode="tel" activa el teclado numérico en móviles -->
-                            <input type="tel" id="celular" name="celular" class="w-full p-3 border border-stone-300 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none" inputmode="tel" required>
+                            <input type="tel" id="celular" name="celular"
+                                class="w-full p-3 border border-stone-300 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none"
+                                inputmode="tel" required>
                             <span id="msg-celular" class="text-xs mt-1 hidden font-bold"></span>
                         </div>
                     </div>
-                    
+
                     <!-- Previsualización de Logo Precargado -->
                     <div class="flex items-center gap-6 mb-6 bg-stone-50 p-4 rounded-xl border border-stone-200">
                         <div class="relative group">
-                            <img id="logo-preview" src="https://placehold.co/100?text=Logo" class="w-24 h-24 rounded-xl object-contain bg-white shadow-sm border border-stone-200">
-                            <div class="absolute inset-0 bg-black/40 rounded-xl flex items-center justify-center opacity-0 group-hover:opacity-100 transition cursor-pointer" onclick="document.getElementById('company_logo_input').click()">
+                            <img id="logo-preview" src="https://placehold.co/100?text=Logo"
+                                class="w-24 h-24 rounded-xl object-contain bg-white shadow-sm border border-stone-200">
+                            <div class="absolute inset-0 bg-black/40 rounded-xl flex items-center justify-center opacity-0 group-hover:opacity-100 transition cursor-pointer"
+                                onclick="document.getElementById('company_logo_input').click()">
                                 <i class="fas fa-camera text-white"></i>
                             </div>
                         </div>
                         <div class="flex-grow">
                             <!-- Campos para PROCESADORA / EMPRESA -->
                             <div id="field-commercial-name">
-                                <label class="block text-xs font-bold text-stone-400 uppercase mb-1">Nombre Comercial</label>
-                                <input type="text" id="empresa" name="empresa" class="w-full p-3 border border-stone-300 rounded-xl font-bold text-stone-800 text-lg focus:ring-2 focus:ring-amber-500 outline-none" placeholder="Nombre de tu Marca o Empresa">
+                                <label class="block text-xs font-bold text-stone-400 uppercase mb-1">Nombre
+                                    Comercial</label>
+                                <input type="text" id="empresa" name="empresa"
+                                    class="w-full p-3 border border-stone-300 rounded-xl font-bold text-stone-800 text-lg focus:ring-2 focus:ring-amber-500 outline-none"
+                                    placeholder="Nombre de tu Marca o Empresa">
                             </div>
 
                             <!-- Campos para FINCA / PRODUCTOR (Ocultos por defecto) -->
                             <div id="field-finca-details" class="hidden space-y-4">
                                 <div>
-                                    <label class="block text-xs font-bold text-stone-400 uppercase mb-1">Nombre de la Finca</label>
-                                    <input type="text" id="nombre_finca" name="nombre_finca" class="w-full p-3 border border-stone-300 rounded-xl font-bold text-stone-800 text-lg focus:ring-2 focus:ring-amber-500 outline-none" placeholder="Ej: Finca La Esperanza">
+                                    <label class="block text-xs font-bold text-stone-400 uppercase mb-1">Nombre de la
+                                        Finca</label>
+                                    <input type="text" id="nombre_finca" name="nombre_finca"
+                                        class="w-full p-3 border border-stone-300 rounded-xl font-bold text-stone-800 text-lg focus:ring-2 focus:ring-amber-500 outline-none"
+                                        placeholder="Ej: Finca La Esperanza">
                                 </div>
                                 <div>
-                                    <label class="block text-xs font-bold text-stone-400 uppercase mb-1">Nombre del Propietario</label>
-                                    <input type="text" id="nombre_propietario" name="nombre_propietario" class="w-full p-3 border border-stone-300 rounded-xl bg-white focus:ring-2 focus:ring-amber-500 outline-none" placeholder="Nombre completo del productor">
+                                    <label class="block text-xs font-bold text-stone-400 uppercase mb-1">Nombre del
+                                        Propietario</label>
+                                    <input type="text" id="nombre_propietario" name="nombre_propietario"
+                                        class="w-full p-3 border border-stone-300 rounded-xl bg-white focus:ring-2 focus:ring-amber-500 outline-none"
+                                        placeholder="Nombre completo del productor">
                                 </div>
                             </div>
-                            
+
                             <!-- Input oculto para el archivo -->
                             <input type="file" id="company_logo_input" class="hidden" accept="image/*">
                             <input type="hidden" id="company_logo_base64" name="company_logo">
@@ -112,11 +164,14 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                         <div class="relative">
                             <i class="fab fa-instagram absolute left-3 top-3.5 text-pink-600 text-lg"></i>
-                            <input type="text" id="social_instagram" name="social_instagram" class="w-full pl-10 p-3 border border-stone-300 rounded-xl" placeholder="Usuario Instagram">
+                            <input type="text" id="social_instagram" name="social_instagram"
+                                class="w-full pl-10 p-3 border border-stone-300 rounded-xl"
+                                placeholder="Usuario Instagram">
                         </div>
                         <div class="relative">
                             <i class="fab fa-facebook absolute left-3 top-3.5 text-blue-600 text-lg"></i>
-                            <input type="text" id="social_facebook" name="social_facebook" class="w-full pl-10 p-3 border border-stone-300 rounded-xl" placeholder="Link Facebook">
+                            <input type="text" id="social_facebook" name="social_facebook"
+                                class="w-full pl-10 p-3 border border-stone-300 rounded-xl" placeholder="Link Facebook">
                         </div>
                     </div>
                 </section>
@@ -130,7 +185,8 @@
                     <div class="bg-white p-4 rounded-xl border border-amber-100 shadow-sm text-center mb-6">
                         <p class="text-sm text-stone-600 mb-3 font-medium">Recomendado: Inicia sesión con Google</p>
                         <div id="google-btn-container" class="flex justify-center"></div>
-                        <p id="google-success-msg" class="hidden text-green-700 text-sm font-bold mt-2 flex items-center justify-center gap-2">
+                        <p id="google-success-msg"
+                            class="hidden text-green-700 text-sm font-bold mt-2 flex items-center justify-center gap-2">
                             <i class="fas fa-check-circle"></i> Cuenta vinculada correctamente
                         </p>
                     </div>
@@ -138,26 +194,33 @@
                     <!-- Separador -->
                     <div class="relative flex py-2 items-center mb-6">
                         <div class="flex-grow border-t border-amber-200"></div>
-                        <span class="flex-shrink-0 mx-4 text-amber-800 text-xs font-bold uppercase">O crea credenciales manuales</span>
+                        <span class="flex-shrink-0 mx-4 text-amber-800 text-xs font-bold uppercase">O crea credenciales
+                            manuales</span>
                         <div class="flex-grow border-t border-amber-200"></div>
                     </div>
-                    
+
                     <!-- Opción 2: Manual -->
-                    <div id="manual-credentials-container" class="grid grid-cols-1 md:grid-cols-2 gap-4 opacity-100 transition-opacity duration-300">
+                    <div id="manual-credentials-container"
+                        class="grid grid-cols-1 md:grid-cols-2 gap-4 opacity-100 transition-opacity duration-300">
                         <div>
                             <label class="block text-sm font-medium text-stone-700 mb-1">Usuario</label>
-                            <input type="text" id="usuario" name="usuario" class="w-full p-3 border border-stone-300 rounded-xl bg-white" placeholder="usuario_ejemplo" autocomplete="username">
+                            <input type="text" id="usuario" name="usuario"
+                                class="w-full p-3 border border-stone-300 rounded-xl bg-white"
+                                placeholder="usuario_ejemplo" autocomplete="username">
                             <p class="text-[10px] text-stone-500 mt-1">Solo letras, números, puntos y guiones bajos.</p>
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-stone-700 mb-1">Nueva Contraseña</label>
-                            <input type="password" id="password" name="password" class="w-full p-3 border border-stone-300 rounded-xl bg-white" placeholder="********" autocomplete="new-password" minlength="6">
+                            <input type="password" id="password" name="password"
+                                class="w-full p-3 border border-stone-300 rounded-xl bg-white" placeholder="********"
+                                autocomplete="new-password" minlength="6">
                         </div>
                     </div>
                 </section>
 
                 <!-- Botón Final -->
-                <button type="submit" id="submit-btn" class="w-full bg-stone-900 hover:bg-black text-white font-bold py-4 rounded-xl shadow-lg transition transform hover:-translate-y-1 text-lg flex items-center justify-center gap-2">
+                <button type="submit" id="submit-btn"
+                    class="w-full bg-stone-900 hover:bg-black text-white font-bold py-4 rounded-xl shadow-lg transition transform hover:-translate-y-1 text-lg flex items-center justify-center gap-2">
                     <span>Completar Registro</span> <i class="fas fa-arrow-right"></i>
                 </button>
             </form>
@@ -168,7 +231,7 @@
     <script src="https://cdn.jsdelivr.net/npm/intl-tel-input@25.3.0/build/js/intlTelInput.min.js"></script>
     <script>
         // Variable global para el token de Google
-        const GOOGLE_CLIENT_ID_CONFIG = "1064687511845-vjel6sbn1cg4nbmgf2228s0u821gvua4.apps.googleusercontent.com"; 
+        const GOOGLE_CLIENT_ID_CONFIG = "1064687511845-vjel6sbn1cg4nbmgf2228s0u821gvua4.apps.googleusercontent.com";
         let googleToken = null;
 
         document.addEventListener('DOMContentLoaded', async () => {
@@ -179,17 +242,17 @@
             const logoPreview = document.getElementById('logo-preview');
             const logoHidden = document.getElementById('company_logo_base64');
             const companyTypeSelect = document.getElementById('company_type');
-            
+
             // Campos dinámicos
             const fieldCommercial = document.getElementById('field-commercial-name');
             const fieldFinca = document.getElementById('field-finca-details');
             const inputEmpresa = document.getElementById('empresa');
             const inputNombreFinca = document.getElementById('nombre_finca');
             const inputPropietario = document.getElementById('nombre_propietario');
-            
+
             const usuarioInput = document.getElementById('usuario');
             if (usuarioInput) {
-                usuarioInput.addEventListener('input', function() {
+                usuarioInput.addEventListener('input', function () {
                     this.value = this.value.toLowerCase().replace(/[^a-z0-9._]/g, '');
                 });
             }
@@ -197,16 +260,16 @@
             // --- CONFIGURACIÓN DE TELÉFONO ROBUSTA ---
             const inputPhone = document.querySelector("#celular");
             let iti;
-            
+
             try {
                 iti = window.intlTelInput(inputPhone, {
                     utilsScript: "https://cdn.jsdelivr.net/npm/intl-tel-input@25.3.0/build/js/utils.js",
                     initialCountry: "auto",
-                    geoIpLookup: function(callback) {
+                    geoIpLookup: function (callback) {
                         fetch("https://ipapi.co/json")
-                        .then(res => res.json())
-                        .then(data => callback(data.country_code))
-                        .catch(() => callback("pe"));
+                            .then(res => res.json())
+                            .then(data => callback(data.country_code))
+                            .catch(() => callback("pe"));
                     },
                     separateDialCode: true,
                     preferredCountries: ['pe', 'co', 'ec', 'mx']
@@ -218,10 +281,10 @@
             // Función Helper para obtener número seguro
             const getSafePhoneNumber = () => {
                 if (!iti) return inputPhone.value; // Fallback si falla librería
-                
+
                 const number = iti.getNumber();
                 if (number) return number;
-                
+
                 // Fallback manual si getNumber falla pero hay valor
                 const rawValue = inputPhone.value.trim();
                 if (rawValue) {
@@ -260,14 +323,14 @@
             const claimId = params.get('claim_id'); // <--- NUEVO: Capturar claim_id
             const isWelcome = !!magicToken || !!claimId;
 
-            window.handleGoogleResponse = function(response) {
+            window.handleGoogleResponse = function (response) {
                 googleToken = response.credential;
                 document.getElementById('google-success-msg').classList.remove('hidden');
                 const manualContainer = document.getElementById('manual-credentials-container');
                 manualContainer.classList.add('opacity-50', 'pointer-events-none');
                 document.getElementById('usuario').required = false;
                 document.getElementById('password').required = false;
-                document.getElementById('usuario').value = ''; 
+                document.getElementById('usuario').value = '';
                 document.getElementById('password').value = '';
             }
 
@@ -288,7 +351,7 @@
                                 context: 'signup'
                             });
                             google.accounts.id.renderButton(document.getElementById("google-btn-container"), { theme: "outline", size: "large", width: "100%" });
-                        } catch(e) { console.error("Error init Google:", e); }
+                        } catch (e) { console.error("Error init Google:", e); }
                     } else { setTimeout(initGoogleBtn, 500); }
                 };
                 initGoogleBtn();
@@ -318,14 +381,14 @@
                     if (data) {
                         companyTypeSelect.value = data.company_type || 'finca';
                         toggleFields();
-                        
+
                         if (data.empresa) {
                             document.getElementById('empresa').value = data.empresa;
-                            document.getElementById('nombre_finca').value = data.empresa; 
+                            document.getElementById('nombre_finca').value = data.empresa;
                         }
                         if (data.social_instagram) document.getElementById('social_instagram').value = data.social_instagram;
                         if (data.social_facebook) document.getElementById('social_facebook').value = data.social_facebook;
-                        
+
                         if (data.company_logo) {
                             document.getElementById('logo-preview').src = data.company_logo;
                             document.getElementById('company_logo_base64').value = data.company_logo;
@@ -337,9 +400,9 @@
             } else {
                 // FLUJO NORMAL
                 try {
-                    const api = async (url, opts={}) => {
-                        const res = await fetch(url, {...opts, credentials: 'include'});
-                        if(!res.ok) throw new Error('Error API');
+                    const api = async (url, opts = {}) => {
+                        const res = await fetch(url, { ...opts, credentials: 'include' });
+                        if (!res.ok) throw new Error('Error API');
                         return res.json();
                     };
                     const user = await api('/api/user/profile');
@@ -351,7 +414,7 @@
                     if (user.usuario) document.getElementById('usuario').value = user.usuario;
                     if (user.social_instagram) document.getElementById('social_instagram').value = user.social_instagram;
                     if (user.social_facebook) document.getElementById('social_facebook').value = user.social_facebook;
-                    if (user.company_logo) { logoPreview.src = user.company_logo; logoHidden.value = user.company_logo; } 
+                    if (user.company_logo) { logoPreview.src = user.company_logo; logoHidden.value = user.company_logo; }
                     else { logoPreview.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.empresa || 'User')}&background=f5f5f4&color=78350f&size=128`; }
                 } catch (e) { console.error("Error cargando perfil:", e); }
             }
@@ -387,7 +450,7 @@
                     const parts = (data.nombre_propietario || '').trim().split(' ');
                     if (parts.length > 0) {
                         finalNombre = parts[0];
-                        finalApellido = parts.slice(1).join(' ') || ''; 
+                        finalApellido = parts.slice(1).join(' ') || '';
                     }
                 }
 
@@ -406,7 +469,7 @@
                     if (isWelcome) {
                         // --- NUEVO ENDPOINT: REGISTER AND CLAIM ---
                         const magicPayload = { ...payload };
-                        
+
                         if (magicToken) magicPayload.magic_token = magicToken;
                         if (claimId) magicPayload.claim_id = claimId; // <--- Pasamos el ID para reclamo público
 
@@ -424,12 +487,12 @@
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify(magicPayload),
-                            credentials: 'include' 
+                            credentials: 'include'
                         });
-                        
+
                         const result = await res.json();
-                        if(!res.ok) throw new Error(result.error || 'Error en registro');
-                        
+                        if (!res.ok) throw new Error(result.error || 'Error en registro');
+
                         window.location.href = result.redirect || '/app/cuenta';
 
                     } else {
@@ -451,4 +514,5 @@
         });
     </script>
 </body>
+
 </html>
