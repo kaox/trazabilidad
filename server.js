@@ -58,6 +58,72 @@ app.use(async (req, res, next) => {
     // Interceptar todos los paths que no sean API, assets estáticos o archivos con extensión
     const isAsset = req.path.includes('.') || req.path.startsWith('/api/') || req.path.startsWith('/js/') || req.path.startsWith('/css/') || req.path.startsWith('/images/');
 
+    // ✅ Si la ruta es /origen-unico/:companySlug/:productSlug dentro de un subdominio,
+    // servir la página de detalle del producto (no la landing de empresa).
+    const productDetailMatch = req.path.match(/^\/origen-unico\/[^/]+\/([^/]+)$/);
+    if (productDetailMatch) {
+        const productSlug = productDetailMatch[1];
+        const shortId = extractShortId(productSlug);
+        const filePath = path.join(__dirname, 'public', 'producto-detalle.html');
+
+        if (!shortId) return res.sendFile(filePath);
+
+        return fs.readFile(filePath, 'utf8', async (err, htmlData) => {
+            if (err) return res.status(500).send('Error interno');
+            try {
+                const product = await ProductoModel.getByShortId(shortId);
+                if (product) {
+                    const title = `${product.nombre} | Trazabilidad y Origen`;
+                    const description = product.descripcion
+                        ? product.descripcion.replace(/"/g, '&quot;')
+                        : `Descubre la trazabilidad completa, perfil sensorial y origen de ${product.nombre}.`;
+
+                    let imageUrl = '';
+                    if (product.imagenes_json) {
+                        try {
+                            const images = typeof product.imagenes_json === 'string'
+                                ? JSON.parse(product.imagenes_json)
+                                : product.imagenes_json;
+                            if (images && images.length > 0) imageUrl = images[0];
+                        } catch (e) { /* imagen no crítica */ }
+                    }
+                    if (!imageUrl) imageUrl = 'https://rurulab.com/images/banner_1.png';
+
+                    const canonicalUrl = buildProductUrl(
+                        product.company_comercial || product.company_name || 'empresa',
+                        product.company_id || product.user_id,
+                        product.nombre,
+                        product.id
+                    );
+
+                    let finalHtml = htmlData
+                        .replace(/<title>.*?<\/title>/gi, `<title>${title}</title>`)
+                        .replace(/<meta name="description" content=".*?">/gi, `<meta name="description" content="${description}">`)
+                        .replace(/<meta property="og:title" content=".*?">/gi, `<meta property="og:title" content="${title}">`)
+                        .replace(/<meta property="og:description" content=".*?">/gi, `<meta property="og:description" content="${description}">`)
+                        .replace(/<meta name="twitter:title" content=".*?">/gi, `<meta name="twitter:title" content="${title}">`)
+                        .replace(/<meta name="twitter:description" content=".*?">/gi, `<meta name="twitter:description" content="${description}">`)
+                        .replace(/<meta property="og:url" content=".*?">/gi, `<meta property="og:url" content="${canonicalUrl}">`)
+                        .replace(/<meta name="twitter:url" content=".*?">/gi, `<meta name="twitter:url" content="${canonicalUrl}">`);
+
+                    if (imageUrl) {
+                        finalHtml = finalHtml
+                            .replace(/<meta property="og:image" content=".*?">/gi, `<meta property="og:image" content="${imageUrl}">`)
+                            .replace(/<meta name="twitter:image" content=".*?">/gi, `<meta name="twitter:image" content="${imageUrl}">`);
+                    }
+
+                    finalHtml = finalHtml.replace('</head>', `<script>window.PRODUCT_ID = "${product.id}";window.PRODUCT_CANONICAL_URL = "${canonicalUrl}";</script>\n</head>`);
+                    return res.send(finalHtml);
+                } else {
+                    return res.sendFile(filePath);
+                }
+            } catch (e) {
+                console.error('Error en detalle producto (subdominio):', e);
+                return res.sendFile(filePath);
+            }
+        });
+    }
+
     if (isAsset) {
         return next();
     }
