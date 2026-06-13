@@ -112,7 +112,7 @@ app.use(async (req, res, next) => {
                             .replace(/<meta name="twitter:image" content=".*?">/gi, `<meta name="twitter:image" content="${imageUrl}">`);
                     }
 
-                    finalHtml = finalHtml.replace('</head>', `<script>window.PRODUCT_ID = "${product.id}";window.PRODUCT_CANONICAL_URL = "${canonicalUrl}";</script>\n</head>`);
+                    finalHtml = finalHtml.replace('</head>', `<script>window.PRODUCT_ID = "${product.id}";window.PRODUCT_CANONICAL_URL = "${canonicalUrl}";window.IS_SUBDOMAIN = true;</script>\n</head>`);
                     return res.send(finalHtml);
                 } else {
                     return res.sendFile(filePath);

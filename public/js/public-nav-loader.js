@@ -1,6 +1,12 @@
 document.addEventListener('DOMContentLoaded', () => {
     const placeholder = document.getElementById('public-nav-placeholder');
     
+    // En subdominios de cliente (White Label) no mostramos el nav de RuruLab
+    if (window.IS_SUBDOMAIN) {
+        if (placeholder) placeholder.style.display = 'none';
+        return;
+    }
+    
     if (placeholder) {
         fetch('/partials/public-nav.html')
             .then(response => {
@@ -17,6 +23,7 @@ document.addEventListener('DOMContentLoaded', () => {
             .catch(err => console.error('Error cargando nav:', err));
     }
 });
+
 
 function initPublicNavigation() {
     const menuButton = document.getElementById('menu-button');
