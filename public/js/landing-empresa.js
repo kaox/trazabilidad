@@ -482,7 +482,39 @@ const app = {
     renderContacto: function () {
         const { user, entity } = this.state.landingData;
         const cleanPhone = user.celular ? user.celular.replace(/\D/g, '') : (user.contact_phone ? user.contact_phone.replace(/\D/g, '') : '');
-        const waBase = cleanPhone ? `https://wa.me/${cleanPhone}` : '#';
+        const waBase = cleanPhone ? `https://wa.me/${cleanPhone}` : null;
+        const displayPhone = user.celular || user.contact_phone || null;
+
+        const instagram = user.instagram || entity.social_instagram || null;
+        const facebook = user.facebook || entity.social_facebook || null;
+
+        const instagramUrl = instagram
+            ? (instagram.startsWith('http') ? instagram : `https://instagram.com/${instagram.replace('@', '')}`)
+            : null;
+        const facebookUrl = facebook
+            ? (facebook.startsWith('http') ? facebook : `https://facebook.com/${facebook}`)
+            : null;
+
+        const hasSocials = instagramUrl || facebookUrl;
+
+        const socialsHtml = hasSocials ? `
+            <div class="mt-8 pt-8 border-t border-stone-100">
+                <h4 class="text-xs font-bold text-stone-400 uppercase tracking-widest mb-4">Síguenos en redes</h4>
+                <div class="flex flex-wrap gap-3">
+                    ${instagramUrl ? `
+                    <a href="${instagramUrl}" target="_blank" rel="noopener"
+                        class="flex items-center gap-3 px-5 py-3 rounded-2xl bg-gradient-to-br from-purple-500 via-pink-500 to-orange-400 text-white font-bold text-sm shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all">
+                        <i class="fab fa-instagram text-xl"></i>
+                        <span>${instagram.replace('@', '')}</span>
+                    </a>` : ''}
+                    ${facebookUrl ? `
+                    <a href="${facebookUrl}" target="_blank" rel="noopener"
+                        class="flex items-center gap-3 px-5 py-3 rounded-2xl bg-blue-600 text-white font-bold text-sm shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all">
+                        <i class="fab fa-facebook text-xl"></i>
+                        <span>${facebook}</span>
+                    </a>` : ''}
+                </div>
+            </div>` : '';
 
         const html = `
             <div class="container mx-auto px-6 py-16 fade-in">
@@ -491,23 +523,38 @@ const app = {
                         <h1 class="text-4xl md:text-5xl font-display font-bold text-stone-900 mb-6">Ponte en contacto</h1>
                         <p class="text-lg text-stone-600 mb-10">¿Tienes dudas sobre nuestros procesos o te gustaría realizar un pedido especial? Estamos aquí para ayudarte.</p>
                         
-                        <div class="space-y-6">
-                            <div class="flex items-start gap-4">
-                                <div class="w-12 h-12 rounded-2xl bg-accent/10 text-accent flex items-center justify-center flex-shrink-0"><i class="fas fa-envelope text-xl"></i></div>
-                                <div>
-                                    <h4 class="font-bold text-stone-900">Email</h4>
-                                    <p class="text-stone-600">${user.email || 'contacto@empresa.com'}</p>
+                        <div class="space-y-4">
+                            ${user.email ? `
+                            <div class="flex items-center gap-4 bg-stone-50 rounded-2xl p-4 border border-stone-100">
+                                <div class="w-12 h-12 rounded-xl bg-accent/10 text-accent flex items-center justify-center flex-shrink-0">
+                                    <i class="fas fa-envelope text-xl"></i>
                                 </div>
-                            </div>
-                            <div class="flex items-start gap-4">
-                                <div class="w-12 h-12 rounded-2xl bg-green-50 text-green-600 flex items-center justify-center flex-shrink-0"><i class="fab fa-whatsapp text-2xl"></i></div>
                                 <div>
-                                    <h4 class="font-bold text-stone-900">WhatsApp</h4>
-                                    <p class="text-stone-600">${user.celular || user.contact_phone || 'N/A'}</p>
-                                    <a href="${waBase}" target="_blank" class="text-green-600 font-bold hover:underline text-sm">Enviar mensaje directo</a>
+                                    <h4 class="text-xs font-bold text-stone-400 uppercase tracking-widest mb-0.5">Email</h4>
+                                    <a href="mailto:${user.email}" class="font-semibold text-stone-800 hover:text-accent transition-colors">${user.email}</a>
                                 </div>
-                            </div>
+                            </div>` : ''}
+
+                            ${waBase ? `
+                            <div class="bg-stone-50 rounded-2xl p-4 border border-stone-100">
+                                <div class="flex items-center gap-4 mb-4">
+                                    <div class="w-12 h-12 rounded-xl bg-green-50 text-green-600 flex items-center justify-center flex-shrink-0">
+                                        <i class="fab fa-whatsapp text-2xl"></i>
+                                    </div>
+                                    <div>
+                                        <h4 class="text-xs font-bold text-stone-400 uppercase tracking-widest mb-0.5">WhatsApp</h4>
+                                        <p class="font-semibold text-stone-800">${displayPhone}</p>
+                                    </div>
+                                </div>
+                                <a href="${waBase}" target="_blank" rel="noopener"
+                                    class="flex items-center justify-center gap-3 w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3.5 rounded-xl shadow-md shadow-green-100 hover:shadow-green-200 hover:-translate-y-0.5 transition-all">
+                                    <i class="fab fa-whatsapp text-2xl"></i>
+                                    Enviar mensaje por WhatsApp
+                                </a>
+                            </div>` : ''}
                         </div>
+
+                        ${socialsHtml}
                     </div>
 
                     <div class="bg-white p-8 md:p-10 rounded-3xl shadow-2xl border border-stone-100">
@@ -532,6 +579,7 @@ const app = {
         `;
         this.container.innerHTML = html;
     },
+
 
     handleContactSubmit: async function (e) {
         e.preventDefault();
