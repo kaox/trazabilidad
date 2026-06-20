@@ -2168,29 +2168,64 @@ const getMyAnalytics = async (req, res) => {
     const days = parseInt(req.query.days) || 30;
 
     try {
-        const kpis = await get(`
-            SELECT
-                COUNT(*) as total_events,
-                SUM(CASE WHEN event_type = 'landing_view' THEN 1 ELSE 0 END) as landing_views,
-                SUM(CASE WHEN event_type = 'trace_view'  THEN 1 ELSE 0 END) as trace_views,
-                SUM(CASE WHEN event_type = 'buy_click'   THEN 1 ELSE 0 END) as buy_clicks,
-                COUNT(DISTINCT DATE(created_at)) as active_days
-            FROM analytics_events
-            WHERE target_user_id = ?
-        `, [userId]);
+        const environment = process.env.NODE_ENV || 'development';
+        
+        let kpisQuery, timeSeriesQuery;
+        let kpisParams = [userId];
+        let timeSeriesParams = [userId];
 
-        const timeSeries = await all(`
-            SELECT
-                DATE(created_at) as day,
-                SUM(CASE WHEN event_type = 'landing_view' THEN 1 ELSE 0 END) as landing_views,
-                SUM(CASE WHEN event_type = 'trace_view'  THEN 1 ELSE 0 END) as trace_views,
-                SUM(CASE WHEN event_type = 'buy_click'   THEN 1 ELSE 0 END) as buy_clicks
-            FROM analytics_events
-            WHERE target_user_id = ?
-              AND created_at >= datetime('now', '-' || ? || ' days')
-            GROUP BY DATE(created_at)
-            ORDER BY day ASC
-        `, [userId, days]);
+        if (environment === 'production') {
+            kpisQuery = `
+                SELECT
+                    COUNT(*) as total_events,
+                    SUM(CASE WHEN event_type = 'landing_view' THEN 1 ELSE 0 END) as landing_views,
+                    SUM(CASE WHEN event_type = 'trace_view'  THEN 1 ELSE 0 END) as trace_views,
+                    SUM(CASE WHEN event_type = 'buy_click'   THEN 1 ELSE 0 END) as buy_clicks,
+                    COUNT(DISTINCT created_at::date) as active_days
+                FROM analytics_events
+                WHERE target_user_id = ?
+            `;
+            timeSeriesQuery = `
+                SELECT
+                    created_at::date as day,
+                    SUM(CASE WHEN event_type = 'landing_view' THEN 1 ELSE 0 END) as landing_views,
+                    SUM(CASE WHEN event_type = 'trace_view'  THEN 1 ELSE 0 END) as trace_views,
+                    SUM(CASE WHEN event_type = 'buy_click'   THEN 1 ELSE 0 END) as buy_clicks
+                FROM analytics_events
+                WHERE target_user_id = ?
+                  AND created_at >= NOW() - CAST(? || ' days' AS INTERVAL)
+                GROUP BY created_at::date
+                ORDER BY day ASC
+            `;
+            timeSeriesParams.push(days);
+        } else {
+            kpisQuery = `
+                SELECT
+                    COUNT(*) as total_events,
+                    SUM(CASE WHEN event_type = 'landing_view' THEN 1 ELSE 0 END) as landing_views,
+                    SUM(CASE WHEN event_type = 'trace_view'  THEN 1 ELSE 0 END) as trace_views,
+                    SUM(CASE WHEN event_type = 'buy_click'   THEN 1 ELSE 0 END) as buy_clicks,
+                    COUNT(DISTINCT DATE(created_at)) as active_days
+                FROM analytics_events
+                WHERE target_user_id = ?
+            `;
+            timeSeriesQuery = `
+                SELECT
+                    DATE(created_at) as day,
+                    SUM(CASE WHEN event_type = 'landing_view' THEN 1 ELSE 0 END) as landing_views,
+                    SUM(CASE WHEN event_type = 'trace_view'  THEN 1 ELSE 0 END) as trace_views,
+                    SUM(CASE WHEN event_type = 'buy_click'   THEN 1 ELSE 0 END) as buy_clicks
+                FROM analytics_events
+                WHERE target_user_id = ?
+                  AND created_at >= datetime('now', '-' || ? || ' days')
+                GROUP BY DATE(created_at)
+                ORDER BY day ASC
+            `;
+            timeSeriesParams.push(days);
+        }
+
+        const kpis = await get(kpisQuery, kpisParams);
+        const timeSeries = await all(timeSeriesQuery, timeSeriesParams);
 
         const rawReferrers = await all(`
             SELECT meta_data FROM analytics_events
