@@ -12,11 +12,11 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             state.fullData = await api('/api/dashboard/data');
 
-            populateTemplateFilter();
-            populateBatchFilter();
+            if (templateFilter) populateTemplateFilter();
+            if (batchFilter) populateBatchFilter();
             
-            templateFilter.addEventListener('change', handleFilterChange);
-            batchFilter.addEventListener('change', handleFilterChange);
+            if (templateFilter) templateFilter.addEventListener('change', handleFilterChange);
+            if (batchFilter) batchFilter.addEventListener('change', handleFilterChange);
             
             // Render basic impact sections
             renderHeroStats();
@@ -38,9 +38,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const activeBatches = state.fullData.batchTrees.filter(b => !b.blockchain_hash).length;
         const totalKg = state.fullData.batchTrees.reduce((acc, b) => {
-            const firstStage = state.fullData.stages[b.plantilla_id]?.[0];
-            const inputField = firstStage?.campos_json.entradas[0]?.name;
-            return acc + (parseFloat(b.data[inputField]) || 0);
+            const firstStage = state.fullData.stages?.[b.plantilla_id]?.[0];
+            const inputField = firstStage?.campos_json?.entradas?.[0]?.name;
+            return acc + (inputField ? (parseFloat(b.data[inputField]) || 0) : 0);
         }, 0);
 
         const stats = [
@@ -133,12 +133,14 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- RE-INTEGRATED CALCULATION LOGIC ---
 
     function populateTemplateFilter() {
+        if (!templateFilter) return;
         let optionsHtml = '<option value="all">Todos los Procesos</option>';
         optionsHtml += state.fullData.templates.map(t => `<option value="${t.id}">${t.nombre_producto}</option>`).join('');
         templateFilter.innerHTML = optionsHtml;
     }
 
     function populateBatchFilter(templateId = 'all') {
+        if (!batchFilter) return;
         let batchesToShow = state.fullData.batchTrees;
         if (templateId !== 'all') {
             batchesToShow = state.fullData.batchTrees.filter(b => b.plantilla_id == templateId);
@@ -300,6 +302,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function renderKPIs(filteredBatches, totalYields, costKPIs) {
+        if (!kpiContainer) return;
         const avgYield = totalYields.length > 0 ? totalYields.reduce((a, b) => a + b, 0) / totalYields.length : 0;
         const kpis = [
             { label: 'Costo Total Invertido', value: `$${costKPIs.costoTotalInvertido.toFixed(2)}`, icon: 'fa-dollar-sign', color: 'text-teal-700 bg-teal-100' },
@@ -320,9 +323,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     function renderRendimientoChart(stageYields) {
+        const canvas = document.getElementById('rendimiento-chart');
+        if (!canvas) return;
         const sortedStages = Object.entries(stageYields).sort(([, a], [, b]) => a.order - b.order);
         if (charts.rendimiento) charts.rendimiento.destroy();
-        charts.rendimiento = new Chart(document.getElementById('rendimiento-chart'), {
+        charts.rendimiento = new Chart(canvas, {
             type: 'bar',
             data: {
                 labels: sortedStages.map(([label]) => label),
@@ -332,9 +337,12 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // Comprobación de existencia de gráficos
     function renderProduccionChart(fincaProduction) {
+        const canvas = document.getElementById('produccion-chart');
+        if (!canvas) return;
         if (charts.produccion) charts.produccion.destroy();
-        charts.produccion = new Chart(document.getElementById('produccion-chart'), {
+        charts.produccion = new Chart(canvas, {
             type: 'doughnut',
             data: {
                 labels: Object.keys(fincaProduction),
@@ -345,9 +353,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function renderCostoPorEtapaChart(costByStage) {
+        const canvas = document.getElementById('costo-etapa-chart');
+        if (!canvas) return;
         const sortedStages = Object.entries(costByStage).sort(([, a], [, b]) => a.order - b.order);
         if (charts.costoEtapa) charts.costoEtapa.destroy();
-        charts.costoEtapa = new Chart(document.getElementById('costo-etapa-chart'), {
+        charts.costoEtapa = new Chart(canvas, {
             type: 'bar',
             data: {
                 labels: sortedStages.map(([label]) => label),
