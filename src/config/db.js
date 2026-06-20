@@ -10,6 +10,9 @@ if (environment === 'production') {
     // Asegúrate de cambiar el nombre de la variable en Vercel a DATABASE_URL
     const pool = new Pool({
         connectionString: process.env.DATABASE_URL,
+        max: 8,
+        idleTimeoutMillis: 10000,
+        connectionTimeoutMillis: 5000,
     });
 
     const queryAdapter = async (sql, params = []) => {
