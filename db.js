@@ -1105,6 +1105,17 @@ const getDashboardData = async (req, res) => {
             get('SELECT name, logo_url AS logo, cover_image_url AS cover, subdomain, history_text, is_published, company_type, company_id FROM company_profiles WHERE user_id = ?', [userId])
         ]);
 
+        const safeUserProfile = userProfile || {
+            name: '',
+            logo: null,
+            cover: null,
+            subdomain: null,
+            history_text: '',
+            is_published: 0,
+            company_type: null,
+            company_id: null
+        };
+
         const lotesProcesados = allLotes.map(lote => ({
             ...lote,
             data: safeJSONParse(lote.data),
@@ -1141,7 +1152,7 @@ const getDashboardData = async (req, res) => {
             costs: costs.map(c => ({ ...c, cost_data: safeJSONParse(c.cost_data) })),
             acquisitions,
             productos,
-            userProfile
+            userProfile: safeUserProfile
         });
 
     } catch (err) {
