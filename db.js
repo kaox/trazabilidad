@@ -1102,7 +1102,7 @@ const getDashboardData = async (req, res) => {
             all('SELECT * FROM lote_costs WHERE user_id = ?', [userId]),
             all('SELECT * FROM acquisitions WHERE user_id = ?', [userId]),
             all('SELECT * FROM productos WHERE user_id = ?', [userId]),
-            get('SELECT name, logo, cover, subdomain, history_text, is_published, company_type, company_id FROM users WHERE id = ?', [userId])
+            get('SELECT name, logo_url AS logo, cover_image_url AS cover, subdomain, history_text, is_published, company_type, company_id FROM company_profiles WHERE user_id = ?', [userId])
         ]);
 
         const lotesProcesados = allLotes.map(lote => ({
@@ -2152,6 +2152,95 @@ const getLandingStats = async (req, res) => {
     }
 };
 
+const getMyAnalytics = async (req, res) => {
+    const userId = req.user.id;
+    const days = parseInt(req.query.days) || 30;
+
+    try {
+        const kpis = await get(`
+            SELECT
+                COUNT(*) as total_events,
+                SUM(CASE WHEN event_type = 'landing_view' THEN 1 ELSE 0 END) as landing_views,
+                SUM(CASE WHEN event_type = 'trace_view'  THEN 1 ELSE 0 END) as trace_views,
+                SUM(CASE WHEN event_type = 'buy_click'   THEN 1 ELSE 0 END) as buy_clicks,
+                COUNT(DISTINCT DATE(created_at)) as active_days
+            FROM analytics_events
+            WHERE target_user_id = ?
+        `, [userId]);
+
+        const timeSeries = await all(`
+            SELECT
+                DATE(created_at) as day,
+                SUM(CASE WHEN event_type = 'landing_view' THEN 1 ELSE 0 END) as landing_views,
+                SUM(CASE WHEN event_type = 'trace_view'  THEN 1 ELSE 0 END) as trace_views,
+                SUM(CASE WHEN event_type = 'buy_click'   THEN 1 ELSE 0 END) as buy_clicks
+            FROM analytics_events
+            WHERE target_user_id = ?
+              AND created_at >= datetime('now', '-' || ? || ' days')
+            GROUP BY DATE(created_at)
+            ORDER BY day ASC
+        `, [userId, days]);
+
+        const rawReferrers = await all(`
+            SELECT meta_data FROM analytics_events
+            WHERE target_user_id = ? AND event_type = 'landing_view'
+              AND meta_data IS NOT NULL
+            ORDER BY created_at DESC
+            LIMIT 500
+        `, [userId]);
+
+        const referrerCounts = {};
+        rawReferrers.forEach(row => {
+            try {
+                const meta = typeof row.meta_data === 'string' ? JSON.parse(row.meta_data) : row.meta_data;
+                let ref = meta.referrer || '';
+                if (!ref) ref = 'Directo';
+                else {
+                    try { ref = new URL(ref).hostname.replace('www.', ''); } catch (e) { ref = ref.substring(0, 30); }
+                }
+                referrerCounts[ref] = (referrerCounts[ref] || 0) + 1;
+            } catch (e) { /* skip */ }
+        });
+        const topReferrers = Object.entries(referrerCounts)
+            .sort(([, a], [, b]) => b - a)
+            .slice(0, 8)
+            .map(([source, count]) => ({ source, count }));
+
+        const recentEvents = await all(`
+            SELECT id, event_type, target_product_id, meta_data, created_at
+            FROM analytics_events
+            WHERE target_user_id = ?
+            ORDER BY created_at DESC
+            LIMIT 20
+        `, [userId]);
+
+        const parsedRecent = recentEvents.map(e => ({
+            ...e,
+            meta_data: (() => { try { return typeof e.meta_data === 'string' ? JSON.parse(e.meta_data) : e.meta_data; } catch (_) { return {}; } })()
+        }));
+
+        // NUEVO: Obtener vistas y clics de compra por producto del usuario
+        const productStats = await all(`
+            SELECT 
+                p.id as product_id,
+                p.nombre as product_name,
+                SUM(CASE WHEN ae.event_type = 'trace_view' THEN 1 ELSE 0 END) as trace_views,
+                SUM(CASE WHEN ae.event_type = 'buy_click' THEN 1 ELSE 0 END) as buy_clicks
+            FROM productos p
+            LEFT JOIN analytics_events ae ON p.id = ae.target_product_id AND ae.target_user_id = ?
+            WHERE p.user_id = ?
+            GROUP BY p.id, p.nombre
+            ORDER BY trace_views DESC, buy_clicks DESC
+        `, [userId, userId]);
+
+        res.status(200).json({ kpis, timeSeries, topReferrers, recentEvents: parsedRecent, productStats });
+    } catch (err) {
+        console.error("Error getMyAnalytics:", err);
+        res.status(500).json({ error: "Error interno al obtener analytics." });
+    }
+};
+
+
 const getWidgetData = async (req, res) => {
     try {
         const { token } = req.params;
@@ -2172,26 +2261,26 @@ const getWidgetData = async (req, res) => {
                     wheel_data: {
                         name: "Sensory",
                         children: [
-                            { 
-                                name: "Frutal", color: "#f43f5e", 
+                            {
+                                name: "Frutal", color: "#f43f5e",
                                 children: [
                                     { name: "Cítrico", color: "#fbbf24" },
                                     { name: "Berries", color: "#e11d48" }
-                                ] 
+                                ]
                             },
-                            { 
-                                name: "Dulce", color: "#ea580c", 
+                            {
+                                name: "Dulce", color: "#ea580c",
                                 children: [
                                     { name: "Caramelo", color: "#92400e" },
                                     { name: "Miel", color: "#f59e0b" }
-                                ] 
+                                ]
                             },
-                            { 
-                                name: "Nueces", color: "#78350f", 
+                            {
+                                name: "Nueces", color: "#78350f",
                                 children: [
                                     { name: "Almendra", color: "#a16207" },
                                     { name: "Cacao", color: "#451a03" }
-                                ] 
+                                ]
                             }
                         ]
                     },
@@ -2298,6 +2387,7 @@ module.exports = {
     getPublicBatchesForProduct,
     getCurrencies, getUnits,
     trackAnalyticsEvent,
+    getMyAnalytics,
     createSuggestion, getSuggestionById, claimSuggestion,
     serveCompanyLogo,
     getPublishedBlogSlugs, getPublishedEventSlugs,

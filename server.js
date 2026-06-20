@@ -1032,6 +1032,7 @@ app.put('/api/user/company-profile', authenticateApi, companyProfileController.u
 // 10. RUTAS PREMIUM / ADMIN / PROXY
 // Dashboard & Analytics
 app.get('/api/dashboard/data', authenticateApi, checkSubscription('profesional'), db.getDashboardData);
+app.get('/api/dashboard/analytics', authenticateApi, db.getMyAnalytics);
 app.get('/api/admin/dashboard-data', authenticateApi, checkAdmin, db.getAdminDashboardData);
 app.get('/api/admin/suggestions', authenticateApi, checkAdmin, suggestionsController.getAdminSuggestions);
 app.delete('/api/admin/suggestions/:id', authenticateApi, checkAdmin, suggestionsController.deleteSuggestion);

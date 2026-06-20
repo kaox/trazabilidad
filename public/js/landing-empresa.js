@@ -93,7 +93,7 @@ const app = {
             // Subdominio: solo slots White Label (sin enlace a directorio)
             const slotId = page === 'tienda' ? 'bc-tienda'
                 : page === 'contacto' ? 'bc-contacto'
-                : 'bc-inicio';
+                    : 'bc-inicio';
             const slot = document.getElementById(slotId);
             if (slot) {
                 slot.classList.remove('hidden');

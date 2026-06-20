@@ -357,5 +357,154 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // --- SECCIÓN ANALYTICS Y EVENTOS ---
+    const analyticsDaysFilter = document.getElementById('analytics-days-filter');
+
+    async function loadAnalytics() {
+        const days = analyticsDaysFilter ? analyticsDaysFilter.value : 30;
+        try {
+            const data = await api(`/api/dashboard/analytics?days=${days}`);
+            renderAnalytics(data);
+        } catch (error) {
+            console.error("Error al cargar analíticas:", error);
+        }
+    }
+
+    function renderAnalytics(data) {
+        // KPIs
+        const kpi = data.kpis || {};
+        document.getElementById('analytics-landing-views').textContent = kpi.landing_views || 0;
+        document.getElementById('analytics-trace-views').textContent = kpi.trace_views || 0;
+        document.getElementById('analytics-buy-clicks').textContent = kpi.buy_clicks || 0;
+        document.getElementById('analytics-active-days').textContent = kpi.active_days || 0;
+
+        // Gráfico de Líneas (Serie Temporal)
+        const ctx = document.getElementById('analytics-time-chart');
+        if (ctx) {
+            const timeSeries = data.timeSeries || [];
+            const labels = timeSeries.map(t => {
+                const parts = t.day.split('-');
+                return parts.length === 3 ? `${parts[2]}/${parts[1]}` : t.day;
+            });
+            const landingViewsData = timeSeries.map(t => t.landing_views);
+            const traceViewsData = timeSeries.map(t => t.trace_views);
+            const buyClicksData = timeSeries.map(t => t.buy_clicks);
+
+            if (charts.analyticsTime) charts.analyticsTime.destroy();
+            charts.analyticsTime = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels,
+                    datasets: [
+                        { label: 'Visitas Landing', data: landingViewsData, borderColor: '#3b82f6', backgroundColor: '#3b82f622', fill: true, tension: 0.3 },
+                        { label: 'Vistas Trazabilidad', data: traceViewsData, borderColor: '#10b981', backgroundColor: '#10b98122', fill: true, tension: 0.3 },
+                        { label: 'Clics Compra', data: buyClicksData, borderColor: '#f59e0b', backgroundColor: '#f59e0b22', fill: true, tension: 0.3 }
+                    ]
+                },
+                options: {
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { beginAtZero: true, ticks: { stepSize: 1 } }
+                    },
+                    plugins: {
+                        legend: { position: 'top', labels: { boxWidth: 12 } }
+                    }
+                }
+            });
+        }
+
+        // Fuentes de Tráfico (Referrers)
+        const referrersList = document.getElementById('analytics-referrers-list');
+        if (referrersList) {
+            const referrers = data.topReferrers || [];
+            if (referrers.length === 0) {
+                referrersList.innerHTML = `<p class="text-stone-400 text-sm text-center py-8">No hay datos de tráfico aún.</p>`;
+            } else {
+                const totalRef = referrers.reduce((acc, r) => acc + r.count, 0);
+                referrersList.innerHTML = referrers.map(r => {
+                    const percentage = totalRef > 0 ? Math.round((r.count / totalRef) * 100) : 0;
+                    return `
+                        <div class="space-y-1.5">
+                            <div class="flex justify-between text-xs font-bold text-stone-700">
+                                <span class="truncate pr-2">${r.source}</span>
+                                <span>${r.count} (${percentage}%)</span>
+                            </div>
+                            <div class="w-full bg-stone-100 h-1.5 rounded-full overflow-hidden">
+                                <div class="bg-blue-600 h-full rounded-full" style="width: ${percentage}%"></div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+        }
+
+        // Tabla de Eventos Recientes
+        const tableBody = document.getElementById('analytics-events-table-body');
+        if (tableBody) {
+            const events = data.recentEvents || [];
+            if (events.length === 0) {
+                tableBody.innerHTML = `<tr><td colspan="3" class="py-8 text-center text-stone-400">No se registran eventos.</td></tr>`;
+            } else {
+                const eventLabels = {
+                    'landing_view': '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-100 text-blue-700">Visita Landing</span>',
+                    'trace_view': '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-700">Vista Trazabilidad</span>',
+                    'buy_click': '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-700">Clic de Compra</span>'
+                };
+                tableBody.innerHTML = events.map(e => {
+                    const label = eventLabels[e.event_type] || `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-stone-100 text-stone-700">${e.event_type}</span>`;
+                    const meta = e.meta_data || {};
+                    let detail = 'Detalle de evento';
+                    if (e.event_type === 'landing_view') {
+                        detail = meta.referrer ? `Referido desde: <span class="text-stone-400 font-mono text-xs break-all">${meta.referrer}</span>` : 'Acceso Directo';
+                    } else if (e.event_type === 'trace_view') {
+                        detail = `Ficha de Trazabilidad`;
+                    } else if (e.event_type === 'buy_click') {
+                        detail = `Clic en botón de WhatsApp / Compra`;
+                    }
+                    const dateStr = new Date(e.created_at).toLocaleString();
+                    return `
+                        <tr class="border-b border-stone-50 hover:bg-stone-50/50">
+                            <td class="py-3.5 pr-2">${label}</td>
+                            <td class="py-3.5 pr-2">
+                                <div class="text-xs max-w-xs md:max-w-md truncate font-semibold text-stone-800">${detail}</div>
+                            </td>
+                            <td class="py-3.5 text-right text-stone-400 text-xs">${dateStr}</td>
+                        </tr>
+                    `;
+                }).join('');
+            }
+        }
+
+        // Tabla de Métricas por Producto
+        const productsTableBody = document.getElementById('analytics-products-table-body');
+        if (productsTableBody) {
+            const productStats = data.productStats || [];
+            if (productStats.length === 0) {
+                productsTableBody.innerHTML = `<tr><td colspan="3" class="py-8 text-center text-stone-400">No se registran productos.</td></tr>`;
+            } else {
+                productsTableBody.innerHTML = productStats.map(p => {
+                    return `
+                        <tr class="border-b border-stone-50 hover:bg-stone-50/50">
+                            <td class="py-3.5 font-bold text-stone-800 truncate max-w-[150px]">${p.product_name || 'Desconocido'}</td>
+                            <td class="py-3.5 text-center text-stone-600 font-semibold">${p.trace_views || 0}</td>
+                            <td class="py-3.5 text-center text-stone-600 font-semibold">${p.buy_clicks || 0}</td>
+                        </tr>
+                    `;
+                }).join('');
+            }
+        }
+    }
+
+    if (analyticsDaysFilter) {
+        analyticsDaysFilter.addEventListener('change', loadAnalytics);
+    }
+
+    // Registrar carga de analíticas en init
+    const originalInit = init;
+    init = async function() {
+        await originalInit();
+        await loadAnalytics();
+    };
+
     init();
 });
