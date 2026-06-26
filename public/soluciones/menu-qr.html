@@ -1,64 +1,163 @@
-Llevar una carta o menú al estándar GS1 Digital Link abre un abanico de posibilidades que van muchísimo más allá de
-"mostrar un PDF". Al convertir el código en un identificador inteligente y estructurado globalmente, puedes segmentar la
-experiencia en múltiples dimensiones.
+<!DOCTYPE html>
+<html lang="es">
 
-Aquí tienes una lista detallada de las principales funcionalidades y usos prácticos que puedes darle a un menú con esta
-tecnología:
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Menus QR para Cafeterias y Chocolaterias | RuruLab</title>
+  <meta name="description" content="Crea menus QR con productos, precios, origen, historia y trazabilidad para cafeterias, chocolaterias y tiendas especializadas.">
+  <meta name="keywords" content="menu QR,cafeteria,chocolateria,GS1 Digital Link,trazabilidad,catalogo digital,RuruLab">
+  <link rel="canonical" href="https://rurulab.com/soluciones/menu-qr.html">
+  
+  <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&family=Playfair+Display:wght@400;700&display=swap"
+    rel="stylesheet">
+  <script src="/js/analytics-loader.js" defer></script>
+  <link href="/css/styles.css" rel="stylesheet">
+  <style>
+    .solution-panel {
+      background:
+        radial-gradient(circle at top left, rgba(201, 107, 59, 0.2), transparent 30%),
+        linear-gradient(145deg, #f7f8fb 0%, #eef2f7 100%);
+      border: 1px solid rgba(15, 23, 42, 0.08);
+      box-shadow: 0 24px 60px rgba(15, 23, 42, 0.08);
+    }
 
-1. Trazabilidad y "Storytelling" del Ingrediente
-Esta es una de las funciones más potentes, especialmente para conceptos enfocados en la sostenibilidad, el comercio
-directo y los productos de especialidad.
+    .solution-frame {
+      background: linear-gradient(180deg, #111827 0%, #1f2937 100%);
+      box-shadow: 0 18px 50px rgba(15, 23, 42, 0.28);
+    }
 
-Pasaporte Digital del Plato: El cliente puede escanear el QR y ver la procedencia exacta de los ingredientes clave. Por
-ejemplo, el origen del café de especialidad (fundo, altitud, productor, puntaje en taza) o la historia del cacao fino de
-aroma utilizado en los postres.
+    .solution-chip {
+      border: 1px solid rgba(15, 23, 42, 0.08);
+      background: rgba(255, 255, 255, 0.82);
+      backdrop-filter: blur(10px);
+    }
 
-Certificaciones en Tiempo Real: Enlazar directamente a los certificados de origen, prácticas orgánicas o sellos de
-comercio justo de los proveedores, respaldando la autenticidad del plato con datos reales.
+    .signal-dot {
+      background: linear-gradient(135deg, #c96b3b 0%, #6e8f80 100%);
+      box-shadow: 0 0 0 10px rgba(201, 107, 59, 0.08);
+    }
+  </style>
+</head>
 
-2. Filtros Avanzados de Salud, Alérgenos y Dietas
-En lugar de saturar el diseño físico del menú con decenas de íconos, el GS1 Digital Link permite digitalizar de forma
-estricta la información técnica del plato.
+<body class="text-[#4E342E] antialiased bg-[#F5F5F5]">
+    <div id="public-nav-placeholder"></div>
 
-Filtro interactivo de alérgenos: El cliente puede marcar si es celíaco o intolerante a la lactosa, y el menú digital
-ocultará o resaltará los platos aptos automáticamente.
+    <main class="mx-auto max-w-7xl px-6 py-12 lg:px-8">
+    <a href="/index.html" class="text-sm font-semibold tracking-[0.22em] text-amber-800 uppercase">Volver al inicio</a>
 
-Transparencia nutricional: Acceso a la declaración de macronutrientes, calorías e ingredientes detallados para
-consumidores conscientes o con dietas específicas (Keto, Vegano, Low-carb).
+    <section class="mt-8 grid items-center gap-10 rounded-[2rem] solution-panel p-8 md:grid-cols-[1.05fr_0.95fr] lg:p-12">
+      <div>
+        <p class="text-xs font-bold uppercase tracking-[0.32em] text-[#6E8F80]">Experiencia en mesa</p>
+        <h1 class="mt-4 max-w-xl font-['Playfair_Display'] text-4xl font-bold leading-tight text-slate-900 lg:text-6xl">Convierte tu menu en una experiencia digital con QR</h1>
+        <p class="mt-5 max-w-2xl text-lg leading-8 text-slate-600">Tus clientes escanean desde la mesa y descubren productos, precios, origen, notas de sabor y trazabilidad desde una experiencia clara en celular.</p>
+        <div class="mt-8 flex flex-wrap gap-4">
+          <a id="cta-menu-primary" href="/pricing-public.html" class="rounded-full bg-slate-900 px-6 py-3 text-sm font-bold tracking-[0.18em] text-white uppercase">Crear mi Menu QR</a>
+          <a id="cta-menu-secondary" href="/soluciones/trazabilidad.html" class="rounded-full border border-slate-300 px-6 py-3 text-sm font-bold tracking-[0.18em] text-slate-700 uppercase">Ver ejemplo de menu</a>
+        </div>
+      </div>
 
-3. Experiencia Multilingüe Inteligente (Sin duplicar QR)
-Redirección por idioma del sistema: Olvídate de poner "QR Menú Español" y "QR Menu English". El Resolver de GS1 detecta
-el idioma configurado en el smartphone del cliente. Si el teléfono está en francés, el GS1 Digital Link lo enrutará
-automáticamente a la versión en francés del menú.
+      <div class="relative min-h-[320px]">
+        <div class="solution-frame absolute inset-x-8 top-4 h-56 rounded-[2rem]"></div>
+        <div class="solution-chip absolute left-0 top-16 w-44 rounded-[1.5rem] p-5">
+          <p class="text-xs font-bold uppercase tracking-[0.28em] text-slate-500">Acceso</p>
+          <div class="mt-4 h-2 w-16 rounded-full bg-[#c96b3b]"></div>
+          <div class="mt-3 h-2 w-28 rounded-full bg-slate-200"></div>
+          <div class="mt-3 h-20 rounded-[1.25rem] bg-slate-100"></div>
+        </div>
+        <div class="solution-chip absolute bottom-0 right-2 w-56 rounded-[1.75rem] p-6">
+          <div class="flex items-center gap-3">
+            <div class="signal-dot h-12 w-12 rounded-2xl"></div>
+            <div>
+              <p class="text-xs font-bold uppercase tracking-[0.24em] text-slate-500">Lectura movil</p>
+              <p class="mt-1 text-lg font-bold text-slate-900">Menu vivo</p>
+            </div>
+          </div>
+          <div class="mt-5 grid grid-cols-3 gap-3">
+            <div class="h-16 rounded-2xl bg-slate-100"></div>
+            <div class="h-16 rounded-2xl bg-slate-100"></div>
+            <div class="h-16 rounded-2xl bg-slate-100"></div>
+          </div>
+        </div>
+      </div>
+    </section>
 
-4. Gestión Dinámica de Horarios y Disponibilidad
-Menú según el momento del día: El mismo código impreso en la mesa puede mostrar la carta de desayunos de 8:00 a.m. a
-12:00 p.m., cambiar automáticamente al menú de almuerzos por la tarde, y activar la carta de cocteles y cena por la
-noche, todo basado en la hora del servidor.
+    <section class="mt-10 grid items-center gap-10 rounded-[2rem] bg-white p-8 shadow-[0_24px_60px_rgba(15,23,42,0.08)] md:grid-cols-[0.95fr_1.05fr] lg:p-12">
+      <div class="relative min-h-[280px] overflow-hidden rounded-[1.75rem] bg-slate-900 p-8">
+        <div class="absolute -left-10 top-8 h-32 w-32 rounded-full bg-[#c96b3b]/20"></div>
+        <div class="absolute bottom-4 right-6 h-40 w-40 rounded-full bg-[#6E8F80]/20"></div>
+        <div class="relative grid h-full place-items-center rounded-[1.5rem] border border-white/10 bg-white/5">
+          <div class="grid gap-4 text-center">
+            <div class="mx-auto h-16 w-16 rounded-full bg-white/10"></div>
+            <div class="space-y-3">
+              <div class="mx-auto h-2 w-28 rounded-full bg-white/80"></div>
+              <div class="mx-auto h-2 w-36 rounded-full bg-white/50"></div>
+              <div class="mx-auto h-2 w-24 rounded-full bg-white/70"></div>
+            </div>
+          </div>
+        </div>
+      </div>
 
-Control de Stock en Tiempo Real: Si un plato que utiliza un insumo exclusivo se agota, se puede actualizar el enlace en
-el Resolver para marcarlo como "No disponible" o redirigir el interés hacia otra recomendación del chef.
+      <div>
+        <p class="text-xs font-bold uppercase tracking-[0.32em] text-[#c96b3b]">Beneficio clave</p>
+        <h2 class="mt-4 font-['Playfair_Display'] text-3xl font-bold text-slate-900 lg:text-5xl">La carta deja de ser un PDF y se vuelve una guia de decision</h2>
+        <p class="mt-5 max-w-2xl text-lg leading-8 text-slate-600">La solucion presenta el menu como una pieza util de venta, con contexto suficiente para conectar curiosidad del cliente con compra inmediata o contacto directo.</p>
+        <ul class="mt-6 space-y-3 text-base leading-7 text-slate-700">
+          <li class="flex gap-3"><span class="mt-2 h-2.5 w-2.5 flex-none rounded-full bg-[#c96b3b]"></span><span>Menus digitales por categoria, disponibilidad y ubicacion.</span></li>
+          <li class="flex gap-3"><span class="mt-2 h-2.5 w-2.5 flex-none rounded-full bg-[#c96b3b]"></span><span>Historias de producto con origen, productor y proceso.</span></li>
+          <li class="flex gap-3"><span class="mt-2 h-2.5 w-2.5 flex-none rounded-full bg-[#c96b3b]"></span><span>Acceso movil sin app obligatoria para mesas, ferias o tiendas.</span></li>
+          <li class="flex gap-3"><span class="mt-2 h-2.5 w-2.5 flex-none rounded-full bg-[#c96b3b]"></span><span>Preparacion para QR y trazabilidad conectada con otros activos.</span></li>
+        </ul>
+      </div>
+    </section>
 
-5. Omnicanalidad: Del Restaurante a la Tienda (Retail)
-Si el restaurante cuenta con una zona de cafetería, tienda gourmet o vende sus propios productos empacados (por ejemplo,
-salsas de la casa, bolsas de café en grano, barras de chocolate artesanales):
+    <section class="mt-10 rounded-[2rem] bg-white p-8 shadow-[0_18px_45px_rgba(15,23,42,0.06)] lg:p-10">
+      <h2 class="font-['Playfair_Display'] text-3xl font-bold text-slate-900 lg:text-4xl">Funciones clave</h2>
+      <ul class="mt-6 grid gap-4 md:grid-cols-2 text-base leading-7 text-slate-700">
+        <li class="rounded-2xl bg-slate-50 p-5">Digital menus por categorias y disponibilidad.</li>
+        <li class="rounded-2xl bg-slate-50 p-5">Multi-location support por sede, canal o evento.</li>
+        <li class="rounded-2xl bg-slate-50 p-5">Product stories con origen, productor y proceso.</li>
+        <li class="rounded-2xl bg-slate-50 p-5">Mobile-first access sin app obligatoria.</li>
+        <li class="rounded-2xl bg-slate-50 p-5 md:col-span-2">Preparacion para GS1 Digital Link.</li>
+      </ul>
+    </section>
 
-Bucle comercial: El cliente prueba un postre o un café en la mesa, escanea el Digital Link del menú y este le da la
-opción de comprar esa misma barra de chocolate o bolsa de café directamente en la tienda online del restaurante para
-llevársela a casa.
+    <section class="mt-10 grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
+      <article class="rounded-[2rem] bg-white p-8 shadow-[0_18px_45px_rgba(15,23,42,0.06)]">
+        <h2 class="font-['Playfair_Display'] text-3xl font-bold text-slate-900">Que puede ver el cliente</h2>
+        <ul class="mt-6 space-y-3 text-base leading-7 text-slate-700">
+          <li>Nombre, descripcion, precio y presentacion.</li>
+          <li>Fotos y categoria del producto.</li>
+          <li>Origen, productor y notas sensoriales.</li>
+          <li>Certificaciones, premios y trazabilidad.</li>
+          <li>Enlace directo de compra o contacto.</li>
+        </ul>
+      </article>
+      <article class="rounded-[2rem] bg-white p-8 shadow-[0_18px_45px_rgba(15,23,42,0.06)]">
+        <h2 class="font-['Playfair_Display'] text-3xl font-bold text-slate-900">Beneficios</h2>
+        <p class="mt-6 text-base leading-8 text-slate-700">Actualiza sin reimprimir, mejora la experiencia en mesa, diferencia productos de origen y conecta curiosidad del cliente con decision de compra.</p>
+      </article>
+    </section>
 
-Compatibilidad con el Punto de Venta (POS): El mismo identificador estructurado en el QR (el GTIN) sirve tanto para que
-el cliente vea la información en su celular como para que el cajero lo escanee en la caja registradora al momento de la
-venta.
+    <section class="mt-10 rounded-[2rem] bg-slate-900 p-8 text-white lg:p-10">
+      <h2 class="font-['Playfair_Display'] text-3xl font-bold lg:text-4xl">Lleva tus productos al celular del cliente</h2>
+      <p class="mt-4 max-w-3xl text-lg leading-8 text-slate-300">Digitaliza menus para cafeterias, chocolaterias, ferias y tiendas especializadas con una experiencia clara y actualizable.</p>
+      <div class="mt-6 flex flex-wrap gap-3">
+        <a href="/pricing-public.html" class="rounded-full bg-[#c96b3b] px-6 py-3 text-sm font-bold uppercase tracking-[0.18em] text-white">Digitaliza tu menu</a>
+        <a href="/marketplace.html" class="rounded-full border border-white/25 px-6 py-3 text-sm font-bold uppercase tracking-[0.18em] text-white">Conectar con marketplace</a>
+        <a href="http://wa.me/51961222040" class="rounded-full border border-white/25 px-6 py-3 text-sm font-bold uppercase tracking-[0.18em] text-white">Contactar por WhatsApp</a>
+      </div>
+    </section>
+  </main>
 
-6. Automatización del Servicio en Mesa
-Pedidos y Pagos Geolocalizados: Al incluir el componente de serialización en la URL (ej. /21/MESA-04), el sistema sabe
-exactamente qué cliente está pidiendo. Permite abrir una comanda digital directamente vinculada a esa mesa física,
-procesar el pago y enviar la orden a la cocina sin errores de digitación del mesero.
+    <footer class="bg-stone-800 py-8 text-center text-stone-300 text-sm mt-16">
+        <p>&copy; 2025 Rurulab. Todos los derechos reservados.</p>
+    </footer>
+    <script src="/js/public-nav-loader.js"></script>
+</body>
 
-Encuestas de Satisfacción Contextuales: Al terminar la experiencia, el mismo código puede mutar o habilitar un botón
-específico para calificar la atención recibida en esa mesa o turno específico.
-
-En resumen: Con GS1 Digital Link, el menú deja de ser una imagen estática en la nube y se convierte en una API de cara
-al cliente, capaz de conectar la cadena de suministro (los productores de los insumos) con la experiencia inmediata en
-la mesa y el sistema de ventas del negocio.
+</html>
