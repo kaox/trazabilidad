@@ -54,6 +54,683 @@
   <script src="/js/analytics-loader.js" defer></script>
 
   <link rel="stylesheet" href="/css/landing.css">
+  <style>
+    /* ═══ HOW IT WORKS – NEW SECTION ═══════════════════ */
+    .hiw-section {
+      padding: 120px 0 140px;
+      background: #fafaf9;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* Faint background gradient orbs */
+    .hiw-section::before {
+      content: '';
+      position: absolute;
+      top: -120px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 800px;
+      height: 800px;
+      background: radial-gradient(circle, rgba(251, 191, 36, .07) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    /* ── HEADER ─────────────────────── */
+    .hiw-header {
+      text-align: center;
+      max-width: 680px;
+      margin: 0 auto 80px;
+    }
+
+    .hiw-header h2 {
+      font-size: clamp(2.1rem, 4.5vw, 3.2rem);
+      font-weight: 900;
+      line-height: 1.1;
+      margin: 0 0 20px;
+      color: #1c1917;
+    }
+
+    .hiw-header p {
+      font-size: 1.05rem;
+      color: #78716c;
+      line-height: 1.7;
+      margin: 0;
+    }
+
+    /* ── DIAGRAM WRAPPER ─────────────── */
+    .hiw-diagram {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0;
+      position: relative;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    /* ── INPUT CARD (top) ────────────── */
+    .hiw-input-card {
+      background: #fff;
+      border: 1px solid #e7e5e4;
+      border-radius: 24px;
+      padding: 28px 36px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, .07), 0 4px 16px rgba(0, 0, 0, .04);
+      display: flex;
+      align-items: center;
+      gap: 22px;
+      position: relative;
+      z-index: 10;
+      transition: transform .3s, box-shadow .3s;
+    }
+
+    .hiw-input-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 32px 80px rgba(0, 0, 0, .1);
+    }
+
+    .hiw-input-icon {
+      width: 60px;
+      height: 60px;
+      border-radius: 16px;
+      background: linear-gradient(135deg, #fef3c7, #fde68a);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 26px;
+      color: #92400e;
+      flex-shrink: 0;
+    }
+
+    .hiw-input-body h3 {
+      font-size: 1rem;
+      font-weight: 700;
+      color: #1c1917;
+      margin: 0 0 10px;
+      font-family: 'Inter', sans-serif;
+    }
+
+    .hiw-input-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .hiw-tag {
+      background: #f5f5f4;
+      color: #57534e;
+      border: 1px solid #e7e5e4;
+      border-radius: 999px;
+      padding: 3px 10px;
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: .04em;
+    }
+
+    /* ── CONNECTOR LINE ──────────────── */
+    .hiw-connector {
+      width: 2px;
+      height: 56px;
+      background: linear-gradient(to bottom, #e7e5e4, #f59e0b);
+      position: relative;
+      flex-shrink: 0;
+    }
+
+    .hiw-connector::after {
+      content: '';
+      position: absolute;
+      bottom: -5px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #f59e0b;
+    }
+
+    /* animated variant */
+    .hiw-connector.animated {
+      background: linear-gradient(to bottom, #f59e0b, #e7e5e4);
+    }
+
+    .hiw-connector.animated::after {
+      background: #e7e5e4;
+    }
+
+    /* ── CORE NODE (RuruLab circle) ───── */
+    .hiw-core {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 18px;
+      position: relative;
+      z-index: 10;
+    }
+
+    .hiw-core-circle {
+      width: 160px;
+      height: 160px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #f59e0b 0%, #92400e 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 0 16px rgba(245, 158, 11, .08), 0 0 0 32px rgba(245, 158, 11, .04), 0 40px 80px rgba(146, 64, 14, .25);
+      animation: hiw-pulse 3s ease-in-out infinite;
+      position: relative;
+    }
+
+    .hiw-core-circle img {
+      width: 88px;
+      filter: brightness(0) invert(1);
+    }
+
+    @keyframes hiw-pulse {
+
+      0%,
+      100% {
+        box-shadow: 0 0 0 16px rgba(245, 158, 11, .08), 0 0 0 32px rgba(245, 158, 11, .04), 0 40px 80px rgba(146, 64, 14, .25);
+      }
+
+      50% {
+        box-shadow: 0 0 0 20px rgba(245, 158, 11, .12), 0 0 0 40px rgba(245, 158, 11, .06), 0 40px 80px rgba(146, 64, 14, .35);
+      }
+    }
+
+    .hiw-core-label {
+      text-align: center;
+    }
+
+    .hiw-core-label h3 {
+      font-size: 1.35rem;
+      font-weight: 800;
+      color: #1c1917;
+      margin: 0 0 4px;
+    }
+
+    .hiw-core-label p {
+      font-size: .82rem;
+      color: #78716c;
+      margin: 0;
+      max-width: 240px;
+    }
+
+    /* ── OUTPUT GRID ─────────────────── */
+    .hiw-outputs {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      grid-auto-rows: 220px;
+      gap: 18px;
+      width: 100%;
+      margin-top: 0;
+      position: relative;
+      z-index: 10;
+    }
+
+    /* top fake connector lines from circle to grid */
+    .hiw-outputs-wrap {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0;
+    }
+
+    .hiw-spread {
+      display: flex;
+      justify-content: space-between;
+      width: 100%;
+      height: 48px;
+      position: relative;
+    }
+
+    .hiw-spread::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: calc(50% - 1px);
+      width: 2px;
+      height: 100%;
+      background: linear-gradient(to bottom, #f59e0b, #e7e5e4);
+    }
+
+    /* Horizontal bar across outputs */
+    .hiw-spread-bar {
+      position: absolute;
+      top: 0;
+      left: 16.66%;
+      right: 16.66%;
+      height: 2px;
+      background: #e7e5e4;
+    }
+
+    /* vertical drops from bar */
+    .hiw-drop {
+      position: absolute;
+      width: 2px;
+      top: 0;
+      background: linear-gradient(to bottom, #e7e5e4, transparent);
+      height: 48px;
+    }
+
+    .hiw-drop.left {
+      left: 16.66%;
+    }
+
+    .hiw-drop.center {
+      left: calc(50% - 1px);
+    }
+
+    .hiw-drop.right {
+      right: 16.66%;
+    }
+
+    /* ── FLIP CARD WRAPPER ──────────────── */
+    .hiw-out-card {
+      perspective: 900px;
+      cursor: pointer;
+      opacity: 0;
+      transform: translateY(16px) scale(.97);
+      /* Height is set via min-height on inner */
+    }
+
+    .hiw-out-card.revealed-card {
+      opacity: 1;
+      transform: none;
+      transition: opacity .45s ease, transform .45s cubic-bezier(.22, 1, .36, 1);
+    }
+
+    .hiw-flip-inner {
+      position: relative;
+      width: 100%;
+      min-height: 200px;
+      transform-style: preserve-3d;
+      transition: transform .55s cubic-bezier(.22, 1, .36, 1);
+      border-radius: 20px;
+    }
+
+    .hiw-out-card.flipped .hiw-flip-inner {
+      transform: rotateY(180deg);
+    }
+
+    /* ── CARD FACES ─────────────────────── */
+    .hiw-front,
+    .hiw-back {
+      position: absolute;
+      inset: 0;
+      border-radius: 20px;
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 22px;
+      text-align: center;
+    }
+
+    .hiw-front {
+      background: #fff;
+      border: 1px solid #e7e5e4;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, .05);
+      transition: box-shadow .3s;
+    }
+
+    .hiw-out-card:not(.flipped):hover .hiw-front {
+      box-shadow: 0 20px 48px rgba(0, 0, 0, .1);
+    }
+
+    .hiw-back {
+      background: #1c1917;
+      transform: rotateY(180deg);
+      overflow: hidden;
+      border: 1px solid #292524;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, .18);
+      justify-content: flex-end;
+      padding: 0;
+    }
+
+    /* placeholder image covers full back */
+    .hiw-back-img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 20px;
+      opacity: .85;
+    }
+
+    /* overlay gradient at bottom */
+    .hiw-back-overlay {
+      position: relative;
+      z-index: 2;
+      width: 100%;
+      background: linear-gradient(to top, rgba(0, 0, 0, .85) 0%, transparent 100%);
+      padding: 18px 16px 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      border-radius: 0 0 20px 20px;
+    }
+
+    .hiw-back-title {
+      font-size: .8rem;
+      font-weight: 700;
+      color: #fff;
+      margin: 0;
+      font-family: 'Inter', sans-serif;
+    }
+
+    .hiw-more-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      background: linear-gradient(135deg, #f59e0b, #d97706);
+      color: #1c1917;
+      font-size: .7rem;
+      font-weight: 800;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      padding: 7px 14px;
+      border-radius: 999px;
+      text-decoration: none;
+      transition: transform .2s, box-shadow .2s;
+    }
+
+    .hiw-more-link:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(245, 158, 11, .4);
+    }
+
+    /* click hint on front */
+    .hiw-click-hint {
+      font-size: .62rem;
+      color: #a8a29e;
+      margin-top: 10px;
+      letter-spacing: .04em;
+    }
+
+    .hiw-out-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 14px;
+      background: linear-gradient(135deg, #fef3c7, #fde68a);
+      color: #92400e;
+      font-size: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 12px;
+    }
+
+    .hiw-front h4 {
+      font-size: .9rem;
+      font-weight: 700;
+      color: #1c1917;
+      margin: 0 0 6px;
+      font-family: 'Inter', sans-serif;
+    }
+
+    .hiw-front p {
+      font-size: .75rem;
+      color: #78716c;
+      margin: 0;
+      line-height: 1.55;
+    }
+
+    /* ── PHONE MOCKUP ─────────────────── */
+    .hiw-phone-wrap {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 32px;
+      position: relative;
+      z-index: 10;
+    }
+
+    .hiw-phone {
+      width: 200px;
+      background: #1c1917;
+      border-radius: 32px;
+      padding: 14px 10px;
+      box-shadow: 0 40px 80px rgba(0, 0, 0, .25), 0 0 0 1px rgba(255, 255, 255, .05);
+      position: relative;
+    }
+
+    /* Notch */
+    .hiw-phone::before {
+      content: '';
+      position: absolute;
+      top: 14px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 54px;
+      height: 6px;
+      background: #2c2824;
+      border-radius: 3px;
+    }
+
+    .hiw-phone-screen {
+      background: #fff;
+      border-radius: 22px;
+      overflow: hidden;
+      padding: 28px 0 0;
+    }
+
+    /* Simulated passport content */
+    .hiw-passport {
+      padding: 0 12px 12px;
+    }
+
+    .hiw-passport-header {
+      background: linear-gradient(135deg, #92400e, #f59e0b);
+      border-radius: 14px 14px 0 0;
+      padding: 14px 12px 12px;
+      margin: 0 -12px;
+      margin-bottom: 10px;
+    }
+
+    .hiw-passport-header p {
+      font-size: 7px;
+      color: rgba(255, 255, 255, .7);
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      margin: 0 0 2px;
+    }
+
+    .hiw-passport-header h5 {
+      font-size: 11px;
+      color: #fff;
+      font-weight: 700;
+      margin: 0;
+      font-family: 'Inter', sans-serif;
+    }
+
+    .hiw-passport-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      background: rgba(255, 255, 255, .2);
+      border-radius: 4px;
+      padding: 2px 5px;
+      font-size: 6px;
+      color: #fff;
+      font-weight: 700;
+      margin-top: 5px;
+    }
+
+    .hiw-passport-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 8px;
+    }
+
+    .hiw-passport-field {
+      flex: 1;
+    }
+
+    .hiw-passport-field span {
+      display: block;
+      font-size: 6px;
+      color: #a8a29e;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+      margin-bottom: 1px;
+    }
+
+    .hiw-passport-field strong {
+      display: block;
+      font-size: 8px;
+      color: #1c1917;
+      font-weight: 700;
+      font-family: 'Inter', sans-serif;
+    }
+
+    .hiw-passport-score {
+      background: #f5f5f4;
+      border-radius: 8px;
+      padding: 6px 8px;
+      text-align: center;
+      margin-bottom: 8px;
+    }
+
+    .hiw-passport-score strong {
+      font-size: 14px;
+      font-weight: 900;
+      color: #92400e;
+      display: block;
+      font-family: 'Playfair Display', serif;
+    }
+
+    .hiw-passport-score span {
+      font-size: 6px;
+      color: #78716c;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+    }
+
+    .hiw-passport-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      margin-bottom: 8px;
+    }
+
+    .hiw-passport-tags span {
+      background: #fef3c7;
+      color: #78350f;
+      border-radius: 4px;
+      font-size: 6px;
+      font-weight: 700;
+      padding: 2px 5px;
+    }
+
+    .hiw-passport-qr {
+      display: flex;
+      justify-content: flex-end;
+    }
+
+    .hiw-passport-qr i {
+      font-size: 28px;
+      color: #1c1917;
+    }
+
+    .hiw-qr-side {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .hiw-qr-box {
+      width: 72px;
+      height: 72px;
+      background: #1c1917;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: 40px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, .2);
+    }
+
+    .hiw-qr-label {
+      text-align: center;
+      font-size: .7rem;
+      font-weight: 700;
+      color: #78716c;
+      line-height: 1.4;
+    }
+
+    .hiw-phone-label {
+      text-align: center;
+      max-width: 200px;
+    }
+
+    .hiw-phone-label h3 {
+      font-size: 1.05rem;
+      font-weight: 800;
+      color: #1c1917;
+      margin: 0 0 6px;
+    }
+
+    .hiw-phone-label p {
+      font-size: .8rem;
+      color: #78716c;
+      margin: 0;
+      line-height: 1.6;
+    }
+
+    /* ── ANIMATION: line draw ────────── */
+    @keyframes hiw-line-grow {
+      from {
+        opacity: 0;
+        transform: scaleY(0);
+        transform-origin: top;
+      }
+
+      to {
+        opacity: 1;
+        transform: scaleY(1);
+        transform-origin: top;
+      }
+    }
+
+    .hiw-connector.anim-in {
+      animation: hiw-line-grow .4s ease forwards;
+    }
+
+    .hiw-spread.anim-in::before {
+      animation: hiw-line-grow .3s ease forwards;
+    }
+
+    /* ── RESPONSIVE ─────────────────── */
+    @media (max-width: 768px) {
+      .hiw-outputs {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .hiw-phone-wrap {
+        flex-direction: column;
+        gap: 24px;
+      }
+
+      .hiw-input-card {
+        flex-direction: column;
+        text-align: center;
+      }
+    }
+
+    @media (max-width: 540px) {
+      .hiw-outputs {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
 </head>
 
 <body>
@@ -72,7 +749,7 @@
           <i class="fas fa-satellite-dish"></i> Validación EUDR Satelital &amp; GS1 Digital Link
         </div>
 
-        <h1 class="text-5xl md:text-7xl font-black leading-[1.05] mb-8 reveal" style="animation-delay:.1s"
+        <h1 class="text-4xl md:text-6xl font-black leading-[1.05] mb-8 reveal" style="animation-delay:.1s"
           data-i18n="hero.title">
           La Historia de tu Origen,<br>
           <span class="grad-amber italic">Validada por el&nbsp;Mundo.</span>
@@ -171,180 +848,306 @@
   </section>
 
   <!-- ════════════════════════════════════════
-       3. VALUE CHAIN STEPPER
+       3b. HOW IT WORKS – Premium Diagram
   ════════════════════════════════════════ -->
-  <section class="py-24 bg-stone-50" id="value-chain">
-    <div class="container mx-auto px-6 max-w-5xl">
-      <div class="text-center mb-16 reveal">
-        <p class="pill bg-amber-100 text-amber-900 mb-4" data-i18n="stepper.tagline">Tree-to-Cup Experience</p>
-        <h2 class="text-4xl md:text-6xl font-black text-stone-900 mb-4" data-i18n="stepper.title">De la Finca
-          al<br><span class="italic text-amber-700">Mercado Global.</span></h2>
-        <p class="text-stone-500 text-lg max-w-xl mx-auto" data-i18n="stepper.subtitle">Cada grano tiene una historia.
-          Nosotros la hacemos inmutable,
-          visible y rentable en 5 pasos.</p>
-      </div>
-
-      <!-- Steps -->
-      <div class="flex items-start gap-2 md:gap-0 reveal" id="stepper-container" style="animation-delay:.1s">
-        <div class="chain-step" id="step-finca">
-          <div class="chain-icon"><i class="fas fa-mountain"></i></div>
-          <span class="chain-label" data-i18n="stepper.finca.title">Finca</span>
-          <p class="text-center text-xs text-stone-400 hidden md:block max-w-[90px]" data-i18n="stepper.finca.desc">
-            Registra tu origen</p>
-        </div>
-        <div class="chain-connector hidden md:block"></div>
-        <div class="chain-step" id="step-acopio">
-          <div class="chain-icon"><i class="fas fa-weight-hanging"></i></div>
-          <span class="chain-label" data-i18n="stepper.acopio.title">Acopio</span>
-          <p class="text-center text-xs text-stone-400 hidden md:block max-w-[90px]" data-i18n="stepper.acopio.desc">
-            Transparencia en campo</p>
-        </div>
-        <div class="chain-connector hidden md:block"></div>
-        <div class="chain-step" id="step-proceso">
-          <div class="chain-icon"><i class="fas fa-microchip"></i></div>
-          <span class="chain-label" data-i18n="stepper.proceso.title">Proceso</span>
-          <p class="text-center text-xs text-stone-400 hidden md:block max-w-[90px]" data-i18n="stepper.proceso.desc">
-            Linaje inmutable</p>
-        </div>
-        <div class="chain-connector hidden md:block"></div>
-        <div class="chain-step" id="step-catacion">
-          <div class="chain-icon"><i class="fas fa-wand-magic-sparkles"></i></div>
-          <span class="chain-label" data-i18n="stepper.catacion.title">Catación</span>
-          <p class="text-center text-xs text-stone-400 hidden md:block max-w-[90px]" data-i18n="stepper.catacion.desc">
-            Ingeniería del sabor</p>
-        </div>
-        <div class="chain-connector hidden md:block"></div>
-        <div class="chain-step" id="step-mercado">
-          <!-- QR always active -->
-          <div class="chain-icon" style="background:#1c1917;color:#fbbf24;border-color:#1c1917;">
-            <i class="fas fa-qrcode"></i>
-          </div>
-          <span class="chain-label" style="color:#1c1917;" data-i18n="stepper.mercado.title">Mercado</span>
-          <p class="text-center text-xs text-stone-400 hidden md:block max-w-[90px]" data-i18n="stepper.mercado.desc">
-            Pasaporte Digital</p>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ════════════════════════════════════════
-       4. FEATURES GRID (9 modules)
-  ════════════════════════════════════════ -->
-  <section class="py-24 bg-white" id="features">
+  <section id="workflow" class="hiw-section">
     <div class="container mx-auto px-6">
-      <div class="flex flex-col md:flex-row justify-between items-end gap-6 mb-16 reveal">
-        <div>
-          <p class="pill bg-stone-100 text-stone-700 mb-4">Módulos de Impacto Total</p>
-          <h2 class="text-4xl md:text-5xl font-black leading-tight">Todo lo que tu Marca<br>Necesita, en un solo lugar.
-          </h2>
-        </div>
-        <a href="/login.html"
-          class="text-amber-700 font-bold border-b-2 border-amber-700 pb-0.5 hover:text-amber-900 transition-all whitespace-nowrap">
-          Ver la plataforma →
-        </a>
+
+      <!-- HEADER -->
+      <div class="hiw-header reveal" id="hiw-header">
+        <p class="pill bg-amber-100 text-amber-900 mx-auto mb-6">¿Cómo funciona?</p>
+        <h2>
+          Solo registras tu producto.<br>
+          <span class="grad-amber italic">RuruLab hace todo lo demás.</span>
+        </h2>
+        <p class="mt-5">Convierte tu café, cacao o miel en un producto digital verificable listo para compartir con
+          compradores de todo el mundo.</p>
       </div>
 
-      <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <!-- DIAGRAM -->
+      <div class="hiw-diagram">
 
-        <!-- 01 Marketplace -->
-        <div class="f-card reveal" data-num="01">
-          <div class="f-icon bg-amber-50 text-amber-800"><i class="fas fa-shop"></i></div>
-          <h3 class="text-amber-950" data-i18n="modules.m1_title">Marketplace de Especialidad</h3>
-          <p data-i18n="modules.m1_desc">Conecta directo con importadores, tostadores y compradores sin intermediarios
-            opacos. Tu producto, tu
-            precio, tu narrativa.</p>
-          <a href="/origen-unico" class="f-link text-amber-700">Explorar <i
-              class="fas fa-arrow-right text-[10px]"></i></a>
+        <!-- INPUT CARD -->
+        <div class="hiw-input-card reveal" id="hiw-input" style="animation-delay:.15s">
+          <div class="hiw-input-icon">
+            <i class="fas fa-seedling"></i>
+          </div>
+          <div class="hiw-input-body">
+            <h3>Registrar Producto</h3>
+            <div class="hiw-input-tags">
+              <span class="hiw-tag">🌿 Origen</span>
+              <span class="hiw-tag">🏡 Finca</span>
+              <span class="hiw-tag">⚙️ Proceso</span>
+              <span class="hiw-tag">📷 Fotografías</span>
+              <span class="hiw-tag">🏅 Certificaciones</span>
+            </div>
+          </div>
         </div>
 
-        <!-- 02 Blockchain -->
-        <div class="f-card reveal" data-num="02" style="animation-delay:.05s">
-          <div class="f-icon bg-indigo-50 text-indigo-900"><i class="fas fa-link"></i></div>
-          <h3 class="text-indigo-950" data-i18n="modules.m2_title">Linaje Inmutable</h3>
-          <p data-i18n="modules.m2_desc">Cada transformación genera un hash blockchain. La autenticidad de tu lote es
-            matemáticamente
-            incuestionable.</p>
-          <a href="/login.html" class="f-link text-indigo-700">Activar <i
-              class="fas fa-arrow-right text-[10px]"></i></a>
+        <!-- LINE DOWN -->
+        <div class="hiw-connector" id="hiw-line-1"></div>
+
+        <!-- CORE RURULAB NODE -->
+        <div class="hiw-core reveal" id="hiw-core" style="animation-delay:.35s">
+          <div class="hiw-core-circle">
+            <img src="/images/logo-icon.png" alt="RuruLab">
+          </div>
+          <div class="hiw-core-label">
+            <h3>RuruLab</h3>
+            <p>Genera automáticamente toda la identidad digital de tu producto.</p>
+          </div>
         </div>
 
-        <!-- 03 Rueda Sabores -->
-        <div class="f-card reveal" data-num="03" style="animation-delay:.1s">
-          <div class="f-icon bg-purple-50 text-purple-900"><i class="fas fa-circle-nodes"></i></div>
-          <h3 class="text-purple-950" data-i18n="modules.m3_title">Ingeniería del Sabor</h3>
-          <p data-i18n="modules.m3_desc">Diseña Ruedas de Sabor interactivas de la SCA y convierte las notas de cata en
-            una experiencia visual para
-            el consumidor.</p>
-          <a href="/login.html" class="f-link text-purple-700">Descubrir <i
-              class="fas fa-arrow-right text-[10px]"></i></a>
+        <!-- SPREAD & OUTPUT CARDS -->
+        <div class="hiw-outputs-wrap" style="width:100%">
+          <!-- Vertical + Horizontal connector lines -->
+          <div class="hiw-spread" id="hiw-spread">
+            <div class="hiw-spread-bar"></div>
+            <div class="hiw-drop left"></div>
+            <div class="hiw-drop center"></div>
+            <div class="hiw-drop right"></div>
+          </div>
+
+          <!-- 6 OUTPUT CARDS: 3 + 3 rows -->
+          <div class="hiw-outputs" id="hiw-outputs">
+
+            <!-- 1. Pasaporte Digital -->
+            <div class="hiw-out-card" data-hiw-delay="0" onclick="this.classList.toggle('flipped')">
+              <div class="hiw-flip-inner">
+                <div class="hiw-front">
+                  <div class="hiw-out-icon"><i class="fas fa-qrcode"></i></div>
+                  <h4>Pasaporte Digital de Producto (PDP)</h4>
+                  <p>Historia completa del producto con un solo QR.</p>
+                  <span class="hiw-click-hint">Clic para ver más</span>
+                </div>
+                <div class="hiw-back">
+                  <img class="hiw-back-img" src="/images/pasaporte-digital-producto.jpg" alt="Pasaporte Digital"
+                    loading="lazy">
+                  <div class="hiw-back-overlay">
+                    <p class="hiw-back-title">Pasaporte Digital</p>
+                    <a href="/soluciones/pasaporte-digital-producto.html" class="hiw-more-link"
+                      onclick="event.stopPropagation()">
+                      Más info <i class="fas fa-arrow-right"></i>
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 2. Pefil Digital Empresa -->
+            <div class="hiw-out-card" data-hiw-delay="80" onclick="this.classList.toggle('flipped')">
+              <div class="hiw-flip-inner">
+                <div class="hiw-front">
+                  <div class="hiw-out-icon"><i class="fas fa-id-card"></i></div>
+                  <h4>Pefil Digital Empresa</h4>
+                  <p>Muestra tu historia, ubicacion, catalogo y contacto directo en una pagina publica</p>
+                  <span class="hiw-click-hint">Clic para ver más</span>
+                </div>
+                <div class="hiw-back">
+                  <img class="hiw-back-img" src="/images/perfil-empresas.png" alt="QR Inteligente" loading="lazy">
+                  <div class="hiw-back-overlay">
+                    <p class="hiw-back-title">Pefil Digital Empresa</p>
+                    <a href="/soluciones/perfil-digital-empresas.html" class="hiw-more-link"
+                      onclick="event.stopPropagation()">
+                      Más info <i class="fas fa-arrow-right"></i>
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 3. Perfil Sensorial -->
+            <div class="hiw-out-card" data-hiw-delay="160" onclick="this.classList.toggle('flipped')">
+              <div class="hiw-flip-inner">
+                <div class="hiw-front">
+                  <div class="hiw-out-icon"><i class="fas fa-mug-hot"></i></div>
+                  <h4>Rueda de Sabor & Perfil Sensorial</h4>
+                  <p>Notas de cata y rueda de sabores.</p>
+                  <span class="hiw-click-hint">Clic para ver más</span>
+                </div>
+                <div class="hiw-back">
+                  <img class="hiw-back-img" src="/images/rueda_sabor.png" alt="Perfil Sensorial" loading="lazy">
+                  <div class="hiw-back-overlay">
+                    <p class="hiw-back-title">Rueda de Sabor & Perfil Sensorial</p>
+                    <a href="/soluciones/rueda-perfil.html" class="hiw-more-link" onclick="event.stopPropagation()">
+                      Más info <i class="fas fa-arrow-right"></i>
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 4. Certificaciones -->
+            <div class="hiw-out-card" data-hiw-delay="240" onclick="this.classList.toggle('flipped')">
+              <div class="hiw-flip-inner">
+                <div class="hiw-front">
+                  <div class="hiw-out-icon"><i class="fas fa-award"></i></div>
+                  <h4>Certificaciones & Premios</h4>
+                  <p>Premios y certificaciones verificables.</p>
+                  <span class="hiw-click-hint">Clic para ver más</span>
+                </div>
+                <div class="hiw-back">
+                  <img class="hiw-back-img" src="/images/premio-producto.png" alt="Certificaciones" loading="lazy">
+                  <div class="hiw-back-overlay">
+                    <p class="hiw-back-title">Certificaciones & Premios</p>
+                    <a href="/soluciones/certificacion-premio.html" class="hiw-more-link"
+                      onclick="event.stopPropagation()">
+                      Más info <i class="fas fa-arrow-right"></i>
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 5. Marketplace -->
+            <div class="hiw-out-card" data-hiw-delay="320" onclick="this.classList.toggle('flipped')">
+              <div class="hiw-flip-inner">
+                <div class="hiw-front">
+                  <div class="hiw-out-icon"><i class="fas fa-store"></i></div>
+                  <h4>Marketplace B2B & B2C</h4>
+                  <p>Conecta con compradores globales.</p>
+                  <span class="hiw-click-hint">Clic para ver más</span>
+                </div>
+                <div class="hiw-back">
+                  <img class="hiw-back-img" src="/images/marketplace.png" alt="Marketplace" loading="lazy">
+                  <div class="hiw-back-overlay">
+                    <p class="hiw-back-title">Marketplace B2B & B2C</p>
+                    <a href="/soluciones/marketplace.html" class="hiw-more-link" onclick="event.stopPropagation()">
+                      Más info <i class="fas fa-arrow-right"></i>
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 6. Cumplimiento EUDR -->
+            <div class="hiw-out-card" data-hiw-delay="400" onclick="this.classList.toggle('flipped')">
+              <div class="hiw-flip-inner">
+                <div class="hiw-front">
+                  <div class="hiw-out-icon"><i class="fas fa-earth-americas"></i></div>
+                  <h4>Cumplimiento EUDR</h4>
+                  <p>Origen validado mediante geolocalización.</p>
+                  <span class="hiw-click-hint">Clic para ver más</span>
+                </div>
+                <div class="hiw-back">
+                  <img class="hiw-back-img" src="/images/ubicacion-satelital.png" alt="Cumplimiento EUDR"
+                    loading="lazy">
+                  <div class="hiw-back-overlay">
+                    <p class="hiw-back-title">Cumplimiento EUDR</p>
+                    <a href="/soluciones/cumplimiento-eudr.html" class="hiw-more-link"
+                      onclick="event.stopPropagation()">
+                      Más info <i class="fas fa-arrow-right"></i>
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
         </div>
 
-        <!-- 04 Perfil SCA -->
-        <div class="f-card reveal" data-num="04" style="animation-delay:.05s">
-          <div class="f-icon bg-emerald-50 text-emerald-900"><i class="fas fa-award"></i></div>
-          <h3 class="text-emerald-950" data-i18n="modules.m4_title">Calidad Validada SCA/CoE</h3>
-          <p data-i18n="modules.m4_desc">Registra puntajes de taza profesionales. Valida la excelencia de cada lote
-            antes de salir al mercado.</p>
-          <a href="/login.html" class="f-link text-emerald-700">Probar <i
-              class="fas fa-arrow-right text-[10px]"></i></a>
-        </div>
+        <!-- CONNECTOR DOWN TO PHONE -->
+        <div class="hiw-connector animated" id="hiw-line-2"></div>
 
-        <!-- 05 Acopio -->
-        <div class="f-card reveal" data-num="05" style="animation-delay:.1s">
-          <div class="f-icon bg-rose-50 text-rose-900"><i class="fas fa-weight-hanging"></i></div>
-          <h3 class="text-rose-950" data-i18n="modules.m5_title">Acopio Inteligente</h3>
-          <p data-i18n="modules.m5_desc">Digitaliza el ingreso de materia prima en tiempo real. Pago justo, origen
-            verificado y trazabilidad desde
-            la primera pesada.</p>
-          <a href="/login.html" class="f-link text-rose-700">Comenzar <i class="fas fa-arrow-right text-[10px]"></i></a>
-        </div>
+        <!-- PHONE + QR + LABEL -->
+        <div class="hiw-phone-wrap reveal" id="hiw-phone" style="animation-delay:.6s">
 
-        <!-- 06 Fincas & Procesadoras -->
-        <div class="f-card reveal" data-num="06" style="animation-delay:.15s">
-          <div class="f-icon bg-sky-50 text-sky-900"><i class="fas fa-map-location-dot"></i></div>
-          <h3 class="text-sky-950" data-i18n="modules.m6_title">Gemelo Digital del Terroir</h3>
-          <p data-i18n="modules.m6_desc">Registra tus Fincas y Centros de Beneficio con coordenadas GPS, altitud,
-            variedad y polígonos de validación
-            EUDR.</p>
-          <a href="/login.html" class="f-link text-sky-700">Mapear <i class="fas fa-arrow-right text-[10px]"></i></a>
-        </div>
+          <!-- Phone mockup -->
+          <div class="hiw-phone">
+            <div class="hiw-phone-screen">
+              <div class="hiw-passport">
+                <!-- Passport header -->
+                <div class="hiw-passport-header">
+                  <p>Pasaporte Digital · RuruLab</p>
+                  <h5>☕ Café Washed Natural – Finca El Cielo</h5>
+                  <div class="hiw-passport-badge"><i class="fas fa-check-circle"></i> EUDR Validado</div>
+                </div>
+                <!-- Fields -->
+                <div class="hiw-passport-row">
+                  <div class="hiw-passport-field">
+                    <span>Origen</span>
+                    <strong>Huila, Colombia</strong>
+                  </div>
+                  <div class="hiw-passport-field">
+                    <span>Variedad</span>
+                    <strong>Castillo</strong>
+                  </div>
+                </div>
+                <!-- Score -->
+                <div class="hiw-passport-score">
+                  <strong>88.5</strong>
+                  <span>SCA Score</span>
+                </div>
+                <!-- Flavor tags -->
+                <div class="hiw-passport-tags">
+                  <span>🍊 Cítrico</span>
+                  <span>🌺 Jazmín</span>
+                  <span>🍫 Chocolate</span>
+                </div>
+                <!-- QR -->
+                <div class="hiw-passport-qr">
+                  <i class="fas fa-qrcode"></i>
+                </div>
+              </div>
+            </div>
+          </div>
 
-        <!-- 07 Perfil Comercial -->
-        <div class="f-card reveal" data-num="07">
-          <div class="f-icon bg-yellow-50 text-yellow-900"><i class="fas fa-globe"></i></div>
-          <h3 class="text-yellow-950" data-i18n="modules.m7_title">Tu Marca, Tu Dominio</h3>
-          <p data-i18n="modules.m7_desc">Una Landing Page personalizada con tu subdominio único, catálogo, historia y
-            chat de ventas directo. Gratis
-            para todos los usuarios.</p>
-          <a href="/origen-unico" class="f-link text-yellow-700">Ver ejemplos <i
-              class="fas fa-arrow-right text-[10px]"></i></a>
-        </div>
+          <!-- Phone label -->
+          <div class="hiw-phone-label">
+            <h3>Comparte un solo QR</h3>
+            <p>Imprímelo en tu empaque, envíalo por WhatsApp, agrégalo a tu catálogo o compártelo.</p>
+          </div>
 
-        <!-- 08 QR / GS1 -->
-        <div class="f-card reveal" data-num="08"
-          style="animation-delay:.05s; background:#1c1917; border-color:#1c1917;">
-          <div class="f-icon bg-amber-500/20 text-amber-400"><i class="fas fa-barcode"></i></div>
-          <h3 style="color:#fdfaf6" data-i18n="modules.m8_title">Pasaporte Digital GS1</h3>
-          <p style="color:#a8a29e" data-i18n="modules.m8_desc">QR inteligente listo para Sunrise 2027. Un solo escaneo
-            entrega la historia completa,
-            certificaciones y notas de sabor.</p>
-          <a href="#" class="f-link" style="color:#fbbf24">Generar QR <i class="fas fa-arrow-right text-[10px]"></i></a>
-        </div>
+          <!-- QR side element -->
+          <div class="hiw-qr-side">
+            <div class="hiw-qr-box">
+              <i class="fas fa-qrcode"></i>
+            </div>
+            <div class="hiw-qr-label">Un solo<br>escaneo</div>
+          </div>
 
-        <!-- 09 Workstation -->
-        <div class="f-card reveal" data-num="09" style="animation-delay:.1s">
-          <div class="f-icon bg-orange-50 text-orange-900"><i class="fas fa-gears"></i></div>
-          <h3 class="text-orange-950" data-i18n="modules.m9_title">Motor de Procesamiento</h3>
-          <p data-i18n="modules.m9_desc">Control total sobre las transformaciones productivas: rendimientos por etapa,
-            costos por kg y análisis de
-            rentabilidad en tiempo real.</p>
-          <a href="/login.html" class="f-link text-orange-700">Explorar <i
-              class="fas fa-arrow-right text-[10px]"></i></a>
         </div>
-
-      </div>
-    </div>
+      </div><!-- /.hiw-diagram -->
+    </div><!-- /.container -->
   </section>
+
+  <!-- HIW Intersection Animation Script -->
+  <script>
+    (function () {
+      function initHIW() {
+        const section = document.getElementById('workflow');
+        if (!section) return;
+
+        const outputCards = section.querySelectorAll('.hiw-out-card');
+
+        const obs = new IntersectionObserver(function (entries) {
+          entries.forEach(function (entry) {
+            if (!entry.isIntersecting) return;
+            obs.unobserve(entry.target);
+
+            // Sequential animation of output cards
+            outputCards.forEach(function (card) {
+              var delay = parseInt(card.getAttribute('data-hiw-delay') || 0);
+              setTimeout(function () {
+                card.classList.add('revealed-card');
+                card.style.transition = 'opacity .45s ease, transform .45s cubic-bezier(.22,1,.36,1)';
+              }, 500 + delay);
+            });
+          });
+        }, { threshold: 0.2 });
+
+        obs.observe(section);
+      }
+
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initHIW);
+      } else {
+        initHIW();
+      }
+    })();
+  </script>
+
+
   <!-- ════════════════════════════════════════
        4. WIDGET INTEGRATION (US3)
   ════════════════════════════════════════ -->
