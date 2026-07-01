@@ -135,8 +135,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         const iframe = document.querySelector('#widgets iframe');
         const code = document.getElementById('embed-code');
         const btns = document.querySelectorAll('.widget-btn');
-        const baseUrl = 'https://rurulab.com/widgets';
-        
+        const baseUrl = 'https://rurulab.com/widget';
+
         // Update UI
         btns.forEach(b => {
             b.classList.remove('bg-amber-900', 'text-white');
@@ -149,11 +149,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
 
         if (type === 'radar') {
-            iframe.src = `/widgets/radar/DEMO_TOKEN`;
-            code.innerHTML = `&lt;iframe src="${baseUrl}/radar/DEMO_TOKEN" \n        width="100%" height="500" frameborder="0"&gt;&lt;/iframe&gt;`;
+            iframe.src = `${baseUrl}/radar/d624ac19-b8c3-45d2-8eed-da6e4272ecad`;
+            code.innerHTML = `&lt;iframe src="${baseUrl}/radar/d624ac19-b8c3-45d2-8eed-da6e4272ecad" \n        width="100%" height="500" frameborder="0"&gt;&lt;/iframe&gt;`;
         } else {
-            iframe.src = `/widgets/flavor-wheel/DEMO_TOKEN`;
-            code.innerHTML = `&lt;iframe src="${baseUrl}/flavor-wheel/DEMO_TOKEN" \n        width="100%" height="500" frameborder="0"&gt;&lt;/iframe&gt;`;
+            iframe.src = `${baseUrl}/rueda/c3e32616-7021-4fb5-82cf-c3c89c3fee02`;
+            code.innerHTML = `&lt;iframe src="${baseUrl}/rueda/c3e32616-7021-4fb5-82cf-c3c89c3fee02" \n        width="100%" height="500" frameborder="0"&gt;&lt;/iframe&gt;`;
         }
     };
 
