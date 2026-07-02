@@ -27,27 +27,28 @@
     <!-- Structured Data -->
     <script type="application/ld+json" id="product-jsonld"></script>
 
-    <link href="/css/styles.css" rel="stylesheet">
-
-    <!-- Scripts Externos -->
-    <script src="https://d3js.org/d3.v7.min.js"></script>
-    <script src="/js/d3-utils.js"></script>
-    <script src="/js/d3-sunburst.js"></script>
-    <script
-        src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAM37iJTRcIoSAxESlDzB2DxlNJWKasW5U&libraries=geometry&v=weekly"></script>
+    <link rel="preload" as="style" href="/css/styles.css" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="/css/styles.css"></noscript>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link
-        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@700;800;900&display=swap"
-        rel="stylesheet">
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@700;800;900&display=swap">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@700;800;900&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
 
     <script src="/js/analytics-loader.js" defer></script>
     <style>
+        /* CRITICAL CSS */
         body {
             font-family: 'Inter', sans-serif;
             background-color: #fdfaf6;
+            margin: 0;
+            padding: 0;
         }
+
+        #public-nav-placeholder { min-height: 80px; }
+        .skeleton { background: #e2e8f0; animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; border-radius: 0.5rem; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .5; } }
+        .aspect-square { aspect-ratio: 1 / 1; }
 
         .font-display {
             font-family: 'Playfair Display', serif;
@@ -285,8 +286,8 @@
         </div>
     </main>
 
-    <script src="/js/public-nav-loader.js"></script>
-    <script src="/js/producto-detalle-app.js"></script>
+    <script src="/js/public-nav-loader.js" defer></script>
+    <script src="/js/producto-detalle-app.js" defer></script>
 </body>
 
 </html>

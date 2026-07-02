@@ -4,6 +4,39 @@ const app = {
     currentTab: 'origen',
     flavorWheels: null,
 
+    async loadGoogleMaps() {
+        if (window.google && window.google.maps) return;
+        return new Promise((resolve, reject) => {
+            const script = document.createElement('script');
+            script.src = "https://maps.googleapis.com/maps/api/js?key=AIzaSyAM37iJTRcIoSAxESlDzB2DxlNJWKasW5U&libraries=geometry&v=weekly";
+            script.async = true;
+            script.defer = true;
+            script.onload = resolve;
+            script.onerror = reject;
+            document.head.appendChild(script);
+        });
+    },
+
+    async loadD3() {
+        if (window.d3) return;
+        return new Promise((resolve, reject) => {
+            const script = document.createElement('script');
+            script.src = "https://d3js.org/d3.v7.min.js";
+            script.onload = () => {
+                const loadScript = (src) => new Promise((res, rej) => {
+                    const s = document.createElement('script');
+                    s.src = src; s.onload = res; s.onerror = rej; document.head.appendChild(s);
+                });
+                Promise.all([
+                    loadScript('/js/d3-utils.js'),
+                    loadScript('/js/d3-sunburst.js')
+                ]).then(resolve).catch(reject);
+            };
+            script.onerror = reject;
+            document.head.appendChild(script);
+        });
+    },
+
     async init() {
         if (!this.productId) {
             window.location.href = '/marketplace';
@@ -482,10 +515,17 @@ const app = {
         }
     },
 
-    initOriginMap() {
+    async initOriginMap() {
         const finca = this.product.finca || {};
         const mapDiv = document.getElementById('origin-map');
         if (!mapDiv) return;
+
+        try {
+            await this.loadGoogleMaps();
+        } catch (e) {
+            console.error("Error loading Google Maps", e);
+            return;
+        }
 
         const map = new google.maps.Map(mapDiv, {
             center: { lat: -11.23, lng: -74.63 },
@@ -608,9 +648,16 @@ const app = {
         this.initProcessMap();
     },
 
-    initProcessMap() {
+    async initProcessMap() {
         const mapDiv = document.getElementById('process-map');
         if (!mapDiv) return;
+
+        try {
+            await this.loadGoogleMaps();
+        } catch (e) {
+            console.error("Error loading Google Maps", e);
+            return;
+        }
 
         const map = new google.maps.Map(mapDiv, {
             center: { lat: -11.12, lng: -74.67 },
@@ -766,7 +813,16 @@ const app = {
         this.initCharts(hasPerfil, hasSabores);
     },
 
-    initCharts(hasPerfil, hasSabores) {
+    async initCharts(hasPerfil, hasSabores) {
+        if (hasPerfil || hasSabores) {
+            try {
+                await this.loadD3();
+            } catch (e) {
+                console.error("Error loading D3", e);
+                return;
+            }
+        }
+
         // Radar Chart
         if (hasPerfil && this.product.perfil && this.sensoryConfig) {
             const configList = this.sensoryConfig[this.product.tipo];
