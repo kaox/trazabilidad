@@ -36,6 +36,48 @@
 
   <!-- Páginas de Valor (Marketing) -->
   <url>
+    <loc>https://rurulab.com/soluciones/pasaporte-digital-producto.html</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://rurulab.com/soluciones/rueda-perfil.html</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://rurulab.com/soluciones/certificacion-premio.html</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  
+  <url>
+    <loc>https://rurulab.com/soluciones/certificacion-premio.html</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://rurulab.com/soluciones/cumplimiento-eudr.html</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://rurulab.com/soluciones/perfil-digital-empresas.html</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://rurulab.com/soluciones/marketplace.html</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
     <loc>https://rurulab.com/use-case.html</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
