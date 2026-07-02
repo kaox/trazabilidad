@@ -859,6 +859,33 @@ app.get('/sitemap-origen-unico.xml', async (req, res) => {
     }
 });
 
+// --- SITEMAP DINÁMICO PARA SUBDOMINIOS ---
+app.get('/sitemap-subdomain.xml', async (req, res) => {
+    try {
+        const companies = await EmpresaModel.getPublicCompaniesDataInternal();
+        let sitemap = '<?xml version="1.0" encoding="UTF-8"?>\n';
+        sitemap += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n';
+
+        companies.forEach(company => {
+            if (company.subdomain) {
+                const url = `https://${company.subdomain}.rurulab.com`;
+                sitemap += '  <url>\n';
+                sitemap += `    <loc>${url}</loc>\n`;
+                sitemap += '    <changefreq>weekly</changefreq>\n';
+                sitemap += '    <priority>0.8</priority>\n';
+                sitemap += '  </url>\n';
+            }
+        });
+
+        sitemap += '</urlset>';
+        res.header('Content-Type', 'application/xml');
+        res.send(sitemap);
+    } catch (error) {
+        console.error("Error generando sitemap subdominios:", error);
+        res.status(500).end();
+    }
+});
+
 app.get('/sitemap-blog.xml', async (req, res) => {
     try {
         const posts = await db.getPublishedBlogSlugs();
