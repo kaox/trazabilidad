@@ -2169,7 +2169,7 @@ const getMyAnalytics = async (req, res) => {
 
     try {
         const environment = process.env.NODE_ENV || 'development';
-        
+
         let kpisQuery, timeSeriesQuery;
         let kpisParams = [userId];
         let timeSeriesParams = [userId];
@@ -2179,7 +2179,7 @@ const getMyAnalytics = async (req, res) => {
                 SELECT
                     COUNT(*) as total_events,
                     SUM(CASE WHEN event_type = 'landing_view' THEN 1 ELSE 0 END) as landing_views,
-                    SUM(CASE WHEN event_type = 'trace_view'  THEN 1 ELSE 0 END) as trace_views,
+                    SUM(CASE WHEN event_type = 'qr_view'  THEN 1 ELSE 0 END) as trace_views,
                     SUM(CASE WHEN event_type = 'buy_click'   THEN 1 ELSE 0 END) as buy_clicks,
                     COUNT(DISTINCT created_at::date) as active_days
                 FROM analytics_events
@@ -2189,7 +2189,7 @@ const getMyAnalytics = async (req, res) => {
                 SELECT
                     created_at::date as day,
                     SUM(CASE WHEN event_type = 'landing_view' THEN 1 ELSE 0 END) as landing_views,
-                    SUM(CASE WHEN event_type = 'trace_view'  THEN 1 ELSE 0 END) as trace_views,
+                    SUM(CASE WHEN event_type = 'qr_view'  THEN 1 ELSE 0 END) as trace_views,
                     SUM(CASE WHEN event_type = 'buy_click'   THEN 1 ELSE 0 END) as buy_clicks
                 FROM analytics_events
                 WHERE target_user_id = ?

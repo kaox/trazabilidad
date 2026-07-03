@@ -251,11 +251,11 @@ const app = {
 
             breadcrumbStore.href = storeHref;
             if (breadcrumbStoreName) breadcrumbStoreName.textContent = companyName;
-            
+
             if (breadcrumbStoreProducts) {
                 breadcrumbStoreProducts.href = storeHref + '#tienda';
             }
-            
+
             breadcrumb.classList.remove('hidden');
         }
 
@@ -285,7 +285,7 @@ const app = {
             whatsappBtn.href = `https://wa.me/${phone}?text=${message}`;
             whatsappBtn.onclick = () => {
                 const compId = this.product.id_empresa || (this.product.empresa && this.product.empresa.id) || null;
-                this.trackEvent('buy_whatsapp_click', compId, this.product.id);
+                this.trackEvent('buy_click', compId, this.product.id);
             };
             whatsappBtn.classList.remove('hidden');
         } else {
