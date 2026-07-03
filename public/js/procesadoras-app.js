@@ -842,12 +842,27 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function renderAddedCertifications() {
         if (!certsListContainer) return;
-        certsListContainer.innerHTML = currentCertifications.map((c, i) =>
-            `<div class="flex justify-between items-center bg-stone-100 p-2 px-3 rounded-lg mb-2 text-sm">
-                <span><i class="fas fa-certificate text-amber-600 mr-2"></i>${c.nombre} ${c.expiry ? `(Vence: ${c.expiry})` : ''}</span>
-                <button type="button" class="delete-cert-btn text-red-500 hover:bg-red-100 rounded-full w-6 h-6 flex items-center justify-center transition" data-index="${i}">&times;</button>
-             </div>`
-        ).join('');
+        certsListContainer.innerHTML = currentCertifications.map(cert => {
+            const isExpired = new Date(cert.expiry) < new Date();
+            const statusClass = isExpired ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800';
+            const statusText = isExpired ? 'Vencida' : 'Vigente';
+
+            return `
+                <div class="flex items-center justify-between p-2 border rounded-lg">
+                    <div class="flex items-center gap-3">
+                        <img src="${cert.logo_url}" alt="${cert.nombre}" class="w-8 h-8 rounded-full">
+                        <div>
+                            <p class="font-semibold text-sm">${cert.nombre}</p>
+                            <p class="text-xs text-stone-500">Vence: ${cert.expiry}</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                         <span class="text-xs font-medium px-2 py-1 rounded-full ${statusClass}">${statusText}</span>
+                         <button type="button" data-id="${cert.id}" class="delete-cert-btn text-red-500 hover:text-red-700 font-bold">&times;</button>
+                    </div>
+                </div>
+            `;
+        }).join('');
     }
 
     function handleAddPremio() {
@@ -872,10 +887,17 @@ document.addEventListener('DOMContentLoaded', () => {
     function renderAddedPremios() {
         if (!premiosListContainer) return;
         premiosListContainer.innerHTML = currentPremios.map((p, i) =>
-            `<div class="flex justify-between items-center bg-stone-100 p-2 px-3 rounded-lg mb-2 text-sm">
-                <span><i class="fas fa-award text-amber-600 mr-2"></i>${p.nombre} (${p.year})</span>
+            `<div class="flex items-center justify-between p-2 border rounded-lg">
+                <div class="flex items-center gap-3">
+                    <img src="${p.logo_url}" alt="${p.nombre}" class="w-8 h-8 rounded-full">
+                    <div>
+                        <p class="font-semibold text-sm">${p.nombre}</p>
+                        <p class="text-xs text-stone-500">Año: ${p.year}</p>
+                    </div>
+                </div>
                 <button type="button" class="delete-premio-btn text-red-500 hover:bg-red-100 rounded-full w-6 h-6 flex items-center justify-center transition" data-index="${i}">&times;</button>
-             </div>`
+            </div>
+`
         ).join('');
     }
 
