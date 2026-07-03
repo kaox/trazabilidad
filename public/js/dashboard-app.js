@@ -14,10 +14,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (templateFilter) populateTemplateFilter();
             if (batchFilter) populateBatchFilter();
-            
+
             if (templateFilter) templateFilter.addEventListener('change', handleFilterChange);
             if (batchFilter) batchFilter.addEventListener('change', handleFilterChange);
-            
+
             // Render basic impact sections
             renderHeroStats();
             renderImpactCards();
@@ -153,7 +153,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }).join('');
         batchFilter.innerHTML = optionsHtml;
     }
-    
+
     function handleFilterChange() {
         const selectedTemplateId = templateFilter.value;
         const selectedBatchId = batchFilter.value;
@@ -183,7 +183,7 @@ document.addEventListener('DOMContentLoaded', () => {
         renderProduccionChart(fincaProduction);
         renderCostoPorEtapaChart(costByStage);
     }
-    
+
     function calculateStageYields(batches) {
         const stageYields = {};
         const totalYields = [];
@@ -271,13 +271,13 @@ document.addEventListener('DOMContentLoaded', () => {
             const stageCosts = loteCosts[batchNode.id] || {};
             const stage = state.fullData.stages[batchNode.plantilla_id]?.find(s => s.id === batchNode.etapa_id);
             if (!stage) return { accumulatedCost: 0, costPerKg: 0, outputWeight: 0 };
-            
+
             const processCosts = (stageCosts.costoAdquisicion || 0) + (stageCosts.costoManoDeObra || 0) + (stageCosts.costoInsumos || 0) + (stageCosts.costoOperativos || 0);
             let inheritedCost = 0;
             const inputField = stage.campos_json?.entradas?.[0]?.name, outputField = stage.campos_json?.salidas?.[0]?.name;
             const inputWeight = getFieldValue(batchNode.data, inputField) || (parentCostInfo?.outputWeight || 0);
             const outputWeight = getFieldValue(batchNode.data, outputField) || 0;
-            
+
             if (parentCostInfo && inputWeight > 0) inheritedCost = parentCostInfo.costPerKg * inputWeight;
             const accumulatedCost = inheritedCost + processCosts, costPerKg = outputWeight > 0 ? accumulatedCost / outputWeight : 0;
             const currentCostInfo = { accumulatedCost, costPerKg, outputWeight };
@@ -295,9 +295,9 @@ document.addEventListener('DOMContentLoaded', () => {
         };
 
         batches.forEach(tree => calculateTreeCosts(tree));
-        return { 
-            costKPIs: { costoTotalInvertido: totalInvertido, costoPromedioPorLote: batches.length > 0 ? totalInvertido / batches.length : 0, costoPromedioFinalKg: totalFinalKg > 0 ? totalInvertido / totalFinalKg : 0 }, 
-            costByStage 
+        return {
+            costKPIs: { costoTotalInvertido: totalInvertido, costoPromedioPorLote: batches.length > 0 ? totalInvertido / batches.length : 0, costoPromedioFinalKg: totalFinalKg > 0 ? totalInvertido / totalFinalKg : 0 },
+            costByStage
         };
     }
 
@@ -321,7 +321,7 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>
         `).join('');
     }
-    
+
     function renderRendimientoChart(stageYields) {
         const canvas = document.getElementById('rendimiento-chart');
         if (!canvas) return;
@@ -407,7 +407,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     labels,
                     datasets: [
                         { label: 'Visitas Landing', data: landingViewsData, borderColor: '#3b82f6', backgroundColor: '#3b82f622', fill: true, tension: 0.3 },
-                        { label: 'Vistas Trazabilidad', data: traceViewsData, borderColor: '#10b981', backgroundColor: '#10b98122', fill: true, tension: 0.3 },
+                        { label: 'QRs Escaneados', data: traceViewsData, borderColor: '#10b981', backgroundColor: '#10b98122', fill: true, tension: 0.3 },
                         { label: 'Clics Compra', data: buyClicksData, borderColor: '#f59e0b', backgroundColor: '#f59e0b22', fill: true, tension: 0.3 }
                     ]
                 },
@@ -511,7 +511,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Registrar carga de analíticas en init
     const originalInit = init;
-    init = async function() {
+    init = async function () {
         await originalInit();
         await loadAnalytics();
     };

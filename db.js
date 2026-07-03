@@ -2203,7 +2203,7 @@ const getMyAnalytics = async (req, res) => {
                 SELECT
                     COUNT(*) as total_events,
                     SUM(CASE WHEN event_type = 'landing_view' THEN 1 ELSE 0 END) as landing_views,
-                    SUM(CASE WHEN event_type = 'trace_view'  THEN 1 ELSE 0 END) as trace_views,
+                    SUM(CASE WHEN event_type = 'qr_view'  THEN 1 ELSE 0 END) as trace_views,
                     SUM(CASE WHEN event_type = 'buy_click'   THEN 1 ELSE 0 END) as buy_clicks,
                     COUNT(DISTINCT DATE(created_at)) as active_days
                 FROM analytics_events
@@ -2213,7 +2213,7 @@ const getMyAnalytics = async (req, res) => {
                 SELECT
                     DATE(created_at) as day,
                     SUM(CASE WHEN event_type = 'landing_view' THEN 1 ELSE 0 END) as landing_views,
-                    SUM(CASE WHEN event_type = 'trace_view'  THEN 1 ELSE 0 END) as trace_views,
+                    SUM(CASE WHEN event_type = 'qr_view'  THEN 1 ELSE 0 END) as trace_views,
                     SUM(CASE WHEN event_type = 'buy_click'   THEN 1 ELSE 0 END) as buy_clicks
                 FROM analytics_events
                 WHERE target_user_id = ?
@@ -2270,7 +2270,7 @@ const getMyAnalytics = async (req, res) => {
             SELECT 
                 p.id as product_id,
                 p.nombre as product_name,
-                SUM(CASE WHEN ae.event_type = 'trace_view' THEN 1 ELSE 0 END) as trace_views,
+                SUM(CASE WHEN ae.event_type = 'qr_view' THEN 1 ELSE 0 END) as trace_views,
                 SUM(CASE WHEN ae.event_type = 'buy_click' THEN 1 ELSE 0 END) as buy_clicks
             FROM productos p
             LEFT JOIN analytics_events ae ON p.id = ae.target_product_id AND ae.target_user_id = ?
