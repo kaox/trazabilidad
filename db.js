@@ -2057,7 +2057,14 @@ const createSuggestion = async (req, res) => {
 };
 
 const trackAnalyticsEvent = async (req, res) => {
-    const { event_type, target_user_id, target_product_id, meta_data } = req.body;
+    let { event_type, target_user_id, target_product_id, meta_data } = req.body;
+
+    // Si target_user_id no es numérico (ej. "SUG-XXXXX"), lo movemos a meta_data
+    if (target_user_id && isNaN(Number(target_user_id))) {
+        meta_data = meta_data || {};
+        meta_data.suggested_company_id = target_user_id;
+        target_user_id = null;
+    }
 
     try {
         await run(
