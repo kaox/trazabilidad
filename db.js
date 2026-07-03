@@ -2153,7 +2153,7 @@ const getLandingStats = async (req, res) => {
                 (SELECT COUNT(*) FROM batches) as total_batches,
                 (SELECT COUNT(*) FROM company_profiles WHERE is_published = TRUE) + 
                 (SELECT COUNT(*) FROM suggested_companies) as total_companies,
-                (SELECT ROUND(SUM(COALESCE(superficie, 0)), 2) FROM fincas) as total_hectares,
+                (SELECT ROUND(CAST(SUM(COALESCE(superficie, 0)) AS NUMERIC), 2) FROM fincas) as total_hectares,
                 (SELECT COUNT(DISTINCT pais) FROM fincas) as countries_covered
         `);
         res.status(200).json({ success: true, data: stats });
