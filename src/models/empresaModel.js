@@ -47,7 +47,7 @@ const getById = async (id) => {
 const getSuggestedById = async (id) => {
     return await db.get(`
         SELECT id, name, type, pais, departamento, provincia, distrito, 
-               superficie, coordenadas, social_instagram, social_facebook, logo
+               coordenadas, social_instagram, social_facebook, logo
         FROM suggested_companies WHERE id = ?
     `, [id]);
 };
