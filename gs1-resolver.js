@@ -78,6 +78,7 @@ const resolve = async (req, res) => {
         const queryParams = new URLSearchParams();
         if (userLang !== 'es') queryParams.append('lang', userLang);
         if (isExpired) queryParams.append('alert', 'expired');
+        queryParams.append('source', 'qr');
 
         // Si hay params, los añadimos
         const queryString = queryParams.toString();
@@ -138,6 +139,7 @@ const resolveProduct = async (req, res) => {
 
         const companyName = product.company_comercial || product.company_name || 'empresa';
         let targetUrl = buildProductUrl(companyName, product.company_id || product.user_id, product.nombre, product.id);
+        targetUrl += targetUrl.includes('?') ? '&source=qr' : '?source=qr';
 
         res.redirect(302, targetUrl);
     } catch (error) {

@@ -4,6 +4,18 @@ const app = {
     currentTab: 'origen',
     flavorWheels: null,
 
+    trackEvent: async function (type, companyId, productId = null) {
+        try {
+            await fetch('/api/public/analytics', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ type, company_id: companyId, product_id: productId })
+            });
+        } catch (e) {
+            console.error('Error tracking event:', e);
+        }
+    },
+
     async loadGoogleMaps() {
         if (window.google && window.google.maps) return;
         return new Promise((resolve, reject) => {
@@ -45,6 +57,12 @@ const app = {
 
         await this.fetchData();
         if (this.product) {
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('source') === 'qr') {
+                const compId = this.product.id_empresa || (this.product.empresa && this.product.empresa.id) || null;
+                this.trackEvent('qr_view', compId, this.product.id);
+            }
+
             this.renderHeader();
             this.renderSidebar();
             this.updateSEO();
@@ -265,6 +283,10 @@ const app = {
             const message = encodeURIComponent("Vengo desde RuruLab estoy interesado en este producto");
             const phone = this.product.empresa.whatsapp.replace(/\D/g, ''); // Limpiar caracteres no numéricos
             whatsappBtn.href = `https://wa.me/${phone}?text=${message}`;
+            whatsappBtn.onclick = () => {
+                const compId = this.product.id_empresa || (this.product.empresa && this.product.empresa.id) || null;
+                this.trackEvent('buy_whatsapp_click', compId, this.product.id);
+            };
             whatsappBtn.classList.remove('hidden');
         } else {
             whatsappBtn.classList.add('hidden');
