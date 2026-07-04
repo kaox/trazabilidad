@@ -294,7 +294,6 @@ const app = {
             const phone = this.product.empresa.whatsapp.replace(/\D/g, ''); // Limpiar caracteres no numéricos
             whatsappBtn.href = `https://wa.me/${phone}?text=${message}`;
             whatsappBtn.onclick = () => {
-                console.log("Guardando buy_clic");
                 const compId = this.product.id_empresa || (this.product.empresa && this.product.empresa.id) || null;
                 this.trackEvent('buy_click', compId, this.product.id);
             };

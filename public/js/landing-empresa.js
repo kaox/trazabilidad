@@ -720,7 +720,7 @@ const app = {
                     </div>
 
                     <div class="mt-auto flex flex-col gap-3">
-                        <a href="${buyLink}" target="_blank" class="btn-accent py-3 rounded-2xl font-bold text-sm shadow-sm flex items-center justify-center gap-2">
+                        <a id="whatsapp-btn" href="${buyLink}" target="_blank" onclick="app.trackEvent('buy_click', '${userId}', '${prod.id}')" class="btn-accent py-3 rounded-2xl font-bold text-sm shadow-sm flex items-center justify-center gap-2">
                             <i class="fab fa-whatsapp"></i> Comprar ahora
                         </a>
                         <a href="${detailLink}" class="block w-full text-center bg-stone-100 hover:bg-stone-200 text-stone-700 py-2.5 rounded-xl font-bold text-sm transition">Ver detalles</a>
