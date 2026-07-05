@@ -334,18 +334,79 @@ const app = {
         }
 
         let claimBanner = '';
+        let tiendaHTML = '';
+        let fomoHTML = '';
+        let badgeHTML = '';
+
         if (isSuggested) {
+            badgeHTML = `
+                <div class="absolute top-0 right-0 bg-stone-100 text-stone-500 px-4 py-1 rounded-bl-xl text-xs font-bold uppercase tracking-wider flex items-center gap-1">
+                    <i class="fas fa-eye-slash"></i> Perfil sin verificar
+                </div>
+            `;
             claimBanner = `
                 <div class="bg-amber-100 border-l-4 border-amber-500 text-amber-900 p-4 mb-8 rounded shadow-sm flex flex-col md:flex-row justify-between items-center gap-4">
                     <div class="flex items-center gap-3">
                         <i class="fas fa-exclamation-circle text-2xl text-amber-600"></i>
                         <div>
-                            <p class="font-bold">Perfil Sugerido</p>
-                            <p class="text-sm">Esta información ha sido generada por usuarios.</p>
+                            <p class="font-bold">¿Eres el dueño de ${entityName}? </p>
+                            <p class="text-sm">Este perfil se generó automáticamente y está listo para ser oficial.</p>
                         </div>
                     </div>
-                    <a href="/onboarding.html?claim_id=${user.id}" class="btn-accent px-6 py-2 rounded-lg font-bold">Reclamar Perfil</a>
+                    <a href="/onboarding.html?claim_id=${user.id}" class="btn-accent px-6 py-2 rounded-lg font-bold">Reclamar Perfil gratis</a>
                 </div>`;
+
+            tiendaHTML = `
+                <style>
+                    .locked-content { filter: blur(4px); user-select: none; opacity: 0.6; }
+                    .glass-overlay { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(2px); }
+                    .modal-enter { opacity: 0; transform: scale(0.95) translateY(10px); transition: all 0.3s ease-out; }
+                    .modal-enter-active { opacity: 1; transform: scale(1) translateY(0); }
+                </style>
+                <div class="bg-white rounded-2xl border border-stone-200 overflow-hidden relative">
+                    <div class="p-6">
+                        <h3 class="font-bold text-stone-800 mb-4">Marketplace y Productos</h3>
+                        <div class="grid grid-cols-2 sm:grid-cols-3 gap-4 locked-content">
+                            <div class="bg-stone-50 rounded-lg p-3"><div class="w-full h-24 bg-stone-200 rounded mb-2"></div><div class="h-4 bg-stone-200 rounded w-3/4 mb-1"></div><div class="h-3 bg-stone-200 rounded w-1/2"></div></div>
+                            <div class="bg-stone-50 rounded-lg p-3"><div class="w-full h-24 bg-stone-200 rounded mb-2"></div><div class="h-4 bg-stone-200 rounded w-3/4 mb-1"></div><div class="h-3 bg-stone-200 rounded w-1/2"></div></div>
+                            <div class="bg-stone-50 rounded-lg p-3 hidden sm:block"><div class="w-full h-24 bg-stone-200 rounded mb-2"></div><div class="h-4 bg-stone-200 rounded w-3/4 mb-1"></div><div class="h-3 bg-stone-200 rounded w-1/2"></div></div>
+                        </div>
+                    </div>
+                    
+                    <div class="absolute inset-0 glass-overlay flex flex-col items-center justify-center p-6 text-center">
+                        <div class="bg-white w-12 h-12 rounded-full shadow-md flex items-center justify-center text-stone-400 mb-3">
+                            <i class="fas fa-shopping-cart text-xl"></i>
+                        </div>
+                        <h3 class="font-bold text-stone-800 mb-1">Tienda no activada</h3>
+                        <p class="text-sm text-stone-600 mb-4 max-w-sm">Publica tus productos gratis, genera Pasaportes Digitales y conecta directamente con compradores sin intermediarios.</p>
+                        <button onclick="app.openClaimModal()" class="bg-amber-700 hover:bg-amber-800 text-white px-6 py-2 rounded-lg font-medium transition-colors shadow-sm">
+                            Activar Tienda Online
+                        </button>
+                    </div>
+                </div>
+            `;
+
+            fomoHTML = `
+                <div class="space-y-6">
+                    <div class="bg-amber-50 rounded-2xl p-6 border border-amber-100">
+                        <h3 class="text-lg font-bold text-amber-900 mb-4 flex items-center gap-2">
+                            <i class="fas fa-gift text-amber-600"></i> Al reclamar obtienes:
+                        </h3>
+                        <ul class="space-y-3 text-sm text-amber-900">
+                            <li class="flex items-start gap-2"><i class="fas fa-check text-green-600 mt-0.5"></i><span>Check de <strong>Perfil Oficial Verificado</strong>.</span></li>
+                            <li class="flex items-start gap-2"><i class="fas fa-check text-green-600 mt-0.5"></i><span>Publicación de <strong>productos ilimitados</strong>.</span></li>
+                            <li class="flex items-start gap-2"><i class="fas fa-check text-green-600 mt-0.5"></i><span>Acceso a métricas de <strong>quién visita tu perfil</strong>.</span></li>
+                            <li class="flex items-start gap-2"><i class="fas fa-check text-green-600 mt-0.5"></i><span>Generador de <strong>códigos QR</strong> para trazabilidad.</span></li>
+                        </ul>
+                        <div class="mt-6">
+                            <button onclick="app.openClaimModal()" class="w-full bg-orange-500 hover:bg-orange-600 text-white py-3 rounded-xl font-bold shadow-md transition-all transform hover:-translate-y-0.5">
+                                Reclamar ahora (Toma 2 min)
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+
         }
 
         // Ubicación y Botón de Mapa
@@ -379,6 +440,7 @@ const app = {
                 
                 <!-- HERO -->
                 <div class="relative w-full h-64 md:h-96 rounded-3xl overflow-hidden mb-12 shadow-2xl group cursor-pointer" onclick="app.openGallery(0, ${mediaJson})">
+                    ${badgeHTML}
                    <img src="${coverImage}" class="w-full h-full object-cover transform group-hover:scale-105 transition duration-700">
                    <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent"></div>
                    <div class="absolute bottom-0 left-0 w-full p-8 flex items-end gap-6">
@@ -449,7 +511,8 @@ const app = {
                             <a href="#tienda" class="text-accent font-bold hover:underline">Ver todo el catálogo <i class="fas fa-arrow-right ml-1"></i></a>
                         </div>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            ${this.renderProductCards(products.slice(0, 4), user.celular || user.contact_phone, user.id, user.name)}
+                            ${isSuggested ? tiendaHTML : this.renderProductCards(products.slice(0, 4), user.celular || user.contact_phone, user.id, user.name)}
+                            ${isSuggested ? fomoHTML : ''}
                         </div>
                     </div>
                 </div>
@@ -579,7 +642,6 @@ const app = {
         `;
         this.container.innerHTML = html;
     },
-
 
     handleContactSubmit: async function (e) {
         e.preventDefault();
