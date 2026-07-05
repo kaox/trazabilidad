@@ -1128,6 +1128,15 @@ app.get('/api/public/fincas/:token', fincasController.getFincaByToken);
 app.put('/api/public/fincas/:token', fincasController.updateFincaByToken);
 app.put('/api/public/suggestions/:id/claim', authenticateApi, db.claimSuggestion);
 
+app.get('/antigua-pagina', (req, res) => {
+    res.redirect('/nueva-pagina');
+});
+
+//Redirecciones
+app.get('/ENV-5W8BL4HE', (req, res) => {
+    res.redirect('https://rurulab.com/01/99939594727799');
+});
+
 // 12. INICIO DEL SERVIDOR
 app.listen(PORT, () => {
     console.log(`Servidor corriendo en modo [${process.env.NODE_ENV || 'development'}] en http://localhost:${PORT}`);
