@@ -396,7 +396,9 @@ const app = {
                             <li class="flex items-start gap-2"><i class="fas fa-check text-green-600 mt-0.5"></i><span>Check de <strong>Perfil Oficial Verificado</strong>.</span></li>
                             <li class="flex items-start gap-2"><i class="fas fa-check text-green-600 mt-0.5"></i><span>Publicación de <strong>productos ilimitados</strong>.</span></li>
                             <li class="flex items-start gap-2"><i class="fas fa-check text-green-600 mt-0.5"></i><span>Acceso a métricas de <strong>quién visita tu perfil</strong>.</span></li>
-                            <li class="flex items-start gap-2"><i class="fas fa-check text-green-600 mt-0.5"></i><span>Generador de <strong>códigos QR</strong> para trazabilidad.</span></li>
+                            <li class="flex items-start gap-2"><i class="fas fa-check text-green-600 mt-0.5"></i><span>Generador de Pasaporte Digital de Producto con <strong>códigos QR GS1 Digital Link</strong> para tus empaques.</span></li>
+                            <li class="flex items-start gap-2"><i class="fas fa-check text-green-600 mt-0.5"></i><span>Vitrina para mostrar tus <strong>certificaciones y premios</strong> obtenidos.</span></li>
+                            <li class="flex items-start gap-2"><i class="fas fa-check text-green-600 mt-0.5"></i><span>Publica tus <strong>Ruedas de Sabor y Perfil Sensorial</strong> en el detalle de tu producto.</span></li>
                         </ul>
                         <div class="mt-6">
                             <button onclick="app.openClaimModal()" class="w-full bg-orange-500 hover:bg-orange-600 text-white py-3 rounded-xl font-bold shadow-md transition-all transform hover:-translate-y-0.5">
