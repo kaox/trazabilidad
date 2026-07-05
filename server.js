@@ -35,6 +35,11 @@ const widgetRoutes = require('./src/routes/widgetRoutes');
 
 const RESERVED_SUBDOMAINS = ['www', 'app', 'api', 'admin', 'localhost', 'rurulab', 'mail', 'smtp'];
 
+//Redirecciones
+app.get('/ENV-5W8BL4HE', (req, res) => {
+    res.redirect('https://rurulab.com/01/99939594727799');
+});
+
 app.use(async (req, res, next) => {
     const host = req.headers.host; // ej: pepito.rurulab.com o pepito.localhost:3000
 
@@ -1127,15 +1132,6 @@ app.post('/api/fincas/:id/share-token', authenticateApi, fincasController.genera
 app.get('/api/public/fincas/:token', fincasController.getFincaByToken);
 app.put('/api/public/fincas/:token', fincasController.updateFincaByToken);
 app.put('/api/public/suggestions/:id/claim', authenticateApi, db.claimSuggestion);
-
-app.get('/antigua-pagina', (req, res) => {
-    res.redirect('/nueva-pagina');
-});
-
-//Redirecciones
-app.get('/ENV-5W8BL4HE', (req, res) => {
-    res.redirect('https://rurulab.com/01/99939594727799');
-});
 
 // 12. INICIO DEL SERVIDOR
 app.listen(PORT, () => {
