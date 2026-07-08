@@ -26,6 +26,8 @@ const empresasController = require('./src/controllers/empresasController');
 const landingsController = require('./src/controllers/landingsController');
 const acquisitionsController = require('./src/controllers/acquisitionsController');
 const batchesController = require('./src/controllers/batchesController');
+const lotesRoutes = require('./src/routes/lotesRoutes');
+const etapasRoutes = require('./src/routes/etapasRoutes');
 const { renderLanding, renderCompanyList, renderMarketplaceProducts } = require('./src/utils/landingRenderer');
 const { buildProductUrl, extractShortId, toSlug } = require('./src/utils/productSlug');
 const ProductoModel = require('./src/models/productoModel');
@@ -964,7 +966,7 @@ app.get('/api/public/marketplace/products', productosController.getMarketplacePr
 // 8. RUTAS PROTEGIDAS (VISTAS APP)
 //app.get('/app/dashboard', authenticatePage, checkSubscription('profesional'), (req, res) => res.sendFile(path.join(__dirname, 'views', 'dashboard.html')));
 app.get('/app/dashboard', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'dashboard.html')));
-app.get('/app/trazabilidad', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'trazabilidad.html')));
+app.get('/app/trazabilidad', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'trazabilidad-new.html')));
 app.get('/app/fincas', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'fincas.html')));
 app.get('/app/perfiles', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'perfiles.html')));
 app.get('/app/procesadoras', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'procesadoras.html')));
@@ -1126,6 +1128,10 @@ app.get('/api/proxy/ruc/:numero', authenticateApi, async (req, res) => {
 });
 app.get('/api/proxy/usda/search', authenticateApi, db.searchUSDA);
 app.get('/api/proxy/usda/food/:fdcId', authenticateApi, db.getUSDADetails);
+
+// RUTAS DE TRAZABILIDAD (Lotes y Etapas)
+app.use('/api/lotes', authenticateApi, lotesRoutes);
+app.use('/api/etapas', authenticateApi, etapasRoutes);
 
 // 11. RUTAS DE COMPARTICIÓN Y SUGERENCIAS
 app.post('/api/fincas/:id/share-token', authenticateApi, fincasController.generateFincaToken);
