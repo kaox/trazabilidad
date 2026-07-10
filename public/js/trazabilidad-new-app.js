@@ -29,11 +29,48 @@ let lotes = [];
 let productos = [];
 let actores = []; // Combinación de Fincas y Procesadoras
 let currentLote = null;
+let editEtapaId = null; // Control para saber si creamos o editamos una etapa
 
 // Mapa
 let map;
 let mapMarkers = [];
 let mapPolyline = null;
+
+// ==========================================
+// UTILIDADES: COMPRESIÓN A WEBP
+// ==========================================
+async function compressImageToWebP(file, maxWidth = 1200) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = (event) => {
+            const img = new Image();
+            img.src = event.target.result;
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                let width = img.width;
+                let height = img.height;
+
+                // Redimensionar si supera el ancho máximo
+                if (width > maxWidth) {
+                    height = Math.round((height * maxWidth) / width);
+                    width = maxWidth;
+                }
+
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+
+                // Exportar como WebP a 80% de calidad
+                const dataUrl = canvas.toDataURL('image/webp', 0.8);
+                resolve(dataUrl);
+            };
+            img.onerror = (e) => reject(e);
+        };
+        reader.onerror = (e) => reject(e);
+    });
+}
 
 // ==========================================
 // FUNCIÓN GLOBAL PARA GOOGLE MAPS
@@ -75,6 +112,51 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (res.status === 204) return null;
         return res.json();
     };
+
+    // Transformar dinámicamente el campo URL a Input de Archivo (Upload WebP)
+    const fotoInputOriginal = document.getElementById('etapa-foto');
+    if (fotoInputOriginal) {
+        const fotoContainer = fotoInputOriginal.parentElement;
+        fotoContainer.innerHTML = `
+            <label class="block text-xs font-medium text-gray-600 mb-1">Foto de la etapa (Subir imagen)</label>
+            <input type="file" id="etapa-foto-file" accept="image/*" class="w-full text-sm border border-gray-300 rounded-md p-1.5 outline-none focus:ring-1 focus:ring-[#8B4513] bg-white file:mr-3 file:py-1.5 file:px-4 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-orange-50 file:text-[#8B4513] hover:file:bg-orange-100 transition-all cursor-pointer">
+            <input type="hidden" id="etapa-foto-b64">
+            <div id="etapa-foto-preview" class="mt-2 hidden rounded-lg overflow-hidden h-24 w-24 border border-gray-200 shadow-sm relative group">
+                <img src="" class="w-full h-full object-cover">
+                <button type="button" id="btn-remove-foto" class="absolute top-1 right-1 bg-red-500/90 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-red-600 shadow-md backdrop-blur-sm"><i class="fas fa-times text-[10px]"></i></button>
+            </div>
+        `;
+
+        document.getElementById('etapa-foto-file').addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                try {
+                    const btnSubmit = document.querySelector('#form-etapa button[type="submit"]');
+                    btnSubmit.disabled = true;
+                    btnSubmit.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Procesando...';
+
+                    const webpBase64 = await compressImageToWebP(file, 1200);
+
+                    document.getElementById('etapa-foto-b64').value = webpBase64;
+                    const preview = document.getElementById('etapa-foto-preview');
+                    preview.querySelector('img').src = webpBase64;
+                    preview.classList.remove('hidden');
+
+                    btnSubmit.disabled = false;
+                    btnSubmit.innerHTML = editEtapaId ? 'Actualizar Etapa' : 'Agregar a la ruta';
+                } catch (err) {
+                    alert('Error al comprimir la imagen');
+                    console.error(err);
+                }
+            }
+        });
+
+        document.getElementById('btn-remove-foto').addEventListener('click', () => {
+            document.getElementById('etapa-foto-file').value = '';
+            document.getElementById('etapa-foto-b64').value = '';
+            document.getElementById('etapa-foto-preview').classList.add('hidden');
+        });
+    }
 
     // ==========================================
     // CARGA DE DATOS INICIALES
@@ -127,21 +209,37 @@ document.addEventListener('DOMContentLoaded', async () => {
             const card = document.createElement('div');
             card.className = `bg-white rounded-2xl shadow-sm border overflow-hidden flex flex-col transition-all hover:shadow-md ${lote.is_locked ? 'border-emerald-200' : 'border-gray-100'}`;
 
-            const lockBadge = lote.is_locked ? `<span class="text-[10px] text-emerald-700 bg-emerald-50 px-2 py-1 rounded flex items-center gap-1 font-bold"><i class="fas fa-shield-check"></i> Sellado</span>` : '';
-            const statusBadge = lote.estado === 'ACTIVO' && !lote.is_locked ? `<span class="text-[10px] uppercase font-bold text-blue-700 bg-blue-50 px-2 py-1 rounded-full"><i class="fas fa-check-circle"></i> Publicado</span>`
-                : (lote.estado === 'BORRADOR' ? `<span class="text-[10px] uppercase font-bold text-amber-700 bg-amber-50 px-2 py-1 rounded-full">Borrador</span>` : '');
+            const lockBadge = lote.is_locked ? `<span class="text-[10px] text-emerald-700 bg-emerald-50 px-2 py-1 rounded flex items-center gap-1 font-bold whitespace-nowrap"><i class="fas fa-shield-check"></i> Sellado</span>` : '';
+            const statusBadge = lote.estado === 'ACTIVO' && !lote.is_locked ? `<span class="text-[10px] uppercase font-bold text-blue-700 bg-blue-50 px-2 py-1 rounded-full whitespace-nowrap"><i class="fas fa-check-circle"></i> Publicado</span>`
+                : (lote.estado === 'BORRADOR' ? `<span class="text-[10px] uppercase font-bold text-amber-700 bg-amber-50 px-2 py-1 rounded-full whitespace-nowrap">Borrador</span>` : '');
+
+            // Extraemos la información del producto asociado desde el arreglo global de productos
+            const productoObj = productos.find(p => p.id === lote.producto_id) || {};
+
+            // Imagen con fallback a un placeholder general si el producto no tiene 'imagen_url'
+            const imagenUrl = productoObj.imagen_url || 'https://images.unsplash.com/photo-1559525839-b184a4d698c7?q=80&w=200&auto=format&fit=crop';
+            // Tipo de producto (Prioridad: SQL -> Producto -> Catálogo Genérico)
+            const tipoProducto = lote.categoria || productoObj.tipo_producto || productoObj.categoria || 'Especialidad';
 
             card.innerHTML = `
-                <div class="p-5 border-b border-gray-50 flex justify-between items-start">
+                <div class="p-5 border-b border-gray-50 flex gap-4 items-start">
+                    <!-- Contenedor de la Minifoto -->
+                    <div class="w-14 h-14 rounded-lg overflow-hidden shrink-0 border border-gray-100 shadow-sm bg-gray-50">
+                        <img src="${imagenUrl}" alt="${lote.producto_nombre}" class="w-full h-full object-cover" onerror="this.src='https://images.unsplash.com/photo-1559525839-b184a4d698c7?q=80&w=200&auto=format&fit=crop'">
+                    </div>
+                    
+                    <!-- Información del Lote -->
                     <div class="w-full">
                         <div class="flex items-center justify-between gap-2 mb-1">
-                            <div class="flex gap-2 items-center">
+                            <div class="flex gap-2 items-center flex-wrap">
                                 <span class="font-mono text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">${lote.codigo_lote}</span>
+                                <!-- Etiqueta del tipo de producto -->
+                                <span class="text-[10px] uppercase font-bold text-[#8B4513] bg-orange-50 px-2 py-1 rounded-full border border-orange-100/50">${tipoProducto}</span>
                                 ${lockBadge}
                             </div>
                             ${statusBadge}
                         </div>
-                        <h3 class="font-serif text-lg font-bold text-[#4A2C2A] mt-2">${lote.producto_nombre || 'Producto Desconocido'}</h3>
+                        <h3 class="font-serif text-lg font-bold text-[#4A2C2A] mt-1 leading-tight">${lote.producto_nombre || 'Producto Desconocido'}</h3>
                     </div>
                 </div>
                 <div class="p-4 bg-white flex justify-between flex-grow items-end">
@@ -162,6 +260,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         vistaEditor.classList.remove('hidden');
         document.getElementById('add-etapa-form').classList.add('hidden');
         document.getElementById('btn-show-form-etapa-container').classList.remove('hidden');
+        editEtapaId = null;
 
         if (loteId) {
             // Cargar datos completos del lote (con etapas)
@@ -183,17 +282,37 @@ document.addEventListener('DOMContentLoaded', async () => {
                 cerrarEditor();
             }
         } else {
-            // Lote Nuevo
-            currentLote = { id: null, codigo_lote: '', producto_id: '', estado: 'BORRADOR', is_locked: false, etapas: [] };
+            // Lógica para Generar Código Automático LOT-[YYYYMM]-[SEC]
+            const now = new Date();
+            const yyyy = now.getFullYear();
+            const mm = String(now.getMonth() + 1).padStart(2, '0');
+            const prefix = `LOT-${yyyy}${mm}-`;
+
+            let maxSec = 0;
+            lotes.forEach(l => {
+                if (l.codigo_lote && l.codigo_lote.startsWith(prefix)) {
+                    const secPart = l.codigo_lote.split('-')[2];
+                    if (secPart) {
+                        const secNum = parseInt(secPart, 10);
+                        if (!isNaN(secNum) && secNum > maxSec) {
+                            maxSec = secNum;
+                        }
+                    }
+                }
+            });
+
+            const nextSec = String(maxSec + 1).padStart(3, '0');
+            const autoCodigoLote = `${prefix}${nextSec}`;
+
+            currentLote = { id: null, codigo_lote: autoCodigoLote, producto_id: '', estado: 'BORRADOR', is_locked: false, etapas: [] };
             document.getElementById('editor-title').innerText = 'Crear Nuevo Lote';
             document.getElementById('editor-subtitle').innerText = 'Guarda el lote primero para añadir etapas.';
 
-            document.getElementById('lote-codigo').value = '';
+            document.getElementById('lote-codigo').value = autoCodigoLote;
             document.getElementById('lote-estado').value = 'BORRADOR';
             document.getElementById('lote-producto').value = '';
 
             aplicarEstadoBloqueo(false);
-            // Ocultar sección de etapas hasta que se guarde el lote base
             document.getElementById('btn-show-form-etapa-container').classList.add('hidden');
             renderTimeline();
         }
@@ -204,6 +323,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         vistaLista.classList.remove('hidden');
         btnNuevoLote.classList.remove('hidden');
         currentLote = null;
+        editEtapaId = null;
         limpiarMapa();
         initData(); // Refrescar lista
     }
@@ -311,26 +431,33 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             const lineHtml = isLast ? '' : `<div class="absolute left-[19px] top-[40px] w-[2px] h-full bg-gray-200 z-0"></div>`;
             const iconHtml = `<div class="w-10 h-10 rounded-full flex items-center justify-center shrink-0 z-10 ${cat.bg || 'bg-gray-200'} ${cat.color || 'text-gray-600'} shadow-sm border-2 border-white"><i class="fas ${cat.icon || 'fa-map-marker-alt'}"></i></div>`;
-            const fotoHtml = etapa.foto ? `<div class="mt-3"><img src="${etapa.foto}" class="w-full max-w-[200px] h-32 object-cover rounded-lg border border-gray-200 shadow-sm" onerror="this.style.display='none'"></div>` : '';
-            const deleteBtn = currentLote.is_locked ? '' : `<button type="button" class="btn-delete-etapa opacity-0 group-hover:opacity-100 absolute -right-2 -top-2 bg-red-100 text-red-600 w-8 h-8 rounded-full shadow flex items-center justify-center transition-all hover:bg-red-200 z-20" data-id="${etapa.id}"><i class="fas fa-trash text-sm"></i></button>`;
+            // Render de foto responsive
+            const fotoHtml = etapa.foto ? `<div class="mt-3 w-full"><img src="${etapa.foto}" class="w-full max-w-full sm:max-w-[200px] h-32 object-cover rounded-lg border border-gray-200 shadow-sm" onerror="this.style.display='none'"></div>` : '';
+            // Renderización Mobile First para los botones de acción: Siempre visibles en mobile, controlados por hover en desktop (lg:opacity-0 group-hover:opacity-100)
+            const actionsHtml = currentLote.is_locked ? '' : `
+                <div class="absolute -right-2 -top-2 flex gap-1.5 z-20 opacity-100 lg:opacity-0 group-hover:opacity-100 transition-all">
+                    <button type="button" class="btn-edit-etapa bg-blue-100 text-blue-600 w-8 h-8 rounded-full shadow-md flex items-center justify-center hover:bg-blue-200" data-id="${etapa.id}"><i class="fas fa-pen text-xs"></i></button>
+                    <button type="button" class="btn-delete-etapa bg-red-100 text-red-600 w-8 h-8 rounded-full shadow-md flex items-center justify-center hover:bg-red-200" data-id="${etapa.id}"><i class="fas fa-trash text-xs"></i></button>
+                </div>
+            `;
 
             const node = document.createElement('div');
-            node.className = 'relative flex gap-4 bg-gray-50 p-4 rounded-xl border border-gray-100 group';
+            node.className = 'relative flex gap-4 bg-gray-50 p-4 rounded-xl border border-gray-100 group mt-4';
             node.innerHTML = `
                 ${lineHtml}
                 ${iconHtml}
-                <div class="flex-grow">
-                    <div class="flex justify-between items-start">
+                <div class="flex-grow min-w-0 pr-8">
+                    <div class="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-1">
                         <div>
-                            <h4 class="font-bold text-gray-800">${cat.nombre || 'Etapa'}</h4>
-                            <p class="text-sm text-[#8B4513] font-medium flex items-center gap-1"><i class="fas fa-map-pin text-[10px]"></i> ${actor.nombre || 'Desconocido'}</p>
+                            <h4 class="font-bold text-gray-800 break-words leading-tight">${cat.nombre || 'Etapa'}</h4>
+                            <p class="text-sm text-[#8B4513] font-medium flex items-center gap-1 mt-0.5"><i class="fas fa-map-pin text-[10px]"></i> <span class="truncate">${actor.nombre || 'Desconocido'}</span></p>
                         </div>
-                        <span class="text-xs text-gray-500 bg-white px-2 py-1 rounded border shadow-sm">${etapa.fecha}</span>
+                        <span class="text-[10px] sm:text-xs text-gray-500 bg-white px-2 py-1 rounded border shadow-sm w-fit">${etapa.fecha}</span>
                     </div>
-                    ${etapa.notas ? `<p class="text-sm text-gray-600 mt-2 italic bg-white p-2 rounded border border-gray-100">"${etapa.notas}"</p>` : ''}
+                    ${etapa.notas ? `<p class="text-xs sm:text-sm text-gray-600 mt-2 italic bg-white p-2 rounded border border-gray-100">"${etapa.notas}"</p>` : ''}
                     ${fotoHtml}
                 </div>
-                ${deleteBtn}
+                ${actionsHtml}
             `;
             container.appendChild(node);
         });
@@ -348,6 +475,43 @@ document.addEventListener('DOMContentLoaded', async () => {
                         // Recargar lote
                         await abrirEditor(currentLote.id);
                     } catch (err) { alert(err.message); }
+                }
+            });
+        });
+
+        // Eventos Editar
+        document.querySelectorAll('.btn-edit-etapa').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const etapaId = e.currentTarget.getAttribute('data-id');
+                const etapaToEdit = currentLote.etapas.find(et => et.id === etapaId);
+
+                if (etapaToEdit) {
+                    editEtapaId = etapaToEdit.id;
+
+                    document.getElementById('etapa-tipo').value = etapaToEdit.catalogo_etapa_id;
+                    document.getElementById('etapa-fecha').value = etapaToEdit.fecha;
+
+                    const actorValue = etapaToEdit.finca_id ? `finca_${etapaToEdit.finca_id}` : `procesadora_${etapaToEdit.procesadora_id}`;
+                    document.getElementById('etapa-actor').value = actorValue;
+                    document.getElementById('etapa-notas').value = etapaToEdit.notas || '';
+
+                    // Manejo del preview webp de edición
+                    document.getElementById('etapa-foto-b64').value = etapaToEdit.foto || '';
+                    document.getElementById('etapa-foto-file').value = '';
+                    const preview = document.getElementById('etapa-foto-preview');
+                    if (etapaToEdit.foto) {
+                        preview.querySelector('img').src = etapaToEdit.foto;
+                        preview.classList.remove('hidden');
+                    } else {
+                        preview.classList.add('hidden');
+                    }
+
+                    document.getElementById('btn-show-form-etapa-container').classList.add('hidden');
+                    document.getElementById('add-etapa-form').classList.remove('hidden');
+                    document.querySelector('#form-etapa button[type="submit"]').innerText = 'Actualizar Etapa';
+
+                    // Scroll smooth al form en mobile
+                    document.getElementById('add-etapa-form').scrollIntoView({ behavior: 'smooth', block: 'center' });
                 }
             });
         });
@@ -457,13 +621,30 @@ document.addEventListener('DOMContentLoaded', async () => {
             alert('Por favor, guarda el lote primero antes de añadir etapas.');
             return;
         }
+        editEtapaId = null; // Modo Creación
+        document.getElementById('form-etapa').reset();
+
+        // Limpiar foto state
+        const fotoB64 = document.getElementById('etapa-foto-b64');
+        const fotoPreview = document.getElementById('etapa-foto-preview');
+        if (fotoB64) fotoB64.value = '';
+        if (fotoPreview) fotoPreview.classList.add('hidden');
+
+        document.querySelector('#form-etapa button[type="submit"]').innerText = 'Agregar a la ruta';
         document.getElementById('btn-show-form-etapa-container').classList.add('hidden');
         document.getElementById('add-etapa-form').classList.remove('hidden');
     });
 
     // Ocultar Formulario Etapa
     document.getElementById('btn-cancel-etapa').addEventListener('click', () => {
+        editEtapaId = null;
         document.getElementById('form-etapa').reset();
+
+        const fotoB64 = document.getElementById('etapa-foto-b64');
+        const fotoPreview = document.getElementById('etapa-foto-preview');
+        if (fotoB64) fotoB64.value = '';
+        if (fotoPreview) fotoPreview.classList.add('hidden');
+
         document.getElementById('add-etapa-form').classList.add('hidden');
         document.getElementById('btn-show-form-etapa-container').classList.remove('hidden');
     });
@@ -478,19 +659,33 @@ document.addEventListener('DOMContentLoaded', async () => {
         const isFinca = actorValue.startsWith('finca_');
         const realId = actorValue.split('_')[1];
 
+        // Si hay una foto cargada localmente y convertida a base64, usarla.
+        let fotoVal = '';
+        const b64Input = document.getElementById('etapa-foto-b64');
+        if (b64Input) fotoVal = b64Input.value;
+
+        const ordenActual = editEtapaId
+            ? currentLote.etapas.find(et => et.id === editEtapaId).orden
+            : currentLote.etapas.length + 1;
+
         const payload = {
             lote_id: currentLote.id,
             catalogo_etapa_id: document.getElementById('etapa-tipo').value,
             fecha: document.getElementById('etapa-fecha').value,
             notas: document.getElementById('etapa-notas').value,
-            foto: document.getElementById('etapa-foto').value,
-            orden: currentLote.etapas.length + 1,
+            foto: fotoVal,
+            orden: ordenActual,
             finca_id: isFinca ? realId : null,
             procesadora_id: !isFinca ? realId : null
         };
 
         try {
-            await fetchApi('/api/etapas', { method: 'POST', body: JSON.stringify(payload) });
+            if (editEtapaId) {
+                await fetchApi(`/api/etapas/${editEtapaId}`, { method: 'PUT', body: JSON.stringify(payload) });
+            } else {
+                await fetchApi('/api/etapas', { method: 'POST', body: JSON.stringify(payload) });
+            }
+
             document.getElementById('btn-cancel-etapa').click();
             await abrirEditor(currentLote.id);
         } catch (err) { alert(err.message); }
