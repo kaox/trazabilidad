@@ -60,9 +60,28 @@ const deleteEtapa = async (id) => {
     return await db.run(sql, [id]);
 };
 
+// Obtener etapas con detalles públicos completos (Cruce con Fincas y Procesadoras)
+const getPublicDetalleByLoteId = async (loteId) => {
+    const sql = `
+        SELECT 
+            e.*, 
+            c.nombre as etapa_nombre, c.icono, c.color,
+            f.nombre_finca, f.distrito as finca_distrito, f.departamento as finca_departamento, f.coordenadas as finca_coordenadas,
+            p.razon_social, p.distrito as proc_distrito, p.departamento as proc_departamento, p.coordenadas as proc_coordenadas
+        FROM etapas e
+        LEFT JOIN catalogo_etapas c ON e.catalogo_etapa_id = c.id
+        LEFT JOIN fincas f ON e.finca_id = f.id
+        LEFT JOIN procesadoras p ON e.procesadora_id = p.id
+        WHERE e.lote_id = ?
+        ORDER BY e.orden ASC
+    `;
+    return await db.all(sql, [loteId]);
+};
+
 module.exports = {
     getAllByLoteId,
     create,
     update,
-    delete: deleteEtapa
+    delete: deleteEtapa,
+    getPublicDetalleByLoteId
 };

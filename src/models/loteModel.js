@@ -67,11 +67,18 @@ const deleteLote = async (id) => {
     return await db.run(sql, [id]);
 };
 
+// Obtener lotes públicos de un producto (solo activos)
+const getPublicLotesByProducto = async (productoId) => {
+    const sql = `SELECT * FROM lotes WHERE producto_id = ? AND estado = 'ACTIVO' ORDER BY created_at DESC`;
+    return await db.all(sql, [productoId]);
+};
+
 module.exports = {
     getAllByUser,
     getById,
     create,
     update,
     lockLote,
-    delete: deleteLote
+    delete: deleteLote,
+    getPublicLotesByProducto
 };

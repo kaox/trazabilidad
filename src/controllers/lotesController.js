@@ -89,11 +89,47 @@ const sellarBlockchain = async (req, res) => {
     }
 };
 
+const getPublicTrazabilidad = async (req, res) => {
+    try {
+        const { productoId } = req.params;
+        const lotes = await LoteModel.getPublicLotesByProducto(productoId);
+
+        if (!lotes || lotes.length === 0) {
+            return res.json([]);
+        }
+
+        // Estructurar las etapas de cada lote agrupando fincas y procesadoras
+        for (let lote of lotes) {
+            const etapas = await EtapaModel.getPublicDetalleByLoteId(lote.id);
+            lote.etapas = etapas.map(et => ({
+                ...et,
+                finca: et.finca_id ? {
+                    nombre_finca: et.nombre_finca,
+                    distrito: et.finca_distrito,
+                    departamento: et.finca_departamento,
+                    coordenadas: et.finca_coordenadas
+                } : null,
+                procesadora: et.procesadora_id ? {
+                    razon_social: et.razon_social,
+                    distrito: et.proc_distrito,
+                    departamento: et.proc_departamento,
+                    coordenadas: et.proc_coordenadas
+                } : null
+            }));
+        }
+        res.json(lotes);
+    } catch (err) {
+        console.error("Error obteniendo trazabilidad pública:", err);
+        res.status(500).json({ error: "Error interno al cargar trazabilidad." });
+    }
+};
+
 module.exports = {
     getAll,
     getById,
     create,
     update,
     remove,
-    sellarBlockchain
+    sellarBlockchain,
+    getPublicTrazabilidad
 };

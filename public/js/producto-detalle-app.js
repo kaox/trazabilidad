@@ -3,6 +3,7 @@ const app = {
     product: null,
     currentTab: 'origen',
     flavorWheels: null,
+    activeLoteEtapasCount: 0,
 
     trackEvent: async function (type, companyId, productId = null) {
         console.log("Guardando analytics... ", type, companyId, productId);
@@ -965,184 +966,588 @@ const app = {
         `;
         document.getElementById('tab-content').innerHTML = html;
     },
-    renderTrazabilidad() {
-        if (!this.traceability || !this.traceability.stages || this.traceability.stages.length === 0) {
-            document.getElementById('tab-content').innerHTML = `
+
+    async loadTrazabilidadData() {
+        try {
+            // Reemplaza esta URL con el endpoint real de tu API pública para lotes de un producto
+            // Ej: /api/public/productos/${this.productId}/trazabilidad
+            const response = await fetch(`/api/public/productos/${this.productId}/trazabilidad`);
+            console.log("response", response);
+            if (!response.ok) {
+                console.warn("Endpoint de trazabilidad no disponible o producto sin lotes.");
+                return null;
+            }
+
+            const backendLotes = await response.json();
+
+            if (!backendLotes || backendLotes.length === 0) return null;
+
+            // Mapeamos los datos del backend a la estructura visual que requiere la UI
+            return backendLotes.map(lote => {
+                return {
+                    id_lote: lote.id || lote.codigo_lote,
+                    nombre_lote: lote.codigo_lote + (lote.is_locked ? ' (Sellado)' : ''),
+                    blockchain_hash: lote.blockchain_hash,
+                    etapas: lote.etapas.map(etapa => {
+                        // 1. Extraer nombre del actor y ubicación
+                        let actorNombre = "Actor Desconocido";
+                        let ubicacionStr = "Ubicación no especificada";
+                        let coords = { lat: -9.189, lng: -75.015 }; // Default (Centro Perú)
+
+                        const parseCoordenadas = (coordData) => {
+                            if (!coordData) return null;
+                            try {
+                                const parsed = typeof coordData === 'string' ? JSON.parse(coordData) : coordData;
+                                if (Array.isArray(parsed) && parsed.length > 0) {
+                                    if (Array.isArray(parsed[0])) {
+                                        let latSum = 0, lngSum = 0;
+                                        parsed.forEach(p => {
+                                            latSum += parseFloat(p[0]);
+                                            lngSum += parseFloat(p[1]);
+                                        });
+                                        return { lat: latSum / parsed.length, lng: lngSum / parsed.length };
+                                    } else if (typeof parsed[0] === 'number') {
+                                        return { lat: parseFloat(parsed[0]), lng: parseFloat(parsed[1]) };
+                                    } else if (parsed[0].lat !== undefined) {
+                                        let latSum = 0, lngSum = 0;
+                                        parsed.forEach(p => {
+                                            latSum += parseFloat(p.lat);
+                                            lngSum += parseFloat(p.lng);
+                                        });
+                                        return { lat: latSum / parsed.length, lng: lngSum / parsed.length };
+                                    }
+                                } else if (parsed && parsed.lat !== undefined && parsed.lng !== undefined) {
+                                    return { lat: parseFloat(parsed.lat), lng: parseFloat(parsed.lng) };
+                                }
+                            } catch (e) {
+                                console.error("Error parseando coordenadas:", e);
+                            }
+                            return null;
+                        };
+
+                        if (etapa.finca_id && etapa.finca) {
+                            actorNombre = etapa.finca.nombre_finca || actorNombre;
+                            ubicacionStr = `${etapa.finca.distrito || ''}, ${etapa.finca.departamento || ''}`.replace(/^, |, $/g, '');
+                            const pCoords = parseCoordenadas(etapa.finca.coordenadas);
+                            if (pCoords) coords = pCoords;
+                        } else if (etapa.procesadora_id && etapa.procesadora) {
+                            actorNombre = etapa.procesadora.razon_social || etapa.procesadora.nombre_comercial || actorNombre;
+                            ubicacionStr = `${etapa.procesadora.distrito || ''}, ${etapa.procesadora.departamento || ''}`.replace(/^, |, $/g, '');
+                            const pCoords = parseCoordenadas(etapa.procesadora.coordenadas);
+                            if (pCoords) coords = pCoords;
+                        }
+
+                        // 2. Extraer clases visuales del catálogo de etapas
+                        const colorClass = etapa.color || 'text-stone-600';
+                        // Generar bg basado en el text-color (ej. text-green-600 -> bg-green-100)
+                        const bgClass = colorClass.replace('text-', 'bg-').replace('-600', '-100').replace('-700', '-100').replace('-500', '-100');
+                        const iconClass = etapa.icono ? (etapa.icono.startsWith('fa-') ? etapa.icono : `fa-${etapa.icono.toLowerCase()}`) : 'fa-check-circle';
+
+                        // 3. Formatear Fecha
+                        const fechaObj = new Date(etapa.fecha);
+                        const fechaFormateada = isNaN(fechaObj) ? etapa.fecha : fechaObj.toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' });
+
+                        return {
+                            nombre: etapa.etapa_nombre || etapa.tipo_etapa || 'Etapa',
+                            fecha: fechaFormateada,
+                            actor: actorNombre,
+                            ubicacion: ubicacionStr || 'Ubicación local',
+                            coordenadas: coords,
+                            descripcion: etapa.notas || 'Paso procesado y registrado correctamente en la cadena de trazabilidad.',
+                            icono: iconClass,
+                            color: colorClass,
+                            bg: bgClass,
+                            foto: etapa.foto || null
+                        };
+                    })
+                };
+            });
+        } catch (error) {
+            console.error("Error obteniendo datos de trazabilidad:", error);
+            return null;
+        }
+    },
+
+    async renderTrazabilidad() {
+        const container = document.getElementById('tab-content');
+
+        // Estado de carga inicial mientras vamos al backend
+        container.innerHTML = `
+            <div class="py-24 text-center animate-pulse">
+                <i class="fas fa-circle-notch fa-spin text-4xl text-stone-300 mb-4"></i>
+                <p class="text-stone-400 font-medium">Cargando hoja de ruta blockchain...</p>
+            </div>
+        `;
+
+        // Forzar limpieza absoluta de mapas y marcadores previos para evitar fugas de memoria o referencias rotas
+        this.map = null;
+        this.markers = [];
+        this.mapPolyline = null;
+        this.activePolyline = null;
+
+        // 1. Intentamos cargar los lotes mapeados desde el backend
+        let lotesData = await this.loadTrazabilidadData();
+        console.log("lotes data", lotesData);
+        // 2. Si no hay datos en la API, usamos los lotes pre-cargados en this.product o el Mock de respaldo
+        if (!lotesData || lotesData.length === 0) {
+            lotesData = (this.product && this.product.lotes && this.product.lotes.length > 0)
+                ? this.product.lotes
+                : null; // Fallback temporal
+        }
+
+        if (!lotesData || lotesData.length === 0) {
+            container.innerHTML = `
                 <div class="py-16 md:py-24 text-center animate-in fade-in slide-in-from-bottom-4 duration-700">
                     <div class="w-20 h-20 md:w-24 md:h-24 bg-stone-50 rounded-full flex items-center justify-center mx-auto mb-8 border border-stone-100 shadow-sm">
                         <i class="fas fa-route text-stone-200 text-3xl md:text-4xl"></i>
                     </div>
                     <h3 class="text-xl md:text-2xl font-display font-bold text-stone-300">Trazabilidad No Disponible</h3>
-                    <p class="text-stone-400 mt-2 max-w-sm mx-auto px-6 text-sm md:text-base">Este producto aún no cuenta con un lote verificado en la blockchain de Ruru Lab.</p>
+                    <p class="text-stone-400 mt-2 max-w-sm mx-auto px-6 text-sm md:text-base">Este producto aún no cuenta con un lote verificado en la blockchain.</p>
                 </div>
             `;
             return;
         }
 
-        const stages = [...this.traceability.stages];
-        const lastBatchId = this.traceability.id || 'N/A';
-
+        // Diseño App-Like optimizado para evitar desbordamiento o recortes
         const html = `
             <style>
-                .stage-card.active-stage {
-                    border-color: #854d0e;
-                    background-color: #fffbeb;
-                    transform: translateX(4px);
-                }
-                @media (min-width: 1024px) {
-                    .stage-card.active-stage { transform: translateX(8px); }
-                }
+                .no-scrollbar::-webkit-scrollbar { display: none; }
+                .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+                
+                /* Tarjeta de Trazabilidad con sombreado premium y transiciones estables */
                 .stage-card {
-                    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+                    transition: opacity 0.5s ease-out, transform 0.6s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s ease, border-color 0.4s ease;
+                    opacity: 0.3;
+                    transform: translateY(15px) scale(0.97);
+                    border-color: transparent;
                 }
-                .node-dot.active {
-                    border-color: #854d0e !important;
-                    background-color: #854d0e !important;
-                    box-shadow: 0 0 0 4px rgba(133, 77, 14, 0.1);
+                .stage-card.active-stage {
+                    opacity: 1;
+                    transform: translateY(0) scale(1);
+                    box-shadow: 0 20px 40px -10px rgba(139, 69, 19, 0.12);
+                    border-color: rgba(139, 69, 19, 0.25);
                 }
-                .pulse-ring {
-                    position: absolute;
-                    inset: 0;
-                    margin: auto;
-                    width: 100%;
-                    height: 100%;
-                    border: 2px solid #854d0e;
-                    border-radius: 50%;
-                    animation: pulse 2s infinite;
-                    opacity: 0;
-                    pointer-events: none;
-                }
-                @keyframes pulse {
-                    0% { transform: scale(0.6); opacity: 0; }
-                    50% { opacity: 0.6; }
-                    100% { transform: scale(1.6); opacity: 0; }
-                }
-                #trace-map [title="Google"] img, #trace-map .gmnoprint { display: none !important; }
+                
+                #mapa-publico [title="Google"] img, #mapa-publico .gmnoprint { display: none !important; }
             </style>
 
-            <div class="animate-in fade-in duration-1000 px-2 md:px-0">
-                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8 lg:gap-12 items-start">
-                    
-                    <!-- Columna Mapa (Sticky on Desktop) -->
-                    <div class="lg:col-span-7 lg:sticky lg:top-24 space-y-4 md:space-y-6">
-                        <div class="flex items-center justify-between mb-2 md:mb-4 px-4 lg:px-0">
-                            <div>
-                                <h2 class="text-2xl md:text-4xl font-display font-bold text-stone-900 leading-tight">Descubre el viaje!</h2>
-                                <p class="text-stone-400 font-medium text-[10px] md:text-sm mt-1 tracking-wide uppercase">Trazabilidad Satelital</p>
-                            </div>
+            <!-- Contenedor principal: overflow-visible para que cards activas no se recorten en ningún viewport -->
+            <div class="animate-in fade-in duration-1000 w-full bg-[#fdfaf6] rounded-[2.5rem] border border-stone-200 shadow-sm flex flex-col my-4 overflow-visible relative" style="min-height:680px;">
+                
+                <!-- CABECERA FIJA -->
+                <div class="bg-white px-6 py-5 border-b border-stone-200 shrink-0 z-20 shadow-sm rounded-t-[2.5rem]">
+                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
+                        <div>
+                            <h2 class="text-2xl md:text-3xl font-display font-bold text-stone-900 leading-tight">El viaje del producto</h2>
                         </div>
-                        
-                        <div class="relative group mx-2 md:mx-0">
-
-                            <div id="trace-map" class="w-full h-[350px] md:h-[450px] lg:h-[600px] rounded-[2rem] md:rounded-[3.5rem] border-4 md:border-8 border-white shadow-[0_20px_40px_-12px_rgba(0,0,0,0.1)] md:shadow-[0_32px_64px_-16px_rgba(0,0,0,0.15)] overflow-hidden bg-stone-100"></div>
-                            
-                            <!-- Legend - Compact on mobile -->
-                            <div class="absolute bottom-6 left-6 md:bottom-10 md:left-10 flex gap-3 md:gap-4 bg-white/90 backdrop-blur-md p-3 md:p-4 rounded-2xl md:rounded-3xl border border-white/50 shadow-xl">
-                                <div class="flex items-center gap-2">
-                                    <div class="w-2.5 h-2.5 md:w-3 md:h-3 rounded-full bg-amber-800"></div>
-                                    <span class="text-[9px] md:text-[10px] font-bold text-stone-600 uppercase tracking-wider">Actual</span>
-                                </div>
-                                <div class="flex items-center gap-2">
-                                    <div class="w-3 h-0.5 bg-stone-300 border-t border-dashed border-stone-400"></div>
-                                    <span class="text-[9px] md:text-[10px] font-bold text-stone-600 uppercase tracking-wider">Ruta</span>
-                                </div>
-                            </div>
+                        <div class="bg-stone-50 px-4 py-2 rounded-xl border border-stone-200 md:min-w-[260px]">
+                            <label class="block font-bold text-stone-400 text-[9px] mb-0.5 uppercase tracking-widest">Seleccionar Lote</label>
+                            <select id="selector-lote" class="w-full bg-transparent font-mono text-sm font-bold text-stone-800 outline-none cursor-pointer">
+                                ${lotesData.map(lote => `<option value="${lote.id_lote}">${lote.nombre_lote}</option>`).join('')}
+                            </select>
                         </div>
                     </div>
 
-                    <!-- Columna Timeline -->
-                    <div class="lg:col-span-5 space-y-6 md:space-y-10 py-4">
-                        <div class="flex items-center justify-between px-6 lg:pl-6 lg:pr-0">
-                            <h2 class="text-2xl md:text-4xl font-display font-bold text-stone-900">Timeline</h2>
-                            <div class="flex flex-col items-end">
-                                <span class="text-[8px] md:text-[10px] font-bold text-stone-400 uppercase tracking-widest mb-1">PROCESSED LOTE</span>
-                                <span class="px-3 py-1 md:px-4 md:py-1.5 bg-stone-900 text-white text-[9px] md:text-[11px] font-black rounded-full shadow-lg tracking-wider">#${lastBatchId.substring(0, 12)}</span>
-                            </div>
-                        </div>
-
-                        <div class="relative px-4 md:px-6">
-                            <!-- Animated Pulse Line Background -->
-                            <div class="absolute left-[2.25rem] md:left-[2.25rem] top-8 bottom-8 w-[2px] bg-gradient-to-b from-amber-800/20 via-stone-100 to-stone-50 selection:bg-none"></div>
-
-                            <div class="space-y-4 md:space-y-6 relative" id="timeline-list">
-                                ${stages.map((stage, idx) => {
-            const dateStr = stage.timestamp ? new Date(stage.timestamp).toLocaleDateString('es-ES', { month: 'short', day: 'numeric' }).toUpperCase() : 'N/A';
-            const yearStr = stage.timestamp ? new Date(stage.timestamp).getFullYear() : '';
-            const loc = this.getStageLocation(stage);
-            const isFinca = stage.nombre_etapa.toLowerCase().includes('cosecha');
-
-            return `
-                                    <div class="stage-card group cursor-pointer p-4 md:p-6 rounded-2xl md:rounded-[2rem] border border-transparent hover:border-stone-100 hover:bg-white hover:shadow-xl relative ml-6" 
-                                         onclick="app.setTraceStage(${idx})" data-index="${idx}">
-                                        
-                                        <!-- Node Indicator -->
-                                        <div class="absolute -left-[3.15rem] top-6 md:top-8 w-10 h-10 md:w-11 md:h-11 rounded-full border-4 border-white bg-stone-100 flex items-center justify-center transition-all duration-500 shadow-sm z-20 node-dot">
-                                            <i class="fas ${isFinca ? 'fa-seedling' : 'fa-gear'} text-[10px] md:text-xs text-stone-400 group-hover:text-white transition-colors relative z-10"></i>
-                                            <div class="pulse-ring"></div>
-                                        </div>
-
-                                        <div class="flex justify-between items-start mb-2">
-                                            <div class="flex flex-col">
-                                                <span class="text-[10px] font-black text-amber-800/60 uppercase tracking-[0.2em] mb-1">${dateStr} ${yearStr}</span>
-                                                <h4 class="text-2xl font-display font-bold text-stone-800 group-hover:text-amber-950 transition-colors">${stage.nombre_etapa}</h4>
-                                            </div>
-                                            <div class="w-10 h-10 rounded-2xl bg-stone-50 flex items-center justify-center group-hover:bg-amber-100 transition-colors">
-                                                <i class="fas fa-chevron-right text-stone-300 group-hover:text-amber-600 text-[10px]"></i>
-                                            </div>
-                                        </div>
-
-                                        <div class="flex items-center gap-2 mb-4">
-                                            <i class="fas fa-location-dot text-[10px] text-stone-300"></i>
-                                            <p class="text-xs font-bold text-stone-400 group-hover:text-stone-600 transition-colors tracking-tight italic">${loc}</p>
-                                        </div>
-                                        
-                                        <!-- Technical Badges -->
-                                        <div class="flex flex-wrap gap-2 pt-2 opacity-60 group-hover:opacity-100 transition-opacity duration-500">
-                                            ${this.renderStageBadges(stage)}
-                                        </div>
-                                    </div>
-                                    `;
-        }).join('')}
-                            </div>
-                        </div>
-                    </div>
+                    <!-- STEPPER DE ETAPAS: overflow-x-auto visible, con padding-bottom para que los textos absolutos no se corten -->
+                    <div id="stepper-container" class="w-full relative"></div>
                 </div>
 
-                <!-- Footer Section -->
-                <div class="mt-12 md:mt-24 p-6 md:p-12 rounded-[2.5rem] md:rounded-[4rem] bg-stone-900 text-white relative overflow-hidden mx-2 md:mx-0">
-                    <div class="absolute top-0 right-0 w-64 h-64 md:w-96 md:h-96 bg-amber-800/10 rounded-full -mr-32 -mt-32 md:-mr-48 md:-mt-48 blur-3xl"></div>
-                    <div class="relative flex flex-col lg:flex-row items-center gap-8 md:gap-12 text-center lg:text-left">
-                        <div class="flex-shrink-0">
-                            <div class="w-16 h-16 md:w-24 md:h-24 rounded-2xl md:rounded-[2.5rem] bg-gradient-to-br from-amber-700 to-amber-900 p-[1px]">
-                                <div class="w-full h-full bg-stone-900 rounded-2xl md:rounded-[2.5rem] flex items-center justify-center">
-                                    <i class="fas fa-shield-halved text-amber-600 text-2xl md:text-4xl"></i>
-                                </div>
-                            </div>
+                <!-- LAYOUT INTERACTIVO -->
+                <div class="flex flex-col md:flex-row bg-stone-50/20 p-4 md:p-5 gap-5" style="flex:1 1 auto; min-height:420px;">
+                    
+                    <!-- Lado Izquierdo: MAPA -->
+                    <!-- Altura explícita en mobile; en desktop ocupa el flex restante -->
+                    <div class="w-full md:w-1/2 lg:w-3/5 shrink-0 relative rounded-3xl overflow-hidden shadow-md border-4 border-white bg-stone-200 z-10" style="height:300px;" id="mapa-wrapper">
+                        <div id="mapa-publico" style="width:100%;height:100%;"></div>
+                        <div class="absolute top-4 left-4 bg-white/90 backdrop-blur-md px-3 py-1.5 rounded-xl shadow-md flex items-center gap-2 border border-stone-100">
+                            <div class="w-2 h-2 rounded-full bg-amber-600 animate-pulse"></div>
+                            <span class="text-[10px] font-bold text-stone-700 uppercase tracking-wider" id="map-status">Cargando mapa...</span>
                         </div>
-                        <div class="flex-grow space-y-3 md:space-y-4">
-                            <h4 class="text-2xl md:text-3xl font-display font-bold leading-tight">Blockchain Certified Lineage</h4>
-                            <p class="text-stone-400 text-sm md:text-lg max-w-2xl px-2 lg:px-0">This cryptographic seal guarantees that every step of this products journey is authentic, permanent, and verified by Ruru Lab's private oracle.</p>
-                            <div class="pt-2 md:pt-4 flex flex-col md:flex-row items-center justify-center lg:justify-start gap-4">
-                                <span class="px-3 py-1.5 md:px-5 md:py-2 bg-stone-800 border border-stone-700 rounded-xl md:rounded-2xl font-mono text-[9px] md:text-xs text-amber-500 selection:bg-amber-500 selection:text-white break-all max-w-xs md:max-w-none">
-                                    ${this.traceability.blockchain_hash || 'SHA256_UNAVAILABLE'}
-                                </span>
-                            </div>
-                        </div>
-                        <a href="https://polygonscan.com/tx/${this.traceability.blockchain_hash}" target="_blank" 
-                           class="w-full lg:w-auto px-8 py-4 md:px-10 md:py-5 bg-amber-800 hover:bg-amber-700 text-white rounded-2xl md:rounded-[2rem] text-xs md:text-sm font-black tracking-widest uppercase transition-all hover:shadow-2xl hover:-translate-y-1 mt-4 lg:mt-0">
-                            Verify Ledger
-                        </a>
+                    </div>
+
+                    <!-- Lado Derecho: LISTA DE TARJETAS -->
+                    <!-- scroll horizontal en mobile, scroll vertical en desktop. Sin max-height para no cortar cards -->
+                    <!-- px-4 en móvil asegura que las sombras/bordes no se corten contra el límite del contenedor -->
+                    <div id="timeline-container" class="w-full md:w-1/2 lg:w-2/5 overflow-x-auto md:overflow-x-hidden md:overflow-y-auto flex md:flex-col gap-4 md:gap-6 snap-x snap-mandatory md:snap-y px-4 md:px-2 pb-6 md:pb-16 no-scrollbar items-start md:items-stretch z-10">
+                        <!-- Se llena vía JS -->
                     </div>
                 </div>
             </div>
         `;
-        document.getElementById('tab-content').innerHTML = html;
+        container.innerHTML = html;
 
+        this.loadGoogleMaps().then(() => {
+            const selector = document.getElementById('selector-lote');
+            selector.addEventListener('change', (e) => this.cambiarLote(e.target.value, lotesData));
+
+            if (lotesData.length > 0) {
+                // Pequeño retardo para asegurar que el DOM cargó y los tamaños estén calculados
+                setTimeout(() => this.cambiarLote(lotesData[0].id_lote, lotesData), 150);
+            }
+        });
+    },
+
+    cambiarLote(loteId, lotesData) {
+        const lote = lotesData.find(l => l.id_lote === loteId);
+        if (!lote) return;
+
+        this.activeLoteEtapasCount = lote.etapas.length;
+
+        // 1. Inyectar Stepper Horizontal
+        const stepperContainer = document.getElementById('stepper-container');
+        if (stepperContainer) this.renderHorizontalStepper(lote.etapas, stepperContainer);
+
+        // 2. Limpiar y renderizar tarjetas
+        const container = document.getElementById('timeline-container');
+        container.innerHTML = '';
+
+        if (this.currentObserver) this.currentObserver.disconnect();
+
+        this.renderTimelineElements(lote.etapas, container);
+
+        // Destruir mapa anterior y forzar recreación
+        this.map = null;
+        this.drawMapRoute(lote.etapas);
+        this.setupScrollObserver(lote);
+
+        this.activeMarkerIndex = -1;
+
+        // Iniciar el viaje en la primera etapa con un delay seguro para que se calculen los offsets reales
         setTimeout(() => {
-            this.initTraceMap();
-            this.setTraceStage(0);
-            this.initScrollIntersectionObserver();
-        }, 300);
+            this.updateStepperProgressLine(0);
+            this.activateEtapa(0, lote);
+        }, 200);
+    },
+
+    renderHorizontalStepper(etapas, container) {
+        // El wrapper tiene overflow-x-auto y padding-bottom suficiente para que los textos
+        // posicionados con absolute (top-12) nunca queden ocultos por overflow
+        let html = `
+            <div class="relative w-full overflow-x-auto no-scrollbar" style="padding-bottom:2.5rem; padding-top:0.5rem;">
+                <div class="relative flex gap-10 md:gap-16 px-4 md:px-10 py-3 mx-auto w-max">
+                    
+                    <!-- Línea base gris -->
+                    <div id="stepper-bg-line" class="absolute h-1 bg-stone-200 rounded-full z-0 transition-all duration-300" style="top:1.5rem;"></div>
+                    
+                    <!-- Línea naranja de progreso -->
+                    <div id="stepper-progress" class="absolute h-1 bg-amber-600 rounded-full z-0 transition-all duration-700 ease-in-out" style="top:1.5rem; width:0px;"></div>
+        `;
+
+        etapas.forEach((etapa, index) => {
+            html += `
+                <div class="relative flex flex-col items-center cursor-pointer group z-10" style="width:3.5rem;" onclick="document.getElementById('etapa-${index}').scrollIntoView({behavior: 'smooth', block: 'nearest', inline: 'center'})">
+                    <div id="step-icon-${index}" class="w-10 h-10 rounded-full flex items-center justify-center border-4 border-white bg-stone-100 text-stone-400 shadow-sm transition-all duration-500 group-hover:scale-110">
+                        <i class="fas ${etapa.icono} text-sm"></i>
+                    </div>
+                    <!-- top-11 fijo para que el texto nunca tape los iconos ni sea recortado -->
+                    <p id="step-text-${index}" class="text-[10px] font-bold text-center text-stone-400 transition-colors leading-tight px-1 mt-1.5" style="width:5rem; word-break:break-word; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">${etapa.nombre}</p>
+                </div>
+            `;
+        });
+
+        html += `
+                </div>
+            </div>
+        `;
+        container.innerHTML = html;
+    },
+
+    renderTimelineElements(etapas, container) {
+        etapas.forEach((etapa, index) => {
+            const fotoHtml = etapa.foto
+                ? `<div class="mt-4 rounded-2xl overflow-hidden shadow-sm h-36 md:h-48 relative border border-stone-100 shrink-0"><img src="${etapa.foto}" class="w-full h-full object-cover transition-transform duration-700 hover:scale-105" alt="Imagen etapa ${etapa.nombre}"></div>`
+                : '';
+
+            // min-h en móvil (no h fija) para que el contenido nunca se recorte
+            const html = `
+                <div id="etapa-${index}" class="stage-card snap-center shrink-0 w-[82vw] md:w-full flex flex-col bg-white rounded-[2rem] p-5 md:p-6 border-2 mx-auto md:mx-0 relative z-10" style="min-height:260px;" data-index="${index}">
+                    
+                    <div class="flex items-start gap-4 mb-3">
+                        <div id="card-icon-${index}" class="w-12 h-12 md:w-14 md:h-14 rounded-2xl flex items-center justify-center bg-stone-50 text-stone-400 transition-colors duration-500 shrink-0 border border-stone-100">
+                            <i class="fas ${etapa.icono} text-lg md:text-xl"></i>
+                        </div>
+                        <div class="flex-grow pt-1 min-w-0">
+                            <h3 class="text-base md:text-xl font-display font-bold text-stone-800 leading-tight">${etapa.nombre}</h3>
+                            <span class="text-[10px] font-black text-amber-600 uppercase tracking-widest mt-0.5 block">${etapa.fecha}</span>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-col gap-1.5 mb-3 p-3 bg-stone-50/80 rounded-2xl text-xs md:text-sm border border-stone-100/80">
+                        <div class="flex items-center gap-2">
+                            <i class="fas fa-location-dot w-4 text-center text-amber-700 opacity-80 shrink-0"></i>
+                            <p class="font-bold text-stone-700 tracking-tight truncate">${etapa.actor}</p>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <i class="fas fa-map w-4 text-center text-stone-400 shrink-0"></i>
+                            <p class="text-stone-500 text-[11px] md:text-xs truncate">${etapa.ubicacion}</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Descripción completa: sin overflow-hidden para que nunca se recorte -->
+                    <div class="text-sm text-stone-600 leading-relaxed">
+                        <p>${etapa.descripcion}</p>
+                        ${fotoHtml}
+                    </div>
+                </div>
+            `;
+            container.insertAdjacentHTML('beforeend', html);
+        });
+
+        // Espaciador inferior para permitir scroll hasta la última tarjeta
+        container.insertAdjacentHTML('beforeend', '<div class="shrink-0 w-4 md:w-auto h-4 md:h-16 pointer-events-none"></div>');
+    },
+
+    drawMapRoute(etapas) {
+        const mapEl = document.getElementById('mapa-publico');
+        if (!mapEl) return;
+
+        // Asegurar que el wrapper tenga altura real en desktop (md y superior)
+        const wrapper = document.getElementById('mapa-wrapper');
+        if (wrapper && window.innerWidth >= 768) {
+            // Hacer que el wrapper ocupe el 100% de la columna flex del padre
+            wrapper.style.height = 'auto';
+            wrapper.style.flex = '1 1 0%';
+        }
+
+        this.map = null;
+        this.map = new google.maps.Map(mapEl, {
+            zoom: 6, center: { lat: -9.189, lng: -75.015 },
+            mapTypeId: 'terrain', disableDefaultUI: true, zoomControl: true, scrollwheel: false
+        });
+
+        if (this.markers) this.markers.forEach(m => m.setMap(null));
+        this.markers = [];
+
+        if (this.mapPolyline) this.mapPolyline.setMap(null);
+        if (this.activePolyline) this.activePolyline.setMap(null);
+
+        if (etapas.length === 0) return;
+
+        const pathCoords = [];
+        const bounds = new google.maps.LatLngBounds();
+
+        etapas.forEach((etapa, index) => {
+            const pos = { lat: parseFloat(etapa.coordenadas.lat), lng: parseFloat(etapa.coordenadas.lng) };
+            pathCoords.push(pos);
+            bounds.extend(pos);
+
+            const marker = new google.maps.Marker({
+                position: pos, map: this.map,
+                label: { text: (index + 1).toString(), color: 'white', fontWeight: 'bold', fontSize: '12px' },
+                title: etapa.nombre,
+                icon: { path: google.maps.SymbolPath.CIRCLE, fillColor: '#d6d3d1', fillOpacity: 1, strokeWeight: 2, strokeColor: '#FFFFFF', scale: 12 },
+                zIndex: 1
+            });
+            this.markers.push(marker);
+        });
+
+        if (pathCoords.length > 1) {
+            this.mapPolyline = new google.maps.Polyline({
+                path: pathCoords, geodesic: true, strokeColor: '#d6d3d1', strokeOpacity: 0.8, strokeWeight: 3, map: this.map,
+                icons: [{ icon: { path: 'M 0,-1 0,1', strokeOpacity: 1, scale: 3 }, offset: '0', repeat: '20px' }]
+            });
+            this.activePolyline = new google.maps.Polyline({
+                path: [], geodesic: true, strokeColor: '#d97706', strokeOpacity: 1, strokeWeight: 5, map: this.map
+            });
+        }
+
+        if (pathCoords.length > 0) {
+            this.map.fitBounds(bounds);
+            if (pathCoords.length === 1) setTimeout(() => this.map.setZoom(12), 100);
+        }
+
+        // Forzar resize para que Google Maps calcule las dimensiones reales del container
+        setTimeout(() => {
+            google.maps.event.trigger(this.map, 'resize');
+            if (pathCoords.length > 0) this.map.fitBounds(bounds);
+        }, 200);
+    },
+
+    setupScrollObserver(loteActivo) {
+        // threshold 0.35 para activar en mobile donde la tarjeta visible es parcial
+        const options = { root: document.getElementById('timeline-container'), rootMargin: '0px', threshold: 0.35 };
+
+        this.currentObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const index = parseInt(entry.target.getAttribute('data-index'));
+                    this.activateEtapa(index, loteActivo);
+                }
+            });
+        }, options);
+
+        document.querySelectorAll('.stage-card').forEach(card => this.currentObserver.observe(card));
+    },
+
+    updateStepperProgressLine(index) {
+        const startNode = document.getElementById('step-icon-0');
+        const activeNode = document.getElementById(`step-icon-${index}`);
+        const lastNode = document.getElementById(`step-icon-${this.activeLoteEtapasCount - 1}`);
+        const progressLine = document.getElementById('stepper-progress');
+        const bgLine = document.getElementById('stepper-bg-line');
+
+        // Usar getBoundingClientRect relativo al contenedor scrollable para precision exacta
+        const scrollWrapper = document.getElementById('stepper-container')?.querySelector('[style*="padding-bottom"]');
+        const wrapperScrollLeft = scrollWrapper ? scrollWrapper.scrollLeft : 0;
+
+        if (startNode && lastNode && bgLine) {
+            const startLeft = startNode.offsetLeft + startNode.offsetWidth / 2;
+            const lastLeft = lastNode.offsetLeft + lastNode.offsetWidth / 2;
+            bgLine.style.left = `${startLeft}px`;
+            bgLine.style.width = `${Math.max(0, lastLeft - startLeft)}px`;
+        }
+
+        if (startNode && activeNode && progressLine) {
+            const startLeft = startNode.offsetLeft + startNode.offsetWidth / 2;
+            const activeLeft = activeNode.offsetLeft + activeNode.offsetWidth / 2;
+            progressLine.style.left = `${startLeft}px`;
+            progressLine.style.width = `${Math.max(0, activeLeft - startLeft)}px`;
+        }
+    },
+
+    activateEtapa(index, loteActivo) {
+        if (this.activeMarkerIndex === index) return;
+        this.activeMarkerIndex = index;
+
+        const mapStatus = document.getElementById('map-status');
+        if (mapStatus) mapStatus.innerText = index === 0 ? 'Origen del Lote' : `Viajando a: ${loteActivo.etapas[index].actor}`;
+
+        // 1. Iluminación de Tarjetas
+        document.querySelectorAll('.stage-card').forEach((card, i) => {
+            const cardIcon = document.getElementById(`card-icon-${i}`);
+
+            if (i === index) {
+                card.classList.add('active-stage');
+                card.classList.add('shadow-[0_20px_50px_rgba(139,69,19,0.12)]', 'border-amber-600/30');
+                if (cardIcon) {
+                    cardIcon.classList.remove('bg-stone-50', 'text-stone-400');
+                    cardIcon.classList.add('bg-amber-100', 'text-amber-700');
+                }
+            } else {
+                card.classList.remove('active-stage');
+                card.classList.remove('shadow-[0_20px_50px_rgba(139,69,19,0.12)]', 'border-amber-600/30');
+                if (cardIcon) {
+                    cardIcon.classList.add('bg-stone-50', 'text-stone-400');
+                    cardIcon.classList.remove('bg-amber-100', 'text-amber-700');
+                }
+            }
+        });
+
+        // 2. Progreso de Flujo Horizontal
+        this.updateStepperProgressLine(index);
+
+        loteActivo.etapas.forEach((_, i) => {
+            const iconDiv = document.getElementById(`step-icon-${i}`);
+            const textP = document.getElementById(`step-text-${i}`);
+            if (!iconDiv || !textP) return;
+
+            if (i === index) { // Activa
+                iconDiv.className = `w-10 h-10 rounded-full flex items-center justify-center border-4 border-white shadow-lg transition-all duration-500 scale-125 bg-amber-600 text-white z-10`;
+                textP.className = `absolute top-12 text-[10px] md:text-xs font-black text-center w-24 md:w-28 transition-colors leading-tight line-clamp-2 mt-1 px-1 text-amber-700`;
+            } else if (i < index) { // Pasada
+                iconDiv.className = `w-10 h-10 rounded-full flex items-center justify-center border-4 border-white shadow-sm transition-all duration-500 bg-amber-600 text-white z-10`;
+                textP.className = `absolute top-12 text-[10px] md:text-xs font-bold text-center w-24 md:w-28 transition-colors leading-tight line-clamp-2 mt-1 px-1 text-stone-700`;
+            } else { // Futura
+                iconDiv.className = `w-10 h-10 rounded-full flex items-center justify-center border-4 border-white bg-stone-100 text-stone-400 shadow-sm transition-all duration-500 hover:scale-110 z-10`;
+                textP.className = `absolute top-12 text-[10px] md:text-xs font-medium text-center w-24 md:w-28 transition-colors leading-tight line-clamp-2 mt-1 px-1 text-stone-400`;
+            }
+        });
+
+        // Deslizar horizontalmente el Stepper para que el nodo activo permanezca a la vista en pantallas angostas
+        const stepperWrapper = document.getElementById('stepper-container')?.querySelector('div.overflow-x-auto');
+        const activeNode = document.getElementById(`step-icon-${index}`);
+        if (stepperWrapper && activeNode) {
+            const nodeOffset = activeNode.parentElement.offsetLeft;
+            stepperWrapper.scrollTo({ left: nodeOffset - (stepperWrapper.clientWidth / 2) + 20, behavior: 'smooth' });
+        }
+
+        // 3. Simulación de Viaje en el Mapa (Pan & Interpolación de Ruta)
+        if (this.map && this.markers[index]) {
+            const currentPos = {
+                lat: parseFloat(loteActivo.etapas[index].coordenadas.lat),
+                lng: parseFloat(loteActivo.etapas[index].coordenadas.lng)
+            };
+
+            this.map.panTo(currentPos);
+            if (this.map.getZoom() < 10) this.map.setZoom(11);
+
+            // Resaltar nodo activo y atenuar inactivos
+            this.markers.forEach((marker, i) => {
+                let newColor = i <= index ? "#d97706" : "#d6d3d1";
+                let newScale = i === index ? 18 : 12;
+                let zIndex = i === index ? 100 : (i < index ? 50 : 1);
+
+                if (i === index) {
+                    marker.setAnimation(google.maps.Animation.BOUNCE);
+                    setTimeout(() => marker.setAnimation(null), 1400);
+                }
+
+                marker.setIcon({
+                    path: google.maps.SymbolPath.CIRCLE, fillColor: newColor, fillOpacity: 1, strokeWeight: 2, strokeColor: "#FFFFFF", scale: newScale
+                });
+                marker.setZIndex(zIndex);
+            });
+
+            // Re-trazar línea de viaje
+            if (this.activePolyline) {
+                this.animateJourney(loteActivo, index);
+            }
+        }
+    },
+
+    animateJourney(loteActivo, targetIndex) {
+        if (!this.map || !this.activePolyline) return;
+
+        const targetPoints = loteActivo.etapas.slice(0, targetIndex + 1).map(e => new google.maps.LatLng(e.coordenadas.lat, e.coordenadas.lng));
+
+        const path = this.activePolyline.getPath();
+        path.clear();
+
+        if (targetPoints.length === 0) return;
+        path.push(targetPoints[0]);
+
+        if (targetIndex === 0) return;
+
+        let currentSegment = 0;
+        const framesPerSegment = 15;
+        let frame = 0;
+
+        const animate = () => {
+            if (currentSegment >= targetPoints.length - 1) {
+                const finalPoint = targetPoints[targetPoints.length - 1];
+                if (path.getLength() > currentSegment + 1) {
+                    path.setAt(currentSegment + 1, finalPoint);
+                } else {
+                    path.push(finalPoint);
+                }
+                return;
+            }
+
+            const p1 = targetPoints[currentSegment];
+            const p2 = targetPoints[currentSegment + 1];
+
+            frame++;
+            const progress = frame / framesPerSegment;
+
+            const lat = p1.lat() + (p2.lat() - p1.lat()) * progress;
+            const lng = p1.lng() + (p2.lng() - p1.lng()) * progress;
+            const intermediatePoint = new google.maps.LatLng(lat, lng);
+
+            if (path.getLength() > currentSegment + 1) {
+                path.setAt(currentSegment + 1, intermediatePoint);
+            } else {
+                path.push(intermediatePoint);
+            }
+
+            if (frame >= framesPerSegment) {
+                frame = 0;
+                currentSegment++;
+            }
+
+            requestAnimationFrame(animate);
+        };
+
+        requestAnimationFrame(animate);
     },
 
     renderStageBadges(stage) {

@@ -26,6 +26,8 @@ const empresasController = require('./src/controllers/empresasController');
 const landingsController = require('./src/controllers/landingsController');
 const acquisitionsController = require('./src/controllers/acquisitionsController');
 const batchesController = require('./src/controllers/batchesController');
+const lotesController = require('./src/controllers/lotesController');
+
 const lotesRoutes = require('./src/routes/lotesRoutes');
 const etapasRoutes = require('./src/routes/etapasRoutes');
 const { renderLanding, renderCompanyList, renderMarketplaceProducts } = require('./src/utils/landingRenderer');
@@ -962,6 +964,7 @@ app.get('/api/public/products/:productId/traceability', db.getProductTraceabilit
 app.get('/api/public/companies/:userId/landing', landingsController.getCompanyLandingData);
 app.post('/api/public/contact', db.saveContactLead);
 app.get('/api/public/marketplace/products', productosController.getMarketplaceProducts);
+app.get('/api/public/productos/:productoId/trazabilidad', lotesController.getPublicTrazabilidad);
 
 // 8. RUTAS PROTEGIDAS (VISTAS APP)
 //app.get('/app/dashboard', authenticatePage, checkSubscription('profesional'), (req, res) => res.sendFile(path.join(__dirname, 'views', 'dashboard.html')));

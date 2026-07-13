@@ -28,12 +28,17 @@
     <script type="application/ld+json" id="product-jsonld"></script>
 
     <link rel="preload" as="style" href="/css/styles.css" onload="this.onload=null;this.rel='stylesheet'">
-    <noscript><link rel="stylesheet" href="/css/styles.css"></noscript>
+    <noscript>
+        <link rel="stylesheet" href="/css/styles.css">
+    </noscript>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@700;800;900&display=swap">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@700;800;900&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+    <link rel="preload" as="style"
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@700;800;900&display=swap">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@700;800;900&display=swap"
+        rel="stylesheet" media="print" onload="this.media='all'">
 
     <script src="/js/analytics-loader.js" defer></script>
     <style>
@@ -45,10 +50,31 @@
             padding: 0;
         }
 
-        #public-nav-placeholder { min-height: 80px; }
-        .skeleton { background: #e2e8f0; animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; border-radius: 0.5rem; }
-        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .5; } }
-        .aspect-square { aspect-ratio: 1 / 1; }
+        #public-nav-placeholder {
+            min-height: 80px;
+        }
+
+        .skeleton {
+            background: #e2e8f0;
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+            border-radius: 0.5rem;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: .5;
+            }
+        }
+
+        .aspect-square {
+            aspect-ratio: 1 / 1;
+        }
 
         .font-display {
             font-family: 'Playfair Display', serif;

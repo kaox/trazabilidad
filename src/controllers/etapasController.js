@@ -1,5 +1,8 @@
 const EtapaModel = require('../models/etapaModel');
 const LoteModel = require('../models/loteModel');
+const { processImagesArray } = require('../utils/storage');
+
+const provider = 'vercel'; // Mantener consistencia con el controlador de productos
 
 // Helper interno para proteger el lote si ya está sellado
 const verificarLoteAbierto = async (loteId, userId) => {
@@ -32,8 +35,15 @@ const create = async (req, res) => {
             return res.status(400).json({ error: 'Debes especificar solo un actor: finca_id o procesadora_id.' });
         }
 
+        // 3. Procesar Foto con Storage
+        let fotoUrlFinal = foto;
+        if (foto && typeof foto === 'string' && foto.startsWith('data:image/')) {
+            const procesadas = await processImagesArray([foto], 'etapas', user_id, provider);
+            fotoUrlFinal = procesadas[0] || null;
+        }
+
         const id = await EtapaModel.create({
-            lote_id, catalogo_etapa_id, fecha, notas, foto, orden, finca_id, procesadora_id
+            lote_id, catalogo_etapa_id, fecha, notas, foto: fotoUrlFinal, orden, finca_id, procesadora_id
         });
         res.status(201).json({ id, message: 'Etapa añadida a la ruta exitosamente.' });
     } catch (err) {
@@ -53,8 +63,15 @@ const update = async (req, res) => {
             return res.status(400).json({ error: 'Debes especificar solo un actor: finca_id o procesadora_id.' });
         }
 
+        // Procesar Foto con Storage
+        let fotoUrlFinal = foto;
+        if (foto && typeof foto === 'string' && foto.startsWith('data:image/')) {
+            const procesadas = await processImagesArray([foto], 'etapas', user_id, provider);
+            fotoUrlFinal = procesadas[0] || null;
+        }
+
         const result = await EtapaModel.update(id, {
-            catalogo_etapa_id, fecha, notas, foto, orden, finca_id, procesadora_id
+            catalogo_etapa_id, fecha, notas, foto: fotoUrlFinal, orden, finca_id, procesadora_id
         });
         if (result.changes === 0) return res.status(404).json({ error: 'Etapa no encontrada' });
 
