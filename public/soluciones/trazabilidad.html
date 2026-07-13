@@ -4,11 +4,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Trazabilidad QR para Producto y Lote | RuruLab</title>
-  <meta name="description" content="Cada escaneo QR abre una historia de origen, cadena de suministro y evidencia comercial para compradores y consumidores.">
-  <meta name="keywords" content="trazabilidad QR,cadena de suministro,origen verificable,producto lote,RuruLab">
+  <title>Trazabilidad Blockchain y Satelital para Agro | RuruLab</title>
+  <meta name="description"
+    content="Demuestra el origen inmutable y libre de deforestación de tu café, cacao y miel. Conecta a tus clientes con la historia real desde la finca hasta la taza.">
+  <meta name="keywords"
+    content="trazabilidad blockchain cafe, origen inmutable cacao, validación satelital deforestación, eudr compliant agro, rurulab trazabilidad">
   <link rel="canonical" href="https://rurulab.com/soluciones/trazabilidad.html">
-  
+
   <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -17,129 +19,258 @@
     rel="stylesheet">
   <script src="/js/analytics-loader.js" defer></script>
   <link href="/css/styles.css" rel="stylesheet">
+
+  <!-- FontAwesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
   <style>
     .solution-panel {
       background:
-        radial-gradient(circle at top left, rgba(201, 107, 59, 0.2), transparent 30%),
-        linear-gradient(145deg, #f7f8fb 0%, #eef2f7 100%);
-      border: 1px solid rgba(15, 23, 42, 0.08);
-      box-shadow: 0 24px 60px rgba(15, 23, 42, 0.08);
+        radial-gradient(circle at top left, rgba(139, 69, 19, 0.05), transparent 40%),
+        radial-gradient(circle at bottom right, rgba(217, 119, 6, 0.05), transparent 40%),
+        #fdfaf6;
     }
 
-    .solution-frame {
-      background: linear-gradient(180deg, #111827 0%, #1f2937 100%);
-      box-shadow: 0 18px 50px rgba(15, 23, 42, 0.28);
+    body {
+      font-family: 'Lato', sans-serif;
     }
 
-    .solution-chip {
-      border: 1px solid rgba(15, 23, 42, 0.08);
-      background: rgba(255, 255, 255, 0.82);
-      backdrop-filter: blur(10px);
-    }
-
-    .signal-dot {
-      background: linear-gradient(135deg, #c96b3b 0%, #6e8f80 100%);
-      box-shadow: 0 0 0 10px rgba(201, 107, 59, 0.08);
+    h1,
+    h2,
+    h3,
+    .font-serif {
+      font-family: 'Playfair Display', serif;
     }
   </style>
 </head>
 
-<body class="text-[#4E342E] antialiased bg-[#F5F5F5]">
-    <div id="public-nav-placeholder"></div>
+<body class="solution-panel min-h-screen text-slate-800">
+  <!-- NAVBAR REUTILIZABLE -->
+  <div id="public-nav-placeholder"></div>
 
-    <main class="mx-auto max-w-7xl px-6 py-12 lg:px-8">
-    <a href="/index.html" class="text-sm font-semibold tracking-[0.22em] text-amber-800 uppercase">Volver al inicio</a>
+  <main class="mx-auto max-w-6xl px-6 py-12 md:py-20">
+    <div class="flex flex-col gap-3">
+      <span class="text-xs font-bold uppercase tracking-[0.2em] text-[#c96b3b]">Soluciones de Impacto</span>
+      <h1 class="text-4xl font-bold leading-tight text-slate-900 md:text-6xl max-w-3xl">
+        Trazabilidad Satelital y Blockchain
+      </h1>
+      <p class="mt-4 max-w-2xl text-lg leading-relaxed text-slate-600">
+        Prueba el origen inmutable de tus cultivos, valida el cumplimiento de normativas de deforestación (EUDR) y
+        ofrece al consumidor final un viaje interactivo directo desde la finca hasta sus manos.
+      </p>
+    </div>
 
-    <section class="mt-8 grid items-center gap-10 rounded-[2rem] solution-panel p-8 md:grid-cols-[1.05fr_0.95fr] lg:p-12">
-      <div>
-        <p class="text-xs font-bold uppercase tracking-[0.32em] text-[#6E8F80]">Solucion RuruLab</p>
-        <h1 class="mt-4 max-w-xl font-['Playfair_Display'] text-4xl font-bold leading-tight text-slate-900 lg:text-6xl">Trazabilidad QR para producto y lote</h1>
-        <p class="mt-5 max-w-2xl text-lg leading-8 text-slate-600">Conecta empaque, menu o ficha con una experiencia movil que muestra origen, historia y evidencia en un solo flujo claro para compradores y consumidores.</p>
-        <div class="mt-8 flex flex-wrap gap-4">
-          <a id="cta-traceability-primary" href="/pricing-public.html" class="rounded-full bg-slate-900 px-6 py-3 text-sm font-bold tracking-[0.18em] text-white uppercase">Solicitar demo</a>
-          <a id="cta-traceability-secondary" href="/soluciones/pasaporte-digital-producto.html" class="rounded-full border border-slate-300 px-6 py-3 text-sm font-bold tracking-[0.18em] text-slate-700 uppercase">Ver pasaporte digital</a>
+    <!-- SECCIÓN: INTERACTIVA (HERO CON MAQUETA VISUAL) -->
+    <div class="mt-12 grid grid-cols-1 gap-12 lg:grid-cols-2 items-center">
+      <div class="flex flex-col gap-6">
+        <div class="flex gap-4">
+          <div
+            class="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-amber-50 text-amber-700 border border-amber-100">
+            <i class="fas fa-route text-lg"></i>
+          </div>
+          <div>
+            <h3 class="text-xl font-bold text-slate-900">Linaje Inmutable Verificado</h3>
+            <p class="mt-2 text-slate-600">
+              Registra cada hito de producción (cosecha, fermentación, secado, tueste y empaque) usando nuestra
+              infraestructura híbrida de base de datos y sellado criptográfico.
+            </p>
+          </div>
+        </div>
+
+        <div class="flex gap-4">
+          <div
+            class="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-700 border border-emerald-100">
+            <i class="fas fa-satellite text-lg"></i>
+          </div>
+          <div>
+            <h3 class="text-xl font-bold text-slate-900">Validación Libre de Deforestación</h3>
+            <p class="mt-2 text-slate-600">
+              Usa herramientas de georreferenciación satelital basadas en Copernicus para verificar que los polígonos
+              geográficos de origen respetan los bosques primarios, cumpliendo con regulaciones de exportación europeas.
+            </p>
+          </div>
+        </div>
+
+        <div class="flex gap-4">
+          <div
+            class="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-orange-50 text-orange-700 border border-orange-100">
+            <i class="fas fa-mobile-screen-button text-lg"></i>
+          </div>
+          <div>
+            <h3 class="text-xl font-bold text-slate-900">Experiencia Narrativa al Consumidor</h3>
+            <p class="mt-2 text-slate-600">
+              Un widget de comercio interactivo que dibuja la ruta real en Google Maps mientras el usuario hace scroll,
+              creando una conexión transparente basada en datos reales.
+            </p>
+          </div>
         </div>
       </div>
 
-      <div class="relative min-h-[320px]">
-        <div class="solution-frame absolute inset-x-8 top-4 h-56 rounded-[2rem]"></div>
-        <div class="solution-chip absolute left-0 top-16 w-40 rounded-[1.5rem] p-5">
-          <p class="text-xs font-bold uppercase tracking-[0.28em] text-slate-500">Vista previa</p>
-          <div class="mt-4 h-2 w-20 rounded-full bg-[#c96b3b]"></div>
-          <div class="mt-3 h-2 w-28 rounded-full bg-slate-200"></div>
-          <div class="mt-3 h-20 rounded-[1.25rem] bg-slate-100"></div>
+      <!-- REPRESENTACIÓN VISUAL PREMIUM DE LA SOLUCIÓN -->
+      <div
+        class="relative rounded-3xl border border-stone-200 bg-white p-6 shadow-xl overflow-hidden flex flex-col h-[400px] md:h-[450px]">
+        <div class="absolute inset-0 z-0 bg-stone-100 opacity-20"></div>
+
+        <!-- Mapa Simulado de Fondo -->
+        <div class="absolute inset-0 bg-cover bg-center filter saturate-[0.8]"
+          style="background-image: url('https://images.unsplash.com/photo-1524661135-423995f22d0b?q=80&w=800&auto=format&fit=crop'); opacity: 0.15;">
         </div>
-        <div class="solution-chip absolute bottom-0 right-2 w-56 rounded-[1.75rem] p-6">
-          <div class="flex items-center gap-3">
-            <div class="signal-dot h-12 w-12 rounded-2xl"></div>
+
+        <div class="relative z-10 flex flex-col h-full justify-between">
+          <!-- Cabecera simulada -->
+          <div
+            class="flex justify-between items-center bg-white/95 backdrop-blur-sm p-3 rounded-2xl border border-stone-100 shadow-sm">
             <div>
-              <p class="text-xs font-bold uppercase tracking-[0.24em] text-slate-500">Escaneo</p>
-              <p class="mt-1 text-lg font-bold text-slate-900">Origen visible</p>
+              <span class="text-[9px] font-black text-amber-700 uppercase tracking-widest">LOT-202607-001</span>
+              <h4 class="text-sm font-bold text-stone-800">Geisha Satipo Especial</h4>
+            </div>
+            <span
+              class="text-[9px] font-bold text-emerald-700 bg-emerald-50 px-2 py-1 rounded-full border border-emerald-100 flex items-center gap-1"><i
+                class="fas fa-shield-check"></i> Blockchain</span>
+          </div>
+
+          <!-- Stepper simulado en el centro -->
+          <div class="flex items-center justify-between px-6 relative my-auto">
+            <div class="absolute top-1/2 left-8 right-8 h-0.5 bg-stone-200 -translate-y-1/2 z-0"></div>
+            <div class="absolute top-1/2 left-8 h-0.5 bg-amber-600 -translate-y-1/2 z-0" style="width: 66%;"></div>
+
+            <!-- Paso 1 -->
+            <div class="relative flex flex-col items-center z-10">
+              <div
+                class="w-8 h-8 rounded-full bg-amber-600 text-white flex items-center justify-center border-4 border-white shadow-sm text-[10px]">
+                1</div>
+              <span
+                class="absolute top-9 text-[8px] font-bold text-stone-700 w-12 text-center leading-none">Cosecha</span>
+            </div>
+            <!-- Paso 2 -->
+            <div class="relative flex flex-col items-center z-10">
+              <div
+                class="w-8 h-8 rounded-full bg-amber-600 text-white flex items-center justify-center border-4 border-white shadow-sm text-[10px]">
+                2</div>
+              <span
+                class="absolute top-9 text-[8px] font-bold text-stone-700 w-12 text-center leading-none">Fermentado</span>
+            </div>
+            <!-- Paso 3 -->
+            <div class="relative flex flex-col items-center z-10">
+              <div
+                class="w-8 h-8 rounded-full bg-stone-200 text-stone-400 flex items-center justify-center border-4 border-white shadow-sm text-[10px]">
+                3</div>
+              <span
+                class="absolute top-9 text-[8px] font-bold text-stone-400 w-12 text-center leading-none">Despacho</span>
             </div>
           </div>
-          <div class="mt-5 grid grid-cols-3 gap-3">
-            <div class="h-16 rounded-2xl bg-slate-100"></div>
-            <div class="h-16 rounded-2xl bg-slate-100"></div>
-            <div class="h-16 rounded-2xl bg-slate-100"></div>
+
+          <!-- Card flotante interactiva simulada abajo -->
+          <div
+            class="bg-white/95 backdrop-blur-sm p-4 rounded-2xl border border-stone-100 shadow-lg flex gap-3 animate-fade-in">
+            <div
+              class="w-10 h-10 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center border border-amber-100 shrink-0">
+              <i class="fas fa-leaf text-sm"></i>
+            </div>
+            <div>
+              <div class="flex justify-between items-center w-full">
+                <h5 class="text-xs font-bold text-stone-800">Cosecha Selectiva</h5>
+                <span class="text-[9px] text-stone-400 bg-stone-100 px-2 py-0.5 rounded">Junín, Perú</span>
+              </div>
+              <p class="text-[11px] text-stone-600 mt-1 leading-normal line-clamp-2">Cosecha manual de los frutos en su
+                óptimo estado de maduración por caficultores locales.</p>
+            </div>
           </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECCIÓN: CÓMO FUNCIONA EL FLUJO DE TRAZABILIDAD -->
+    <section class="mt-20">
+      <h2 class="text-3xl font-bold text-slate-900 md:text-4xl text-center">Un ecosistema de confianza en 3 pasos</h2>
+      <p class="mt-3 text-center text-slate-600 max-w-xl mx-auto">Nuestra arquitectura simplifica el registro técnico,
+        la validación de cumplimiento y el marketing de impacto para tu marca.</p>
+
+      <div class="mt-12 grid grid-cols-1 gap-8 md:grid-cols-3">
+        <div class="rounded-3xl border border-stone-200 bg-white p-8 shadow-sm transition-all hover:shadow-md">
+          <div class="text-3xl font-black text-[#c96b3b]/20 font-serif mb-4">01</div>
+          <h3 class="text-xl font-bold text-slate-900">Registro Local Simplificado</h3>
+          <p class="mt-3 text-slate-600 text-sm leading-relaxed">
+            Asigna un lote a tu producto de origen, asocia el polígono de tu finca (EUDR Compliant) y registra los
+            eventos del proceso de manera intuitiva y adaptada a dispositivos móviles.
+          </p>
+        </div>
+
+        <div class="rounded-3xl border border-stone-200 bg-white p-8 shadow-sm transition-all hover:shadow-md">
+          <div class="text-3xl font-black text-[#c96b3b]/20 font-serif mb-4">02</div>
+          <h3 class="text-xl font-bold text-slate-900">Sello Criptográfico Blockchain</h3>
+          <p class="mt-3 text-slate-600 text-sm leading-relaxed">
+            Una vez finalizada la hoja de ruta, sella el lote. Nuestra tecnología generará un registro permanente e
+            inmutable que no podrá ser modificado ni alterado por nadie, sirviendo de prueba legal y de origen.
+          </p>
+        </div>
+
+        <div class="rounded-3xl border border-stone-200 bg-white p-8 shadow-sm transition-all hover:shadow-md">
+          <div class="text-3xl font-black text-[#c96b3b]/20 font-serif mb-4">03</div>
+          <h3 class="text-xl font-bold text-slate-900">Tienda Web de Impacto</h3>
+          <p class="mt-3 text-slate-600 text-sm leading-relaxed">
+            Publica tus lotes. Tus clientes finales verán la experiencia interactiva en tu catálogo digital, pudiendo
+            rastrear geográficamente cada paso y verificar el hash en el libro contable inmutable.
+          </p>
         </div>
       </div>
     </section>
 
-    <section class="mt-10 grid items-center gap-10 rounded-[2rem] bg-white p-8 shadow-[0_24px_60px_rgba(15,23,42,0.08)] md:grid-cols-[0.95fr_1.05fr] lg:p-12">
-      <div class="relative min-h-[280px] overflow-hidden rounded-[1.75rem] bg-slate-900 p-8">
-        <div class="absolute -left-10 top-8 h-32 w-32 rounded-full bg-[#c96b3b]/20"></div>
-        <div class="absolute bottom-4 right-6 h-40 w-40 rounded-full bg-[#6E8F80]/20"></div>
-        <div class="relative grid h-full place-items-center rounded-[1.5rem] border border-white/10 bg-white/5">
-          <div class="grid gap-4 text-center">
-            <div class="mx-auto h-16 w-16 rounded-full bg-white/10"></div>
-            <div class="space-y-3">
-              <div class="mx-auto h-2 w-28 rounded-full bg-white/80"></div>
-              <div class="mx-auto h-2 w-36 rounded-full bg-white/50"></div>
-              <div class="mx-auto h-2 w-24 rounded-full bg-white/70"></div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div>
-        <p class="text-xs font-bold uppercase tracking-[0.32em] text-[#c96b3b]">Beneficio clave</p>
-        <h2 class="mt-4 font-['Playfair_Display'] text-3xl font-bold text-slate-900 lg:text-5xl">Cada escaneo resume la historia esencial de la operacion</h2>
-        <p class="mt-5 max-w-2xl text-lg leading-8 text-slate-600">La pagina abre una vista simple para que la persona entienda que esta comprando, de donde viene y por que puede confiar sin revisar documentos dispersos.</p>
-        <ul class="mt-6 space-y-3 text-base leading-7 text-slate-700">
-          <li class="flex gap-3"><span class="mt-2 h-2.5 w-2.5 flex-none rounded-full bg-[#c96b3b]"></span><span>Identidad de producto y lote presentada en una sola lectura.</span></li>
-          <li class="flex gap-3"><span class="mt-2 h-2.5 w-2.5 flex-none rounded-full bg-[#c96b3b]"></span><span>Contexto de productor, territorio y evidencia asociado al mismo flujo.</span></li>
-          <li class="flex gap-3"><span class="mt-2 h-2.5 w-2.5 flex-none rounded-full bg-[#c96b3b]"></span><span>Certificaciones y documentos visibles sin cambiar de canal.</span></li>
-          <li class="flex gap-3"><span class="mt-2 h-2.5 w-2.5 flex-none rounded-full bg-[#c96b3b]"></span><span>Salida directa hacia conversion comercial desde una experiencia movil.</span></li>
+    <!-- SECCIÓN: BENEFICIOS DE NEGOCIO -->
+    <section class="mt-20 border-t border-orange-100/50 pt-16">
+      <h2 class="text-3xl font-bold text-slate-900 md:text-4xl">¿Por qué implementar trazabilidad?</h2>
+      <div class="mt-8 grid grid-cols-1 gap-6 md:grid-cols-2">
+        <ul class="flex flex-col gap-4 text-slate-600 text-base leading-relaxed">
+          <li class="flex gap-3 items-start">
+            <i class="fas fa-check-circle text-[#c96b3b] mt-1 shrink-0"></i>
+            <span><strong>Cumplimiento Normativo de Exportación:</strong> Genera de forma rápida la prueba requerida de
+              origen y deforestación para los mercados internacionales más exigentes (EUDR).</span>
+          </li>
+          <li class="flex gap-3 items-start">
+            <i class="fas fa-check-circle text-[#c96b3b] mt-1 shrink-0"></i>
+            <span><strong>Combate a la Falsificación:</strong> Protege la denominación de origen y la reputación de tu
+              marca asociando códigos inmutables únicos (como GTIN formalizado) a lotes físicos.</span>
+          </li>
+        </ul>
+        <ul class="flex flex-col gap-4 text-slate-600 text-base leading-relaxed">
+          <li class="flex gap-3 items-start">
+            <i class="fas fa-check-circle text-[#c96b3b] mt-1 shrink-0"></i>
+            <span><strong>Mayor Valor Percibido (Premium):</strong> Un producto con datos certificados, análisis y fotos
+              del proceso tiene una tasa de conversión superior y justifica precios más elevados en el ecommerce.</span>
+          </li>
+          <li class="flex gap-3 items-start">
+            <i class="fas fa-check-circle text-[#c96b3b] mt-1 shrink-0"></i>
+            <span><strong>Comercio Directo y Transparente:</strong> Demuestra con datos satelitales el valor ético y el
+              pago justo a los caficultores de origen de tu marca.</span>
+          </li>
         </ul>
       </div>
     </section>
 
-    <section class="mt-10 rounded-[2rem] bg-white p-8 shadow-[0_18px_45px_rgba(15,23,42,0.06)] lg:p-10">
-      <h2 class="font-['Playfair_Display'] text-3xl font-bold text-slate-900 lg:text-4xl">Que se visualiza al escanear</h2>
-      <ul class="mt-6 grid gap-4 md:grid-cols-2 text-base leading-7 text-slate-700">
-        <li class="rounded-2xl bg-slate-50 p-5">Identidad de producto y lote.</li>
-        <li class="rounded-2xl bg-slate-50 p-5">Productor y contexto territorial.</li>
-        <li class="rounded-2xl bg-slate-50 p-5">Eventos de trazabilidad y evidencia.</li>
-        <li class="rounded-2xl bg-slate-50 p-5">Certificaciones y documentos asociados.</li>
-      </ul>
-    </section>
-
-    <section class="mt-10 rounded-[2rem] bg-slate-900 p-8 text-white lg:p-10">
-      <h2 class="font-['Playfair_Display'] text-3xl font-bold lg:text-4xl">Transparencia que impulsa conversion</h2>
-      <p class="mt-4 max-w-3xl text-lg leading-8 text-slate-300">Lleva al visitante desde la verificabilidad hasta una accion comercial concreta.</p>
-      <div class="mt-6 flex flex-wrap gap-3">
-        <a href="/pricing-public.html" class="rounded-full bg-[#c96b3b] px-6 py-3 text-sm font-bold uppercase tracking-[0.18em] text-white">Activar trazabilidad QR</a>
-        <a href="/marketplace.html" class="rounded-full border border-white/25 px-6 py-3 text-sm font-bold uppercase tracking-[0.18em] text-white">Explorar marketplace</a>
-        <a href="http://wa.me/51961222040" class="rounded-full border border-white/25 px-6 py-3 text-sm font-bold uppercase tracking-[0.18em] text-white">Hablar por WhatsApp</a>
+    <!-- SECCIÓN: LLAMADA A LA ACCIÓN (CTA) -->
+    <section class="mt-20 rounded-[2rem] bg-slate-900 p-8 text-white lg:p-12 relative overflow-hidden">
+      <div class="absolute top-0 right-0 w-80 h-84 bg-amber-600/10 rounded-full -mr-40 -mt-40 blur-3xl"></div>
+      <div class="relative z-10 flex flex-col md:flex-row justify-between items-center gap-8">
+        <div class="space-y-4 max-w-2xl">
+          <h2 class="font-serif text-3xl font-bold lg:text-4xl">Sube el origen de tu producto al siguiente nivel</h2>
+          <p class="text-slate-300 text-base md:text-lg leading-relaxed">
+            Centraliza la información técnica de tus fincas, analiza bosques con satélites, registra tus lotes
+            inmutablemente y expón widgets de alto impacto visual en tu catálogo público.
+          </p>
+        </div>
+        <div class="flex flex-col sm:flex-row gap-3 w-full md:w-auto shrink-0 justify-end">
+          <a href="/login.html"
+            class="rounded-full bg-[#c96b3b] hover:bg-[#b0572e] text-center px-6 py-4 text-xs font-bold uppercase tracking-[0.18em] text-white transition-all shadow-md">Registrar
+            mis Lotes</a>
+          <a href="http://wa.me/51961222040" target="_blank"
+            class="rounded-full border border-white/20 hover:border-white/50 text-center px-6 py-4 text-xs font-bold uppercase tracking-[0.18em] text-white transition-all">Soporte
+            WhatsApp</a>
+        </div>
       </div>
     </section>
   </main>
 
-    <footer class="bg-stone-800 py-8 text-center text-stone-300 text-sm mt-16">
-        <p>&copy; 2025 Rurulab. Todos los derechos reservados.</p>
-    </footer>
-    <script src="/js/public-nav-loader.js"></script>
+  <script src="/js/public-nav-loader.js" defer></script>
 </body>
 
 </html>
