@@ -45,7 +45,7 @@ const update = async (id, data) => {
     const sql = `
         UPDATE lotes 
         SET codigo_lote = ?, producto_id = ?, estado = ?, updated_at = CURRENT_TIMESTAMP
-        WHERE id = ? AND is_locked = 0
+        WHERE id = ? AND is_locked IS FALSE
     `;
     const params = [data.codigo_lote, data.producto_id, data.estado, id];
     return await db.run(sql, params);
@@ -55,7 +55,7 @@ const update = async (id, data) => {
 const lockLote = async (id, hash) => {
     const sql = `
         UPDATE lotes 
-        SET is_locked = 1, blockchain_hash = ?, estado = 'ACTIVO', updated_at = CURRENT_TIMESTAMP
+        SET is_locked IS TRUE, blockchain_hash = ?, estado = 'ACTIVO', updated_at = CURRENT_TIMESTAMP
         WHERE id = ?
     `;
     return await db.run(sql, [hash, id]);
@@ -63,7 +63,7 @@ const lockLote = async (id, hash) => {
 
 // Eliminar lote (solo si no está bloqueado)
 const deleteLote = async (id) => {
-    const sql = `DELETE FROM lotes WHERE id = ? AND is_locked = 0`;
+    const sql = `DELETE FROM lotes WHERE id = ? AND is_locked IS FALSE`;
     return await db.run(sql, [id]);
 };
 
