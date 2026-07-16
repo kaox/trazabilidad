@@ -964,6 +964,7 @@ app.get('/api/public/products/:productId/traceability', db.getProductTraceabilit
 app.get('/api/public/companies/:userId/landing', landingsController.getCompanyLandingData);
 app.post('/api/public/contact', db.saveContactLead);
 app.get('/api/public/marketplace/products', productosController.getMarketplaceProducts);
+app.get('/api/public/marketplace/products/:id', productosController.getMarketplaceProductById);
 app.get('/api/public/productos/:productoId/trazabilidad', lotesController.getPublicTrazabilidad);
 
 // 8. RUTAS PROTEGIDAS (VISTAS APP)

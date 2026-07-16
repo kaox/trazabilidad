@@ -131,8 +131,7 @@ async function initializeDatabase() {
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     deleted_at TIMESTAMP,
-                    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-                    UNIQUE(user_id, ruc)
+                    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
                 )`);
             console.log("Tabla 'procesadoras' actualizada y lista.");
 

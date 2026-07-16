@@ -464,4 +464,74 @@ const getMarketplaceProductsInternal = async (tipo = 'cafe') => {
     }
 };
 
-module.exports = { getProductos, createProducto, updateProducto, deleteProducto, getPublicProducts, getMarketplaceProducts, getMarketplaceProductsInternal };
+const getMarketplaceProductById = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const row = await ProductoModel.getMarketplaceProductById(id);
+        
+        if (!row) {
+            return res.status(404).json({ error: "Producto no encontrado." });
+        }
+
+        const atributosData = safeJSONParse(row.atributos_dinamicos || '{}');
+        const saboresData = safeJSONParse(row.sabores_json);
+        const perfilData = safeJSONParse(row.perfil_data);
+        const premiosData = safeJSONParse(row.product_premios_json);
+        const imagenesDataRaw = safeJSONParse(row.product_imagenes_json || '[]');
+
+        const imagen = normalizeImage(imagenesDataRaw);
+        const imagenesData = Array.isArray(imagenesDataRaw) ? imagenesDataRaw : (imagenesDataRaw ? [imagenesDataRaw] : []);
+
+        const product = {
+            id: row.product_id,
+            nombre: row.product_name,
+            descripcion: row.product_descripcion,
+            tipo: row.product_tipo,
+            presentacion: row.presentacion,
+            variedad: atributosData.variedad,
+            proceso: atributosData.proceso,
+            nivel_tueste: atributosData.nivel_tueste,
+            puntaje_sca: atributosData.puntaje_sca,
+            grupo_genetico: atributosData.grupo_genetico,
+            porcentaje_cacao: atributosData.porcentaje_cacao,
+            imagen,
+            imagenes_json: imagenesData,
+            sabores: saboresData,
+            perfil: perfilData,
+            premios: Array.isArray(premiosData) ? premiosData : [],
+            precio: row.product_precio,
+            moneda: row.currency_symbol,
+            unidad: row.unit_code,
+            lotes: row.has_traceability ? [{ registry_id: 1 }] : [],
+            finca: row.finca_nombre ? {
+                nombre: row.finca_nombre,
+                pais: row.finca_pais,
+                departamento: row.finca_departamento,
+                provincia: row.finca_provincia,
+                distrito: row.finca_distrito,
+                altura: row.finca_altura,
+                historia: row.finca_historia,
+                productor: row.finca_propietario,
+                coordenadas: row.finca_coordenadas,
+                imagenes: row.finca_imagenes,
+                video: row.finca_video
+            } : null,
+            empresa: {
+                id: row.company_id,
+                nombre: row.company_name,
+                tipo: row.company_type,
+                slug: row.company_slug,
+                logo: row.company_logo,
+                whatsapp: row.company_phone,
+                pais: row.company_pais
+            }
+        };
+
+        res.json({ product });
+    } catch (err) {
+        console.error("Error getMarketplaceProductById:", err);
+        res.status(500).json({ error: err.message });
+    }
+};
+
+module.exports = { getProductos, createProducto, updateProducto, deleteProducto, getPublicProducts, getMarketplaceProducts, getMarketplaceProductsInternal, getMarketplaceProductById };

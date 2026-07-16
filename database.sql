@@ -116,8 +116,7 @@ CREATE TABLE IF NOT EXISTS procesadoras (
     numero_trabajadores INTEGER,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-    UNIQUE(user_id, ruc)
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
 -- Nueva tabla para las sucursales

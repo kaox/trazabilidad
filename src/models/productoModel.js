@@ -217,6 +217,62 @@ const getMarketplaceBaseProducts = async (tipo) => {
     return await db.all(sql, params);
 };
 
+const getMarketplaceProductById = async (productId) => {
+    const sql = `
+        WITH TracedProducts AS (
+            SELECT DISTINCT CAST(b.producto_id AS TEXT) as producto_id
+            FROM batches b
+            JOIN traceability_registry tr ON CAST(b.id AS TEXT) = CAST(tr.batch_id AS TEXT)
+            WHERE CAST(b.producto_id AS TEXT) = ?
+        )
+        SELECT
+            p.id as product_id,
+            p.user_id as company_id,
+            p.nombre as product_name,
+            p.imagen_url as product_imagen,
+            p.descripcion as product_descripcion,
+            p.peso as presentacion,
+            p.tipo_producto as product_tipo,
+            p.atributos_dinamicos,
+            p.premios_json as product_premios_json,
+            p.imagenes_json as product_imagenes_json,
+            p.precio as product_precio,
+            c.symbol as currency_symbol,
+            u_measure.code as unit_code,
+            f.nombre_finca as finca_nombre,
+            f.pais as finca_pais,
+            f.departamento as finca_departamento,
+            f.provincia as finca_provincia,
+            f.distrito as finca_distrito,
+            f.altura as finca_altura,
+            f.historia as finca_historia,
+            f.propietario as finca_propietario,
+            f.coordenadas as finca_coordenadas,
+            f.imagenes_json as finca_imagenes,
+            f.video_link as finca_video,
+            perf.perfil_data as perfil_data,
+            perf.tipo as perfil_tipo,
+            rueda.notas_json as sabores_json,
+            rueda.tipo as sabores_tipo,
+            cp.name as company_name,
+            cp.company_type as company_type,
+            cp.contact_phone as company_phone,
+            COALESCE(cp.logo_url, u.company_logo) as company_logo,
+            CASE WHEN tp.producto_id IS NOT NULL THEN 1 ELSE 0 END as has_traceability
+        FROM productos p
+        JOIN users u ON p.user_id = u.id
+        LEFT JOIN currencies c ON p.currency_id = c.id
+        LEFT JOIN units_of_measure u_measure ON p.unit_id = u_measure.id
+        LEFT JOIN fincas f ON p.finca_id = f.id
+        LEFT JOIN company_profiles cp ON u.id = cp.user_id
+        LEFT JOIN perfiles perf ON p.perfil_sensorial_id = perf.id
+        LEFT JOIN ruedas_sabores rueda ON p.rueda_id = rueda.id
+        LEFT JOIN TracedProducts tp ON CAST(p.id AS TEXT) = tp.producto_id
+        WHERE p.id = ? AND p.is_published IS TRUE AND p.deleted_at IS NULL
+    `;
+    return await db.get(sql, [productId, productId]);
+};
+
 const getPublicProductsWithProfilesByUserId = async (userId) => {
     const sql = `
         SELECT 
@@ -308,5 +364,6 @@ module.exports = {
     getPublicProductsWithProfilesByUserId,
     getBasicPublicProductsByUserId,
     getByShortId,
-    getByGtin
+    getByGtin,
+    getMarketplaceProductById
 };

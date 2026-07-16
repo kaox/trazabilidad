@@ -15,7 +15,7 @@ CREATE TABLE IF NOT EXISTS catalogo_etapas (
 -- 2. TABLA DE LOTES (Batches de Trazabilidad)
 CREATE TABLE IF NOT EXISTS lotes (
     id TEXT PRIMARY KEY, -- UUID
-    codigo_lote TEXT NOT NULL UNIQUE,
+    codigo_lote TEXT NOT NULL,
     
     -- Relación ajustada a TEXT para coincidir con productos.id
     producto_id TEXT REFERENCES productos(id) ON DELETE CASCADE, 
@@ -27,7 +27,9 @@ CREATE TABLE IF NOT EXISTS lotes (
     is_locked BOOLEAN DEFAULT FALSE,
     
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    
+    UNIQUE(producto_id, codigo_lote)
 );
 
 -- 3. TABLA DE ETAPAS (Eventos de la ruta del lote)

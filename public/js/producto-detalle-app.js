@@ -194,14 +194,14 @@ const app = {
 
     async fetchData() {
         try {
-            const [productsRes, flavorsRes, perfilesRes] = await Promise.all([
-                fetch('/api/public/marketplace/products'),
+            const [productRes, flavorsRes, perfilesRes] = await Promise.all([
+                fetch(`/api/public/marketplace/products/${this.productId}`),
                 fetch('/data/flavor-wheels.json'),
                 fetch('/data/perfiles.json')
             ]);
 
-            const productsData = await productsRes.json();
-            this.product = productsData.products.find(p => p.id === this.productId);
+            const productData = await productRes.json();
+            this.product = productData.product;
             this.flavorWheels = await flavorsRes.json();
             this.sensoryConfig = await perfilesRes.json();
 
