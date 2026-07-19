@@ -460,6 +460,18 @@ async function initializeDatabase() {
                 )`);
             console.log("Tabla 'suggested_companies' creada.");
 
+            await runQuery(db, `
+                CREATE TABLE IF NOT EXISTS suggested_products (
+                    id TEXT PRIMARY KEY,
+                    suggested_company_id TEXT NOT NULL REFERENCES suggested_companies(id) ON DELETE CASCADE,
+                    nombre TEXT NOT NULL,
+                    tipo_producto TEXT,
+                    peso TEXT,
+                    imagen_url TEXT,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )`);
+            console.log("Tabla 'suggested_products' creada.");
+
             // --- NUEVA TABLA: UNIDADES DE MEDIDA ---
             await runQuery(db, `
                 CREATE TABLE IF NOT EXISTS units_of_measure (

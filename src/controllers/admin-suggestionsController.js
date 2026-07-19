@@ -313,6 +313,63 @@ async function registerUserAndClaim(suggestion, google_token, usuario, password,
     res.json({ success: true, redirect: '/app/dashboard', token: jwtToken });
 }
 
+// --- SUGGESTED PRODUCTS ---
+
+const getSuggestedProducts = async (req, res) => {
+    try {
+        const { companyId } = req.params;
+        const products = await SuggestionModel.getProductsByCompanyId(companyId);
+        res.json(products);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};
+
+const createSuggestedProduct = async (req, res) => {
+    try {
+        const { companyId } = req.params;
+        const { nombre, tipo_producto, peso, imagen_url } = req.body;
+
+        // Upload image to Supabase if it's a base64 string
+        let finalImageUrl = null;
+        if (imagen_url && imagen_url.startsWith('data:image/')) {
+            const uploaded = await processImagesArray([imagen_url], 'suggested-products', companyId, 'supabase');
+            finalImageUrl = uploaded[0] || null;
+        } else if (imagen_url && imagen_url.startsWith('http')) {
+            finalImageUrl = imagen_url;
+        }
+
+        const id = crypto.randomUUID();
+        await SuggestionModel.createProduct({
+            id,
+            suggested_company_id: companyId,
+            nombre,
+            tipo_producto: tipo_producto || null,
+            peso: peso || null,
+            imagen_url: finalImageUrl
+        });
+
+        res.status(201).json({ id, imagen_url: finalImageUrl });
+    } catch (err) {
+        console.error('Error creando producto sugerido:', err);
+        res.status(500).json({ error: err.message });
+    }
+};
+
+const deleteSuggestedProduct = async (req, res) => {
+    try {
+        const { productId } = req.params;
+        const product = await SuggestionModel.getProductById(productId);
+        if (product && product.imagen_url && product.imagen_url.startsWith('http')) {
+            await deleteImagesArray([product.imagen_url], 'supabase');
+        }
+        await SuggestionModel.deleteProductById(productId);
+        res.status(204).send();
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};
+
 module.exports = {
     getAdminSuggestions,
     deleteSuggestion,
@@ -321,5 +378,8 @@ module.exports = {
     handleMagicLogin,
     getMagicLinkData,
     completeMagicRegistration,
-    registerAndClaimPublic
+    registerAndClaimPublic,
+    getSuggestedProducts,
+    createSuggestedProduct,
+    deleteSuggestedProduct
 };

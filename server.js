@@ -1076,6 +1076,10 @@ app.get('/api/admin/suggestions', authenticateApi, checkAdmin, suggestionsContro
 app.delete('/api/admin/suggestions/:id', authenticateApi, checkAdmin, suggestionsController.deleteSuggestion);
 app.post('/api/admin/suggestions/:id/magic-link', authenticateApi, checkAdmin, suggestionsController.generateMagicLink);
 app.put('/api/admin/suggestions/:id', authenticateApi, checkAdmin, suggestionsController.updateSuggestion);
+// Suggested Products
+app.get('/api/admin/suggestions/:companyId/products', authenticateApi, checkAdmin, suggestionsController.getSuggestedProducts);
+app.post('/api/admin/suggestions/:companyId/products', authenticateApi, checkAdmin, suggestionsController.createSuggestedProduct);
+app.delete('/api/admin/suggestions/:companyId/products/:productId', authenticateApi, checkAdmin, suggestionsController.deleteSuggestedProduct);
 
 // Blends & Recetas (Profesional)
 app.get('/api/blends', authenticateApi, checkSubscription('profesional'), db.getBlends);

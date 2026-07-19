@@ -92,6 +92,30 @@ const updateById = async (id, data) => {
     ]);
 };
 
+// --- SUGGESTED PRODUCTS ---
+
+// Obtener todos los productos de una empresa sugerida
+const getProductsByCompanyId = async (companyId) => {
+    return await db.all('SELECT * FROM suggested_products WHERE suggested_company_id = ? ORDER BY created_at DESC', [companyId]);
+};
+
+// Crear producto sugerido
+const createProduct = async (data) => {
+    const { id, suggested_company_id, nombre, tipo_producto, peso, imagen_url } = data;
+    const sql = `INSERT INTO suggested_products (id, suggested_company_id, nombre, tipo_producto, peso, imagen_url) VALUES (?, ?, ?, ?, ?, ?)`;
+    return await db.run(sql, [id, suggested_company_id, nombre, tipo_producto, peso, imagen_url || null]);
+};
+
+// Eliminar producto sugerido
+const deleteProductById = async (id) => {
+    return await db.run('DELETE FROM suggested_products WHERE id = ?', [id]);
+};
+
+// Obtener producto por id
+const getProductById = async (id) => {
+    return await db.get('SELECT * FROM suggested_products WHERE id = ?', [id]);
+};
+
 module.exports = {
     getAll,
     deleteById,
@@ -100,5 +124,9 @@ module.exports = {
     findUserBySuggestionId,
     createUserFromSuggestion,
     markAsClaimed,
-    updateById
+    updateById,
+    getProductsByCompanyId,
+    createProduct,
+    deleteProductById,
+    getProductById
 };

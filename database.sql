@@ -521,6 +521,17 @@ CREATE TABLE IF NOT EXISTS suggested_companies (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Productos sugeridos (recomendaciones de productos de empresas no registradas)
+CREATE TABLE IF NOT EXISTS suggested_products (
+    id TEXT PRIMARY KEY,
+    suggested_company_id TEXT NOT NULL REFERENCES suggested_companies(id) ON DELETE CASCADE,
+    nombre TEXT NOT NULL,
+    tipo_producto TEXT, -- 'cafe', 'cacao', 'miel', 'otro'
+    peso TEXT,          -- Presentación, ej: '250g', '1kg'
+    imagen_url TEXT,    -- URL pública en Supabase Storage (WebP, max 1000px)
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Agregar campo para controlar la cantidad de insumo utilizada en este proceso
 ALTER TABLE batches 
 ADD COLUMN IF NOT EXISTS input_quantity NUMERIC(10, 2) DEFAULT 0;

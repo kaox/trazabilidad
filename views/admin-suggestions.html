@@ -69,7 +69,84 @@
                 </div>
             </div>
 
+            <!-- Panel de Productos de Empresa Sugerida -->
+            <div id="products-panel" class="hidden bg-white rounded-xl shadow border border-amber-200 overflow-hidden mt-6">
+                <div class="p-6 border-b border-gray-100 flex justify-between items-center bg-amber-50">
+                    <div>
+                        <h2 class="text-lg font-bold text-amber-900">📦 Productos de <span id="products-panel-company-name" class="font-black"></span></h2>
+                        <p class="text-xs text-amber-700 mt-0.5">Productos recomendados de esta empresa sugerida</p>
+                    </div>
+                    <div class="flex gap-2 items-center">
+                        <button onclick="openAddProductModal()" class="bg-amber-800 hover:bg-amber-900 text-white text-sm font-bold px-4 py-2 rounded-lg shadow transition flex items-center gap-2">
+                            <i class="fas fa-plus"></i> Agregar Producto
+                        </button>
+                        <button onclick="closeProductsPanel()" class="text-gray-400 hover:text-gray-700 p-2 transition" title="Cerrar">
+                            <i class="fas fa-times text-lg"></i>
+                        </button>
+                    </div>
+                </div>
+                <div id="products-list" class="p-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                    <p class="text-gray-400 text-sm col-span-full text-center">Cargando productos...</p>
+                </div>
+            </div>
+
         </main>
+    </div>
+
+    <!-- Modal: Agregar Producto Sugerido -->
+    <div id="add-product-modal" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center z-50">
+        <div class="bg-white p-6 rounded-xl shadow-2xl max-w-md w-full mx-4 relative">
+            <button onclick="closeAddProductModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+            <h3 class="text-xl font-bold text-gray-900 mb-5">Agregar Producto</h3>
+
+            <form id="prod-form" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Nombre del Producto *</label>
+                    <input type="text" id="prod-nombre" required placeholder="Ej: Café Washed Natural"
+                        class="w-full p-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-400">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Tipo</label>
+                        <select id="prod-tipo" class="w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm">
+                            <option value="">Seleccionar...</option>
+                            <option value="cafe">Café</option>
+                            <option value="cacao">Cacao</option>
+                            <option value="miel">Miel</option>
+                            <option value="otro">Otro</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Presentación / Peso</label>
+                        <input type="text" id="prod-peso" placeholder="Ej: 250g, 1kg"
+                            class="w-full p-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-400">
+                    </div>
+                </div>
+
+                <!-- Imagen del producto -->
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 uppercase mb-2">Imagen del Producto</label>
+                    <input type="file" id="prod-img-file" accept="image/*"
+                        class="block w-full text-sm text-gray-500 file:mr-3 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-amber-50 file:text-amber-700 hover:file:bg-amber-100 transition cursor-pointer">
+                    <p class="text-xs text-gray-400 mt-1">Se convertirá a WebP con ancho máximo de 1000px automáticamente.</p>
+                    <input type="hidden" id="prod-img-base64">
+                    <div id="prod-img-preview-container" class="hidden mt-3">
+                        <img id="prod-img-preview" src="" alt="Vista previa"
+                            class="w-full max-h-48 object-contain rounded-lg border border-gray-200 bg-gray-50">
+                    </div>
+                </div>
+
+                <div class="pt-2 flex justify-end gap-3">
+                    <button type="button" onclick="closeAddProductModal()"
+                        class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg font-medium transition">Cancelar</button>
+                    <button type="submit"
+                        class="px-6 py-2 bg-amber-800 text-white hover:bg-amber-900 rounded-lg font-bold shadow-md transition">Guardar
+                        Producto</button>
+                </div>
+            </form>
+        </div>
     </div>
 
     <!-- Modal Magic Link -->
@@ -274,10 +351,14 @@
                                     ${statusLabel[s.status] || s.status}
                                 </span>
                             </td>
-                            <td class="p-4 text-right whitespace-nowrap">
+                                <td class="p-4 text-right whitespace-nowrap">
                                 <a href="${landingUrl}" target="_blank" class="text-gray-400 hover:text-blue-600 p-2 transition mr-1" title="Ver Página">
                                     <i class="fas fa-external-link-alt"></i>
                                 </a>
+                                <button onclick="openProductsPanel('${s.id}', '${(s.name || '').replace(/'/g, "\\'")}')"
+                                    class="text-gray-400 hover:text-amber-600 p-2 transition mr-1" title="Gestionar Productos">
+                                    <i class="fas fa-box"></i>
+                                </button>
                                 <button onclick="openEditModal('${s.id}')" class="text-gray-400 hover:text-amber-600 p-2 transition mr-1" title="Editar Información">
                                     <i class="fas fa-pen"></i>
                                 </button>
@@ -477,6 +558,143 @@
                 alert("Enlace copiado al portapapeles");
             });
         }
+
+        // ============================================================
+        // --- SUGGESTED PRODUCTS LOGIC ---
+        // ============================================================
+
+        let currentCompanyId = null;
+        let currentCompanyName = null;
+
+        function openProductsPanel(companyId, companyName) {
+            currentCompanyId = companyId;
+            currentCompanyName = companyName;
+            document.getElementById('products-panel-company-name').textContent = companyName;
+            document.getElementById('products-panel').classList.remove('hidden');
+            document.getElementById('products-panel').scrollIntoView({ behavior: 'smooth', block: 'start' });
+            loadProducts();
+        }
+
+        function closeProductsPanel() {
+            document.getElementById('products-panel').classList.add('hidden');
+            currentCompanyId = null;
+        }
+
+        async function loadProducts() {
+            const container = document.getElementById('products-list');
+            container.innerHTML = '<p class="text-gray-400 text-sm col-span-full text-center"><i class="fas fa-spinner fa-spin"></i> Cargando...</p>';
+            try {
+                const res = await fetch(`/api/admin/suggestions/${currentCompanyId}/products`);
+                const products = await res.json();
+                if (!products.length) {
+                    container.innerHTML = '<p class="text-gray-400 text-sm col-span-full text-center py-6">No hay productos. Agrega el primero.</p>';
+                    return;
+                }
+                container.innerHTML = products.map(p => `
+                    <div class="border border-gray-200 rounded-xl overflow-hidden bg-white shadow-sm hover:shadow-md transition flex flex-col">
+                        <div class="h-40 bg-gray-100 flex items-center justify-center overflow-hidden">
+                            ${p.imagen_url
+                    ? `<img src="${p.imagen_url}" alt="${p.nombre}" class="w-full h-full object-cover">`
+                    : `<i class="fas fa-image text-gray-300 text-4xl"></i>`
+                }
+                        </div>
+                        <div class="p-3 flex flex-col flex-1">
+                            <p class="font-bold text-gray-800 text-sm truncate">${p.nombre}</p>
+                            <div class="flex gap-1 mt-1 flex-wrap">
+                                ${p.tipo_producto ? `<span class="text-xs bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full font-semibold">${p.tipo_producto}</span>` : ''}
+                                ${p.peso ? `<span class="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">${p.peso}</span>` : ''}
+                            </div>
+                            <button onclick="deleteProduct('${p.id}')" class="mt-auto pt-3 text-xs text-red-500 hover:text-red-700 font-medium transition flex items-center gap-1 self-start">
+                                <i class="fas fa-trash"></i> Eliminar
+                            </button>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (e) {
+                container.innerHTML = '<p class="text-red-500 text-sm col-span-full text-center">Error al cargar productos.</p>';
+            }
+        }
+
+        async function deleteProduct(productId) {
+            if (!confirm('¿Eliminar este producto?')) return;
+            try {
+                await fetch(`/api/admin/suggestions/${currentCompanyId}/products/${productId}`, { method: 'DELETE' });
+                loadProducts();
+            } catch (e) { alert('Error al eliminar'); }
+        }
+
+        // --- ADD PRODUCT MODAL ---
+        function openAddProductModal() {
+            document.getElementById('add-product-modal').classList.remove('hidden');
+            document.getElementById('prod-form').reset();
+            document.getElementById('prod-img-preview-container').classList.add('hidden');
+            document.getElementById('prod-img-base64').value = '';
+        }
+
+        function closeAddProductModal() {
+            document.getElementById('add-product-modal').classList.add('hidden');
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('prod-img-file').addEventListener('change', async function (e) {
+                const file = e.target.files[0];
+                if (!file) return;
+                try {
+                    // compressImage from file-utils.js — converts to WebP, max 1000px wide
+                    const base64 = await compressImage(file, { maxWidth: 1000, maxHeight: 1000, quality: 0.85 });
+                    document.getElementById('prod-img-base64').value = base64;
+                    document.getElementById('prod-img-preview').src = base64;
+                    document.getElementById('prod-img-preview-container').classList.remove('hidden');
+                } catch (err) {
+                    console.error('Error comprimiendo imagen:', err);
+                    // Fallback: read as-is
+                    const reader = new FileReader();
+                    reader.onload = ev => {
+                        document.getElementById('prod-img-base64').value = ev.target.result;
+                        document.getElementById('prod-img-preview').src = ev.target.result;
+                        document.getElementById('prod-img-preview-container').classList.remove('hidden');
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+
+            document.getElementById('prod-form').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                if (!currentCompanyId) { alert('Error: no hay empresa seleccionada'); return; }
+
+                const btn = e.target.querySelector('button[type="submit"]');
+                const orig = btn.innerText;
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
+
+                const payload = {
+                    nombre: document.getElementById('prod-nombre').value,
+                    tipo_producto: document.getElementById('prod-tipo').value || null,
+                    peso: document.getElementById('prod-peso').value || null,
+                    imagen_url: document.getElementById('prod-img-base64').value || null
+                };
+
+                try {
+                    const res = await fetch(`/api/admin/suggestions/${currentCompanyId}/products`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    if (res.ok) {
+                        closeAddProductModal();
+                        loadProducts();
+                    } else {
+                        const err = await res.json();
+                        alert('Error: ' + (err.error || 'Desconocido'));
+                    }
+                } catch (err) {
+                    alert('Error de conexión');
+                } finally {
+                    btn.disabled = false;
+                    btn.innerText = orig;
+                }
+            });
+        });
     </script>
     <script src="/js/nav-loader.js" defer></script>
 </body>
