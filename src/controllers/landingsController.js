@@ -3,10 +3,12 @@ const ProductoModel = require('../models/productoModel');
 const RegistroModel = require('../models/registroModel');
 const FincaModel = require('../models/fincaModel');
 const ProcesadoraModel = require('../models/procesadoraModel');
+const SuggestionModel = require('../models/admin-suggestions-model');
 const { safeJSONParse } = require('../utils/helpers');
 const { getCache, setCache } = require('../utils/cache');
 
 const getCompanyLandingData = async (req, res) => {
+    console.log("Suggested Company");
     const { userId } = req.params;
 
     try {
@@ -14,8 +16,23 @@ const getCompanyLandingData = async (req, res) => {
 
         // --- CASO A: EMPRESA SUGERIDA ---
         if (isSuggested) {
+            console.log("Suggested Company", userId);
             const suggestion = await EmpresaModel.getSuggestedById(userId);
             if (!suggestion) return res.status(404).json({ error: "Sugerencia no encontrada" });
+
+            const rawSuggestedProducts = await SuggestionModel.getProductsByCompanyId(userId);
+            const suggestedProducts = rawSuggestedProducts.map(p => ({
+                id: p.id,
+                nombre: p.nombre,
+                tipo_producto: p.tipo_producto,
+                peso: p.peso,
+                unidad: '', // Presentación ya está en peso
+                imagenes: p.imagen_url ? [p.imagen_url] : [],
+                recent_batches: [],
+                perfil_data: {}
+            }));
+
+            console.log("Suggested products: ", suggestedProducts);
 
             return res.json({
                 user: {
@@ -40,12 +57,12 @@ const getCompanyLandingData = async (req, res) => {
                     social_instagram: suggestion.social_instagram,
                     social_facebook: suggestion.social_facebook
                 },
-                products: []
+                products: suggestedProducts
             });
         }
 
         // --- CASO B: EMPRESA VERIFICADA ---
-        
+
         // 1. Perfil Consolidado (Primera llamada para saber qué tipo de entidad buscar luego)
         const userRow = await EmpresaModel.getVerifiedProfileByUserId(userId);
         if (!userRow) return res.status(404).json({ error: "Empresa no encontrada" });
@@ -146,6 +163,19 @@ const _fetchCompanyLandingDataFromDB = async (userId) => {
         if (isSuggested) {
             const suggestion = await EmpresaModel.getSuggestedById(userId);
             if (!suggestion) return null;
+
+            const rawSuggestedProducts = await SuggestionModel.getProductsByCompanyId(userId);
+            const suggestedProducts = rawSuggestedProducts.map(p => ({
+                id: p.id,
+                nombre: p.nombre,
+                tipo_producto: p.tipo_producto,
+                peso: p.peso,
+                unidad: '', // Presentación ya está en peso
+                imagenes: p.imagen_url ? [p.imagen_url] : [],
+                recent_batches: [],
+                perfil_data: {}
+            }));
+
             return {
                 user: {
                     id: suggestion.id, name: suggestion.name, logo: suggestion.logo,
@@ -161,7 +191,7 @@ const _fetchCompanyLandingDataFromDB = async (userId) => {
                     imagenes: [], certificaciones: [], premios: [], historia: null,
                     social_instagram: suggestion.social_instagram, social_facebook: suggestion.social_facebook
                 },
-                products: []
+                products: suggestedProducts
             };
         }
 

@@ -193,6 +193,7 @@ const app = {
                 // Limpiar para evitar problemas si se navega a otra empresa sin recargar (aunque sea raro en esta app)
                 // window.INITIAL_DATA = null; 
             } else {
+                const res = await fetch(`/api/public/companies/${userId}/landing`);
                 data = await res.json();
             }
 
@@ -513,7 +514,7 @@ const app = {
                             <a href="#tienda" class="text-accent font-bold hover:underline">Ver todo el catálogo <i class="fas fa-arrow-right ml-1"></i></a>
                         </div>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            ${isSuggested ? tiendaHTML : this.renderProductCards(products.slice(0, 4), user.celular || user.contact_phone, user.id, user.name)}
+                            ${(isSuggested && (!products || products.length === 0)) ? tiendaHTML : this.renderProductCards(products.slice(0, 4), user.celular || user.contact_phone, user.id, user.name)}
                             ${isSuggested ? fomoHTML : ''}
                         </div>
                     </div>
