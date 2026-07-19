@@ -785,10 +785,17 @@ const app = {
                     </div>
 
                     <div class="mt-auto flex flex-col gap-3">
-                        <a id="whatsapp-btn" href="${buyLink}" target="_blank" onclick="app.trackEvent('buy_click', '${userId}', '${prod.id}')" class="btn-accent py-3 rounded-2xl font-bold text-sm shadow-sm flex items-center justify-center gap-2">
-                            <i class="fab fa-whatsapp"></i> Comprar ahora
-                        </a>
-                        <a href="${detailLink}" class="block w-full text-center bg-stone-100 hover:bg-stone-200 text-stone-700 py-2.5 rounded-xl font-bold text-sm transition">Ver detalles</a>
+                        ${this.state.landingData?.user?.is_suggested ? `
+                            <button disabled class="w-full bg-stone-200 text-stone-400 py-3 rounded-2xl font-bold text-sm shadow-sm flex items-center justify-center gap-2 cursor-not-allowed" title="Reclama tu perfil para activar ventas">
+                                <i class="fab fa-whatsapp"></i> Comprar ahora (No disponible)
+                            </button>
+                            <button disabled class="block w-full text-center bg-stone-100 text-stone-400 py-2.5 rounded-xl font-bold text-sm cursor-not-allowed">Ver detalles (No disponible)</button>
+                        ` : `
+                            <a id="whatsapp-btn" href="${buyLink}" target="_blank" onclick="app.trackEvent('buy_click', '${userId}', '${prod.id}')" class="btn-accent py-3 rounded-2xl font-bold text-sm shadow-sm flex items-center justify-center gap-2">
+                                <i class="fab fa-whatsapp"></i> Comprar ahora
+                            </a>
+                            <a href="${detailLink}" class="block w-full text-center bg-stone-100 hover:bg-stone-200 text-stone-700 py-2.5 rounded-xl font-bold text-sm transition">Ver detalles</a>
+                        `}
                     </div>
                 </div>
             </div>`;
@@ -1028,12 +1035,21 @@ const app = {
                                 ${hasTraceability ? `<i class="fas fa-cubes text-emerald-500"></i> ${prod.recent_batches.length} Lotes` : ''}
                             </span>
                             <div class="flex gap-2">
-                                <a href="${detailLink}" class="bg-amber-100 hover:bg-amber-200 text-amber-900 border border-amber-200 hover:border-amber-300 px-4 py-2 rounded-xl text-sm font-bold transition flex items-center shadow-sm">
-                                    Ver Detalle
-                                </a>
-                                <a href="${buyLink}" target="_blank" class="bg-stone-900 hover:bg-stone-800 text-white px-5 py-2 rounded-xl text-sm font-bold transition flex items-center gap-2 shadow-lg">
-                                    <i class="fas fa-shopping-cart"></i> Comprar
-                                </a>
+                                ${this.state.landingData?.user?.is_suggested ? `
+                                    <button disabled class="bg-stone-100 text-stone-400 border border-stone-200 px-4 py-2 rounded-xl text-sm font-bold cursor-not-allowed shadow-sm" title="Reclama tu perfil">
+                                        Detalle (No disponible)
+                                    </button>
+                                    <button disabled class="bg-stone-200 text-stone-400 px-5 py-2 rounded-xl text-sm font-bold flex items-center gap-2 cursor-not-allowed shadow-sm">
+                                        <i class="fas fa-shopping-cart"></i> Comprar (No disp.)
+                                    </button>
+                                ` : `
+                                    <a href="${detailLink}" class="bg-amber-100 hover:bg-amber-200 text-amber-900 border border-amber-200 hover:border-amber-300 px-4 py-2 rounded-xl text-sm font-bold transition flex items-center shadow-sm">
+                                        Ver Detalle
+                                    </a>
+                                    <a href="${buyLink}" target="_blank" class="bg-stone-900 hover:bg-stone-800 text-white px-5 py-2 rounded-xl text-sm font-bold transition flex items-center gap-2 shadow-lg">
+                                        <i class="fas fa-shopping-cart"></i> Comprar
+                                    </a>
+                                `}
                             </div>
                         </div>
                     </div>
