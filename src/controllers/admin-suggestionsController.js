@@ -7,6 +7,8 @@ const { processImagesArray, deleteImagesArray } = require('../utils/storage');
 const { safeJSONParse } = require('../utils/helpers');
 const { OAuth2Client } = require('google-auth-library');
 
+
+const provider = 'supabase';
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
 const client = new OAuth2Client(GOOGLE_CLIENT_ID);
 
@@ -31,7 +33,6 @@ const deleteSuggestion = async (req, res) => {
         const allSuggestions = await SuggestionModel.getAll();
         const suggestion = allSuggestions.find(s => s.id == id);
         if (suggestion && suggestion.logo && suggestion.logo.startsWith('http')) {
-            const provider = 'vercel';
             await deleteImagesArray([suggestion.logo], provider);
         }
 
@@ -46,7 +47,6 @@ const updateSuggestion = async (req, res) => {
     const { id } = req.params;
     try {
         if (req.body.logo && req.body.logo.startsWith('data:image/')) {
-            const provider = 'vercel';
             const uploadResult = await processImagesArray([req.body.logo], 'suggested-logos', `admin-${id}`, provider);
 
             if (uploadResult && uploadResult.length > 0) {
