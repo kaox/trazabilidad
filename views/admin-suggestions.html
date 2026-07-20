@@ -6,7 +6,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Sugerencias - Ruru Lab</title>
     <script src="/auth.js"></script>
-    <script src="/js/file-utils.js"></script>
+    <script type="module">
+        import { compressImage } from '/js/file-utils.js';
+        window.compressImage = compressImage; // Para hacerla accesible globalmente en tus eventos
+    </script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link
         href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Playfair+Display:wght@700&display=swap"
@@ -70,17 +73,21 @@
             </div>
 
             <!-- Panel de Productos de Empresa Sugerida -->
-            <div id="products-panel" class="hidden bg-white rounded-xl shadow border border-amber-200 overflow-hidden mt-6">
+            <div id="products-panel"
+                class="hidden bg-white rounded-xl shadow border border-amber-200 overflow-hidden mt-6">
                 <div class="p-6 border-b border-gray-100 flex justify-between items-center bg-amber-50">
                     <div>
-                        <h2 class="text-lg font-bold text-amber-900">📦 Productos de <span id="products-panel-company-name" class="font-black"></span></h2>
+                        <h2 class="text-lg font-bold text-amber-900">📦 Productos de <span
+                                id="products-panel-company-name" class="font-black"></span></h2>
                         <p class="text-xs text-amber-700 mt-0.5">Productos recomendados de esta empresa sugerida</p>
                     </div>
                     <div class="flex gap-2 items-center">
-                        <button onclick="openAddProductModal()" class="bg-amber-800 hover:bg-amber-900 text-white text-sm font-bold px-4 py-2 rounded-lg shadow transition flex items-center gap-2">
+                        <button onclick="openAddProductModal()"
+                            class="bg-amber-800 hover:bg-amber-900 text-white text-sm font-bold px-4 py-2 rounded-lg shadow transition flex items-center gap-2">
                             <i class="fas fa-plus"></i> Agregar Producto
                         </button>
-                        <button onclick="closeProductsPanel()" class="text-gray-400 hover:text-gray-700 p-2 transition" title="Cerrar">
+                        <button onclick="closeProductsPanel()" class="text-gray-400 hover:text-gray-700 p-2 transition"
+                            title="Cerrar">
                             <i class="fas fa-times text-lg"></i>
                         </button>
                     </div>
@@ -130,7 +137,8 @@
                     <label class="block text-xs font-bold text-gray-500 uppercase mb-2">Imagen del Producto</label>
                     <input type="file" id="prod-img-file" accept="image/*"
                         class="block w-full text-sm text-gray-500 file:mr-3 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-amber-50 file:text-amber-700 hover:file:bg-amber-100 transition cursor-pointer">
-                    <p class="text-xs text-gray-400 mt-1">Se convertirá a WebP con ancho máximo de 1000px automáticamente.</p>
+                    <p class="text-xs text-gray-400 mt-1">Se convertirá a WebP con ancho máximo de 1000px
+                        automáticamente.</p>
                     <input type="hidden" id="prod-img-base64">
                     <div id="prod-img-preview-container" class="hidden mt-3">
                         <img id="prod-img-preview" src="" alt="Vista previa"
@@ -594,9 +602,9 @@
                     <div class="border border-gray-200 rounded-xl overflow-hidden bg-white shadow-sm hover:shadow-md transition flex flex-col">
                         <div class="h-40 bg-gray-100 flex items-center justify-center overflow-hidden">
                             ${p.imagen_url
-                    ? `<img src="${p.imagen_url}" alt="${p.nombre}" class="w-full h-full object-cover">`
-                    : `<i class="fas fa-image text-gray-300 text-4xl"></i>`
-                }
+                        ? `<img src="${p.imagen_url}" alt="${p.nombre}" class="w-full h-full object-cover">`
+                        : `<i class="fas fa-image text-gray-300 text-4xl"></i>`
+                    }
                         </div>
                         <div class="p-3 flex flex-col flex-1">
                             <p class="font-bold text-gray-800 text-sm truncate">${p.nombre}</p>
