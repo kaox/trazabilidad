@@ -73,6 +73,17 @@ const getPublicLotesByProducto = async (productoId) => {
     return await db.all(sql, [productoId]);
 };
 
+const countLotes = async (userId) => {
+    const sql = `
+        SELECT COUNT(*) as total 
+        FROM lotes l
+        JOIN productos p ON l.producto_id = p.id
+        WHERE p.user_id = ?
+    `;
+    const row = await db.get(sql, [userId]);
+    return row && row.total ? parseInt(row.total, 10) : 0;
+};
+
 module.exports = {
     getAllByUser,
     getById,
@@ -80,5 +91,6 @@ module.exports = {
     update,
     lockLote,
     delete: deleteLote,
-    getPublicLotesByProducto
+    getPublicLotesByProducto,
+    countLotes
 };

@@ -33,6 +33,9 @@ const etapasRoutes = require('./src/routes/etapasRoutes');
 const { renderLanding, renderCompanyList, renderMarketplaceProducts } = require('./src/utils/landingRenderer');
 const { buildProductUrl, extractShortId, toSlug } = require('./src/utils/productSlug');
 const ProductoModel = require('./src/models/productoModel');
+const FincaModel = require('./src/models/fincaModel');
+const ProcesadoraModel = require('./src/models/procesadoraModel');
+const LoteModel = require('./src/models/loteModel');
 const perfilesRoutes = require('./src/routes/perfilesRoutes');
 const ruedasRoutes = require('./src/routes/ruedasRoutes');
 const widgetRoutes = require('./src/routes/widgetRoutes');
@@ -375,21 +378,75 @@ const authenticate = (req, res, next, isPageRequest = false) => {
 const authenticatePage = (req, res, next) => authenticate(req, res, next, true);
 const authenticateApi = (req, res, next) => authenticate(req, res, next, false);
 
-const checkSubscription = (requiredTier) => async (req, res, next) => {
+const TIER_LIMITS = {
+    emprendedor: {
+        fincas: 3,
+        plantas: 3,
+        productos: 3,
+        lotes: 6
+    },
+    mype: {
+        fincas: 10,
+        plantas: 10,
+        productos: 10,
+        lotes: 30
+    }
+};
+
+const checkEntityLimit = (entityType) => async (req, res, next) => {
     const userId = req.user.id;
+
     try {
         const user = await db.getUserSubscriptionStatus(userId);
         if (!user) return res.status(403).json({ error: 'Acceso denegado.' });
 
-        const hasActiveTrial = user.trial_ends_at && new Date(user.trial_ends_at) > new Date();
-        const hasProfesionalTier = user.subscription_tier === 'profesional';
+        // EXCEPCIÓN: Si el usuario es admin, salta la validación de límites y avanza directo
+        if (user.subscription_tier === 'admin') {
+            return next();
+        }
 
-        if (hasProfesionalTier || hasActiveTrial) return next();
+        // Si el usuario no tiene plan, o el texto viene mal, se asigna 'emprendedor' por defecto como nivel base
+        let userTier = (user.subscription_tier || 'emprendedor').toLowerCase();
 
-        return res.status(403).json({ error: 'Esta funcionalidad requiere un plan Profesional. Mejora tu cuenta para acceder.' });
+        // Validación de seguridad para asegurar que la llave existe en TIER_LIMITS
+        if (!TIER_LIMITS[userTier]) {
+            userTier = 'emprendedor';
+        }
+
+        const limit = TIER_LIMITS[userTier][entityType];
+
+        // Obtener el conteo actual desde PostgreSQL
+        let currentCount = 0;
+        switch (entityType) {
+            case 'fincas':
+                currentCount = await FincaModel.countFincas(userId);
+                break;
+            case 'procesadoras':
+                currentCount = await ProcesadoraModel.countProcesadoras(userId);
+                break;
+            case 'productos':
+                currentCount = await ProductoModel.countProductos(userId);
+                break;
+            case 'lotes':
+                currentCount = await LoteModel.countLotes(userId);
+                break;
+            default:
+                return res.status(500).json({ error: 'Tipo de entidad no configurada.' });
+        }
+
+        // Bloqueo estricto si se alcanza el límite
+        if (currentCount >= limit) {
+            const planName = userTier.charAt(0).toUpperCase() + userTier.slice(1);
+            return res.status(403).json({
+                error: 'LÍMITE_ALCANZADO',
+                message: `Has alcanzado el límite de ${limit} ${entityType} en tu plan ${planName}.`
+            });
+        }
+
+        next();
     } catch (error) {
-        console.error(`Error al verificar la suscripción para el usuario ${userId}:`, error);
-        res.status(500).json({ error: 'Error del servidor al verificar la suscripción.' });
+        console.error(`Error al verificar límite de ${entityType} para el usuario ${userId}:`, error);
+        res.status(500).json({ error: 'Error al validar cuotas de la cuenta.' });
     }
 };
 
@@ -968,7 +1025,7 @@ app.get('/api/public/marketplace/products/:id', productosController.getMarketpla
 app.get('/api/public/productos/:productoId/trazabilidad', lotesController.getPublicTrazabilidad);
 
 // 8. RUTAS PROTEGIDAS (VISTAS APP)
-//app.get('/app/dashboard', authenticatePage, checkSubscription('profesional'), (req, res) => res.sendFile(path.join(__dirname, 'views', 'dashboard.html')));
+//app.get('/app/dashboard', authenticatePage,  (req, res) => res.sendFile(path.join(__dirname, 'views', 'dashboard.html')));
 app.get('/app/dashboard', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'dashboard.html')));
 app.get('/app/trazabilidad', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'trazabilidad-new.html')));
 app.get('/app/fincas', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'fincas.html')));
@@ -982,7 +1039,7 @@ app.get('/app/maridaje', authenticatePage, (req, res) => res.sendFile(path.join(
 app.get('/app/blends', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'blends.html')));
 app.get('/app/recetas-chocolate', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'formulador.html')));
 app.get('/app/pricing', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'pricing.html')));
-app.get('/app/costos', authenticatePage, checkSubscription('profesional'), (req, res) => res.sendFile(path.join(__dirname, 'views', 'costos.html')));
+app.get('/app/costos', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'costos.html')));
 app.get('/app/admin-dashboard', authenticatePage, checkAdmin, (req, res) => res.sendFile(path.join(__dirname, 'views', 'admin-dashboard.html')));
 app.get('/app/cms', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'admin-blog-list.html')));
 app.get('/app/trazabilidad-inmutable', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'trazabilidad-inmutable.html')));
@@ -995,7 +1052,7 @@ app.get('/app/admin-blog/editor', authenticatePage, checkAdmin, (req, res) => re
 app.get('/app/admin-suggestions', authenticatePage, checkAdmin, (req, res) => res.sendFile(path.join(__dirname, 'views', 'admin-suggestions.html')));
 app.get('/app/payment-success', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'payment-success.html')));
 app.get('/app/payment-failure', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'payment-failure.html')));
-app.get('/app/nutricion', authenticatePage, checkSubscription('profesional'), (req, res) => res.sendFile(path.join(__dirname, 'views', 'nutricion.html')));
+app.get('/app/nutricion', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'nutricion.html')));
 app.get('/app/existencias', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'existencias.html')));
 
 // Parciales HTML
@@ -1011,18 +1068,18 @@ app.get('/partials/:partialName', (req, res) => {
 // 9. RUTAS DE API PROTEGIDAS
 // Fincas & Deforestación
 app.get('/api/fincas', authenticateApi, fincasController.getFincas);
-app.post('/api/fincas', authenticateApi, fincasController.createFinca);
+app.post('/api/fincas', authenticateApi, checkEntityLimit('fincas'), fincasController.createFinca);
 app.put('/api/fincas/:id', authenticateApi, fincasController.updateFinca);
 app.delete('/api/fincas/:id', authenticateApi, fincasController.deleteFinca);
 app.post('/api/validate-deforestation', authenticateApi, db.validateDeforestation);
 
 // Productos, Procesadoras, Perfiles, Ruedas
 app.get('/api/productos', authenticateApi, productosController.getProductos);
-app.post('/api/productos', authenticateApi, productosController.createProducto);
+app.post('/api/productos', authenticateApi, checkEntityLimit('productos'), productosController.createProducto);
 app.put('/api/productos/:id', authenticateApi, productosController.updateProducto);
 app.delete('/api/productos/:id', authenticateApi, productosController.deleteProducto);
 app.get('/api/procesadoras', authenticateApi, procesadorasController.getProcesadoras);
-app.post('/api/procesadoras', authenticateApi, procesadorasController.createProcesadora);
+app.post('/api/procesadoras', authenticateApi, checkEntityLimit('procesadoras'), procesadorasController.createProcesadora);
 app.put('/api/procesadoras/:id', authenticateApi, procesadorasController.updateProcesadora);
 app.delete('/api/procesadoras/:id', authenticateApi, procesadorasController.deleteProcesadora);
 // Sucursales de Procesadora
@@ -1069,7 +1126,7 @@ app.put('/api/user/company-profile', authenticateApi, companyProfileController.u
 
 // 10. RUTAS PREMIUM / ADMIN / PROXY
 // Dashboard & Analytics
-app.get('/api/dashboard/data', authenticateApi, checkSubscription('profesional'), db.getDashboardData);
+app.get('/api/dashboard/data', authenticateApi, db.getDashboardData);
 app.get('/api/dashboard/analytics', authenticateApi, db.getMyAnalytics);
 app.get('/api/admin/dashboard-data', authenticateApi, checkAdmin, db.getAdminDashboardData);
 app.get('/api/admin/suggestions', authenticateApi, checkAdmin, suggestionsController.getAdminSuggestions);
@@ -1082,17 +1139,17 @@ app.post('/api/admin/suggestions/:companyId/products', authenticateApi, checkAdm
 app.delete('/api/admin/suggestions/:companyId/products/:productId', authenticateApi, checkAdmin, suggestionsController.deleteSuggestedProduct);
 
 // Blends & Recetas (Profesional)
-app.get('/api/blends', authenticateApi, checkSubscription('profesional'), db.getBlends);
-app.post('/api/blends', authenticateApi, checkSubscription('profesional'), db.createBlend);
-app.delete('/api/blends/:id', authenticateApi, checkSubscription('profesional'), db.deleteBlend);
-app.get('/api/recetas-chocolate', authenticateApi, checkSubscription('profesional'), db.getRecetas);
-app.post('/api/recetas-chocolate', authenticateApi, checkSubscription('profesional'), db.createReceta);
-app.delete('/api/recetas-chocolate/:id', authenticateApi, checkSubscription('profesional'), db.deleteReceta);
-app.put('/api/recetas-chocolate/:id', authenticateApi, checkSubscription('profesional'), db.updateReceta);
+app.get('/api/blends', authenticateApi, db.getBlends);
+app.post('/api/blends', authenticateApi, db.createBlend);
+app.delete('/api/blends/:id', authenticateApi, db.deleteBlend);
+app.get('/api/recetas-chocolate', authenticateApi, db.getRecetas);
+app.post('/api/recetas-chocolate', authenticateApi, db.createReceta);
+app.delete('/api/recetas-chocolate/:id', authenticateApi, db.deleteReceta);
+app.put('/api/recetas-chocolate/:id', authenticateApi, db.updateReceta);
 
 // Costos & Pagos
-app.get('/api/costs/:lote_id', authenticateApi, checkSubscription('profesional'), db.getLoteCosts);
-app.post('/api/costs/:lote_id', authenticateApi, checkSubscription('profesional'), db.saveLoteCosts);
+app.get('/api/costs/:lote_id', authenticateApi, db.getLoteCosts);
+app.post('/api/costs/:lote_id', authenticateApi, db.saveLoteCosts);
 app.post('/api/payments/create-preference', authenticateApi, db.createPaymentPreference);
 app.post('/api/payments/webhook', express.raw({ type: 'application/json' }), db.handlePaymentWebhook);
 

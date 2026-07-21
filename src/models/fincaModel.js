@@ -49,6 +49,11 @@ const updateByToken = async (fincaId, data) => {
     return await db.run(sql, params);
 };
 
+const countFincas = async (userId) => {
+    const row = await db.get('SELECT COUNT(*) as total FROM fincas WHERE user_id = ?', [userId]);
+    return row && row.total ? parseInt(row.total, 10) : 0;
+};
+
 module.exports = {
     getById,
     getAllByUserId,
@@ -58,5 +63,6 @@ module.exports = {
     getByIdAndUserId,
     updateToken,
     getByToken,
-    updateByToken
+    updateByToken,
+    countFincas
 };

@@ -468,7 +468,7 @@ const getMarketplaceProductById = async (req, res) => {
     try {
         const { id } = req.params;
         const row = await ProductoModel.getMarketplaceProductById(id);
-        
+
         if (!row) {
             return res.status(404).json({ error: "Producto no encontrado." });
         }

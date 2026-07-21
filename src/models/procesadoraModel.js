@@ -41,11 +41,17 @@ const deleteById = async (id, userId) => {
     return await db.run('DELETE FROM procesadoras WHERE id = ? AND user_id = ?', [id, userId]);
 };
 
+const countProcesadoras = async (userId) => {
+    const row = await db.get('SELECT COUNT(*) as total FROM procesadoras WHERE user_id = ?', [userId]);
+    return row && row.total ? parseInt(row.total, 10) : 0;
+};
+
 module.exports = {
     getAllByUserId,
     getByIdAndUserId,
     getById,
     create,
     update,
-    deleteById
+    deleteById,
+    countProcesadoras
 };

@@ -352,6 +352,16 @@ const getByGtin = async (gtin) => {
     return await db.get(sql, [gtin]);
 };
 
+// Contar la cantidad de productos activos de un usuario (para límites de planes Emprendedor/Mype)
+const countProductos = async (userId) => {
+    const sql = `SELECT COUNT(*) as total FROM productos WHERE user_id = ? AND deleted_at IS NULL`;
+    const row = await db.get(sql, [userId]);
+
+    // Dependiendo de tu driver SQL, el count puede venir como string o número. 
+    // Lo parseamos a entero por seguridad.
+    return row && row.total ? parseInt(row.total, 10) : 0;
+};
+
 module.exports = {
     getByIdAndUserId,
     getAllByUserId,
@@ -365,5 +375,6 @@ module.exports = {
     getBasicPublicProductsByUserId,
     getByShortId,
     getByGtin,
-    getMarketplaceProductById
+    getMarketplaceProductById,
+    countProductos
 };
