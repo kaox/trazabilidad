@@ -388,7 +388,7 @@ const TIER_LIMITS = {
     mype: {
         fincas: 10,
         plantas: 10,
-        productos: 10,
+        productos: 20,
         lotes: 30
     }
 };
