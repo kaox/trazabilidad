@@ -60,7 +60,7 @@ const createUserFromSuggestion = async (userObj) => {
     const result = await db.run(sql, [
         username, password, nombre, apellido,
         empresa, type, companyId,
-        logo, 'user', 'artesano', trialEndDate.toISOString(),
+        logo, 'user', 'emprendedor', trialEndDate.toISOString(),
         instagram, facebook,
         celular, correo // <--- Valores Agregados
     ]);

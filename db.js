@@ -72,7 +72,7 @@ const registerUser = async (req, res) => {
 
         await run(
             'INSERT INTO users (usuario, password, nombre, apellido, dni, ruc, empresa, company_logo, celular, correo, subscription_tier, trial_ends_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)',
-            [usuario, hashedPassword, nombre, apellido, dni, ruc, empresa, finalLogo, celular, correo, 'artesano', trialEndDate.toISOString()]
+            [usuario, hashedPassword, nombre, apellido, dni, ruc, empresa, finalLogo, celular, correo, 'emprendedor', trialEndDate.toISOString()]
         );
         res.status(201).json({ message: "Usuario registrado exitosamente." });
     } catch (err) {
@@ -132,7 +132,7 @@ const handleGoogleLogin = async (req, res) => {
 
             await run(
                 'INSERT INTO users (usuario, password, nombre, apellido, correo, subscription_tier, trial_ends_at, role) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-                [username, hashedPassword, given_name, family_name, email, 'artesano', trialEndDate.toISOString(), 'user']
+                [username, hashedPassword, given_name, family_name, email, 'emprendedor', trialEndDate.toISOString(), 'user']
             );
             user = await get('SELECT * FROM users WHERE correo = ?', [email]);
         }

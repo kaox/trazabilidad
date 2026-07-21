@@ -44,7 +44,7 @@ async function initializeDatabase() {
                     social_facebook TEXT,
                     default_currency TEXT DEFAULT 'PEN',
                     default_unit TEXT DEFAULT 'KG',
-                    subscription_tier TEXT DEFAULT 'artesano',
+                    subscription_tier TEXT DEFAULT 'emprendedor',
                     trial_ends_at TIMESTAMP,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     company_type TEXT,

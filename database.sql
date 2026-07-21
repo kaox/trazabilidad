@@ -44,7 +44,7 @@ CREATE TABLE IF NOT EXISTS users (
     default_currency TEXT DEFAULT 'PEN',
     default_unit TEXT DEFAULT 'KG',
     role TEXT DEFAULT 'user', -- 'user', 'admin'
-    subscription_tier TEXT DEFAULT 'artesano', -- 'artesano', 'profesional'
+    subscription_tier TEXT DEFAULT 'emprendedor', -- 'emprendedor', 'mype'
     trial_ends_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
