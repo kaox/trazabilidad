@@ -378,6 +378,24 @@ const authenticate = (req, res, next, isPageRequest = false) => {
 const authenticatePage = (req, res, next) => authenticate(req, res, next, true);
 const authenticateApi = (req, res, next) => authenticate(req, res, next, false);
 
+const checkSubscription = (requiredTier) => async (req, res, next) => {
+    const userId = req.user.id;
+    try {
+        const user = await db.getUserSubscriptionStatus(userId);
+        if (!user) return res.status(403).json({ error: 'Acceso denegado.' });
+
+        const hasActiveTrial = user.trial_ends_at && new Date(user.trial_ends_at) > new Date();
+        const hasProfesionalTier = user.subscription_tier === 'profesional';
+
+        if (hasProfesionalTier || hasActiveTrial) return next();
+
+        return res.status(403).json({ error: 'Esta funcionalidad requiere un plan Profesional. Mejora tu cuenta para acceder.' });
+    } catch (error) {
+        console.error(`Error al verificar la suscripción para el usuario ${userId}:`, error);
+        res.status(500).json({ error: 'Error del servidor al verificar la suscripción.' });
+    }
+};
+
 const TIER_LIMITS = {
     emprendedor: {
         fincas: 3,
@@ -715,8 +733,8 @@ app.get('/origen-unico/:slug', async (req, res) => {
                 company = companies.find(c => String(c.id) === potentialId);
             }
             if (company) {
-                const title = `${company.empresa} - Origen Único Verificado`;
-                const description = `Conoce el origen de ${company.empresa} - ${company.provincia}, ${company.departamento}, ${company.pais} - en Ruru Lab.`;
+                const title = `${company.empresa} | Origen Único Verificado | ${company.provincia}, ${company.departamento}, ${company.pais}`;
+                const description = `Conoce el origen de ${company.empresa} | ${company.provincia}, ${company.departamento}, ${company.pais} | Ruru Lab.`;
 
                 const protocol = req.headers['x-forwarded-proto'] || req.protocol;
                 const host = req.get('host');
@@ -769,6 +787,7 @@ app.get('/origen-unico/:slug', async (req, res) => {
                     .replace('<head>', `<head>${dynamicStyles}${jsonLdTag}${dataScript}`)
                     .replace('<div id="app-container" class="min-h-[400px]">', `<div id="app-container" class="min-h-[400px]">${renderedContent}`)
                     .replace('<title>Empresas con Origen Único - Ruru Lab</title>', `<title>${title}</title>`)
+                    .replace(/content="Descubre el origen y trazabilidad."/g, `content="${description}"`)
                     .replace(/content="RuruLab - Trazabilidad y Pasaporte Digital para Cacao y Café"/g, `content="${title}"`)
                     .replace(/content="Crea un pasaporte digital para tu producto..."/g, `content="${description}"`)
                     .replace(/content="https:\/\/rurulab\.com\/images\/banner_1\.png"/g, `content="${image}"`);
@@ -1052,7 +1071,7 @@ app.get('/app/admin-blog/editor', authenticatePage, checkAdmin, (req, res) => re
 app.get('/app/admin-suggestions', authenticatePage, checkAdmin, (req, res) => res.sendFile(path.join(__dirname, 'views', 'admin-suggestions.html')));
 app.get('/app/payment-success', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'payment-success.html')));
 app.get('/app/payment-failure', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'payment-failure.html')));
-app.get('/app/nutricion', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'nutricion.html')));
+app.get('/app/nutricion', authenticatePage, checkSubscription('profesional'), (req, res) => res.sendFile(path.join(__dirname, 'views', 'nutricion.html')));
 app.get('/app/existencias', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'existencias.html')));
 
 // Parciales HTML
