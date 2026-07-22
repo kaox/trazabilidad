@@ -305,7 +305,7 @@ const renderLanding = (data, hostUrl = '') => {
                 <div class="lg:col-span-2">
                     <div class="flex items-center justify-between mb-8">
                         <h3 class="text-3xl font-display font-bold text-stone-900">Productos Destacados</h3>
-                        <a href="#tienda" class="text-accent font-bold hover:underline">Ver todo el catálogo <i class="fas fa-arrow-right ml-1"></i></a>
+                        <a href="/tienda" data-page="tienda" class="text-accent font-bold hover:underline">Ver todo el catálogo <i class="fas fa-arrow-right ml-1"></i></a>
                     </div>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         ${renderProductCards(products.slice(0, 4), cleanPhone, user.id, hostUrl, entityName)}

@@ -172,8 +172,17 @@ app.use(async (req, res, next) => {
             if (err) return next();
 
             // Metadatos SEO personalizados
-            const title = `${company.empresa} | Sitio Oficial`;
-            const description = `Bienvenido al sitio oficial de ${company.empresa}. Conoce nuestra historia, productos y trazabilidad.`;
+            const subPath = req.path.toLowerCase();
+            let title = `${company.empresa} | Sitio Oficial`;
+            let description = `Bienvenido al sitio oficial de ${company.empresa}. Conoce nuestra historia, productos y trazabilidad.`;
+
+            if (subPath === '/tienda') {
+                title = `Tienda y Productos | ${company.empresa}`;
+                description = `Explora el catálogo de productos con trazabilidad garantizada de ${company.empresa}.`;
+            } else if (subPath === '/contacto') {
+                title = `Contáctanos | ${company.empresa}`;
+                description = `Ponte en contacto directamente con ${company.empresa}.`;
+            }
 
             // Inyección de Script de Configuración Global
             const injectionScript = `
@@ -706,8 +715,7 @@ app.get('/marketplace', async (req, res) => {
     });
 });
 
-app.get('/origen-unico/:slug', async (req, res) => {
-    const slugParam = req.params.slug;
+const renderAndSendCompanyLanding = async (req, res, slugParam) => {
     const filePath = path.join(__dirname, 'public', 'landing-empresa.html');
 
     fs.readFile(filePath, 'utf8', async (err, htmlData) => {
@@ -715,7 +723,6 @@ app.get('/origen-unico/:slug', async (req, res) => {
         try {
             const companies = await EmpresaModel.getPublicCompaniesDataInternal();
 
-            // --- NUEVA LÓGICA DE BÚSQUEDA HÍBRIDA ---
             let company = null;
 
             // 1. Intentar buscar por ID al final del string (Formato nuevo: nombre-123)
@@ -723,18 +730,29 @@ app.get('/origen-unico/:slug', async (req, res) => {
             const penultimoGuion = slugParam.lastIndexOf('-', lastHyphenIndex - 1);
             if (lastHyphenIndex !== -1) {
                 const potentialId = slugParam.substring(lastHyphenIndex + 1);
-                // Verificamos si lo que hay después del guion parece un ID (número o string corto)
                 company = companies.find(c => String(c.id) === potentialId);
             }
 
-            // 2. Si no se encuentra por ID, buscar por Slug tradicional (Compatibilidad hacia atrás)
-            if (!company) {
-                potentialId = slugParam.substring(penultimoGuion + 1);
+            // 2. Si no se encuentra por ID, buscar por Slug tradicional
+            if (!company && lastHyphenIndex !== -1) {
+                const potentialId = slugParam.substring(penultimoGuion + 1);
                 company = companies.find(c => String(c.id) === potentialId);
             }
+
             if (company) {
-                const title = `${company.empresa} | Origen Único Verificado | ${company.provincia}, ${company.departamento}, ${company.pais}`;
-                const description = `Conoce el origen de ${company.empresa} | ${company.provincia}, ${company.departamento}, ${company.pais} | Ruru Lab.`;
+                const segments = req.path.split('/').filter(Boolean);
+                const subpage = (segments.length >= 3 ? segments[2] : '').toLowerCase();
+
+                let title = `${company.empresa} | Origen Único Verificado | ${company.provincia || ''}, ${company.departamento || ''}, ${company.pais || ''}`;
+                let description = `Conoce el origen de ${company.empresa} | ${company.provincia || ''}, ${company.departamento || ''}, ${company.pais || ''} | Ruru Lab.`;
+
+                if (subpage === 'tienda') {
+                    title = `Tienda y Productos | ${company.empresa} - Origen Único`;
+                    description = `Explora el catálogo de productos con trazabilidad garantizada de ${company.empresa}.`;
+                } else if (subpage === 'contacto') {
+                    title = `Contáctanos | ${company.empresa} - Origen Único`;
+                    description = `Ponte en contacto directamente con ${company.empresa}.`;
+                }
 
                 const protocol = req.headers['x-forwarded-proto'] || req.protocol;
                 const host = req.get('host');
@@ -795,8 +813,6 @@ app.get('/origen-unico/:slug', async (req, res) => {
                 res.send(injectedHtml);
 
             } else {
-                // Si no se encuentra, enviamos el HTML base. 
-                // El frontend se encargará de mostrar "Empresa no encontrada" al no poder cargar la API.
                 res.send(htmlData);
             }
         } catch (error) {
@@ -804,6 +820,10 @@ app.get('/origen-unico/:slug', async (req, res) => {
             res.send(htmlData);
         }
     });
+};
+
+app.get('/origen-unico/:slug', async (req, res) => {
+    return renderAndSendCompanyLanding(req, res, req.params.slug);
 });
 
 // --- RUTA LEGACY: redirect 301 a la nueva URL SEO canónica
@@ -845,7 +865,7 @@ app.get('/origen-unico/:companySlug/:productSlug', async (req, res) => {
     const filePath = path.join(__dirname, 'public', 'producto-detalle.html');
 
     if (!shortId) {
-        return res.sendFile(filePath);
+        return renderAndSendCompanyLanding(req, res, companySlug);
     }
 
     fs.readFile(filePath, 'utf8', async (err, htmlData) => {

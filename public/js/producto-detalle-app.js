@@ -264,7 +264,7 @@ const app = {
             if (breadcrumbStoreName) breadcrumbStoreName.textContent = companyName;
 
             if (breadcrumbStoreProducts) {
-                breadcrumbStoreProducts.href = storeHref + '#tienda';
+                breadcrumbStoreProducts.href = storeHref === '/' ? '/tienda' : storeHref + '/tienda';
             }
 
             breadcrumb.classList.remove('hidden');

@@ -31,8 +31,18 @@ const app = {
             if (e.key === 'Escape') this.closeGallery();
         });
 
-        // Escuchar cambios de hash para el router SPA
-        window.addEventListener('hashchange', () => this.handleRouting());
+        // Escuchar cambios de historial (HTML5 History API)
+        window.addEventListener('popstate', () => this.handleRouting());
+
+        // Interceptar clics en enlaces de navegación SPA interna (data-page)
+        document.addEventListener('click', (e) => {
+            const navLink = e.target.closest('a[data-page]');
+            if (navLink) {
+                e.preventDefault();
+                const page = navLink.getAttribute('data-page');
+                if (page) this.navigateTo(page);
+            }
+        });
 
         // CASO A: Subdominio (ej: finca-esperanza.rurulab.com)
         if (window.IS_SUBDOMAIN && window.CURRENT_COMPANY_ID) {
@@ -46,8 +56,9 @@ const app = {
         } else {
             const pathSegments = window.location.pathname.split('/').filter(Boolean);
             if (pathSegments.length > 1 && pathSegments[0] === 'origen-unico') {
-                const slug = pathSegments[pathSegments.length - 1];
-                await this.resolveSlugAndLoad(slug);
+                const companySlug = pathSegments[1];
+                this.state.companySlug = companySlug;
+                await this.resolveSlugAndLoad(companySlug);
             } else {
                 this.container.innerHTML = '<p class="text-center py-10">URL inválida.</p>';
             }
@@ -58,11 +69,91 @@ const app = {
         }
     },
 
-    handleRouting: function () {
-        const hash = window.location.hash || '#inicio';
-        const page = hash.substring(1);
+    getCurrentPage: function () {
+        // Compatibilidad hacia atrás: si hay fragmento hash, usarlo
+        if (window.location.hash) {
+            const hashPage = window.location.hash.replace('#', '').toLowerCase();
+            if (['inicio', 'tienda', 'contacto'].includes(hashPage)) {
+                return hashPage;
+            }
+        }
 
-        // Actualizar links activos en el header
+        const segments = window.location.pathname.split('/').filter(Boolean);
+
+        if (window.IS_SUBDOMAIN) {
+            if (segments.length === 0) return 'inicio';
+            const first = segments[0].toLowerCase();
+            if (['tienda', 'contacto', 'inicio'].includes(first)) {
+                return first;
+            }
+            return 'inicio';
+        } else {
+            if (segments.length >= 3 && segments[0] === 'origen-unico') {
+                const subpage = segments[2].toLowerCase();
+                if (['tienda', 'contacto', 'inicio'].includes(subpage)) {
+                    return subpage;
+                }
+            }
+            return 'inicio';
+        }
+    },
+
+    getCleanUrlForPage: function (page) {
+        page = page || 'inicio';
+        const isSubdomain = !!window.IS_SUBDOMAIN;
+
+        if (isSubdomain) {
+            if (page === 'inicio') return '/';
+            return `/${page}`;
+        } else {
+            const companySlug = this.state.companySlug || this.extractCompanySlugFromUrl();
+            const basePath = companySlug ? `/origen-unico/${companySlug}` : '/origen-unico';
+            if (page === 'inicio') return basePath;
+            return `${basePath}/${page}`;
+        }
+    },
+
+    extractCompanySlugFromUrl: function () {
+        const segments = window.location.pathname.split('/').filter(Boolean);
+        if (segments.length > 1 && segments[0] === 'origen-unico') {
+            return segments[1];
+        }
+        return '';
+    },
+
+    navigateTo: function (page, options = { pushState: true }) {
+        page = page || 'inicio';
+        const targetUrl = this.getCleanUrlForPage(page);
+
+        if (options.pushState && window.location.pathname !== targetUrl) {
+            window.history.pushState({ page }, '', targetUrl);
+        }
+
+        this.setActivePage(page);
+        if (this.state.landingData) {
+            this.renderPage(page);
+        }
+    },
+
+    handleRouting: function () {
+        const page = this.getCurrentPage();
+
+        // Si venía de un link antiguo con hash, reemplazar por URL limpia
+        if (window.location.hash) {
+            const cleanUrl = this.getCleanUrlForPage(page);
+            window.history.replaceState({ page }, '', cleanUrl);
+        }
+
+        this.setActivePage(page);
+
+        if (this.state.landingData) {
+            this.renderPage(page);
+        }
+    },
+
+    setActivePage: function (page) {
+        this.state.currentPage = page;
+
         document.querySelectorAll('.wl-nav-link').forEach(link => {
             if (link.getAttribute('data-page') === page) {
                 link.classList.add('active');
@@ -71,13 +162,17 @@ const app = {
             }
         });
 
-        // Actualizar breadcrumb según la página activa
         this.updateBreadcrumb(page);
+        this.updateNavLinksHref();
+    },
 
-        // Renderizar la página correspondiente
-        if (this.state.landingData) {
-            this.renderPage(page);
-        }
+    updateNavLinksHref: function () {
+        document.querySelectorAll('a[data-page]').forEach(link => {
+            const page = link.getAttribute('data-page');
+            if (page) {
+                link.setAttribute('href', this.getCleanUrlForPage(page));
+            }
+        });
     },
 
     updateBreadcrumb: function (page) {
@@ -511,7 +606,7 @@ const app = {
                     <div class="lg:col-span-2">
                         <div class="flex items-center justify-between mb-8">
                             <h3 class="text-3xl font-display font-bold text-stone-900">Productos Destacados</h3>
-                            <a href="#tienda" class="text-accent font-bold hover:underline">Ver todo el catálogo <i class="fas fa-arrow-right ml-1"></i></a>
+                            <a href="/tienda" data-page="tienda" class="text-accent font-bold hover:underline">Ver todo el catálogo <i class="fas fa-arrow-right ml-1"></i></a>
                         </div>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             ${(isSuggested && (!products || products.length === 0)) ? tiendaHTML : this.renderProductCards(products.slice(0, 4), user.celular || user.contact_phone, user.id, user.name)}
@@ -674,7 +769,7 @@ const app = {
                         <div class="w-20 h-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-6"><i class="fas fa-check text-4xl"></i></div>
                         <h1 class="text-4xl font-display font-bold text-stone-900 mb-4">¡Mensaje enviado!</h1>
                         <p class="text-lg text-stone-600 mb-8">Gracias por contactarnos. Nos comunicaremos contigo a la brevedad.</p>
-                        <a href="#inicio" class="btn-accent px-8 py-3 rounded-xl font-bold inline-block">Volver al inicio</a>
+                        <a href="/" data-page="inicio" class="btn-accent px-8 py-3 rounded-xl font-bold inline-block">Volver al inicio</a>
                     </div>
                 `;
             } else {
