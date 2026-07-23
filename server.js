@@ -411,17 +411,23 @@ const checkSubscription = (requiredTier) => async (req, res, next) => {
 };
 
 const TIER_LIMITS = {
-    emprendedor: {
+    basico: {
         fincas: 3,
         plantas: 3,
         productos: 3,
         lotes: 6
     },
-    mype: {
+    emprendedor: {
         fincas: 10,
         plantas: 10,
         productos: 20,
         lotes: 30
+    },
+    coorporativo: {
+        fincas: 100,
+        plantas: 100,
+        productos: 100,
+        lotes: 300
     }
 };
 
@@ -437,12 +443,12 @@ const checkEntityLimit = (entityType) => async (req, res, next) => {
             return next();
         }
 
-        // Si el usuario no tiene plan, o el texto viene mal, se asigna 'emprendedor' por defecto como nivel base
-        let userTier = (user.subscription_tier || 'emprendedor').toLowerCase();
+        // Si el usuario no tiene plan, o el texto viene mal, se asigna 'basico' por defecto como nivel base
+        let userTier = (user.subscription_tier || 'basico').toLowerCase();
 
         // Validación de seguridad para asegurar que la llave existe en TIER_LIMITS
         if (!TIER_LIMITS[userTier]) {
-            userTier = 'emprendedor';
+            userTier = 'basico';
         }
 
         const limit = TIER_LIMITS[userTier][entityType];

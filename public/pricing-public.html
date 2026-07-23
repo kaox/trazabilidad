@@ -9,7 +9,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
-        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Playfair+Display:wght@700;800&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Playfair+Display:ital,wght@0,700;0,800;1,700&display=swap"
         rel="stylesheet">
     <script src="/js/analytics-loader.js" defer></script>
     <style>
@@ -35,17 +35,38 @@
     <div id="public-nav-placeholder"></div>
 
     <div class="container mx-auto p-4 md:p-8">
-        <header class="text-center mb-12 mt-4">
+        <header class="text-center mb-10 mt-4">
             <h1 class="text-4xl md:text-5xl font-bold text-amber-900 mb-2">Planes para cada Etapa de tu Negocio</h1>
             <p class="text-stone-600 max-w-2xl mx-auto">Desde el artesano que recién comienza hasta la empresa que busca
-                innovar, tenemos un plan que se adapta a tus necesidades.</p>
+                innovar con I+D y trazabilidad avanzada.</p>
         </header>
 
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-4xl mx-auto">
-            <!-- Plan Emprendedor -->
+        <!-- Selector Mensual / Anual -->
+        <div class="flex flex-col items-center justify-center mb-12">
+            <div
+                class="bg-stone-200/80 p-1.5 rounded-full flex items-center shadow-inner relative border border-stone-300">
+                <button id="btn-monthly" onclick="setBillingCycle('monthly')"
+                    class="px-6 py-2.5 rounded-full font-bold text-sm transition-all duration-300 bg-amber-800 text-white shadow">
+                    Facturación Mensual
+                </button>
+                <button id="btn-annual" onclick="setBillingCycle('annual')"
+                    class="px-6 py-2.5 rounded-full font-bold text-sm transition-all duration-300 text-stone-700 hover:text-amber-900 flex items-center gap-2">
+                    Facturación Anual
+                    <span
+                        class="bg-green-600 text-white text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full shadow">2
+                        MESES GRATIS (-17%)</span>
+                </button>
+            </div>
+            <p class="text-xs font-semibold text-stone-500 mt-3">
+                Pagas 10 meses en el plan anual y obtienes 2 meses totalmente gratis.
+            </p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+            <!-- Plan Básico -->
             <div
                 class="border-2 border-stone-200 bg-white rounded-3xl p-8 flex flex-col shadow-sm hover:shadow-md transition-shadow">
-                <h2 class="text-2xl font-display font-bold text-amber-900">Emprendedor</h2>
+                <h2 class="text-2xl font-display font-bold text-amber-900">Básico</h2>
                 <p class="text-stone-500 mb-6 font-medium">Ideal para empezar a digitalizar tu origen.</p>
                 <p class="text-5xl font-black font-display mb-6">Gratis</p>
                 <ul class="space-y-4 text-stone-600 mb-8 flex-grow">
@@ -85,25 +106,41 @@
                     Gratis</a>
             </div>
 
-            <!-- Plan Mype -->
+            <!-- Plan Emprendedor -->
             <div class="border-2 border-amber-800 bg-white rounded-3xl p-8 flex flex-col relative shadow-xl">
                 <span
                     class="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-amber-800 text-white text-[10px] font-black uppercase tracking-widest px-4 py-1.5 rounded-full shadow-lg">RECOMENDADO</span>
-                <h2 class="text-2xl font-display font-bold text-amber-900">Mype</h2>
+                <h2 class="text-2xl font-display font-bold text-amber-900">Emprendedor</h2>
                 <p class="text-stone-500 mb-6 font-medium">La suite completa para escalar tu impacto comercial.</p>
-                <div class="flex flex-col mb-6">
+
+                <!-- Precio Mensual Emprendedor -->
+                <div class="flex flex-col mb-6 price-monthly">
                     <div class="flex items-baseline gap-2">
                         <span class="text-5xl font-black font-display text-amber-900">$15</span>
                         <span class="text-lg font-bold text-stone-400">/mes</span>
                     </div>
-                    <span class="text-sm font-bold text-green-600 mt-2 bg-green-100 px-3 py-1 rounded-full w-max">Ahorra
-                        $30 al año pagando
-                        $150 por todo el año</span>
+                    <span
+                        class="text-xs font-bold text-green-700 mt-2 bg-green-50 border border-green-200 px-3 py-1 rounded-full w-max">
+                        Paga $150 al año (Ahorras $30 USD)
+                    </span>
                 </div>
+
+                <!-- Precio Anual Emprendedor -->
+                <div class="flex flex-col mb-6 price-annual hidden">
+                    <div class="flex items-baseline gap-2">
+                        <span class="text-5xl font-black font-display text-amber-900">$150</span>
+                        <span class="text-lg font-bold text-stone-400">/año</span>
+                    </div>
+                    <span
+                        class="text-xs font-bold text-green-700 mt-2 bg-green-50 border border-green-200 px-3 py-1 rounded-full w-max">
+                        Equivale a $12.50/mes • 2 meses GRATIS
+                    </span>
+                </div>
+
                 <ul class="space-y-4 text-stone-600 mb-8 flex-grow">
                     <li class="flex items-start gap-3">
                         <i class="fas fa-star text-amber-500 mt-1"></i>
-                        <span><strong>Todo lo de Emprendedor</strong>.</span>
+                        <span><strong>Todo lo de Básico</strong>.</span>
                     </li>
                     <li class="flex items-start gap-3">
                         <i class="fas fa-check-circle text-green-500 mt-1"></i>
@@ -139,6 +176,218 @@
                 <a href="/login.html"
                     class="w-full text-center bg-amber-800 hover:bg-amber-900 text-white font-bold py-4 px-6 rounded-2xl shadow-lg shadow-amber-900/20 transition transform hover:-translate-y-1">Iniciar
                     Prueba de 1 Mes</a>
+            </div>
+
+            <!-- Plan Corporativo -->
+            <div
+                class="border-2 border-amber-900 bg-amber-950 text-white rounded-3xl p-8 flex flex-col relative shadow-2xl">
+                <span
+                    class="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-amber-400 text-amber-950 text-[10px] font-black uppercase tracking-widest px-4 py-1.5 rounded-full shadow-lg">MÓDULOS
+                    I+D Y EXPORTACIÓN</span>
+                <h2 class="text-2xl font-display font-bold text-amber-200">Corporativo</h2>
+                <p class="text-amber-200/70 mb-6 font-medium">Potencia ilimitada y herramientas científicas para
+                    agroindustria.</p>
+
+                <!-- Precio Mensual Corporativo -->
+                <div class="flex flex-col mb-6 price-monthly">
+                    <div class="flex items-baseline gap-2">
+                        <span class="text-5xl font-black font-display text-white">$45</span>
+                        <span class="text-lg font-bold text-amber-200/60">/mes</span>
+                    </div>
+                    <span
+                        class="text-xs font-bold text-amber-300 mt-2 bg-amber-900/60 border border-amber-700/50 px-3 py-1 rounded-full w-max">
+                        Paga $450 al año (Ahorras $90 USD)
+                    </span>
+                </div>
+
+                <!-- Precio Anual Corporativo -->
+                <div class="flex flex-col mb-6 price-annual hidden">
+                    <div class="flex items-baseline gap-2">
+                        <span class="text-5xl font-black font-display text-white">$450</span>
+                        <span class="text-lg font-bold text-amber-200/60">/año</span>
+                    </div>
+                    <span
+                        class="text-xs font-bold text-amber-300 mt-2 bg-amber-900/60 border border-amber-700/50 px-3 py-1 rounded-full w-max">
+                        Equivale a $37.50/mes • 2 meses GRATIS
+                    </span>
+                </div>
+
+                <ul class="space-y-4 text-amber-100/90 mb-8 flex-grow">
+                    <li class="flex items-start gap-3">
+                        <i class="fas fa-star text-amber-400 mt-1"></i>
+                        <span><strong>Todo lo de Emprendedor</strong>.</span>
+                    </li>
+                    <li class="flex items-start gap-3">
+                        <i class="fas fa-check-circle text-amber-400 mt-1"></i>
+                        <span>Registro <strong>Ilimitado de Productos</strong>.</span>
+                    </li>
+                    <li class="flex items-start gap-3">
+                        <i class="fas fa-check-circle text-amber-400 mt-1"></i>
+                        <span>Registro <strong>Ilimitado de Fincas y Plantas de Procesamiento</strong>.</span>
+                    </li>
+                    <li class="flex items-start gap-3">
+                        <i class="fas fa-flask text-amber-400 mt-1"></i>
+                        <span><strong>Módulos I+D</strong>: Generación de <strong>Etiquetas Nutricionales</strong> (FDA,
+                            UE, OPS y Nutri-Score).</span>
+                    </li>
+                    <li class="flex items-start gap-3">
+                        <i class="fas fa-chart-line text-amber-400 mt-1"></i>
+                        <span><strong>Módulos I+D</strong>: <strong>Estimación de Cosecha</strong> impulsada por
+                            IA.</span>
+                    </li>
+                    <li class="flex items-start gap-3">
+                        <i class="fas fa-headset text-amber-400 mt-1"></i>
+                        <span><strong>Soporte Técnico Especializado</strong> e Integración API.</span>
+                    </li>
+                </ul>
+                <a href="/login.html"
+                    class="w-full text-center bg-amber-500 hover:bg-amber-400 text-amber-950 font-bold py-4 px-6 rounded-2xl shadow-lg transition transform hover:-translate-y-1">Solicitar
+                    Acceso Corporativo</a>
+            </div>
+        </div>
+
+        <!-- Tabla Comparativa Completa Estilizada -->
+        <div class="max-w-6xl mx-auto mt-20">
+            <div class="text-center mb-10">
+                <h2 class="text-3xl md:text-4xl font-display font-bold text-amber-900">
+                    Comparativa <span class="italic text-amber-700">Completa</span>
+                </h2>
+                <p class="text-stone-600 mt-2">Detalle de características y funciones por nivel de plan</p>
+            </div>
+
+            <div
+                class="bg-white text-stone-800 rounded-3xl p-6 md:p-8 shadow-sm border border-stone-200 overflow-x-auto">
+                <table class="w-full text-left border-collapse min-w-[700px]">
+                    <thead>
+                        <tr class="border-b-2 border-amber-900/20 bg-stone-50">
+                            <th
+                                class="py-4 px-5 font-bold text-xs uppercase tracking-wider text-amber-900 w-2/5 rounded-tl-2xl">
+                                Característica</th>
+                            <th class="py-4 px-4 font-bold text-sm text-stone-700 text-center w-1/5">
+                                <div class="flex items-center justify-center gap-1.5 text-stone-800">
+                                    <i class="fas fa-seedling text-amber-700"></i> Básico
+                                </div>
+                            </th>
+                            <th class="py-4 px-4 font-bold text-sm text-amber-900 text-center w-1/5">
+                                <div class="flex items-center justify-center gap-1.5 text-amber-900 font-extrabold">
+                                    <i class="fas fa-leaf text-amber-800"></i> Emprendedor
+                                </div>
+                            </th>
+                            <th class="py-4 px-4 font-bold text-sm text-amber-950 text-center w-1/5 rounded-tr-2xl">
+                                <div class="flex items-center justify-center gap-1.5 text-amber-950 font-black">
+                                    <i class="fas fa-building text-amber-900"></i> Corporativo
+                                </div>
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-stone-100 text-sm">
+                        <!-- Sección Capacidad -->
+                        <tr class="bg-amber-50/60 border-y border-amber-100">
+                            <td colspan="4"
+                                class="py-3 px-5 text-xs font-black uppercase tracking-widest text-amber-900">Capacidad
+                                & Registros</td>
+                        </tr>
+                        <tr class="hover:bg-amber-50/30 transition-colors">
+                            <td class="py-3.5 px-5 font-medium text-stone-700">Fincas & Plantaciones</td>
+                            <td class="py-3.5 px-4 text-center font-semibold text-stone-600">3</td>
+                            <td class="py-3.5 px-4 text-center font-bold text-amber-900">10</td>
+                            <td class="py-3.5 px-4 text-center font-black text-amber-950 text-lg">∞</td>
+                        </tr>
+                        <tr class="hover:bg-amber-50/30 transition-colors">
+                            <td class="py-3.5 px-5 font-medium text-stone-700">Plantas de Procesamiento</td>
+                            <td class="py-3.5 px-4 text-center font-semibold text-stone-600">3</td>
+                            <td class="py-3.5 px-4 text-center font-bold text-amber-900">10</td>
+                            <td class="py-3.5 px-4 text-center font-black text-amber-950 text-lg">∞</td>
+                        </tr>
+                        <tr class="hover:bg-amber-50/30 transition-colors">
+                            <td class="py-3.5 px-5 font-medium text-stone-700">Productos en Catálogo</td>
+                            <td class="py-3.5 px-4 text-center font-semibold text-stone-600">3</td>
+                            <td class="py-3.5 px-4 text-center font-bold text-amber-900">20</td>
+                            <td class="py-3.5 px-4 text-center font-black text-amber-950 text-lg">∞</td>
+                        </tr>
+                        <tr class="hover:bg-amber-50/30 transition-colors">
+                            <td class="py-3.5 px-5 font-medium text-stone-700">Lotes de Trazabilidad</td>
+                            <td class="py-3.5 px-4 text-center font-semibold text-stone-600">6</td>
+                            <td class="py-3.5 px-4 text-center font-black text-amber-900 text-lg">∞</td>
+                            <td class="py-3.5 px-4 text-center font-black text-amber-950 text-lg">∞</td>
+                        </tr>
+
+                        <!-- Sección Presencia Digital -->
+                        <tr class="bg-amber-50/60 border-y border-amber-100">
+                            <td colspan="4"
+                                class="py-3 px-5 text-xs font-black uppercase tracking-widest text-amber-900">Presencia
+                                Digital & Comercio</td>
+                        </tr>
+                        <tr class="hover:bg-amber-50/30 transition-colors">
+                            <td class="py-3.5 px-5 font-medium text-stone-700">Landing Page de Marca</td>
+                            <td class="py-3.5 px-4 text-center text-xs text-stone-500">Canónica (/origen-unico)</td>
+                            <td class="py-3.5 px-4 text-center text-xs font-bold text-amber-900">Subdominio / Dominio
+                                Propio</td>
+                            <td class="py-3.5 px-4 text-center text-xs font-black text-amber-950">Subdominio / Dominio
+                                Propio</td>
+                        </tr>
+                        <tr class="hover:bg-amber-50/30 transition-colors">
+                            <td class="py-3.5 px-5 font-medium text-stone-700">Venta Directa por WhatsApp</td>
+                            <td class="py-3.5 px-4 text-center text-green-600 font-bold"><i class="fas fa-check"></i>
+                            </td>
+                            <td class="py-3.5 px-4 text-center text-green-600 font-bold"><i class="fas fa-check"></i>
+                            </td>
+                            <td class="py-3.5 px-4 text-center text-green-600 font-bold"><i class="fas fa-check"></i>
+                            </td>
+                        </tr>
+                        <tr class="hover:bg-amber-50/30 transition-colors">
+                            <td class="py-3.5 px-5 font-medium text-stone-700">Códigos QR de Producto</td>
+                            <td class="py-3.5 px-4 text-center text-green-600 font-bold"><i class="fas fa-check"></i>
+                            </td>
+                            <td class="py-3.5 px-4 text-center text-green-600 font-bold"><i class="fas fa-check"></i>
+                            </td>
+                            <td class="py-3.5 px-4 text-center text-green-600 font-bold"><i class="fas fa-check"></i>
+                            </td>
+                        </tr>
+                        <tr class="hover:bg-amber-50/30 transition-colors">
+                            <td class="py-3.5 px-5 font-medium text-stone-700">Perfil Destacado en RuruLab</td>
+                            <td class="py-3.5 px-4 text-center text-stone-300">—</td>
+                            <td class="py-3.5 px-4 text-center text-green-600 font-bold"><i class="fas fa-check"></i>
+                            </td>
+                            <td class="py-3.5 px-4 text-center text-green-600 font-bold"><i class="fas fa-check"></i>
+                            </td>
+                        </tr>
+                        <tr class="hover:bg-amber-50/30 transition-colors">
+                            <td class="py-3.5 px-5 font-medium text-stone-700">Estadísticas & Analíticas</td>
+                            <td class="py-3.5 px-4 text-center text-stone-300">—</td>
+                            <td class="py-3.5 px-4 text-center text-xs font-semibold text-amber-900">Avanzadas</td>
+                            <td class="py-3.5 px-4 text-center text-xs font-bold text-amber-950">Completas + API</td>
+                        </tr>
+
+                        <!-- Módulos Avanzados e I+D -->
+                        <tr class="bg-amber-50/60 border-y border-amber-100">
+                            <td colspan="4"
+                                class="py-3 px-5 text-xs font-black uppercase tracking-widest text-amber-900">Módulos
+                                I+D & Exportación</td>
+                        </tr>
+                        <tr class="hover:bg-amber-50/30 transition-colors">
+                            <td class="py-3.5 px-5 font-medium text-stone-700">Etiquetas Nutricionales (FDA, UE, OPS,
+                                Nutri-Score)</td>
+                            <td class="py-3.5 px-4 text-center text-stone-300">—</td>
+                            <td class="py-3.5 px-4 text-center text-stone-300">—</td>
+                            <td class="py-3.5 px-4 text-center text-green-600 font-bold"><i class="fas fa-check"></i>
+                                <span class="text-xs font-bold ml-1 text-green-700">Incluido</span></td>
+                        </tr>
+                        <tr class="hover:bg-amber-50/30 transition-colors">
+                            <td class="py-3.5 px-5 font-medium text-stone-700">Estimación de Cosecha con IA</td>
+                            <td class="py-3.5 px-4 text-center text-stone-300">—</td>
+                            <td class="py-3.5 px-4 text-center text-stone-300">—</td>
+                            <td class="py-3.5 px-4 text-center text-green-600 font-bold"><i class="fas fa-check"></i>
+                                <span class="text-xs font-bold ml-1 text-green-700">Incluido</span></td>
+                        </tr>
+                        <tr class="hover:bg-amber-50/30 transition-colors">
+                            <td class="py-3.5 px-5 font-medium text-stone-700">Soporte Técnico</td>
+                            <td class="py-3.5 px-4 text-center text-xs text-stone-500">Comunitario</td>
+                            <td class="py-3.5 px-4 text-center text-xs font-semibold text-amber-900">Prioritario</td>
+                            <td class="py-3.5 px-4 text-center text-xs font-bold text-amber-950">VIP / Asignado</td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
         </div>
 
@@ -185,9 +434,7 @@
         </div>
         <!-- Fin Sección: Anclaje de Precio -->
 
-
     </div>
-
 
     <footer class="py-8 bg-stone-800 text-stone-300">
         <div class="container mx-auto px-6 text-center">
@@ -200,6 +447,29 @@
             <p>&copy; 2025 Ruru Lab. Todos los derechos reservados.</p>
         </div>
     </footer>
+
+    <script>
+        function setBillingCycle(cycle) {
+            const btnMonthly = document.getElementById('btn-monthly');
+            const btnAnnual = document.getElementById('btn-annual');
+            const monthlyPrices = document.querySelectorAll('.price-monthly');
+            const annualPrices = document.querySelectorAll('.price-annual');
+
+            if (cycle === 'annual') {
+                btnAnnual.className = "px-6 py-2.5 rounded-full font-bold text-sm transition-all duration-300 bg-amber-800 text-white shadow flex items-center gap-2";
+                btnMonthly.className = "px-6 py-2.5 rounded-full font-bold text-sm transition-all duration-300 text-stone-700 hover:text-amber-900";
+
+                monthlyPrices.forEach(el => el.classList.add('hidden'));
+                annualPrices.forEach(el => el.classList.remove('hidden'));
+            } else {
+                btnMonthly.className = "px-6 py-2.5 rounded-full font-bold text-sm transition-all duration-300 bg-amber-800 text-white shadow";
+                btnAnnual.className = "px-6 py-2.5 rounded-full font-bold text-sm transition-all duration-300 text-stone-700 hover:text-amber-900 flex items-center gap-2";
+
+                annualPrices.forEach(el => el.classList.add('hidden'));
+                monthlyPrices.forEach(el => el.classList.remove('hidden'));
+            }
+        }
+    </script>
     <script src="/js/public-nav-loader.js"></script>
 </body>
 
