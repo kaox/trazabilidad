@@ -211,24 +211,29 @@ app.use(async (req, res, next) => {
                 }
             } catch (e) { console.error('Error inyectando estilos:', e); }
 
-            // JSON-LD server-side
+            // Inyectar HTML renderizado por el servidor (SSR)
+            let renderedContent = '';
             let jsonLdTag = '';
             try {
                 const protocol = req.headers['x-forwarded-proto'] || req.protocol;
                 const host = req.get('host');
+                const hostUrl = `${protocol}://${host}`;
+                const subpage = (req.path.split('/').filter(Boolean)[0] || 'inicio').toLowerCase();
                 if (landingData) {
+                    renderedContent = renderLanding(landingData, hostUrl, subpage);
                     jsonLdTag = buildJsonLd({
                         ...landingData,
-                        pageUrl: `${protocol}://${host}`
+                        pageUrl: `${protocol}://${host}${req.originalUrl}`
                     });
                 }
-            } catch (e) { console.error('JSON-LD subdominio error:', e); }
+            } catch (e) { console.error('JSON-LD / SSR subdominio error:', e); }
 
             const dataScript = landingData ? `<script>window.INITIAL_DATA = ${JSON.stringify(landingData)};</script>` : '';
 
             // Reemplazar en el HTML
             let injectedHtml = htmlData
                 .replace('<head>', `<head>${injectionScript}${dynamicStyles}${jsonLdTag}${dataScript}`)
+                .replace('<div id="app-container" class="min-h-[400px]">', `<div id="app-container" class="min-h-[400px]">${renderedContent}`)
                 .replace('<title>Empresas con Origen Único - Ruru Lab</title>', `<title>${title}</title>`)
                 .replace(/content="Descubre el origen y trazabilidad."/g, `content="${description}"`)
                 .replace(/content="RuruLab - Trazabilidad y Pasaporte Digital para Cacao y Café"/g, `content="${title}"`);
@@ -775,7 +780,7 @@ const renderAndSendCompanyLanding = async (req, res, slugParam) => {
                     const hostUrl = `${protocol}://${host}`;
                     landingData = await landingsController.getCompanyLandingDataInternal(company.id);
                     if (landingData) {
-                        renderedContent = renderLanding(landingData, hostUrl);
+                        renderedContent = renderLanding(landingData, hostUrl, subpage);
                         jsonLdTag = buildJsonLd({ ...landingData, pageUrl });
                     }
                 } catch (e) { console.error('JSON-LD slug error:', e); }

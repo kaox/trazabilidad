@@ -134,7 +134,7 @@ const renderProductCards = (products, phone, userId, hostUrl = '', companyName =
     }).join('');
 };
 
-const renderLanding = (data, hostUrl = '') => {
+const renderInicio = (data, hostUrl = '') => {
     const { user, entity, products } = data;
     const isSuggested = user.is_suggested;
     const isFinca = user.type === 'finca';
@@ -316,40 +316,159 @@ const renderLanding = (data, hostUrl = '') => {
     `;
 };
 
+const renderTienda = (data, hostUrl = '') => {
+    const { products, user } = data;
+    const cleanPhone = user.celular ? String(user.celular).replace(/\D/g, '') : (user.contact_phone ? String(user.contact_phone).replace(/\D/g, '') : '');
+    const isSuggested = user.is_suggested;
+    const entityName = user.name || 'Tienda';
+
+    const tiendaHTML = `
+        <style>
+            .locked-content { filter: blur(4px); user-select: none; opacity: 0.6; }
+            .glass-overlay { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(2px); }
+        </style>
+        <div class="bg-white rounded-2xl border border-stone-200 overflow-hidden relative min-h-[300px]">
+            <div class="p-6">
+                <h3 class="font-bold text-stone-800 mb-4">Marketplace y Productos</h3>
+                <div class="grid grid-cols-2 sm:grid-cols-3 gap-4 locked-content">
+                    <div class="bg-stone-50 rounded-lg p-3"><div class="w-full h-24 bg-stone-200 rounded mb-2"></div><div class="h-4 bg-stone-200 rounded w-3/4 mb-1"></div></div>
+                </div>
+            </div>
+            <div class="absolute inset-0 glass-overlay flex flex-col items-center justify-center p-6 text-center">
+                <h3 class="font-bold text-stone-800 mb-1">Tienda no activada</h3>
+                <p class="text-xs text-stone-500 max-w-sm mb-4">El propietario aún no ha activado la tienda oficial.</p>
+                <a href="/onboarding.html?claim_id=${user.id}" class="bg-amber-800 text-white text-xs font-bold px-4 py-2 rounded-lg">Reclamar Perfil</a>
+            </div>
+        </div>
+    `;
+
+    return `
+        <div class="container mx-auto px-6 py-12 fade-in">
+            <div class="max-w-3xl mb-12">
+                <h1 class="text-4xl md:text-5xl font-display font-bold text-stone-900 mb-4">Nuestra Tienda</h1>
+                <p class="text-lg text-stone-600">Explora nuestra selección exclusiva de productos con trazabilidad garantizada directamente desde el origen.</p>
+            </div>
+            
+            <div class="product-grid">
+                ${(isSuggested && (!products || products.length === 0)) ? tiendaHTML : renderProductCards(products, cleanPhone, user.id, hostUrl, entityName)}
+            </div>
+        </div>
+    `;
+};
+
+const renderContacto = (data) => {
+    const { user } = data;
+    const cleanPhone = user.celular ? String(user.celular).replace(/\D/g, '') : (user.contact_phone ? String(user.contact_phone).replace(/\D/g, '') : '');
+    const waBase = cleanPhone ? `https://wa.me/${cleanPhone}?text=${encodeURIComponent('Hola, los vi en RuruLab y quisiera comunicarme con ustedes.')}` : '';
+    const displayPhone = user.celular || user.contact_phone || 'No registrado';
+    const entityName = user.name || 'Empresa';
+
+    return `
+        <div class="container mx-auto px-6 py-12 fade-in">
+            <div class="max-w-3xl mx-auto">
+                <div class="text-center mb-12">
+                    <h1 class="text-4xl md:text-5xl font-display font-bold text-stone-900 mb-4">Ponte en Contacto</h1>
+                    <p class="text-lg text-stone-600">¿Tienes dudas o deseas coordinar un pedido directo con ${entityName}? Escríbenos.</p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-12">
+                    <div class="bg-white rounded-3xl p-8 border border-stone-200 shadow-sm">
+                        <h3 class="text-xl font-bold text-stone-900 mb-6">Información Directa</h3>
+                        <div class="space-y-4">
+                            ${user.email ? `
+                            <div class="flex items-center gap-4 bg-stone-50 rounded-2xl p-4 border border-stone-100">
+                                <div class="w-12 h-12 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center flex-shrink-0">
+                                    <i class="fas fa-envelope text-xl"></i>
+                                </div>
+                                <div>
+                                    <h4 class="text-xs font-bold text-stone-400 uppercase tracking-widest mb-0.5">Email</h4>
+                                    <a href="mailto:${user.email}" class="font-semibold text-stone-800 hover:text-amber-800 transition-colors">${user.email}</a>
+                                </div>
+                            </div>` : ''}
+
+                            ${waBase ? `
+                            <div class="bg-stone-50 rounded-2xl p-4 border border-stone-100">
+                                <div class="flex items-center gap-4 mb-4">
+                                    <div class="w-12 h-12 rounded-xl bg-green-50 text-green-600 flex items-center justify-center flex-shrink-0">
+                                        <i class="fab fa-whatsapp text-2xl"></i>
+                                    </div>
+                                    <div>
+                                        <h4 class="text-xs font-bold text-stone-400 uppercase tracking-widest mb-0.5">WhatsApp</h4>
+                                        <p class="font-semibold text-stone-800">${displayPhone}</p>
+                                    </div>
+                                </div>
+                                <a href="${waBase}" target="_blank" rel="noopener"
+                                    class="flex items-center justify-center gap-3 w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3.5 rounded-xl shadow-md shadow-green-100 transition-all">
+                                    <i class="fab fa-whatsapp text-2xl"></i> Enviar mensaje por WhatsApp
+                                </a>
+                            </div>` : ''}
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-3xl p-8 border border-stone-200 shadow-sm">
+                        <h3 class="text-xl font-bold text-stone-900 mb-6">Envíanos un Mensaje</h3>
+                        <form id="wl-contact-form" class="space-y-4">
+                            <div>
+                                <label class="block text-xs font-bold text-stone-500 uppercase tracking-wider mb-1">Nombre Completo *</label>
+                                <input type="text" id="contact-nombre" required placeholder="Tu nombre" class="w-full px-4 py-3 rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-amber-500 text-sm">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-stone-500 uppercase tracking-wider mb-1">Correo Electrónico *</label>
+                                <input type="email" id="contact-email" required placeholder="tu@email.com" class="w-full px-4 py-3 rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-amber-500 text-sm">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-stone-500 uppercase tracking-wider mb-1">Mensaje *</label>
+                                <textarea id="contact-mensaje" required rows="4" placeholder="¿En qué podemos ayudarte?" class="w-full px-4 py-3 rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-amber-500 text-sm"></textarea>
+                            </div>
+                            <button type="submit" class="w-full bg-amber-800 hover:bg-amber-900 text-white font-bold py-3.5 rounded-xl shadow-md transition">Enviar Mensaje</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+};
+
+const renderLanding = (data, hostUrl = '', page = 'inicio') => {
+    if (page === 'tienda') return renderTienda(data, hostUrl);
+    if (page === 'contacto') return renderContacto(data);
+    return renderInicio(data, hostUrl);
+};
+
 const renderCompanyList = (companies) => {
-    if (!companies || companies.length === 0) {
-        return `<p class="text-center py-20 text-stone-400">No hay empresas registradas.</p>`;
-    }
-
-    const createSlug = text => (text || '').toString().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, '-').replace(/[^\w-]+/g, '').replace(/--+/g, '-').replace(/^-+/, '').replace(/-+$/, '');
-
-    let html = `<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 fade-in">`;
-
-    companies.forEach(c => {
-        const logoSrc = c.logo || c.logo_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(c.name)}&background=f5f5f4&color=78350f&size=128`;
-        const isFinca = c.type === 'finca';
-        const typeColor = isFinca ? 'amber' : 'blue';
-        const locationStr = [c.distrito, c.provincia, c.departamento, c.pais].filter(Boolean).map(p => toTitleCase(p)).join(', ') || 'Ubicación por verificar';
-
-        let tagsHtml = '';
-        let categories = [];
-        try { categories = typeof c.product_categories === 'string' ? JSON.parse(c.product_categories) : (c.product_categories || []); } catch (e) { }
-
-        if (categories.length > 0) {
-            const topTags = categories.slice(0, 2).map(cat => {
-                let icon = '';
-                if (cat === 'cafe') icon = '☕ ';
-                if (cat === 'cacao') icon = '🍫 ';
-                if (cat === 'miel') icon = '🍯 ';
-                return `<span class="text-[9px] font-bold bg-stone-100 text-stone-500 px-1.5 py-0.5 rounded border border-stone-200 capitalize">${icon}${cat}</span>`;
-            }).join(' ');
-            const moreTag = categories.length > 2 ? `<span class="text-[9px] font-bold text-stone-400">+${categories.length - 2}</span>` : '';
-            tagsHtml = `<div class="flex gap-1 mt-2">${topTags}${moreTag}</div>`;
+        if (!companies || companies.length === 0) {
+            return `<p class="text-center py-20 text-stone-400">No hay empresas registradas.</p>`;
         }
 
-        const slug = createSlug(c.name) + '-' + c.id;
-        const linkUrl = `/origen-unico/${slug}`;
-        html += `
+        const createSlug = text => (text || '').toString().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, '-').replace(/[^\w-]+/g, '').replace(/--+/g, '-').replace(/^-+/, '').replace(/-+$/, '');
+
+        let html = `<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 fade-in">`;
+
+        companies.forEach(c => {
+            const logoSrc = c.logo || c.logo_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(c.name)}&background=f5f5f4&color=78350f&size=128`;
+            const isFinca = c.type === 'finca';
+            const typeColor = isFinca ? 'amber' : 'blue';
+            const locationStr = [c.distrito, c.provincia, c.departamento, c.pais].filter(Boolean).map(p => toTitleCase(p)).join(', ') || 'Ubicación por verificar';
+
+            let tagsHtml = '';
+            let categories = [];
+            try { categories = typeof c.product_categories === 'string' ? JSON.parse(c.product_categories) : (c.product_categories || []); } catch (e) { }
+
+            if (categories.length > 0) {
+                const topTags = categories.slice(0, 2).map(cat => {
+                    let icon = '';
+                    if (cat === 'cafe') icon = '☕ ';
+                    if (cat === 'cacao') icon = '🍫 ';
+                    if (cat === 'miel') icon = '🍯 ';
+                    return `<span class="text-[9px] font-bold bg-stone-100 text-stone-500 px-1.5 py-0.5 rounded border border-stone-200 capitalize">${icon}${cat}</span>`;
+                }).join(' ');
+                const moreTag = categories.length > 2 ? `<span class="text-[9px] font-bold text-stone-400">+${categories.length - 2}</span>` : '';
+                tagsHtml = `<div class="flex gap-1 mt-2">${topTags}${moreTag}</div>`;
+            }
+
+            const slug = createSlug(c.name) + '-' + c.id;
+            const linkUrl = `/origen-unico/${slug}`;
+            html += `
             <a href="${linkUrl}" class="group relative bg-white rounded-3xl border border-stone-200 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-500 cursor-pointer overflow-hidden flex flex-col h-full text-left no-underline">
                 <div class="h-2 w-full bg-${typeColor}-600/20 group-hover:bg-${typeColor}-600 transition-colors duration-500"></div>
                 <div class="p-6 flex flex-col h-full">
@@ -369,10 +488,10 @@ const renderCompanyList = (companies) => {
                     </div>
                 </div>
             </a>`;
-    });
+        });
 
-    // Tarjeta "Tu Marca Aquí"
-    html += `
+        // Tarjeta "Tu Marca Aquí"
+        html += `
         <div class="flex flex-col items-center justify-center p-8 rounded-3xl border-2 border-dashed border-amber-200 bg-amber-50/30 hover:bg-amber-50 hover:border-amber-400 cursor-pointer transition-all duration-500 min-h-[280px]">
             <div class="w-16 h-16 rounded-2xl bg-white border border-amber-100 flex items-center justify-center mb-4 shadow-sm"><i class="fas fa-plus text-3xl text-amber-500"></i></div>
             <h3 class="text-xl font-display font-bold text-amber-900 mb-2">¿Tu Marca Aquí?</h3>
@@ -380,35 +499,35 @@ const renderCompanyList = (companies) => {
             <span class="bg-amber-800 text-white text-xs font-bold px-6 py-3 rounded-xl shadow-lg hover:bg-amber-900 transition-all">Sugerir Empresa</span>
         </div></div>`;
 
-    return html;
-};
+        return html;
+    };
 
-const renderMarketplaceProducts = (products) => {
-    if (!products || products.length === 0) {
-        return `<div class="col-span-full text-center py-16 bg-white rounded-2xl border border-dashed border-stone-300">
+    const renderMarketplaceProducts = (products) => {
+        if (!products || products.length === 0) {
+            return `<div class="col-span-full text-center py-16 bg-white rounded-2xl border border-dashed border-stone-300">
                     <i class="fas fa-search text-4xl text-stone-300 mb-4"></i>
                     <h3 class="text-lg font-bold text-stone-700">No hay productos disponibles</h3>
                 </div>`;
-    }
+        }
 
-    const createSlug = text => (text || '').toString().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, '-').replace(/[^\w-]+/g, '').replace(/--+/g, '-').replace(/^-+/, '').replace(/-+$/, '');
+        const createSlug = text => (text || '').toString().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, '-').replace(/[^\w-]+/g, '').replace(/--+/g, '-').replace(/^-+/, '').replace(/-+$/, '');
 
-    let html = '';
-    products.forEach(p => {
-        const images = safeJSONParse(p.imagenes_json || '[]');
-        const image = images.length > 0 ? images[0] : 'https://rurulab.com/images/placeholder-product.jpg';
-        const type = p.tipo || 'cafe';
-        const typeIcon = type === 'cafe' ? 'fa-mug-hot' : (type === 'cacao' ? 'fa-cookie-bite' : 'fa-jar');
-        const score = p.puntuacion_taza || p.puntuacion_total || null;
+        let html = '';
+        products.forEach(p => {
+            const images = safeJSONParse(p.imagenes_json || '[]');
+            const image = images.length > 0 ? images[0] : 'https://rurulab.com/images/placeholder-product.jpg';
+            const type = p.tipo || 'cafe';
+            const typeIcon = type === 'cafe' ? 'fa-mug-hot' : (type === 'cacao' ? 'fa-cookie-bite' : 'fa-jar');
+            const score = p.puntuacion_taza || p.puntuacion_total || null;
 
-        const slug = createSlug(p.nombre) + '-' + p.id.substring(0, 8);
-        const compName = p.empresa?.nombre || p.empresa || 'empresa';
-        const compId = p.empresa?.id || '';
-        const linkUrl = compId
-            ? buildProductUrl(compName, compId, p.nombre, p.id)
-            : `/lote/${createSlug(p.nombre)}-${p.id}`;
+            const slug = createSlug(p.nombre) + '-' + p.id.substring(0, 8);
+            const compName = p.empresa?.nombre || p.empresa || 'empresa';
+            const compId = p.empresa?.id || '';
+            const linkUrl = compId
+                ? buildProductUrl(compName, compId, p.nombre, p.id)
+                : `/lote/${createSlug(p.nombre)}-${p.id}`;
 
-        html += `
+            html += `
             <div class="product-card bg-white rounded-2xl border border-stone-100 shadow-sm overflow-hidden flex flex-col relative group">
                 <a href="${linkUrl}" class="block overflow-hidden relative aspect-square">
                     <img src="${image}" alt="${p.nombre}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
@@ -434,8 +553,8 @@ const renderMarketplaceProducts = (products) => {
                     <div class="mt-auto pt-3 border-t border-stone-50">
                         <div class="flex flex-wrap gap-1 mb-3">
                             ${(safeJSONParse(p.perfil_data || '{}').notas || []).slice(0, 3).map(nota =>
-            `<span class="text-[9px] font-bold bg-amber-50 text-amber-800 px-2 py-0.5 rounded-full border border-amber-100">${nota}</span>`
-        ).join('')}
+                `<span class="text-[9px] font-bold bg-amber-50 text-amber-800 px-2 py-0.5 rounded-full border border-amber-100">${nota}</span>`
+            ).join('')}
                         </div>
                         
                         <div class="flex justify-between items-center">
@@ -446,9 +565,9 @@ const renderMarketplaceProducts = (products) => {
                 </div>
             </div>
         `;
-    });
+        });
 
-    return html;
-};
+        return html;
+    };
 
-module.exports = { renderLanding, renderCompanyList, renderMarketplaceProducts };
+    module.exports = { renderLanding, renderCompanyList, renderMarketplaceProducts };
