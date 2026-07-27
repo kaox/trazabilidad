@@ -193,22 +193,29 @@ app.use(async (req, res, next) => {
                 </script>
             `;
 
-            // 🎨 Inyección de CSS Variables dinámicas (White Label)
+            // 🎨 Inyección de CSS Variables dinámicas (White Label - 5 variables de tema)
             let dynamicStyles = '';
             let landingData = null;
             try {
                 landingData = await landingsController.getCompanyLandingDataInternal(company.id);
                 if (landingData && landingData.white_label_config) {
                     const cfg = landingData.white_label_config;
-                    if (cfg.accent_color) {
-                        dynamicStyles = `
-                        <style>
-                            :root {
-                                --accent-color: ${cfg.accent_color};
-                                --accent-hover: ${cfg.accent_hover || cfg.accent_color};
-                            }
-                        </style>`;
-                    }
+                    const primary    = cfg.primary_color    || cfg.accent_color || '#78350f';
+                    const secondary  = cfg.secondary_color  || '#451a03';
+                    const accent     = cfg.accent_color     || '#d97706';
+                    const accentHov  = cfg.accent_hover     || secondary;
+                    const bg         = cfg.background_color || '#fdfaf6';
+                    const textColor  = cfg.text_color       || '#1c1917';
+                    dynamicStyles = `<style>#wl-scope {
+                        --primary-color: ${primary};
+                        --secondary-color: ${secondary};
+                        --accent-color: ${accent};
+                        --accent-hover: ${accentHov};
+                        --bg-warm: ${bg};
+                        --text-color: ${textColor};
+                        background-color: ${bg};
+                        color: ${textColor};
+                    }</style>`;
                 }
             } catch (e) { console.error('Error inyectando estilos:', e); }
 
@@ -798,19 +805,26 @@ const renderAndSendCompanyLanding = async (req, res, slugParam) => {
                         window.INITIAL_DATA = ${JSON.stringify(landingData)};
                     </script>` : '';
 
-                // 🎨 Inyección de CSS Variables dinámicas (White Label)
+                // 🎨 Inyección de CSS Variables dinámicas (White Label - 5 variables de tema)
                 let dynamicStyles = '';
                 if (landingData && landingData.white_label_config) {
                     const cfg = landingData.white_label_config;
-                    if (cfg.accent_color) {
-                        dynamicStyles = `
-                        <style>
-                            :root {
-                                --accent-color: ${cfg.accent_color};
-                                --accent-hover: ${cfg.accent_hover || cfg.accent_color};
-                            }
-                        </style>`;
-                    }
+                    const primary    = cfg.primary_color    || cfg.accent_color || '#78350f';
+                    const secondary  = cfg.secondary_color  || '#451a03';
+                    const accent     = cfg.accent_color     || '#d97706';
+                    const accentHov  = cfg.accent_hover     || secondary;
+                    const bg         = cfg.background_color || '#fdfaf6';
+                    const textColor  = cfg.text_color       || '#1c1917';
+                    dynamicStyles = `<style>#wl-scope {
+                        --primary-color: ${primary};
+                        --secondary-color: ${secondary};
+                        --accent-color: ${accent};
+                        --accent-hover: ${accentHov};
+                        --bg-warm: ${bg};
+                        --text-color: ${textColor};
+                        background-color: ${bg};
+                        color: ${textColor};
+                    }</style>`;
                 }
 
                 let injectedHtml = htmlData

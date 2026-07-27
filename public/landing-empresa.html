@@ -31,17 +31,21 @@
     <script src="/js/analytics-loader.js" defer></script>
 
     <style>
-        /* === CSS Variables dinámicas (inyectadas por el servidor o defaults) === */
-        :root {
-            --accent-color: #78350f;
-            --accent-hover: #92400e;
-            --primary-color: #1c1917;
-            --bg-warm: #fdfaf6;
+        /* === CSS Variables dinámicas — scoped al área White Label únicamente ===
+           Se aplican a #wl-scope, NO afectan el nav de RuruLab (#public-nav-placeholder) */
+        #wl-scope {
+            --primary-color: #78350f;      /* Encabezados, botones primarios */
+            --secondary-color: #451a03;    /* Subtítulos, bordes */
+            --accent-color: #d97706;       /* Badges, links, destacados */
+            --accent-hover: #b45309;       /* Hover de acento */
+            --bg-warm: #fdfaf6;            /* Fondo general de la landing */
+            --text-color: #1c1917;         /* Color de texto principal */
+            background-color: var(--bg-warm);
+            color: var(--text-color);
         }
 
         body {
             font-family: 'Inter', sans-serif;
-            background-color: var(--bg-warm);
         }
 
         .font-display {
@@ -267,10 +271,13 @@
     </style>
 </head>
 
-<body class="text-stone-800 antialiased min-h-screen flex flex-col">
+<body class="antialiased min-h-screen flex flex-col">
 
-    <!-- Header original de RuruLab (para modo NO white label) -->
+    <!-- Header original de RuruLab (para modo NO white label) — fuera del scope de tema -->
     <div id="public-nav-placeholder"></div>
+
+    <!-- WL SCOPE: todo lo que sigue hereda el tema del cliente -->
+    <div id="wl-scope" class="flex flex-col flex-grow">
 
     <!-- HEADER WHITE LABEL (neutral, sin branding RuruLab) -->
     <header id="wl-header" class="wl-header hidden">
@@ -381,6 +388,8 @@
                     class="text-stone-400 hover:text-white transition">RuruLab</a></p>
         </div>
     </footer>
+
+    </div><!-- /#wl-scope -->
 
     <script src="/js/landing-empresa.js"></script>
     <script src="/js/chart-utils.js"></script>

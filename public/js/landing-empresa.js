@@ -356,6 +356,27 @@ const app = {
             // El slot directorio se mostrará en handleRouting() para 'inicio'
             // pero en las páginas internas se oculta y se usan los slots WL
         }
+
+        // 🎨 Aplicar paleta de colores del tema (White Label Theme Builder)
+        // Se aplica a #wl-scope para NO afectar el nav de RuruLab (#public-nav-placeholder)
+        let cfg = user.white_label_config;
+        if (cfg) {
+            if (typeof cfg === 'string') {
+                try { cfg = JSON.parse(cfg); } catch (e) { cfg = {}; }
+            }
+            const scope = document.getElementById('wl-scope');
+            if (scope) {
+                if (cfg.primary_color)    scope.style.setProperty('--primary-color',   cfg.primary_color);
+                if (cfg.secondary_color)  scope.style.setProperty('--secondary-color', cfg.secondary_color);
+                if (cfg.accent_color)     scope.style.setProperty('--accent-color',    cfg.accent_color);
+                if (cfg.accent_color)     scope.style.setProperty('--accent-hover',    cfg.accent_hover || cfg.secondary_color || cfg.accent_color);
+                if (cfg.background_color) scope.style.setProperty('--bg-warm',         cfg.background_color);
+                if (cfg.text_color)       scope.style.setProperty('--text-color',      cfg.text_color);
+                // Aplicar directamente al scope para garantizar fondo y texto
+                if (cfg.background_color) scope.style.backgroundColor = cfg.background_color;
+                if (cfg.text_color)       scope.style.color = cfg.text_color;
+            }
+        }
     },
 
     renderPage: function (page) {
