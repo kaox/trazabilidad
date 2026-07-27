@@ -366,15 +366,15 @@ const app = {
             }
             const scope = document.getElementById('wl-scope');
             if (scope) {
-                if (cfg.primary_color)    scope.style.setProperty('--primary-color',   cfg.primary_color);
-                if (cfg.secondary_color)  scope.style.setProperty('--secondary-color', cfg.secondary_color);
-                if (cfg.accent_color)     scope.style.setProperty('--accent-color',    cfg.accent_color);
-                if (cfg.accent_color)     scope.style.setProperty('--accent-hover',    cfg.accent_hover || cfg.secondary_color || cfg.accent_color);
-                if (cfg.background_color) scope.style.setProperty('--bg-warm',         cfg.background_color);
-                if (cfg.text_color)       scope.style.setProperty('--text-color',      cfg.text_color);
+                if (cfg.primary_color) scope.style.setProperty('--primary-color', cfg.primary_color);
+                if (cfg.secondary_color) scope.style.setProperty('--secondary-color', cfg.secondary_color);
+                if (cfg.accent_color) scope.style.setProperty('--accent-color', cfg.accent_color);
+                if (cfg.accent_color) scope.style.setProperty('--accent-hover', cfg.accent_hover || cfg.secondary_color || cfg.accent_color);
+                if (cfg.background_color) scope.style.setProperty('--bg-warm', cfg.background_color);
+                if (cfg.text_color) scope.style.setProperty('--text-color', cfg.text_color);
                 // Aplicar directamente al scope para garantizar fondo y texto
                 if (cfg.background_color) scope.style.backgroundColor = cfg.background_color;
-                if (cfg.text_color)       scope.style.color = cfg.text_color;
+                if (cfg.text_color) scope.style.color = cfg.text_color;
             }
         }
     },
@@ -626,7 +626,7 @@ const app = {
 
                     <div class="lg:col-span-2">
                         <div class="flex items-center justify-between mb-8">
-                            <h3 class="text-3xl font-display font-bold text-stone-900">Productos Destacados</h3>
+                            <h3 class="wl-heading-3 text-3xl font-display font-bold text-stone-900">Productos Destacados</h3>
                             <a href="/tienda" data-page="tienda" class="text-accent font-bold hover:underline">Ver todo el catálogo <i class="fas fa-arrow-right ml-1"></i></a>
                         </div>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -648,7 +648,7 @@ const app = {
         const html = `
             <div class="container mx-auto px-6 py-12 fade-in">
                 <div class="max-w-3xl mb-12">
-                    <h1 class="text-4xl md:text-5xl font-display font-bold text-stone-900 mb-4">Nuestra Tienda</h1>
+                    <h1 class="wl-heading-3 text-4xl md:text-5xl font-display font-bold text-stone-900 mb-4">Nuestra Tienda</h1>
                     <p class="text-lg text-stone-600">Explora nuestra selección exclusiva de productos con trazabilidad garantizada directamente desde el origen.</p>
                 </div>
                 
@@ -702,7 +702,7 @@ const app = {
             <div class="container mx-auto px-6 py-16 fade-in">
                 <div class="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-16">
                     <div>
-                        <h1 class="text-4xl md:text-5xl font-display font-bold text-stone-900 mb-6">Ponte en contacto</h1>
+                        <h1 class="wl-heading-3 text-4xl md:text-5xl font-display font-bold text-stone-900 mb-6">Ponte en contacto</h1>
                         <p class="text-lg text-stone-600 mb-10">¿Tienes dudas sobre nuestros procesos o te gustaría realizar un pedido especial? Estamos aquí para ayudarte.</p>
                         
                         <div class="space-y-4">

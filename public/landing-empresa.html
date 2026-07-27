@@ -34,14 +34,25 @@
         /* === CSS Variables dinámicas — scoped al área White Label únicamente ===
            Se aplican a #wl-scope, NO afectan el nav de RuruLab (#public-nav-placeholder) */
         #wl-scope {
-            --primary-color: #78350f;      /* Encabezados, botones primarios */
-            --secondary-color: #451a03;    /* Subtítulos, bordes */
-            --accent-color: #d97706;       /* Badges, links, destacados */
-            --accent-hover: #b45309;       /* Hover de acento */
-            --bg-warm: #fdfaf6;            /* Fondo general de la landing */
-            --text-color: #1c1917;         /* Color de texto principal */
+            --primary-color: #78350f;
+            /* Encabezados, botones primarios */
+            --secondary-color: #451a03;
+            /* Subtítulos, bordes */
+            --accent-color: #d97706;
+            /* Badges, links, destacados */
+            --accent-hover: #b45309;
+            /* Hover de acento */
+            --bg-warm: #fdfaf6;
+            /* Fondo general de la landing */
+            --text-color: #1c1917;
+            /* Color de texto principal */
             background-color: var(--bg-warm);
             color: var(--text-color);
+        }
+
+        #wl-scope .wl-heading-3 {
+            color: var(--primary-color);
+            font-family: 'Playfair Display', serif;
         }
 
         body {
@@ -279,115 +290,120 @@
     <!-- WL SCOPE: todo lo que sigue hereda el tema del cliente -->
     <div id="wl-scope" class="flex flex-col flex-grow">
 
-    <!-- HEADER WHITE LABEL (neutral, sin branding RuruLab) -->
-    <header id="wl-header" class="wl-header hidden">
-        <div class="container mx-auto px-6">
-            <div class="flex items-center justify-between h-16">
-                <!-- Logo del cliente -->
-                <a href="/" data-page="inicio" class="flex items-center gap-3">
-                    <img id="wl-logo" src="" alt="Logo"
-                        class="h-10 w-10 rounded-lg object-contain bg-white border border-stone-100">
-                    <span id="wl-brand-name"
-                        class="font-display font-bold text-lg text-stone-900 hidden md:inline"></span>
-                </a>
+        <!-- HEADER WHITE LABEL (neutral, sin branding RuruLab) -->
+        <header id="wl-header" class="wl-header hidden">
+            <div class="container mx-auto px-6">
+                <div class="flex items-center justify-between h-16">
+                    <!-- Logo del cliente -->
+                    <a href="/" data-page="inicio" class="flex items-center gap-3">
+                        <img id="wl-logo" src="" alt="Logo"
+                            class="h-10 w-10 rounded-lg object-contain bg-white border border-stone-100">
+                        <span id="wl-brand-name"
+                            class="font-display font-bold text-lg text-stone-900 hidden md:inline"></span>
+                    </a>
 
-                <!-- Navegación desktop -->
-                <nav class="hidden md:flex items-center gap-8">
-                    <a href="/" class="wl-nav-link active" data-page="inicio">
-                        <i class="fas fa-home mr-1 text-xs"></i> Inicio
-                    </a>
-                    <a href="/tienda" class="wl-nav-link" data-page="tienda">
-                        <i class="fas fa-shopping-bag mr-1 text-xs"></i> Tienda
-                    </a>
-                    <a href="/contacto" class="wl-nav-link" data-page="contacto">
-                        <i class="fas fa-envelope mr-1 text-xs"></i> Contáctanos
-                    </a>
-                </nav>
+                    <!-- Navegación desktop -->
+                    <nav class="hidden md:flex items-center gap-8">
+                        <a href="/" class="wl-nav-link active" data-page="inicio">
+                            <i class="fas fa-home mr-1 text-xs"></i> Inicio
+                        </a>
+                        <a href="/tienda" class="wl-nav-link" data-page="tienda">
+                            <i class="fas fa-shopping-bag mr-1 text-xs"></i> Tienda
+                        </a>
+                        <a href="/contacto" class="wl-nav-link" data-page="contacto">
+                            <i class="fas fa-envelope mr-1 text-xs"></i> Contáctanos
+                        </a>
+                    </nav>
 
-                <!-- Hamburger mobile -->
-                <button id="mobile-menu-btn" class="md:hidden p-2 text-stone-600 hover:text-stone-900"
-                    onclick="app.toggleMobileMenu()">
-                    <i class="fas fa-bars text-xl"></i>
-                </button>
-            </div>
+                    <!-- Hamburger mobile -->
+                    <button id="mobile-menu-btn" class="md:hidden p-2 text-stone-600 hover:text-stone-900"
+                        onclick="app.toggleMobileMenu()">
+                        <i class="fas fa-bars text-xl"></i>
+                    </button>
+                </div>
 
-            <!-- Menú mobile -->
-            <div id="wl-mobile-menu" class="mobile-menu md:hidden border-t border-stone-100">
-                <div class="py-3 space-y-1">
-                    <a href="/" class="block px-4 py-2 rounded-lg text-stone-600 hover:bg-stone-50 font-medium"
-                        data-page="inicio" onclick="app.closeMobileMenu()">
-                        <i class="fas fa-home mr-2 text-xs"></i> Inicio
-                    </a>
-                    <a href="/tienda" class="block px-4 py-2 rounded-lg text-stone-600 hover:bg-stone-50 font-medium"
-                        data-page="tienda" onclick="app.closeMobileMenu()">
-                        <i class="fas fa-shopping-bag mr-2 text-xs"></i> Tienda
-                    </a>
-                    <a href="/contacto" class="block px-4 py-2 rounded-lg text-stone-600 hover:bg-stone-50 font-medium"
-                        data-page="contacto" onclick="app.closeMobileMenu()">
-                        <i class="fas fa-envelope mr-2 text-xs"></i> Contáctanos
-                    </a>
+                <!-- Menú mobile -->
+                <div id="wl-mobile-menu" class="mobile-menu md:hidden border-t border-stone-100">
+                    <div class="py-3 space-y-1">
+                        <a href="/" class="block px-4 py-2 rounded-lg text-stone-600 hover:bg-stone-50 font-medium"
+                            data-page="inicio" onclick="app.closeMobileMenu()">
+                            <i class="fas fa-home mr-2 text-xs"></i> Inicio
+                        </a>
+                        <a href="/tienda"
+                            class="block px-4 py-2 rounded-lg text-stone-600 hover:bg-stone-50 font-medium"
+                            data-page="tienda" onclick="app.closeMobileMenu()">
+                            <i class="fas fa-shopping-bag mr-2 text-xs"></i> Tienda
+                        </a>
+                        <a href="/contacto"
+                            class="block px-4 py-2 rounded-lg text-stone-600 hover:bg-stone-50 font-medium"
+                            data-page="contacto" onclick="app.closeMobileMenu()">
+                            <i class="fas fa-envelope mr-2 text-xs"></i> Contáctanos
+                        </a>
+                    </div>
                 </div>
             </div>
-        </div>
-    </header>
+        </header>
 
-    <main class="flex-grow">
+        <main class="flex-grow">
 
-        <!-- Breadcrumbs dinámicos por página -->
-        <nav id="breadcrumbs" aria-label="Migas de pan"
-            class="container mx-auto px-6 py-3 flex items-center gap-1.5 text-xs font-medium text-stone-400 flex-wrap hidden">
+            <!-- Breadcrumbs dinámicos por página -->
+            <nav id="breadcrumbs" aria-label="Migas de pan"
+                class="container mx-auto px-6 py-3 flex items-center gap-1.5 text-xs font-medium text-stone-400 flex-wrap hidden">
 
-            <!-- Inicio: Nombre tienda -->
-            <span id="bc-inicio" class="hidden items-center gap-1 text-amber-800 font-semibold">
-                <i class="fas fa-store text-[10px]"></i> <span class="bc-store-name">Tienda</span>
-            </span>
-
-            <!-- Tienda: Nombre tienda › Productos -->
-            <span id="bc-tienda" class="hidden items-center gap-1.5">
-                <a href="/" data-page="inicio" class="hover:text-stone-600 transition-colors flex items-center gap-1">
+                <!-- Inicio: Nombre tienda -->
+                <span id="bc-inicio" class="hidden items-center gap-1 text-amber-800 font-semibold">
                     <i class="fas fa-store text-[10px]"></i> <span class="bc-store-name">Tienda</span>
-                </a>
-                <i class="fas fa-chevron-right text-[8px] text-stone-300"></i>
-                <span class="text-amber-800 font-semibold">Productos</span>
-            </span>
+                </span>
 
-            <!-- Contáctanos: Nombre tienda › Contactenos -->
-            <span id="bc-contacto" class="hidden items-center gap-1.5">
-                <a href="/" data-page="inicio" class="hover:text-stone-600 transition-colors flex items-center gap-1">
-                    <i class="fas fa-store text-[10px]"></i> <span class="bc-store-name">Tienda</span>
-                </a>
-                <i class="fas fa-chevron-right text-[8px] text-stone-300"></i>
-                <span class="text-amber-800 font-semibold">Contactenos</span>
-            </span>
+                <!-- Tienda: Nombre tienda › Productos -->
+                <span id="bc-tienda" class="hidden items-center gap-1.5">
+                    <a href="/" data-page="inicio"
+                        class="hover:text-stone-600 transition-colors flex items-center gap-1">
+                        <i class="fas fa-store text-[10px]"></i> <span class="bc-store-name">Tienda</span>
+                    </a>
+                    <i class="fas fa-chevron-right text-[8px] text-stone-300"></i>
+                    <span class="text-amber-800 font-semibold">Productos</span>
+                </span>
 
-            <!-- Modo directorio (no White Label): Empresas › NombreEmpresa -->
-            <span id="bc-directorio" class="hidden items-center gap-1.5">
-                <i class="fas fa-store text-[10px]"></i>
-                <span id="breadcrumb-company" class="font-bold text-stone-800"></span>
-            </span>
-        </nav>
+                <!-- Contáctanos: Nombre tienda › Contactenos -->
+                <span id="bc-contacto" class="hidden items-center gap-1.5">
+                    <a href="/" data-page="inicio"
+                        class="hover:text-stone-600 transition-colors flex items-center gap-1">
+                        <i class="fas fa-store text-[10px]"></i> <span class="bc-store-name">Tienda</span>
+                    </a>
+                    <i class="fas fa-chevron-right text-[8px] text-stone-300"></i>
+                    <span class="text-amber-800 font-semibold">Contactenos</span>
+                </span>
+
+                <!-- Modo directorio (no White Label): Empresas › NombreEmpresa -->
+                <span id="bc-directorio" class="hidden items-center gap-1.5">
+                    <i class="fas fa-store text-[10px]"></i>
+                    <span id="breadcrumb-company" class="font-bold text-stone-800"></span>
+                </span>
+            </nav>
 
 
-        <!-- Contenedor del Landing (todas las páginas se renderizan aquí) -->
-        <div id="landing-view">
-            <div id="app-container" class="min-h-[400px]">
-                <div class="flex justify-center py-20">
-                    <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-900"></div>
+            <!-- Contenedor del Landing (todas las páginas se renderizan aquí) -->
+            <div id="landing-view">
+                <div id="app-container" class="min-h-[400px]">
+                    <div class="flex justify-center py-20">
+                        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-900"></div>
+                    </div>
                 </div>
             </div>
-        </div>
 
-    </main>
+        </main>
 
-    <!-- Footer (se actualiza dinámicamente) -->
-    <footer id="wl-footer" class="bg-stone-950 text-stone-500 py-12 border-t border-stone-800 mt-auto">
-        <div class="container mx-auto px-6 text-center">
-            <p class="text-sm font-medium">&copy; 2025 <span id="footer-brand">Ruru Lab</span>. Trazabilidad que genera
-                confianza.</p>
-            <p class="text-xs text-stone-600 mt-2">Potenciado por <a href="https://rurulab.com" target="_blank"
-                    class="text-stone-400 hover:text-white transition">RuruLab</a></p>
-        </div>
-    </footer>
+        <!-- Footer (se actualiza dinámicamente) -->
+        <footer id="wl-footer" class="bg-stone-950 text-stone-500 py-12 border-t border-stone-800 mt-auto">
+            <div class="container mx-auto px-6 text-center">
+                <p class="text-sm font-medium">&copy; 2025 <span id="footer-brand">Ruru Lab</span>. Trazabilidad que
+                    genera
+                    confianza.</p>
+                <p class="text-xs text-stone-600 mt-2">Potenciado por <a href="https://rurulab.com" target="_blank"
+                        class="text-stone-400 hover:text-white transition">RuruLab</a></p>
+            </div>
+        </footer>
 
     </div><!-- /#wl-scope -->
 
