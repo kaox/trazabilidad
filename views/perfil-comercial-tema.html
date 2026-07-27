@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Theme Builder - Ruru Lab</title>
+    <script src="/auth.js"></script>
+    <link href="/css/styles.css" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&family=Playfair+Display:wght@700;800;900&display=swap"
+        rel="stylesheet">
+    <script src="/js/analytics-loader.js" defer></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc;
+        }
+
+        .font-display {
+            font-family: 'Playfair Display', serif;
+        }
+
+        /* Viewport Transition */
+        .preview-canvas-container {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .viewport-desktop {
+            width: 100%;
+            max-width: 100%;
+        }
+
+        .viewport-tablet {
+            width: 768px;
+            max-width: 100%;
+            border: 12px solid #1e293b;
+            border-radius: 2rem;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        }
+
+        .viewport-mobile {
+            width: 375px;
+            max-width: 100%;
+            border: 12px solid #1e293b;
+            border-radius: 2.5rem;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        }
+
+        /* Color Input Custom Styling */
+        input[type="color"]::-webkit-color-swatch-wrapper {
+            padding: 0;
+        }
+        input[type="color"]::-webkit-color-swatch {
+            border: none;
+            border-radius: 0.5rem;
+        }
+    </style>
+</head>
+
+<body class="text-stone-800 antialiased min-h-screen flex flex-col">
+    <!-- Navbar principal de la app -->
+    <div id="nav-placeholder"></div>
+
+    <div class="flex-grow flex flex-col">
+        <!-- Toolbar Header de Theme Builder -->
+        <header class="bg-white border-b border-stone-200 px-6 py-4 flex flex-wrap items-center justify-between gap-4 sticky top-0 z-30 shadow-sm">
+            <div class="flex items-center gap-4">
+                <a href="/app/perfil-comercial" class="p-2 rounded-xl text-stone-500 hover:text-amber-900 hover:bg-amber-50 transition" title="Volver a Perfil Comercial">
+                    <i class="fas fa-arrow-left text-lg"></i>
+                </a>
+                <div>
+                    <div class="flex items-center gap-2">
+                        <span class="bg-amber-100 text-amber-900 text-[10px] font-black uppercase px-2 py-0.5 rounded">White Label</span>
+                        <h1 class="text-xl font-bold text-stone-900 font-display">Theme Builder</h1>
+                    </div>
+                    <p class="text-xs text-stone-500">Personaliza la paleta de colores de la Landing Page de tu marca en tiempo real.</p>
+                </div>
+            </div>
+
+            <!-- Selector de Dispositivo (Viewport Toolbar) -->
+            <div class="bg-stone-100 p-1 rounded-2xl flex items-center gap-1 border border-stone-200 shadow-inner">
+                <button id="btn-vp-desktop" onclick="setViewport('desktop')" class="px-3.5 py-1.5 rounded-xl font-bold text-xs flex items-center gap-2 transition bg-white text-stone-900 shadow">
+                    <i class="fas fa-desktop"></i> <span class="hidden sm:inline">PC</span>
+                </button>
+                <button id="btn-vp-tablet" onclick="setViewport('tablet')" class="px-3.5 py-1.5 rounded-xl font-bold text-xs flex items-center gap-2 transition text-stone-600 hover:text-stone-900">
+                    <i class="fas fa-tablet-alt"></i> <span class="hidden sm:inline">Tablet</span>
+                </button>
+                <button id="btn-vp-mobile" onclick="setViewport('mobile')" class="px-3.5 py-1.5 rounded-xl font-bold text-xs flex items-center gap-2 transition text-stone-600 hover:text-stone-900">
+                    <i class="fas fa-mobile-alt"></i> <span class="hidden sm:inline">Móvil</span>
+                </button>
+            </div>
+
+            <!-- Botones de Acción principales -->
+            <div class="flex items-center gap-3">
+                <button id="btn-reset-theme" onclick="resetThemeToSaved()" class="px-4 py-2 rounded-xl text-xs font-bold bg-stone-100 hover:bg-stone-200 text-stone-700 transition flex items-center gap-2">
+                    <i class="fas fa-undo"></i> Restablecer
+                </button>
+                <button id="btn-save-theme" onclick="saveTheme()" class="px-5 py-2 rounded-xl text-xs font-bold bg-amber-800 hover:bg-amber-900 text-white transition shadow-md flex items-center gap-2">
+                    <i class="fas fa-save"></i> Guardar Tema
+                </button>
+            </div>
+        </header>
+
+        <!-- Split View: Sidebar de Configuración + Lienzo de Previsualización -->
+        <div class="flex-grow flex flex-col lg:flex-row overflow-hidden">
+            <!-- Sidebar Izquierda: Panel de Controles -->
+            <aside class="w-full lg:w-96 bg-white border-r border-stone-200 p-6 overflow-y-auto max-h-[calc(100vh-80px)] space-y-6">
+                <!-- Indicador de Estado / Modo -->
+                <div class="bg-stone-50 border border-stone-200 p-4 rounded-2xl flex items-center justify-between">
+                    <div>
+                        <span class="text-[10px] font-bold uppercase tracking-wider text-stone-400 block mb-0.5">Modo de Tema</span>
+                        <h4 id="theme-mode-text" class="text-sm font-bold text-amber-900">Claro Orgánico (Prediseñado)</h4>
+                    </div>
+                    <span id="theme-mode-badge" class="bg-amber-100 text-amber-800 text-[10px] font-bold px-2.5 py-1 rounded-full">Preset</span>
+                </div>
+
+                <!-- Campo de Nombre para Tema Personalizado (Visible en modo Custom) -->
+                <div id="custom-name-container" class="hidden space-y-1">
+                    <label class="block text-xs font-bold text-stone-600 uppercase tracking-wider">Nombre de tu Tema Custom</label>
+                    <input type="text" id="input-custom-name" placeholder="Ej. Mi Marca Especial" class="w-full px-3.5 py-2.5 rounded-xl border border-stone-200 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500">
+                </div>
+
+                <!-- SECCIÓN 1: Temas Prediseñados (Presets) -->
+                <div>
+                    <h3 class="text-sm font-bold text-stone-800 uppercase tracking-wider mb-3 flex items-center justify-between">
+                        <span>1. Temas Prediseñados</span>
+                        <span class="text-[10px] text-stone-400 font-normal">Click para aplicar</span>
+                    </h3>
+                    <div id="presets-container" class="grid grid-cols-2 gap-3">
+                        <!-- Se puebla dinámicamente con los temas prediseñados -->
+                        <div class="animate-pulse bg-stone-100 h-20 rounded-xl"></div>
+                        <div class="animate-pulse bg-stone-100 h-20 rounded-xl"></div>
+                    </div>
+                </div>
+
+                <!-- SECCIÓN 2: Colores Personalizados (Custom Palette) -->
+                <div>
+                    <h3 class="text-sm font-bold text-stone-800 uppercase tracking-wider mb-3">
+                        2. Colores Personalizados
+                    </h3>
+                    <p class="text-xs text-stone-500 mb-4">Modifica los colores individualmente. La selección prediseñada cambiará a modo Custom automáticamente.</p>
+
+                    <div class="space-y-4 bg-stone-50/70 p-4 rounded-2xl border border-stone-100">
+                        <!-- Color Primario -->
+                        <div class="flex items-center justify-between gap-3">
+                            <div>
+                                <label class="block text-xs font-bold text-stone-700">Color Primario</label>
+                                <span class="text-[10px] text-stone-400">Encabezados y Botones</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <input type="color" id="color-primary" class="w-9 h-9 cursor-pointer rounded-lg border-0 shadow-sm" onchange="onCustomColorChange('primary', this.value)">
+                                <input type="text" id="hex-primary" class="w-20 px-2 py-1 text-xs font-mono font-bold rounded-lg border border-stone-200 text-center uppercase" onchange="onCustomHexChange('primary', this.value)">
+                            </div>
+                        </div>
+
+                        <!-- Color Secundario -->
+                        <div class="flex items-center justify-between gap-3">
+                            <div>
+                                <label class="block text-xs font-bold text-stone-700">Color Secundario</label>
+                                <span class="text-[10px] text-stone-400">Subtítulos y Bordes</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <input type="color" id="color-secondary" class="w-9 h-9 cursor-pointer rounded-lg border-0 shadow-sm" onchange="onCustomColorChange('secondary', this.value)">
+                                <input type="text" id="hex-secondary" class="w-20 px-2 py-1 text-xs font-mono font-bold rounded-lg border border-stone-200 text-center uppercase" onchange="onCustomHexChange('secondary', this.value)">
+                            </div>
+                        </div>
+
+                        <!-- Color Acento -->
+                        <div class="flex items-center justify-between gap-3">
+                            <div>
+                                <label class="block text-xs font-bold text-stone-700">Color Acento</label>
+                                <span class="text-[10px] text-stone-400">Badges, Enlaces y Destacados</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <input type="color" id="color-accent" class="w-9 h-9 cursor-pointer rounded-lg border-0 shadow-sm" onchange="onCustomColorChange('accent', this.value)">
+                                <input type="text" id="hex-accent" class="w-20 px-2 py-1 text-xs font-mono font-bold rounded-lg border border-stone-200 text-center uppercase" onchange="onCustomHexChange('accent', this.value)">
+                            </div>
+                        </div>
+
+                        <!-- Color Fondo -->
+                        <div class="flex items-center justify-between gap-3">
+                            <div>
+                                <label class="block text-xs font-bold text-stone-700">Color de Fondo</label>
+                                <span class="text-[10px] text-stone-400">Fondo de la Landing Page</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <input type="color" id="color-background" class="w-9 h-9 cursor-pointer rounded-lg border-0 shadow-sm" onchange="onCustomColorChange('background', this.value)">
+                                <input type="text" id="hex-background" class="w-20 px-2 py-1 text-xs font-mono font-bold rounded-lg border border-stone-200 text-center uppercase" onchange="onCustomHexChange('background', this.value)">
+                            </div>
+                        </div>
+
+                        <!-- Color Texto -->
+                        <div class="flex items-center justify-between gap-3">
+                            <div>
+                                <label class="block text-xs font-bold text-stone-700">Color de Texto</label>
+                                <span class="text-[10px] text-stone-400">Párrafos y textos principales</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <input type="color" id="color-text" class="w-9 h-9 cursor-pointer rounded-lg border-0 shadow-sm" onchange="onCustomColorChange('text', this.value)">
+                                <input type="text" id="hex-text" class="w-20 px-2 py-1 text-xs font-mono font-bold rounded-lg border border-stone-200 text-center uppercase" onchange="onCustomHexChange('text', this.value)">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- Área Principal Derecha: Lienzo de Previsualización -->
+            <main class="flex-grow bg-slate-200/70 p-4 md:p-8 flex justify-center items-start overflow-y-auto">
+                <div id="preview-viewport-wrapper" class="preview-canvas-container viewport-desktop bg-white overflow-hidden shadow-2xl rounded-2xl my-auto">
+                    <!-- Barra del Navegador simulado en el lienzo -->
+                    <div class="bg-slate-800 text-slate-400 px-4 py-2 flex items-center justify-between text-xs select-none">
+                        <div class="flex items-center gap-2">
+                            <span class="w-3 h-3 rounded-full bg-red-500 inline-block"></span>
+                            <span class="w-3 h-3 rounded-full bg-amber-500 inline-block"></span>
+                            <span class="w-3 h-3 rounded-full bg-green-500 inline-block"></span>
+                        </div>
+                        <div class="bg-slate-900 px-6 py-1 rounded-full text-[11px] font-mono text-slate-300 flex items-center gap-2">
+                            <i class="fas fa-lock text-green-400 text-[9px]"></i>
+                            <span id="preview-url-bar">https://preview.rurulab.com/origen-unico/tu-marca</span>
+                        </div>
+                        <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Vista Previa en Vivo</div>
+                    </div>
+
+                    <!-- MOCK LANDING PAGE REALISTA (Renderiza con CSS Variables) -->
+                    <div id="mock-landing-root" class="min-h-[750px] transition-colors duration-300" style="background-color: var(--color-background, #fdfaf6); color: var(--color-text, #1c1917);">
+                        
+                        <!-- Header / Nav Mock -->
+                        <nav class="px-6 py-4 border-b flex items-center justify-between" style="border-color: rgba(0,0,0,0.08);">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-xl flex items-center justify-center font-bold text-white shadow-sm" style="background-color: var(--color-primary, #78350f);">
+                                    <i class="fas fa-leaf text-lg"></i>
+                                </div>
+                                <div>
+                                    <h2 id="mock-company-name" class="font-display font-bold text-lg leading-tight" style="color: var(--color-primary, #78350f);">Finca Don Carlos</h2>
+                                    <span class="text-[10px] uppercase font-bold tracking-widest opacity-60">Origen Único</span>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-6 text-xs font-bold">
+                                <span class="cursor-pointer font-black" style="color: var(--color-accent, #d97706);">Inicio</span>
+                                <span class="cursor-pointer opacity-75">Tienda</span>
+                                <span class="cursor-pointer opacity-75">Contacto</span>
+                                <span class="px-4 py-2 rounded-xl font-bold text-white shadow-sm" style="background-color: var(--color-accent, #d97706);">Pedir WhatsApp</span>
+                            </div>
+                        </nav>
+
+                        <!-- Hero Banner Section -->
+                        <div class="p-8 md:p-12">
+                            <div class="relative rounded-3xl overflow-hidden shadow-xl p-8 md:p-12 flex flex-col justify-end min-h-[300px]" style="background: linear-gradient(180deg, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0.85) 100%), url('https://images.unsplash.com/photo-1511537632536-b7a4896848a5?auto=format&fit=crop&q=80&w=1000') center/cover;">
+                                <div class="relative z-10 text-white space-y-3">
+                                    <span class="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider inline-block text-white" style="background-color: var(--color-accent, #d97706);">Finca de Origen</span>
+                                    <h1 class="text-3xl md:text-5xl font-display font-bold">Café Especial de Altura</h1>
+                                    <p class="text-white/80 text-sm max-w-xl">Cultivado a 1,800 m.s.n.m. con procesos artesanales y trazabilidad garantizada.</p>
+                                    <div class="pt-2 flex items-center gap-4">
+                                        <button class="px-6 py-3 rounded-2xl font-bold text-sm text-white shadow-lg flex items-center gap-2" style="background-color: var(--color-accent, #d97706);">
+                                            <i class="fab fa-whatsapp text-lg"></i> Contactar Productor
+                                        </button>
+                                        <button class="px-6 py-3 rounded-2xl font-bold text-sm bg-white/20 hover:bg-white/30 backdrop-blur text-white">
+                                            Ver Catálogo
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 2 Column Layout: Historia & Terroir vs Productos -->
+                        <div class="px-8 pb-12 grid grid-cols-1 lg:grid-cols-3 gap-8">
+                            
+                            <!-- Col 1: Historia & Terroir -->
+                            <div class="lg:col-span-1 space-y-6">
+                                <div class="p-6 rounded-3xl border shadow-sm space-y-4" style="background-color: rgba(255,255,255,0.7); border-color: rgba(0,0,0,0.08);">
+                                    <h3 class="font-display font-bold text-xl pb-2 border-b" style="color: var(--color-primary, #78350f); border-color: rgba(0,0,0,0.08);">Nuestra Historia</h3>
+                                    <p class="text-xs leading-relaxed italic opacity-85">"Tres generaciones dedicadas a la conservación del suelo y al cultivo de cafés con notas sensoriales finas."</p>
+                                    <div class="grid grid-cols-3 gap-2 pt-2">
+                                        <div class="h-16 rounded-xl bg-stone-300 overflow-hidden">
+                                            <img src="https://images.unsplash.com/photo-1447933601403-0c6688de566e?auto=format&fit=crop&q=80&w=300" class="w-full h-full object-cover">
+                                        </div>
+                                        <div class="h-16 rounded-xl bg-stone-300 overflow-hidden">
+                                            <img src="https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?auto=format&fit=crop&q=80&w=300" class="w-full h-full object-cover">
+                                        </div>
+                                        <div class="h-16 rounded-xl bg-stone-300 overflow-hidden">
+                                            <img src="https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&q=80&w=300" class="w-full h-full object-cover">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="p-6 rounded-3xl border shadow-sm space-y-3" style="background-color: rgba(255,255,255,0.7); border-color: rgba(0,0,0,0.08);">
+                                    <h4 class="font-bold text-sm flex items-center gap-2" style="color: var(--color-secondary, #451a03);">
+                                        <i class="fas fa-map-marker-alt" style="color: var(--color-accent, #d97706);"></i> Terroir & Origen
+                                    </h4>
+                                    <p class="text-xs opacity-75">Villa Rica, Pasco, Perú • 1,800 m.s.n.m.</p>
+                                    <div class="w-full h-24 rounded-2xl bg-amber-900/10 border border-amber-900/20 flex items-center justify-center text-xs font-bold opacity-60">
+                                        <i class="fas fa-map text-lg mr-2"></i> Mapa de Origen
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Col 2: Catálogo de Productos -->
+                            <div class="lg:col-span-2 space-y-6">
+                                <div class="flex items-center justify-between">
+                                    <h3 class="font-display font-bold text-2xl" style="color: var(--color-primary, #78350f);">Productos Destacados</h3>
+                                    <span class="text-xs font-bold hover:underline cursor-pointer" style="color: var(--color-accent, #d97706);">Ver todo el catálogo &rarr;</span>
+                                </div>
+
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <!-- Tarjeta Producto 1 -->
+                                    <div class="rounded-3xl border shadow-sm overflow-hidden flex flex-col bg-white" style="border-color: rgba(0,0,0,0.08);">
+                                        <div class="relative aspect-square bg-stone-100 overflow-hidden">
+                                            <img src="https://images.unsplash.com/photo-1559056199-641a0ac8b55e?auto=format&fit=crop&q=80&w=400" class="w-full h-full object-cover">
+                                            <span class="absolute top-3 left-3 text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full text-white" style="background-color: var(--color-secondary, #451a03);">
+                                                Café Geisha
+                                            </span>
+                                            <span class="absolute top-3 right-3 text-[10px] font-bold px-2 py-1 rounded-full bg-white text-stone-900 shadow">
+                                                <i class="fas fa-star text-amber-500"></i> 88.5 Pts
+                                            </span>
+                                        </div>
+                                        <div class="p-5 flex flex-col flex-grow space-y-3">
+                                            <div>
+                                                <span class="text-[10px] font-bold uppercase tracking-wider opacity-50 block mb-1">Lavado • 250g</span>
+                                                <h4 class="font-bold text-base leading-snug" style="color: var(--color-primary, #78350f);">Geisha Reserva Especial</h4>
+                                            </div>
+                                            <div class="flex flex-wrap gap-1">
+                                                <span class="text-[9px] font-bold px-2 py-0.5 rounded-full border" style="background-color: rgba(217, 119, 6, 0.1); color: var(--color-accent, #d97706); border-color: rgba(217, 119, 6, 0.2);">Jazmín</span>
+                                                <span class="text-[9px] font-bold px-2 py-0.5 rounded-full border" style="background-color: rgba(217, 119, 6, 0.1); color: var(--color-accent, #d97706); border-color: rgba(217, 119, 6, 0.2);">Durazno</span>
+                                                <span class="text-[9px] font-bold px-2 py-0.5 rounded-full border" style="background-color: rgba(217, 119, 6, 0.1); color: var(--color-accent, #d97706); border-color: rgba(217, 119, 6, 0.2);">Miel</span>
+                                            </div>
+                                            <div class="pt-3 border-t flex items-center justify-between mt-auto" style="border-color: rgba(0,0,0,0.06);">
+                                                <span class="font-black text-base" style="color: var(--color-primary, #78350f);">S/ 45.00</span>
+                                                <button class="px-4 py-2 rounded-xl text-xs font-bold text-white shadow-sm" style="background-color: var(--color-accent, #d97706);">
+                                                    Comprar ahora
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Tarjeta Producto 2 -->
+                                    <div class="rounded-3xl border shadow-sm overflow-hidden flex flex-col bg-white" style="border-color: rgba(0,0,0,0.08);">
+                                        <div class="relative aspect-square bg-stone-100 overflow-hidden">
+                                            <img src="https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?auto=format&fit=crop&q=80&w=400" class="w-full h-full object-cover">
+                                            <span class="absolute top-3 left-3 text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full text-white" style="background-color: var(--color-secondary, #451a03);">
+                                                Caturra Natural
+                                            </span>
+                                        </div>
+                                        <div class="p-5 flex flex-col flex-grow space-y-3">
+                                            <div>
+                                                <span class="text-[10px] font-bold uppercase tracking-wider opacity-50 block mb-1">Proceso Natural • 500g</span>
+                                                <h4 class="font-bold text-base leading-snug" style="color: var(--color-primary, #78350f);">Bourbon Rojo Intenso</h4>
+                                            </div>
+                                            <div class="flex flex-wrap gap-1">
+                                                <span class="text-[9px] font-bold px-2 py-0.5 rounded-full border" style="background-color: rgba(217, 119, 6, 0.1); color: var(--color-accent, #d97706); border-color: rgba(217, 119, 6, 0.2);">Chocolate</span>
+                                                <span class="text-[9px] font-bold px-2 py-0.5 rounded-full border" style="background-color: rgba(217, 119, 6, 0.1); color: var(--color-accent, #d97706); border-color: rgba(217, 119, 6, 0.2);">Avellana</span>
+                                            </div>
+                                            <div class="pt-3 border-t flex items-center justify-between mt-auto" style="border-color: rgba(0,0,0,0.06);">
+                                                <span class="font-black text-base" style="color: var(--color-primary, #78350f);">S/ 38.00</span>
+                                                <button class="px-4 py-2 rounded-xl text-xs font-bold text-white shadow-sm" style="background-color: var(--color-accent, #d97706);">
+                                                    Comprar ahora
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Mock Footer -->
+                        <footer class="p-6 border-t text-center text-xs opacity-60" style="border-color: rgba(0,0,0,0.08);">
+                            <p>&copy; 2026 Finca Don Carlos. Impulsado por Ruru Lab Marca Blanca.</p>
+                        </footer>
+
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Scripts de la aplicación -->
+    <script src="/js/nav-loader.js"></script>
+    <script src="/js/perfil-comercial-tema-app.js"></script>
+</body>
+
+</html>
