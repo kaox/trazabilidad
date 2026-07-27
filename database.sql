@@ -158,6 +158,41 @@ CREATE TABLE IF NOT EXISTS company_profiles (
     CONSTRAINT uq_user_company_name UNIQUE (user_id, name)
 );
 
+CREATE TABLE IF NOT EXISTS theme_presets (
+    id TEXT PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    color_primary VARCHAR(20) NOT NULL,
+    color_secondary VARCHAR(20) NOT NULL,
+    color_accent VARCHAR(20) NOT NULL,
+    color_background VARCHAR(20) NOT NULL,
+    color_text VARCHAR(20) NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS company_profile_theme (
+    id TEXT PRIMARY KEY,
+    company_profile_id TEXT NOT NULL REFERENCES company_profiles(id) ON DELETE CASCADE,
+    preset_id TEXT REFERENCES theme_presets(id) ON DELETE SET NULL,
+    is_custom BOOLEAN DEFAULT FALSE,
+    custom_name VARCHAR(255),
+    color_primary VARCHAR(20) NOT NULL,
+    color_secondary VARCHAR(20) NOT NULL,
+    color_accent VARCHAR(20) NOT NULL,
+    color_background VARCHAR(20) NOT NULL,
+    color_text VARCHAR(20) NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+INSERT INTO theme_presets (id, name, color_primary, color_secondary, color_accent, color_background, color_text) VALUES
+('preset-claro-organico', 'Claro Orgánico', '#78350f', '#451a03', '#d97706', '#fdfaf6', '#1c1917'),
+('preset-oscuro-elegante', 'Oscuro Elegante', '#1c1917', '#292524', '#f59e0b', '#0c0a09', '#f5f5f4'),
+('preset-verde-finca', 'Verde Finca', '#14532d', '#166534', '#22c55e', '#f0fdf4', '#052e16'),
+('preset-cacao-gourmet', 'Cacao Gourmet', '#3b0764', '#581c87', '#a855f7', '#faf5ff', '#2e1065'),
+('preset-cafe-tostado', 'Café Tostado', '#271c19', '#442d25', '#c27844', '#f7f3ee', '#1e1310'),
+('preset-sol-andino', 'Sol Andino', '#9a3412', '#7c2d12', '#ea580c', '#fff7ed', '#431407')
+ON CONFLICT (id) DO NOTHING;
+
 -- 4. CONFIGURACIÓN DE PROCESOS (PLANTILLAS)
 CREATE TABLE IF NOT EXISTS plantillas_proceso (
     id SERIAL PRIMARY KEY,

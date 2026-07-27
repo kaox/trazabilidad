@@ -20,6 +20,7 @@ const EmpresaModel = require('./src/models/empresaModel');
 const suggestionsController = require('./src/controllers/admin-suggestionsController');
 const productosController = require('./src/controllers/productosController');
 const companyProfileController = require('./src/controllers/companyProfileController');
+const themeController = require('./src/controllers/themeController');
 const fincasController = require('./src/controllers/fincasController');
 const procesadorasController = require('./src/controllers/procesadorasController');
 const empresasController = require('./src/controllers/empresasController');
@@ -1085,6 +1086,7 @@ app.get('/app/plantillas', authenticatePage, (req, res) => res.sendFile(path.joi
 app.get('/app/ruedas-sabores', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'ruedas-sabores.html')));
 app.get('/app/cuenta', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'cuenta.html')));
 app.get('/app/perfil-comercial', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'perfil-comercial.html')));
+app.get('/app/perfil-comercial-tema', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'perfil-comercial-tema.html')));
 app.get('/app/maridaje', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'maridaje.html')));
 app.get('/app/blends', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'blends.html')));
 app.get('/app/recetas-chocolate', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'formulador.html')));
@@ -1138,6 +1140,10 @@ app.post('/api/procesadoras/:procesadoraId/sucursales', authenticateApi, db.crea
 app.put('/api/procesadoras/:procesadoraId/sucursales/:sucursalId', authenticateApi, db.updateSucursal);
 app.delete('/api/procesadoras/:procesadoraId/sucursales/:sucursalId', authenticateApi, db.deleteSucursal);
 app.use('/api/perfiles', authenticateApi, perfilesRoutes);
+app.get('/api/themes/presets', authenticateApi, themeController.getPresets);
+app.get('/api/themes/my-theme', authenticateApi, themeController.getCompanyTheme);
+app.post('/api/themes/my-theme', authenticateApi, themeController.saveCompanyTheme);
+app.put('/api/themes/my-theme', authenticateApi, themeController.saveCompanyTheme);
 app.use('/widget', widgetRoutes);
 app.use('/api/ruedas', authenticateApi, ruedasRoutes);
 

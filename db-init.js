@@ -76,6 +76,50 @@ async function initializeDatabase() {
             console.log("Tabla 'company_profiles' lista.");
 
             await runQuery(db, `
+                CREATE TABLE IF NOT EXISTS theme_presets (
+                    id TEXT PRIMARY KEY,
+                    name TEXT NOT NULL,
+                    color_primary TEXT NOT NULL,
+                    color_secondary TEXT NOT NULL,
+                    color_accent TEXT NOT NULL,
+                    color_background TEXT NOT NULL,
+                    color_text TEXT NOT NULL,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                )`);
+            console.log("Tabla 'theme_presets' lista.");
+
+            await runQuery(db, `
+                CREATE TABLE IF NOT EXISTS company_profile_theme (
+                    id TEXT PRIMARY KEY,
+                    company_profile_id TEXT NOT NULL REFERENCES company_profiles(id) ON DELETE CASCADE,
+                    preset_id TEXT REFERENCES theme_presets(id) ON DELETE SET NULL,
+                    is_custom BOOLEAN DEFAULT 0,
+                    custom_name TEXT,
+                    color_primary TEXT NOT NULL,
+                    color_secondary TEXT NOT NULL,
+                    color_accent TEXT NOT NULL,
+                    color_background TEXT NOT NULL,
+                    color_text TEXT NOT NULL,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                )`);
+            console.log("Tabla 'company_profile_theme' lista.");
+
+            const initialThemePresets = [
+                ['preset-claro-organico', 'Claro Orgánico', '#78350f', '#451a03', '#d97706', '#fdfaf6', '#1c1917'],
+                ['preset-oscuro-elegante', 'Oscuro Elegante', '#1c1917', '#292524', '#f59e0b', '#0c0a09', '#f5f5f4'],
+                ['preset-verde-finca', 'Verde Finca', '#14532d', '#166534', '#22c55e', '#f0fdf4', '#052e16'],
+                ['preset-cacao-gourmet', 'Cacao Gourmet', '#3b0764', '#581c87', '#a855f7', '#faf5ff', '#2e1065'],
+                ['preset-cafe-tostado', 'Café Tostado', '#271c19', '#442d25', '#c27844', '#f7f3ee', '#1e1310'],
+                ['preset-sol-andino', 'Sol Andino', '#9a3412', '#7c2d12', '#ea580c', '#fff7ed', '#431407']
+            ];
+
+            for (const p of initialThemePresets) {
+                await runQuery(db, `INSERT OR IGNORE INTO theme_presets (id, name, color_primary, color_secondary, color_accent, color_background, color_text) VALUES ('${p[0]}', '${p[1]}', '${p[2]}', '${p[3]}', '${p[4]}', '${p[5]}', '${p[6]}')`);
+            }
+            console.log("Temas prediseñados iniciales cargados.");
+
+            await runQuery(db, `
                 CREATE TABLE IF NOT EXISTS fincas (
                     id TEXT PRIMARY KEY,
                     user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
