@@ -2,12 +2,12 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Selectores del DOM ---
     const profileForm = document.getElementById('profile-form');
     const passwordForm = document.getElementById('password-form');
-    
+
     // Selectores de Información de Suscripción (Mantenidos por si los reactivas)
     const currentPlanEl = document.getElementById('current-plan');
     const trialInfoEl = document.getElementById('trial-info');
     const trialDaysLeftEl = document.getElementById('trial-days-left');
-    
+
     // Selectores de Configuración
     const currencySelect = document.getElementById('default_currency');
     const unitSelect = document.getElementById('default_unit');
@@ -23,22 +23,22 @@ document.addEventListener('DOMContentLoaded', () => {
             // Cargar Monedas
             const currRes = await api('/api/config/currencies');
             if (currencySelect) {
-                currencySelect.innerHTML = currRes.map(c => 
+                currencySelect.innerHTML = currRes.map(c =>
                     `<option value="${c.code}">${c.code} - ${c.name} (${c.symbol})</option>`
                 ).join('');
                 // Default fallback
-                if(!currencySelect.value) currencySelect.value = 'USD';
+                if (!currencySelect.value) currencySelect.value = 'USD';
             }
 
             // Cargar Unidades (Solo MASA por ahora para simplificar)
             const unitRes = await api('/api/config/units');
             if (unitSelect) {
                 const massUnits = unitRes.filter(u => u.type === 'MASA');
-                unitSelect.innerHTML = massUnits.map(u => 
+                unitSelect.innerHTML = massUnits.map(u =>
                     `<option value="${u.code}">${u.code} - ${u.name}</option>`
                 ).join('');
                 // Default fallback
-                if(!unitSelect.value) unitSelect.value = 'KG';
+                if (!unitSelect.value) unitSelect.value = 'KG';
             }
         } catch (e) {
             console.error("Error cargando configuraciones:", e);
@@ -48,7 +48,7 @@ document.addEventListener('DOMContentLoaded', () => {
     async function loadProfile() {
         try {
             const user = await api('/api/user/profile');
-            
+
             // Poblar formulario de perfil
             if (profileForm) {
                 // Sección Personal
@@ -62,7 +62,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (user.default_currency && currencySelect) currencySelect.value = user.default_currency;
                 if (user.default_unit && unitSelect) unitSelect.value = user.default_unit;
             }
-            
+
             // Lógica de Suscripción (Opcional, si reactivas la sección en HTML)
             if (currentPlanEl && user.subscription_tier) {
                 currentPlanEl.textContent = user.subscription_tier;
@@ -75,12 +75,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
                 if (diffDays > 0) {
-                    if(trialDaysLeftEl) trialDaysLeftEl.textContent = diffDays;
+                    if (trialDaysLeftEl) trialDaysLeftEl.textContent = diffDays;
                     trialInfoEl.classList.remove('hidden');
                 } else {
                     trialInfoEl.classList.add('hidden');
                 }
-            } else if(trialInfoEl) {
+            } else if (trialInfoEl) {
                 trialInfoEl.classList.add('hidden');
             }
 
