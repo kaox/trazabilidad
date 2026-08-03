@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Pagos y Suscripciones | Admin Ruru Lab</title>
+    <script src="/auth.js"></script>
+    <link href="/css/styles.css" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Playfair+Display:wght@700;800&display=swap"
+        rel="stylesheet">
+    <script src="/js/analytics-loader.js" defer></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc;
+        }
+
+        .font-display {
+            font-family: 'Playfair Display', serif;
+        }
+    </style>
+</head>
+
+<body class="text-stone-800 antialiased min-h-screen flex flex-col">
+    <!-- Navbar de la aplicación -->
+    <div id="nav-placeholder"></div>
+
+    <div class="container mx-auto p-4 md:p-8 flex-grow space-y-8">
+        <!-- Encabezado del Panel de Administración -->
+        <header class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-stone-200 pb-6">
+            <div>
+                <div class="flex items-center gap-2 mb-1">
+                    <span class="bg-amber-900 text-amber-100 text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full">Admin Panel</span>
+                    <span class="text-xs font-bold text-stone-400">Trazabilidad & Marca Blanca</span>
+                </div>
+                <h1 class="text-3xl font-bold font-display text-stone-900">Validación de Pagos & Suscripciones</h1>
+                <p class="text-sm text-stone-500 mt-1">Revisa y aprueba transferencias manuales (Yape/Plin, BBVA), consulta el historial por usuario y controla los vencimientos automáticos.</p>
+            </div>
+
+            <!-- Botones de Acción Admin -->
+            <div class="flex items-center gap-3">
+                <button onclick="adminPaymentsApp.runExpirationCheck()" class="px-4 py-2 bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs font-bold rounded-xl transition flex items-center gap-2 border border-stone-200">
+                    <i class="fas fa-sync-alt text-amber-800"></i> Verificar Expiraciones
+                </button>
+                <a href="/app/admin-dashboard" class="px-4 py-2 bg-amber-800 hover:bg-amber-900 text-white text-xs font-bold rounded-xl transition shadow">
+                    <i class="fas fa-arrow-left mr-1"></i> Dashboard Admin
+                </a>
+            </div>
+        </header>
+
+        <!-- KPI Summary Cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <!-- Pendientes por Validar -->
+            <div class="bg-white p-5 rounded-2xl border border-stone-200 shadow-sm flex items-center justify-between">
+                <div>
+                    <span class="text-[10px] font-bold uppercase tracking-wider text-stone-400 block mb-1">Pendientes por Validar</span>
+                    <span id="kpi-pending-count" class="text-3xl font-black font-display text-amber-900">0</span>
+                    <span class="text-xs text-amber-700 font-semibold block mt-1">Vouchers por revisar</span>
+                </div>
+                <div class="w-12 h-12 rounded-2xl bg-amber-100 text-amber-900 flex items-center justify-center text-xl font-bold">
+                    <i class="fas fa-clock"></i>
+                </div>
+            </div>
+
+            <!-- Ingresos Totales Aprobados -->
+            <div class="bg-white p-5 rounded-2xl border border-stone-200 shadow-sm flex items-center justify-between">
+                <div>
+                    <span class="text-[10px] font-bold uppercase tracking-wider text-stone-400 block mb-1">Ingresos Confirmados</span>
+                    <span id="kpi-approved-total" class="text-3xl font-black font-display text-emerald-700">$0.00</span>
+                    <span class="text-xs text-stone-500 font-medium block mt-1">USD en suscripciones</span>
+                </div>
+                <div class="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-800 flex items-center justify-center text-xl font-bold">
+                    <i class="fas fa-[#004481] fa-dollar-sign"></i>
+                </div>
+            </div>
+
+            <!-- Suscripciones Activas -->
+            <div class="bg-white p-5 rounded-2xl border border-stone-200 shadow-sm flex items-center justify-between">
+                <div>
+                    <span class="text-[10px] font-bold uppercase tracking-wider text-stone-400 block mb-1">Suscripciones Activas</span>
+                    <span id="kpi-active-subs" class="text-3xl font-black font-display text-blue-900">0</span>
+                    <span class="text-xs text-blue-700 font-semibold block mt-1">Emprendedor & Corporativo</span>
+                </div>
+                <div class="w-12 h-12 rounded-2xl bg-blue-100 text-blue-900 flex items-center justify-center text-xl font-bold">
+                    <i class="fas fa-user-check"></i>
+                </div>
+            </div>
+
+            <!-- Suscripciones Expiradas / Degradadas -->
+            <div class="bg-white p-5 rounded-2xl border border-stone-200 shadow-sm flex items-center justify-between">
+                <div>
+                    <span class="text-[10px] font-bold uppercase tracking-wider text-stone-400 block mb-1">Expiradas / Vencidas</span>
+                    <span id="kpi-expired-subs" class="text-3xl font-black font-display text-stone-600">0</span>
+                    <span class="text-xs text-stone-500 font-medium block mt-1">Regresados a Básico</span>
+                </div>
+                <div class="w-12 h-12 rounded-2xl bg-stone-100 text-stone-600 flex items-center justify-center text-xl font-bold">
+                    <i class="fas fa-history"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pestañas de Navegación del Panel -->
+        <div class="bg-white border border-stone-200 rounded-3xl p-6 shadow-sm space-y-6">
+            <div class="flex items-center gap-2 border-b border-stone-100 pb-4 overflow-x-auto">
+                <button id="admin-tab-pending" onclick="adminPaymentsApp.switchTab('pending')"
+                    class="px-5 py-2.5 rounded-xl font-bold text-xs flex items-center gap-2 transition bg-amber-800 text-white shadow">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <span>Validaciones Pendientes</span>
+                    <span id="badge-pending-count" class="bg-white text-amber-900 text-[10px] font-black px-2 py-0.5 rounded-full">0</span>
+                </button>
+                <button id="admin-tab-history" onclick="adminPaymentsApp.switchTab('history')"
+                    class="px-5 py-2.5 rounded-xl font-bold text-xs flex items-center gap-2 transition text-stone-600 hover:text-stone-900">
+                    <i class="fas fa-history"></i>
+                    <span>Histórico de Pagos</span>
+                </button>
+                <button id="admin-tab-users" onclick="adminPaymentsApp.switchTab('users')"
+                    class="px-5 py-2.5 rounded-xl font-bold text-xs flex items-center gap-2 transition text-stone-600 hover:text-stone-900">
+                    <i class="fas fa-users-cog"></i>
+                    <span>Usuarios & Expiraciones</span>
+                </button>
+            </div>
+
+            <!-- CONTENIDO PESTAÑA 1: VALIDACIONES PENDIENTES -->
+            <div id="admin-content-pending" class="space-y-4">
+                <div class="flex items-center justify-between">
+                    <h3 class="font-bold text-base text-stone-900">Comprobantes Manuales en Espera de Aprobación</h3>
+                    <span class="text-xs text-stone-500">Valida los pagos reportados por Yape/Plin o Transferencia BBVA</span>
+                </div>
+
+                <div class="overflow-x-auto rounded-2xl border border-stone-200">
+                    <table class="w-full text-left text-xs text-stone-700">
+                        <thead class="bg-stone-100 text-stone-600 font-bold uppercase text-[10px] border-b border-stone-200">
+                            <tr>
+                                <th class="p-3.5">Usuario / Empresa</th>
+                                <th class="p-3.5">Plan & Ciclo</th>
+                                <th class="p-3.5">Método</th>
+                                <th class="p-3.5">N° Operación</th>
+                                <th class="p-3.5 text-center">Voucher</th>
+                                <th class="p-3.5">Fecha</th>
+                                <th class="p-3.5 text-right">Acciones de Validación</th>
+                            </tr>
+                        </thead>
+                        <tbody id="table-body-pending" class="divide-y divide-stone-100 bg-white">
+                            <tr><td colspan="7" class="p-6 text-center text-stone-400">Cargando pagos pendientes...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- CONTENIDO PESTAÑA 2: HISTÓRICO GENERAL DE PAGOS -->
+            <div id="admin-content-history" class="space-y-4 hidden">
+                <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                    <h3 class="font-bold text-base text-stone-900">Historial Completo de Transacciones</h3>
+                    
+                    <!-- Buscador / Filtro -->
+                    <div class="flex items-center gap-2 w-full sm:w-auto">
+                        <input type="text" id="search-history" onkeyup="adminPaymentsApp.filterHistory()" placeholder="Buscar por usuario, email u operación..."
+                            class="px-3.5 py-2 rounded-xl border border-stone-200 text-xs w-full sm:w-64 focus:outline-none focus:ring-2 focus:ring-amber-500">
+                        <select id="filter-history-status" onchange="adminPaymentsApp.filterHistory()" class="px-3 py-2 rounded-xl border border-stone-200 text-xs font-bold text-stone-700">
+                            <option value="ALL">Todos los Estados</option>
+                            <option value="approved">Aprobados</option>
+                            <option value="pending">Pendientes</option>
+                            <option value="rejected">Rechazados</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto rounded-2xl border border-stone-200">
+                    <table class="w-full text-left text-xs text-stone-700">
+                        <thead class="bg-stone-100 text-stone-600 font-bold uppercase text-[10px] border-b border-stone-200">
+                            <tr>
+                                <th class="p-3.5">ID / Fecha</th>
+                                <th class="p-3.5">Usuario / Empresa</th>
+                                <th class="p-3.5">Plan & Importe</th>
+                                <th class="p-3.5">Método de Pago</th>
+                                <th class="p-3.5">N° Operación</th>
+                                <th class="p-3.5 text-center">Estado</th>
+                                <th class="p-3.5 text-right">Detalles</th>
+                            </tr>
+                        </thead>
+                        <tbody id="table-body-history" class="divide-y divide-stone-100 bg-white">
+                            <tr><td colspan="7" class="p-6 text-center text-stone-400">Cargando historial de pagos...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- CONTENIDO PESTAÑA 3: USUARIOS & EXPIRACIONES -->
+            <div id="admin-content-users" class="space-y-4 hidden">
+                <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                    <div>
+                        <h3 class="font-bold text-base text-stone-900">Control de Suscripciones por Usuario</h3>
+                        <p class="text-xs text-stone-500">Consulta las fechas de vencimiento y fuerza la activación o expiración de planes.</p>
+                    </div>
+
+                    <input type="text" id="search-users" onkeyup="adminPaymentsApp.filterUsers()" placeholder="Buscar usuario..."
+                        class="px-3.5 py-2 rounded-xl border border-stone-200 text-xs w-full sm:w-64 focus:outline-none focus:ring-2 focus:ring-amber-500">
+                </div>
+
+                <div class="overflow-x-auto rounded-2xl border border-stone-200">
+                    <table class="w-full text-left text-xs text-stone-700">
+                        <thead class="bg-stone-100 text-stone-600 font-bold uppercase text-[10px] border-b border-stone-200">
+                            <tr>
+                                <th class="p-3.5">Usuario</th>
+                                <th class="p-3.5">Empresa / Email</th>
+                                <th class="p-3.5">Plan Actual</th>
+                                <th class="p-3.5">Vencimiento Suscripción</th>
+                                <th class="p-3.5 text-center">Estado Expiración</th>
+                                <th class="p-3.5 text-right">Modificar Plan</th>
+                            </tr>
+                        </thead>
+                        <tbody id="table-body-users" class="divide-y divide-stone-100 bg-white">
+                            <tr><td colspan="6" class="p-6 text-center text-stone-400">Cargando lista de usuarios...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- MODAL DE VISUALIZACIÓN DE VOUCHER -->
+    <div id="modal-voucher" class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-3xl max-w-xl w-full p-6 shadow-2xl space-y-4 max-h-[90vh] flex flex-col">
+            <div class="flex items-center justify-between border-b pb-3">
+                <h3 id="modal-voucher-title" class="font-bold text-stone-900 text-base font-display">Revisión de Comprobante</h3>
+                <button onclick="adminPaymentsApp.closeVoucherModal()" class="text-stone-400 hover:text-stone-700 p-1"><i class="fas fa-times text-lg"></i></button>
+            </div>
+
+            <!-- Preview del voucher (Imagen o PDF) -->
+            <div id="modal-voucher-preview" class="bg-stone-100 rounded-2xl overflow-hidden min-h-[250px] flex items-center justify-center border p-2 flex-grow">
+                <!-- Imagen renderizada dinámicamente -->
+            </div>
+
+            <div id="modal-voucher-details" class="bg-stone-50 p-3.5 rounded-2xl text-xs space-y-1">
+                <!-- Detalles del pago -->
+            </div>
+
+            <!-- Botones de Acción dentro del Modal -->
+            <div class="flex items-center justify-end gap-3 pt-2">
+                <button id="modal-btn-reject" onclick="adminPaymentsApp.rejectCurrentModalVoucher()" class="px-4 py-2.5 bg-red-100 hover:bg-red-200 text-red-800 text-xs font-bold rounded-xl transition">
+                    <i class="fas fa-times-circle"></i> Rechazar Pago
+                </button>
+                <button id="modal-btn-approve" onclick="adminPaymentsApp.approveCurrentModalVoucher()" class="px-5 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold rounded-xl transition shadow">
+                    <i class="fas fa-check-circle"></i> Aprobar y Activar Plan
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/nav-loader.js" defer></script>
+    <script src="/js/admin-payments-app.js"></script>
+</body>
+
+</html>

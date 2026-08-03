@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Checkout - Confirmar Pago | Ruru Lab</title>
+    <script src="/auth.js"></script>
+    <link href="/css/styles.css" rel="stylesheet">
+    <script src="https://sdk.mercadopago.com/js/v2"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Playfair+Display:wght@700;800&display=swap"
+        rel="stylesheet">
+    <script src="/js/analytics-loader.js" defer></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #fdfaf6;
+        }
+
+        h1,
+        h2,
+        h3,
+        .font-display {
+            font-family: 'Playfair Display', serif;
+        }
+
+        .tab-active-yape {
+            background-color: #70298d;
+            color: white;
+            border-color: #70298d;
+        }
+
+        .tab-active-bbva {
+            background-color: #004481;
+            color: white;
+            border-color: #004481;
+        }
+
+        .tab-active-mp {
+            background-color: #009EE3;
+            color: white;
+            border-color: #009EE3;
+        }
+    </style>
+</head>
+
+<body class="text-stone-800 antialiased min-h-screen flex flex-col">
+    <!-- Navbar de la app -->
+    <div id="nav-placeholder"></div>
+
+    <div class="container mx-auto p-4 md:p-8 flex-grow">
+        <!-- Header Toolbar -->
+        <div class="max-w-6xl mx-auto mb-8">
+            <a href="/app/pricing"
+                class="text-amber-800 font-bold hover:underline inline-flex items-center gap-2 mb-3 text-sm">
+                <i class="fas fa-arrow-left"></i> Volver a Planes y Precios
+            </a>
+            <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+                <div>
+                    <h1 class="text-3xl md:text-4xl font-bold text-amber-900">Checkout & Confirmación de Suscripción</h1>
+                    <p class="text-stone-600 text-sm mt-1">Revisa el resumen de tu plan y elige tu método de pago preferido para activar tu cuenta.</p>
+                </div>
+
+                <!-- SELECTOR DE MONEDA USD / PEN -->
+                <div class="flex flex-col items-end gap-1.5 flex-shrink-0">
+                    <div class="bg-stone-100 p-1 rounded-2xl flex items-center border border-stone-200 shadow-inner">
+                        <button id="currency-btn-usd" onclick="checkoutApp.setCurrency('USD')"
+                            class="px-4 py-1.5 rounded-xl text-xs font-bold transition bg-amber-800 text-white shadow">
+                            <i class="fas fa-dollar-sign mr-1 text-[10px]"></i> USD
+                        </button>
+                        <button id="currency-btn-pen" onclick="checkoutApp.setCurrency('PEN')"
+                            class="px-4 py-1.5 rounded-xl text-xs font-bold transition text-stone-600 hover:text-stone-900">
+                            <span class="font-black text-[10px] mr-1">S/</span> Soles
+                        </button>
+                    </div>
+                    <!-- Live Rate Badge -->
+                    <div id="rate-loading" class="text-[10px] text-stone-400 flex items-center gap-1">
+                        <i class="fas fa-spinner fa-spin text-amber-700"></i>
+                        <span>Obteniendo tipo de cambio...</span>
+                    </div>
+                    <div id="rate-badge" class="hidden">
+                        <span class="inline-flex items-center gap-1.5 bg-emerald-50 border border-emerald-200 text-emerald-800 text-[10px] font-bold px-2.5 py-1 rounded-full">
+                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block animate-pulse"></span>
+                            <span id="rate-live-value">1 USD = S/ 3.75</span>
+                            <span class="text-emerald-600 font-normal">•</span>
+                            <span id="rate-source-label" class="text-emerald-600 font-normal">fxapi.app</span>
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Layout 2 Columnas -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 max-w-6xl mx-auto items-start">
+
+            <!-- COLUMNA IZQUIERDA: Resumen del Plan -->
+            <div class="lg:col-span-5 space-y-6">
+                <div class="bg-white border-2 border-stone-200 rounded-3xl p-6 shadow-md relative overflow-hidden">
+                    <!-- Badge del Plan -->
+                    <div class="flex items-center justify-between pb-4 border-b border-stone-100">
+                        <div>
+                            <span class="text-[10px] font-black uppercase tracking-wider text-stone-400 block mb-0.5">Plan Seleccionado</span>
+                            <h2 id="summary-plan-title" class="text-2xl font-bold font-display text-amber-900">Plan Emprendedor</h2>
+                        </div>
+                        <span id="summary-plan-badge" class="bg-amber-100 text-amber-900 text-xs font-black px-3 py-1 rounded-full uppercase">Recomendado</span>
+                    </div>
+
+                    <!-- Selector de Ciclo (Mensual vs Anual) -->
+                    <div class="py-4 border-b border-stone-100">
+                        <label class="block text-xs font-bold text-stone-500 uppercase tracking-wider mb-2">Ciclo de Facturación</label>
+                        <div class="bg-stone-100 p-1 rounded-2xl flex items-center border border-stone-200">
+                            <button id="cycle-btn-monthly" onclick="checkoutApp.setCycle('monthly')"
+                                class="w-1/2 py-2 rounded-xl text-xs font-bold transition bg-amber-800 text-white shadow">
+                                Mensual
+                            </button>
+                            <button id="cycle-btn-annual" onclick="checkoutApp.setCycle('annual')"
+                                class="w-1/2 py-2 rounded-xl text-xs font-bold transition text-stone-600 hover:text-stone-900 flex items-center justify-center gap-1">
+                                Anual <span class="bg-green-600 text-white text-[9px] px-1.5 py-0.5 rounded-full font-black">-17%</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Detalle de Precios -->
+                    <div class="py-4 space-y-2 border-b border-stone-100">
+                        <div class="flex items-center justify-between text-sm">
+                            <span class="text-stone-600">Suscripción Base</span>
+                            <span id="summary-base-price" class="font-bold text-stone-800">$15.00 USD</span>
+                        </div>
+                        <div id="summary-discount-row" class="flex items-center justify-between text-xs text-green-700 font-semibold hidden">
+                            <span>Descuento Anual (2 meses gratis)</span>
+                            <span id="summary-discount-amount">-$30.00 USD</span>
+                        </div>
+                    </div>
+
+                    <!-- Total a Pagar -->
+                    <div class="pt-4 pb-2">
+                        <div class="flex items-center justify-between mb-0.5">
+                            <div>
+                                <span class="text-xs font-bold text-stone-400 uppercase tracking-wider block">Total a Pagar</span>
+                                <span id="summary-cycle-text" class="text-xs text-stone-500">Facturado mensualmente</span>
+                            </div>
+                            <div class="text-right">
+                                <div class="flex items-baseline gap-1">
+                                    <span id="summary-total-usd" class="text-3xl font-black font-display text-amber-900">15.00</span>
+                                    <span id="summary-currency-label" class="text-sm font-bold text-amber-700">USD</span>
+                                </div>
+                                <span id="summary-total-alt" class="text-[11px] text-stone-400 font-medium">≈ S/ 56.25</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Beneficios incluidos -->
+                    <div class="mt-4 pt-4 border-t border-stone-100">
+                        <h4 class="text-xs font-bold text-stone-700 uppercase tracking-wider mb-3">Incluido en tu suscripción:</h4>
+                        <ul id="summary-features-list" class="space-y-2 text-xs text-stone-600">
+                            <!-- Se carga dinámicamente -->
+                        </ul>
+                    </div>
+
+                    <!-- Garantía de seguridad -->
+                    <div class="mt-6 bg-amber-50/70 border border-amber-200/60 p-3.5 rounded-2xl flex items-center gap-3">
+                        <i class="fas fa-shield-alt text-amber-800 text-xl"></i>
+                        <p class="text-[11px] text-amber-900 leading-snug">
+                            <strong>Activación Garantizada:</strong> Tu cuenta mantendrá todos tus lotes y configuraciones activos de inmediato.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- COLUMNA DERECHA: Métodos de Pago Adaptativos -->
+            <div class="lg:col-span-7 space-y-6">
+                <div class="bg-white border-2 border-stone-200 rounded-3xl p-6 md:p-8 shadow-md">
+                    <h3 class="text-xl font-bold text-stone-900 font-display mb-2">Selecciona tu Método de Pago</h3>
+                    <p class="text-xs text-stone-500 mb-6">Elige la opción de pago que más te acomode para completar tu transacción de manera segura.</p>
+
+                    <!-- PESTAÑAS DE PAGO (Tabs Toolbar) -->
+                    <div class="grid grid-cols-3 gap-2 p-1.5 bg-stone-100 rounded-2xl mb-6 border border-stone-200">
+                        <button id="tab-btn-yape" onclick="checkoutApp.switchTab('yape')"
+                            class="py-3 px-2 rounded-xl text-xs font-bold flex flex-col sm:flex-row items-center justify-center gap-1.5 transition tab-active-yape">
+                            <i class="fas fa-qrcode text-base"></i>
+                            <span>Yape / Plin</span>
+                        </button>
+                        <button id="tab-btn-bbva" onclick="checkoutApp.switchTab('bbva')"
+                            class="py-3 px-2 rounded-xl text-xs font-bold flex flex-col sm:flex-row items-center justify-center gap-1.5 transition text-stone-600 hover:text-stone-900">
+                            <i class="fas fa-university text-base"></i>
+                            <span>Transferencia BBVA</span>
+                        </button>
+                        <button id="tab-btn-mp" onclick="checkoutApp.switchTab('mp')"
+                            class="py-3 px-2 rounded-xl text-xs font-bold flex flex-col sm:flex-row items-center justify-center gap-1.5 transition text-stone-600 hover:text-stone-900">
+                            <i class="fas fa-credit-card text-base"></i>
+                            <span>Mercado Pago</span>
+                        </button>
+                    </div>
+
+                    <!-- CONTENIDO TAB 1: YAPE / PLIN -->
+                    <div id="tab-content-yape" class="space-y-6">
+                        <div class="bg-purple-900/5 border border-purple-200 p-5 rounded-2xl flex flex-col sm:flex-row items-center gap-6">
+                            <!-- QR Simulado -->
+                            <div class="bg-white p-3 rounded-2xl border-2 border-purple-800 shadow-md flex-shrink-0 text-center">
+                                <div class="w-36 h-36 bg-purple-900 text-white rounded-xl flex flex-col items-center justify-center relative p-2 shadow-inner">
+                                    <i class="fas fa-qrcode text-6xl text-purple-200 mb-1"></i>
+                                    <span class="text-[9px] font-black tracking-widest uppercase bg-purple-600 text-white px-2 py-0.5 rounded-full">YAPE / PLIN</span>
+                                </div>
+                                <span class="text-[10px] font-bold text-purple-900 block mt-2">+51 999 888 777</span>
+                            </div>
+
+                            <!-- Instrucciones Yape -->
+                            <div class="space-y-2 text-xs">
+                                <h4 class="font-bold text-sm text-purple-950 flex items-center gap-2">
+                                    <i class="fas fa-mobile-alt text-purple-700"></i> Instrucciones para Yape / Plin:
+                                </h4>
+                                <ol class="list-decimal list-inside space-y-1.5 text-stone-700 font-medium leading-relaxed">
+                                    <li>Abre tu app de <strong>Yape</strong> o <strong>Plin</strong>.</li>
+                                    <li>Escanea el código QR o yapea al número <strong>+51 999 888 777</strong>.</li>
+                                    <li>Monto a pagar: <strong id="yape-instruction-amount" class="text-purple-900 font-bold">USD $15.00 (aprox S/ 56.25)</strong>.</li>
+                                    <li>Comparte el pago al número <strong>+51 999 888 777</strong> o carga el comprobante (voucher) a continuación.</li>
+                                </ol>
+                            </div>
+                        </div>
+
+                        <!-- Formulario Yape / Plin -->
+                        <form id="form-yape" onsubmit="checkoutApp.handleVoucherSubmit(event, 'yape_plin')" class="space-y-4 bg-stone-50 p-5 rounded-2xl border border-stone-200">
+                            <div>
+                                <label class="block text-xs font-bold text-stone-700 mb-1">Número de Operación / Constancia</label>
+                                <input type="text" id="yape-op-number" required placeholder="Ej. 12345678"
+                                    class="w-full px-4 py-2.5 rounded-xl border border-stone-300 text-sm focus:outline-none focus:ring-2 focus:ring-purple-600">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-stone-700 mb-1">Adjuntar Voucher o Captura de Pantalla</label>
+                                <input type="file" id="yape-voucher-file" accept="image/*,.pdf" onchange="checkoutApp.handleFilePreview(this, 'yape-preview')"
+                                    class="w-full text-xs text-stone-600 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-purple-100 file:text-purple-900 hover:file:bg-purple-200">
+                                <div id="yape-preview" class="mt-2 hidden"></div>
+                            </div>
+                            <button type="submit" id="btn-submit-yape"
+                                class="w-full py-3.5 bg-purple-800 hover:bg-purple-900 text-white font-bold rounded-xl shadow-md transition flex items-center justify-center gap-2">
+                                <i class="fas fa-check-circle"></i> Confirmar y Enviar Pago Yape / Plin
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- CONTENIDO TAB 2: TRANSFERENCIA BBVA -->
+                    <div id="tab-content-bbva" class="space-y-6 hidden">
+                        <div class="bg-blue-950/5 border border-blue-200 p-5 rounded-2xl space-y-4">
+                            <h4 class="font-bold text-sm text-blue-950 flex items-center gap-2">
+                                <i class="fas fa-university text-blue-800"></i> Cuentas Bancarias BBVA (Perú):
+                            </h4>
+
+                            <!-- Cuentas Dólares y Soles -->
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                                <!-- Dólares -->
+                                <div class="bg-white p-4 rounded-xl border border-blue-100 shadow-sm space-y-2">
+                                    <span class="bg-blue-100 text-blue-900 font-bold px-2 py-0.5 rounded text-[10px] uppercase">Cuenta Dólares (USD)</span>
+                                    <div>
+                                        <span class="text-stone-400 block text-[10px]">Cuenta Corriente Dólares</span>
+                                        <div class="flex items-center justify-between">
+                                            <span class="font-mono font-bold text-stone-900">0011-0123-0100045678</span>
+                                            <button onclick="checkoutApp.copyToClipboard('0011-0123-0100045678', 'Cuenta Dólares')" class="text-blue-700 hover:text-blue-900 text-xs font-bold"><i class="far fa-copy"></i> Copiar</button>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <span class="text-stone-400 block text-[10px]">CCI Dólares</span>
+                                        <div class="flex items-center justify-between">
+                                            <span class="font-mono font-bold text-stone-900">011-123-000100045678-12</span>
+                                            <button onclick="checkoutApp.copyToClipboard('011-123-000100045678-12', 'CCI Dólares')" class="text-blue-700 hover:text-blue-900 text-xs font-bold"><i class="far fa-copy"></i> Copiar</button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Soles -->
+                                <div class="bg-white p-4 rounded-xl border border-blue-100 shadow-sm space-y-2">
+                                    <span class="bg-emerald-100 text-emerald-900 font-bold px-2 py-0.5 rounded text-[10px] uppercase">Cuenta Soles (PEN)</span>
+                                    <div>
+                                        <span class="text-stone-400 block text-[10px]">Cuenta Corriente Soles</span>
+                                        <div class="flex items-center justify-between">
+                                            <span class="font-mono font-bold text-stone-900">0011-0123-0100045678</span>
+                                            <button onclick="checkoutApp.copyToClipboard('0011-0123-0100045678', 'Cuenta Soles')" class="text-blue-700 hover:text-blue-900 text-xs font-bold"><i class="far fa-copy"></i> Copiar</button>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <span class="text-stone-400 block text-[10px]">CCI Soles</span>
+                                        <div class="flex items-center justify-between">
+                                            <span class="font-mono font-bold text-stone-900">011-123-000100045678-12</span>
+                                            <button onclick="checkoutApp.copyToClipboard('011-123-000100045678-12', 'CCI Soles')" class="text-blue-700 hover:text-blue-900 text-xs font-bold"><i class="far fa-copy"></i> Copiar</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <p class="text-xs text-stone-600 font-medium italic">
+                                Sube tu comprobante de transferencia para agilizar la activación de tu cuenta.
+                            </p>
+                        </div>
+
+                        <!-- Formulario BBVA -->
+                        <form id="form-bbva" onsubmit="checkoutApp.handleVoucherSubmit(event, 'bbva_transfer')" class="space-y-4 bg-stone-50 p-5 rounded-2xl border border-stone-200">
+                            <div>
+                                <label class="block text-xs font-bold text-stone-700 mb-1">Número de Operación BBVA</label>
+                                <input type="text" id="bbva-op-number" required placeholder="Ej. 98765432"
+                                    class="w-full px-4 py-2.5 rounded-xl border border-stone-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-700">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-stone-700 mb-1">Adjuntar Comprobante de Transferencia (Voucher)</label>
+                                <input type="file" id="bbva-voucher-file" accept="image/*,.pdf" onchange="checkoutApp.handleFilePreview(this, 'bbva-preview')"
+                                    class="w-full text-xs text-stone-600 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-blue-100 file:text-blue-900 hover:file:bg-blue-200">
+                                <div id="bbva-preview" class="mt-2 hidden"></div>
+                            </div>
+                            <button type="submit" id="btn-submit-bbva"
+                                class="w-full py-3.5 bg-[#004481] hover:bg-[#003366] text-white font-bold rounded-xl shadow-md transition flex items-center justify-center gap-2">
+                                <i class="fas fa-upload"></i> Registrar Transferencia BBVA
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- CONTENIDO TAB 3: MERCADO PAGO -->
+                    <div id="tab-content-mp" class="space-y-6 hidden">
+                        <div class="bg-[#009EE3]/10 border border-[#009EE3]/30 p-6 rounded-2xl text-center space-y-4">
+                            <div class="inline-flex items-center justify-center p-3 bg-white rounded-2xl shadow-sm border border-stone-200">
+                                <img src="https://raw.githubusercontent.com/mercadopago/assets/main/full-logo-mp/SVG/horizontal_-short-primary.svg" alt="Mercado Pago" class="h-8">
+                            </div>
+                            <h4 class="font-bold text-base text-stone-900">Pago Seguro con Tarjeta de Crédito o Débito</h4>
+                            <p class="text-xs text-stone-600 max-w-md mx-auto leading-relaxed">
+                                Serás redirigido a la pasarela segura de <strong>Mercado Pago</strong> para procesar tu transacción de forma totalmente cifrada y protegida.
+                            </p>
+
+                            <!-- Tarjetas aceptadas -->
+                            <div class="flex items-center justify-center gap-3 pt-2 text-stone-400 text-xl">
+                                <i class="fab fa-cc-visa" title="Visa"></i>
+                                <i class="fab fa-cc-mastercard" title="Mastercard"></i>
+                                <i class="fab fa-cc-amex" title="American Express"></i>
+                                <i class="fab fa-cc-diners-club" title="Diners Club"></i>
+                            </div>
+                        </div>
+
+                        <!-- Botón Adaptativo Mercado Pago (Azul Marca #009EE3) -->
+                        <button id="btn-submit-mp" onclick="checkoutApp.handleMercadoPagoRedirect()"
+                            class="w-full py-4 bg-[#009EE3] hover:bg-[#008cd6] text-white font-bold rounded-2xl shadow-lg transition transform hover:-translate-y-0.5 flex items-center justify-center gap-2 text-base">
+                            <span id="mp-btn-text">Pagar con Mercado Pago (<span id="mp-btn-amount">$15.00 USD</span>)</span>
+                            <i class="fas fa-external-link-alt text-sm"></i>
+                        </button>
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Feedback Toast / Alert Container -->
+    <div id="toast-container" class="fixed bottom-6 right-6 z-50"></div>
+
+    <script src="/js/nav-loader.js" defer></script>
+    <script src="/js/checkout-app.js"></script>
+</body>
+
+</html>
