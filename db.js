@@ -1165,14 +1165,36 @@ const createPaymentPreference = async (req, res, client) => {
     const userId = req.user.id;
     const host = req.get('host');
     const protocol = req.protocol;
+    const { plan = 'emprendedor', cycle = 'monthly' } = req.body || {};
+
+    let title = 'Suscripción RuruLab - Plan Emprendedor (Mensual)';
+    let price = 15.00;
+
+    if (plan === 'corporativo') {
+        if (cycle === 'annual') {
+            title = 'Suscripción RuruLab - Plan Corporativo (Anual - 2 Meses Gratis)';
+            price = 450.00;
+        } else {
+            title = 'Suscripción RuruLab - Plan Corporativo (Mensual)';
+            price = 45.00;
+        }
+    } else {
+        if (cycle === 'annual') {
+            title = 'Suscripción RuruLab - Plan Emprendedor (Anual - 2 Meses Gratis)';
+            price = 150.00;
+        } else {
+            title = 'Suscripción RuruLab - Plan Emprendedor (Mensual)';
+            price = 15.00;
+        }
+    }
 
     const preferenceData = {
         items: [
             {
-                title: 'Suscripción Rurulab - Plan Profesional',
-                description: 'Acceso completo a todos los módulos de I+D y trazabilidad ilimitada.',
+                title: title,
+                description: 'Acceso a la plataforma RuruLab con trazabilidad y perfil comercial.',
                 quantity: 1,
-                unit_price: 19.00,
+                unit_price: price,
                 currency_id: 'USD'
             }
         ],
@@ -1183,7 +1205,7 @@ const createPaymentPreference = async (req, res, client) => {
         },
         auto_return: 'approved',
         notification_url: `${protocol}://${host}/api/payments/webhook?userId=${userId}`,
-        external_reference: userId.toString()
+        external_reference: `${userId}_${plan}_${cycle}`
     };
 
     try {
@@ -1197,6 +1219,31 @@ const createPaymentPreference = async (req, res, client) => {
     } catch (error) {
         console.error("Error al crear preferencia de Mercado Pago:", error);
         res.status(500).json({ error: 'No se pudo generar el enlace de pago.' });
+    }
+};
+
+const submitPaymentVoucher = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const { plan = 'emprendedor', cycle = 'monthly', amount = 0, payment_method = 'yape_plin', operation_number = '', voucher_url = '' } = req.body;
+
+        const voucherId = crypto.randomUUID();
+        const sql = `
+            INSERT INTO payment_vouchers (
+                id, user_id, plan, cycle, amount, payment_method, operation_number, voucher_url, status
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending')
+        `;
+
+        await run(sql, [voucherId, userId, plan, cycle, amount, payment_method, operation_number, voucher_url]);
+
+        res.json({
+            success: true,
+            voucher_id: voucherId,
+            message: 'Comprobante recibido exitosamente. Nuestro equipo activará tu plan a la brevedad.'
+        });
+    } catch (error) {
+        console.error('Error guardando comprobante de pago:', error);
+        res.status(500).json({ error: 'Error al registrar el comprobante de pago.' });
     }
 };
 
@@ -2430,7 +2477,7 @@ module.exports = {
     getAdminDashboardData,
     getLoteCosts, saveLoteCosts,
     getDashboardData,
-    createPaymentPreference, handlePaymentWebhook,
+    createPaymentPreference, submitPaymentVoucher, handlePaymentWebhook,
     getReviews, submitReview,
     getBlogPosts, getEvents, getEventBySlug, getBlogPostBySlug, createBlogPost, updateBlogPost, deleteBlogPost, getAdminBlogPosts, getBlogPostById, getPublicCompaniesForEvents,
     validateDeforestation, getBatchByGtinAndLot,

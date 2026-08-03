@@ -581,3 +581,19 @@ CREATE INDEX IF NOT EXISTS idx_batches_user ON batches(user_id);
 CREATE INDEX IF NOT EXISTS idx_batches_parent ON batches(parent_id);
 CREATE INDEX IF NOT EXISTS idx_acquisitions_user ON acquisitions(user_id);
 CREATE INDEX IF NOT EXISTS idx_trace_gtin ON traceability_registry(gtin);
+
+CREATE TABLE IF NOT EXISTS payment_vouchers (
+    id TEXT PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    plan VARCHAR(50) NOT NULL,
+    cycle VARCHAR(50) NOT NULL,
+    amount NUMERIC(10, 2) NOT NULL,
+    payment_method VARCHAR(50) NOT NULL,
+    operation_number VARCHAR(100),
+    voucher_url TEXT,
+    status VARCHAR(50) DEFAULT 'pending',
+    rejection_reason TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+ALTER TABLE users ADD COLUMN IF NOT EXISTS subscription_expires_at TIMESTAMP WITH TIME ZONE;

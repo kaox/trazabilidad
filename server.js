@@ -18,6 +18,7 @@ const PORT = process.env.PORT || 3000;
 const EmpresaModel = require('./src/models/empresaModel');
 
 const suggestionsController = require('./src/controllers/admin-suggestionsController');
+const adminPaymentsController = require('./src/controllers/adminPaymentsController');
 const productosController = require('./src/controllers/productosController');
 const companyProfileController = require('./src/controllers/companyProfileController');
 const themeController = require('./src/controllers/themeController');
@@ -1105,6 +1106,7 @@ app.get('/app/maridaje', authenticatePage, (req, res) => res.sendFile(path.join(
 app.get('/app/blends', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'blends.html')));
 app.get('/app/recetas-chocolate', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'formulador.html')));
 app.get('/app/pricing', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'pricing.html')));
+app.get('/app/checkout', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'checkout.html')));
 app.get('/app/costos', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'costos.html')));
 app.get('/app/admin-dashboard', authenticatePage, checkAdmin, (req, res) => res.sendFile(path.join(__dirname, 'views', 'admin-dashboard.html')));
 app.get('/app/cms', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'admin-blog-list.html')));
@@ -1116,6 +1118,7 @@ app.get('/app/estimacion-cosecha', authenticatePage, (req, res) => res.sendFile(
 app.get('/app/admin-blog', authenticatePage, checkAdmin, (req, res) => res.sendFile(path.join(__dirname, 'views', 'admin-blog-list.html')));
 app.get('/app/admin-blog/editor', authenticatePage, checkAdmin, (req, res) => res.sendFile(path.join(__dirname, 'views', 'admin-blog-editor.html')));
 app.get('/app/admin-suggestions', authenticatePage, checkAdmin, (req, res) => res.sendFile(path.join(__dirname, 'views', 'admin-suggestions.html')));
+app.get('/app/admin-payments', authenticatePage, checkAdmin, (req, res) => res.sendFile(path.join(__dirname, 'views', 'admin-payments.html')));
 app.get('/app/payment-success', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'payment-success.html')));
 app.get('/app/payment-failure', authenticatePage, (req, res) => res.sendFile(path.join(__dirname, 'views', 'payment-failure.html')));
 app.get('/app/nutricion', authenticatePage, checkSubscription('profesional'), (req, res) => res.sendFile(path.join(__dirname, 'views', 'nutricion.html')));
@@ -1221,7 +1224,15 @@ app.put('/api/recetas-chocolate/:id', authenticateApi, db.updateReceta);
 app.get('/api/costs/:lote_id', authenticateApi, db.getLoteCosts);
 app.post('/api/costs/:lote_id', authenticateApi, db.saveLoteCosts);
 app.post('/api/payments/create-preference', authenticateApi, db.createPaymentPreference);
+app.post('/api/payments/submit-voucher', authenticateApi, db.submitPaymentVoucher);
 app.post('/api/payments/webhook', express.raw({ type: 'application/json' }), db.handlePaymentWebhook);
+
+// Admin Payments Management
+app.get('/api/admin/payments', authenticateApi, checkAdmin, adminPaymentsController.getOverview);
+app.post('/api/admin/payments/vouchers/:id/approve', authenticateApi, checkAdmin, adminPaymentsController.approveVoucher);
+app.post('/api/admin/payments/vouchers/:id/reject', authenticateApi, checkAdmin, adminPaymentsController.rejectVoucher);
+app.post('/api/admin/payments/users/:userId/subscription', authenticateApi, checkAdmin, adminPaymentsController.updateUserSubscription);
+app.post('/api/admin/payments/check-expirations', authenticateApi, checkAdmin, adminPaymentsController.triggerExpirationCheck);
 
 // Admin Blog CRUD
 app.get('/api/admin/blog', authenticateApi, checkAdmin, db.getAdminBlogPosts);

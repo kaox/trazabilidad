@@ -11,7 +11,7 @@ document.addEventListener('DOMContentLoaded', () => {
             .then(response => response.ok ? response.text() : Promise.reject('Error loading navigation'))
             .then(data => {
                 navPlaceholder.innerHTML = data;
-                
+
                 // Helper para mostrar enlaces de admin
                 const showAdminLinks = (role) => {
                     if (role === 'admin') {
@@ -60,14 +60,18 @@ function initializeNav() {
     // 1. MI ORIGEN
     const origenBtn = document.getElementById('origen-dropdown-btn');
     const origenDropdown = document.getElementById('origen-dropdown-desktop');
-    
+
     // 2. PRODUCCIÓN
     const prodBtn = document.getElementById('produccion-dropdown-btn');
     const prodDropdown = document.getElementById('produccion-dropdown-desktop');
-    
+
     // 3. CALIDAD Y LAB
     const calidadBtn = document.getElementById('calidad-dropdown-btn');
     const calidadDropdown = document.getElementById('calidad-dropdown-desktop');
+
+    // 4. ADMINISTRACIÓN
+    const adminBtn = document.getElementById('admin-dropdown-btn');
+    const adminDropdown = document.getElementById('admin-dropdown-desktop');
 
     // Mobile Menu Toggle
     if (mobileMenuButton && mobileMenu) {
@@ -87,10 +91,10 @@ function initializeNav() {
         btn.addEventListener('click', (e) => {
             e.stopPropagation();
             const isHidden = dropdown.classList.contains('hidden');
-            
+
             // Close all others first
-            [origenDropdown, prodDropdown, calidadDropdown].forEach(d => {
-                if(d) d.classList.add('hidden');
+            [origenDropdown, prodDropdown, calidadDropdown, adminDropdown].forEach(d => {
+                if (d) d.classList.add('hidden');
             });
 
             if (isHidden) {
@@ -102,8 +106,8 @@ function initializeNav() {
         container.addEventListener('mouseenter', () => {
             clearTimeout(hideTimer);
             // Optional: Close others on hover entry to avoid overlap
-            [origenDropdown, prodDropdown, calidadDropdown].forEach(d => {
-                if(d && d !== dropdown) d.classList.add('hidden');
+            [origenDropdown, prodDropdown, calidadDropdown, adminDropdown].forEach(d => {
+                if (d && d !== dropdown) d.classList.add('hidden');
             });
             dropdown.classList.remove('hidden');
         });
@@ -118,18 +122,20 @@ function initializeNav() {
     setupDropdown(origenBtn, origenDropdown);
     setupDropdown(prodBtn, prodDropdown);
     setupDropdown(calidadBtn, calidadDropdown);
-    
+    setupDropdown(adminBtn, adminDropdown);
+
     // Click Outside to Close
     document.addEventListener('click', () => {
-        if(origenDropdown) origenDropdown.classList.add('hidden');
-        if(prodDropdown) prodDropdown.classList.add('hidden');
-        if(calidadDropdown) calidadDropdown.classList.add('hidden');
+        if (origenDropdown) origenDropdown.classList.add('hidden');
+        if (prodDropdown) prodDropdown.classList.add('hidden');
+        if (calidadDropdown) calidadDropdown.classList.add('hidden');
+        if (adminDropdown) adminDropdown.classList.add('hidden');
     });
 
     // --- Lógica de Resaltado (Active State) ---
     const currentPage = window.location.pathname;
     const navLinks = document.querySelectorAll('a.nav-link, a.nav-link-mobile');
-    
+
     // Resaltar enlaces directos
     navLinks.forEach(link => {
         if (link.href) {
@@ -145,20 +151,19 @@ function initializeNav() {
 
     // 1. MI ORIGEN (Fincas, Procesadoras, Admin)
     if (origenBtn && (
-        currentPage.startsWith('/app/fincas') || 
-        currentPage.startsWith('/app/procesadoras') || 
-        currentPage.startsWith('/app/perfil-comercial') ||
-        currentPage.startsWith('/app/admin')
+        currentPage.startsWith('/app/fincas') ||
+        currentPage.startsWith('/app/procesadoras') ||
+        currentPage.startsWith('/app/perfil-comercial')
     )) {
         origenBtn.classList.add('bg-amber-800');
     }
 
     // 2. PRODUCCIÓN (Productos, Acopio, Proceso, Stock, Trazabilidad)
     if (prodBtn && (
-        currentPage.startsWith('/app/productos') || 
-        currentPage.startsWith('/app/acopio') || 
-        currentPage.startsWith('/app/procesamiento') || 
-        currentPage.startsWith('/app/existencias') || 
+        currentPage.startsWith('/app/productos') ||
+        currentPage.startsWith('/app/acopio') ||
+        currentPage.startsWith('/app/procesamiento') ||
+        currentPage.startsWith('/app/existencias') ||
         currentPage.startsWith('/app/trazabilidad-inmutable')
     )) {
         prodBtn.classList.add('bg-amber-800');
@@ -166,20 +171,25 @@ function initializeNav() {
 
     // 3. CALIDAD Y LAB (Perfiles, Ruedas, Maridaje, Nutricion, Blends, Recetas, Estimacion)
     if (calidadBtn && (
-        currentPage.startsWith('/app/perfiles') || 
-        currentPage.startsWith('/app/ruedas-sabores') || 
-        currentPage.startsWith('/app/maridaje') || 
-        currentPage.startsWith('/app/blends') || 
-        currentPage.startsWith('/app/recetas-chocolate') || 
+        currentPage.startsWith('/app/perfiles') ||
+        currentPage.startsWith('/app/ruedas-sabores') ||
+        currentPage.startsWith('/app/maridaje') ||
+        currentPage.startsWith('/app/blends') ||
+        currentPage.startsWith('/app/recetas-chocolate') ||
         currentPage.startsWith('/app/nutricion') ||
         currentPage.startsWith('/app/estimacion-cosecha')
     )) {
         calidadBtn.classList.add('bg-amber-800');
     }
+
+    // 4. ADMINISTRACIÓN (Solo para administradores)
+    if (adminBtn && currentPage.startsWith('/app/admin')) {
+        adminBtn.classList.add('bg-amber-800');
+    }
 }
 
 // Inicialización de permisos de administrador global (Fallback)
-(async function() {
+(async function () {
     try {
         const response = await fetch('/api/user/profile');
         if (response.ok) {

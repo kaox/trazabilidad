@@ -172,20 +172,12 @@
                     </li>
                 </ul>
 
-                <!-- Opciones de Pago (Mercado Pago Integration) -->
+                <!-- Opciones de Pago -->
                 <div class="space-y-4 mt-2 pt-4 border-t border-stone-100">
-
-                    <button id="upgrade-btn" data-cycle="monthly"
-                        class="w-full text-center bg-amber-800 hover:bg-amber-900 text-white font-bold py-4 px-6 rounded-2xl shadow-lg shadow-amber-900/20 transition transform hover:-translate-y-1 flex items-center justify-center">
-                        <span id="upgrade-btn-text">Actualizar a Emprendedor</span>
-                        <svg id="upgrade-loader" class="animate-spin -ml-1 mr-3 h-5 w-5 text-white hidden"
-                            xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4">
-                            </circle>
-                            <path class="opacity-75" fill="currentColor"
-                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
-                            </path>
-                        </svg>
+                    <button onclick="goToCheckout('emprendedor')"
+                        class="w-full text-center bg-amber-800 hover:bg-amber-900 text-white font-bold py-4 px-6 rounded-2xl shadow-lg shadow-amber-900/20 transition transform hover:-translate-y-1 flex items-center justify-center gap-2">
+                        <span>Actualizar a Emprendedor</span>
+                        <i class="fas fa-arrow-right text-sm"></i>
                     </button>
                 </div>
             </div>
@@ -252,21 +244,24 @@
                         <span><strong>Soporte Técnico Especializado</strong> e Integración API.</span>
                     </li>
                 </ul>
-                <a href="https://wa.me/51961222040?text=Hola,%20soy%20usuario%20de%20RuruLab.%20Deseo%20solicitar%20acceso%20al%20plan%20Corporativo."
-                    target="_blank"
-                    class="w-full text-center bg-amber-500 hover:bg-amber-400 text-amber-950 font-bold py-4 px-6 rounded-2xl shadow-lg transition transform hover:-translate-y-1 mt-auto">Actualizar
-                    a Corporativo</a>
+                <button onclick="goToCheckout('corporativo')"
+                    class="w-full text-center bg-amber-500 hover:bg-amber-400 text-amber-950 font-bold py-4 px-6 rounded-2xl shadow-lg transition transform hover:-translate-y-1 mt-auto flex items-center justify-center gap-2">
+                    <span>Actualizar a Corporativo</span>
+                    <i class="fas fa-arrow-right text-sm"></i>
+                </button>
             </div>
         </div>
     </div>
 
     <script>
+        let activeBillingCycle = 'monthly';
+
         function setBillingCycle(cycle) {
+            activeBillingCycle = cycle;
             const btnMonthly = document.getElementById('btn-monthly');
             const btnAnnual = document.getElementById('btn-annual');
             const monthlyPrices = document.querySelectorAll('.price-monthly');
             const annualPrices = document.querySelectorAll('.price-annual');
-            const upgradeBtn = document.getElementById('upgrade-btn');
 
             if (cycle === 'annual') {
                 btnAnnual.className = "px-6 py-2.5 rounded-full font-bold text-sm transition-all duration-300 bg-amber-800 text-white shadow flex items-center gap-2";
@@ -274,18 +269,19 @@
 
                 monthlyPrices.forEach(el => el.classList.add('hidden'));
                 annualPrices.forEach(el => el.classList.remove('hidden'));
-                if (upgradeBtn) upgradeBtn.setAttribute('data-cycle', 'annual');
             } else {
                 btnMonthly.className = "px-6 py-2.5 rounded-full font-bold text-sm transition-all duration-300 bg-amber-800 text-white shadow";
                 btnAnnual.className = "px-6 py-2.5 rounded-full font-bold text-sm transition-all duration-300 text-stone-700 hover:text-amber-900 flex items-center gap-2";
 
                 annualPrices.forEach(el => el.classList.add('hidden'));
                 monthlyPrices.forEach(el => el.classList.remove('hidden'));
-                if (upgradeBtn) upgradeBtn.setAttribute('data-cycle', 'monthly');
             }
         }
+
+        function goToCheckout(plan) {
+            window.location.href = `/app/checkout?plan=${plan}&cycle=${activeBillingCycle}`;
+        }
     </script>
-    <script src="/js/pricing-app.js"></script>
     <script src="/js/nav-loader.js" defer></script>
 </body>
 

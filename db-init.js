@@ -592,6 +592,26 @@ async function initializeDatabase() {
             await runQuery(db, `ALTER TABLE blog_posts ADD COLUMN event_companies TEXT`);
             console.log("Columnas de evento en 'blog_posts' listas.");
 
+            await runQuery(db, `
+                CREATE TABLE IF NOT EXISTS payment_vouchers (
+                    id TEXT PRIMARY KEY,
+                    user_id INTEGER NOT NULL,
+                    plan TEXT NOT NULL,
+                    cycle TEXT NOT NULL,
+                    amount REAL NOT NULL,
+                    payment_method TEXT NOT NULL,
+                    operation_number TEXT,
+                    voucher_url TEXT,
+                    status TEXT DEFAULT 'pending',
+                    rejection_reason TEXT,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+                )`);
+            console.log("Tabla 'payment_vouchers' creada.");
+
+            await runQuery(db, `ALTER TABLE users ADD COLUMN subscription_expires_at TIMESTAMP`);
+            console.log("Columna 'subscription_expires_at' en 'users' lista.");
+
             console.log('Esquema de base de datos listo.');
 
         } catch (error) {

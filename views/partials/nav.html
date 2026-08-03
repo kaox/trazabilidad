@@ -45,19 +45,6 @@
                         <a href="/app/perfil-comercial-tema"
                             class="block px-4 py-2 text-sm text-stone-700 hover:bg-amber-50 hover:text-amber-800"><i
                                 class="fas fa-palette w-5 text-center mr-1 text-amber-600"></i> Tema de Landing</a>
-                        <!-- Admin Links (Solo visibles para admin) -->
-                        <div class="admin-only hidden border-t border-stone-100 mt-1">
-                            <div class="px-4 py-1 text-xs font-bold text-stone-400 uppercase">Admin</div>
-                            <a href="/app/admin-dashboard"
-                                class="block px-4 py-2 text-sm text-stone-700 hover:bg-stone-100"><i
-                                    class="fas fa-lock w-5 text-center mr-1"></i> Dashboard</a>
-                            <a href="/app/admin-suggestions"
-                                class="block px-4 py-2 text-sm text-stone-700 hover:bg-stone-100"><i
-                                    class="fas fa-inbox w-5 text-center mr-1"></i> Sugerencias</a>
-                            <a href="/app/admin-blog"
-                                class="block px-4 py-2 text-sm text-stone-700 hover:bg-stone-100"><i
-                                    class="fas fa-feather-alt w-5 text-center mr-1"></i> CMS Blog</a>
-                        </div>
                     </div>
                 </div>
 
@@ -129,6 +116,34 @@
                         <a href="/app/estimacion-cosecha"
                             class="block px-4 py-2 text-sm text-stone-700 hover:bg-amber-50 hover:text-amber-800"><i
                                 class="fas fa-chart-line w-5 text-center mr-1 text-teal-500"></i> Estimación</a>
+                    </div>
+                </div>
+
+                <!-- 4. ADMINISTRACIÓN (Solo visible para admins) -->
+                <div class="relative group admin-only hidden">
+                    <button id="admin-dropdown-btn"
+                        class="nav-link px-3 py-2 rounded-md text-sm font-medium hover:bg-amber-800 transition flex items-center gap-1 group-hover:bg-amber-800">
+                        <span>Admin 🛡️</span>
+                        <svg class="w-4 h-4 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7">
+                            </path>
+                        </svg>
+                    </button>
+                    <div id="admin-dropdown-desktop"
+                        class="absolute right-0 mt-0 w-56 bg-white rounded-md shadow-xl z-50 hidden group-hover:block border border-stone-100">
+                        <a href="/app/admin-dashboard"
+                            class="block px-4 py-2 text-sm text-stone-700 hover:bg-amber-50 hover:text-amber-800"><i
+                                class="fas fa-lock w-5 text-center mr-1 text-stone-600"></i> Dashboard Admin</a>
+                        <a href="/app/admin-suggestions"
+                            class="block px-4 py-2 text-sm text-stone-700 hover:bg-amber-50 hover:text-amber-800"><i
+                                class="fas fa-inbox w-5 text-center mr-1 text-sky-600"></i> Sugerencias</a>
+                        <a href="/app/admin-blog"
+                            class="block px-4 py-2 text-sm text-stone-700 hover:bg-amber-50 hover:text-amber-800"><i
+                                class="fas fa-feather-alt w-5 text-center mr-1 text-emerald-600"></i> CMS Blog</a>
+                        <a href="/app/admin-payments"
+                            class="block px-4 py-2 text-sm text-stone-700 hover:bg-amber-50 hover:text-amber-800"><i
+                                class="fas fa-credit-card w-5 text-center mr-1 text-purple-600"></i> Validación
+                            Pagos</a>
                     </div>
                 </div>
 
@@ -236,14 +251,27 @@
                 </div>
             </div>
 
-            <!-- Admin Links (Hidden by default) -->
-            <div class="admin-only hidden border-t border-amber-800 pt-2 mb-2">
-                <p class="px-3 text-xs font-bold text-sky-400 uppercase tracking-widest mb-2">Administración</p>
-                <a href="/app/admin-suggestions" class="block px-3 py-2 text-sm text-sky-200 hover:text-white">Admin
-                    Sugerencias</a>
-                <a href="/app/admin-dashboard" class="block px-3 py-2 text-sm text-sky-200 hover:text-white">Admin
-                    Dashboard</a>
-                <a href="/app/admin-blog" class="block px-3 py-2 text-sm text-sky-200 hover:text-white">CMS Blog</a>
+            <!-- 4. Administración (Solo visible para admin) -->
+            <div class="admin-only hidden mb-4 border-t border-amber-800 pt-4">
+                <p class="px-3 text-xs font-bold text-sky-400 uppercase tracking-widest mb-2">4. Administración 🛡️</p>
+                <div class="grid grid-cols-2 gap-2 px-1">
+                    <a href="/app/admin-dashboard"
+                        class="block px-2 py-2 rounded text-sm text-center text-sky-100 bg-amber-900/40 border border-transparent hover:border-amber-700">
+                        <i class="fas fa-lock mr-1"></i> Dashboard
+                    </a>
+                    <a href="/app/admin-suggestions"
+                        class="block px-2 py-2 rounded text-sm text-center text-sky-100 bg-amber-900/40 border border-transparent hover:border-amber-700">
+                        <i class="fas fa-inbox mr-1"></i> Sugerencias
+                    </a>
+                    <a href="/app/admin-blog"
+                        class="block px-2 py-2 rounded text-sm text-center text-sky-100 bg-amber-900/40 border border-transparent hover:border-amber-700">
+                        <i class="fas fa-feather-alt mr-1"></i> CMS Blog
+                    </a>
+                    <a href="/app/admin-payments"
+                        class="block px-2 py-2 rounded text-sm text-center text-sky-100 bg-amber-900/40 border border-transparent hover:border-amber-700">
+                        <i class="fas fa-credit-card mr-1"></i> Pagos
+                    </a>
+                </div>
             </div>
 
             <div class="border-t border-amber-800 pt-4 pb-2">
