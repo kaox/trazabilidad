@@ -288,9 +288,11 @@ CREATE TABLE IF NOT EXISTS productos (
     finca_id TEXT,
     receta_nutricional_id TEXT, -- Vinculación con Módulo Nutrición
     perfil_id INTEGER, -- Vinculación con Perfiles de Cata
-    rueda_id INTEGER, -- Vinculación con Ruedas de Sabores
     deleted_at TIMESTAMPTZ, -- Soft Delete
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    is_published boolean null default true,
+    rueda_id text null,
+    perfil_sensorial_id text null,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (receta_nutricional_id) REFERENCES recetas_nutricionales(id) ON DELETE SET NULL,
     FOREIGN KEY (perfil_id) REFERENCES perfiles(id) ON DELETE SET NULL,

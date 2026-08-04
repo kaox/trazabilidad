@@ -568,9 +568,9 @@ const app = {
                    <img src="${coverImage}" class="w-full h-full object-cover transform group-hover:scale-105 transition duration-700">
                    <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent"></div>
                    <div class="absolute bottom-0 left-0 w-full p-8 flex items-end gap-6">
-                       <img src="${user.logo || 'https://placehold.co/100x100?text=Logo'}" class="w-24 h-24 md:w-32 md:h-32 rounded-2xl border-4 border-white shadow-lg bg-white object-contain">
+                       <!--img src="${user.logo || 'https://placehold.co/100x100?text=Logo'}" class="w-24 h-24 md:w-32 md:h-32 rounded-2xl border-4 border-white shadow-lg bg-white object-contain"-->
                        <div class="text-white mb-2">
-                           <span class="bg-accent text-white text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider mb-3 inline-block shadow-lg">${typeLabel}</span>
+                           <span class="bg-accent text-white text-[8px] font-bold px-3 py-1 rounded-full uppercase tracking-wider mb-3 inline-block shadow-lg">${typeLabel}</span>
                            <h1 class="text-3xl md:text-5xl font-display font-bold leading-tight">${entityName}</h1>
                            <p class="text-white/80 flex items-center gap-2 text-sm md:text-base"><i class="fas fa-map-marker-alt text-accent"></i> ${locationStr}</p>
                        </div>
@@ -644,7 +644,7 @@ const app = {
         `;
 
         this.container.innerHTML = html;
-        if (entity.coordenadas) setTimeout(() => this.initMiniMap(entity.coordenadas), 500);
+        if (entity.coordenadas) setTimeout(() => this.initMiniMap(entity.coordenadas, isFinca), 500);
         setTimeout(() => this.initProductCharts(products.slice(0, 4)), 100);
     },
 
@@ -855,7 +855,7 @@ const app = {
             const fincaAltura = prod.finca_altura ? `${prod.finca_altura} msnm` : '';
 
             return `
-            <div class="product-card fade-in">
+            <div class="product-card fade-in cursor-pointer transition-transform hover:-translate-y-1 hover:shadow-lg duration-300" onclick="if(!event.target.closest('button') && !event.target.closest('a')) window.location.href='${detailLink}'">
                 <div class="h-64 relative overflow-hidden group">
                     <img src="${prodImage}" class="w-full h-full object-cover transition duration-500 group-hover:scale-110">
                     
@@ -907,20 +907,16 @@ const app = {
 
                     <div class="mt-auto flex flex-col gap-3">
                         ${this.state.landingData?.user?.is_suggested ? `
-                            <button disabled class="w-full bg-stone-200 text-stone-400 py-3 rounded-2xl font-bold text-sm shadow-sm flex items-center justify-center gap-2 cursor-not-allowed" title="Reclama tu perfil para activar ventas">
+                            <button onclick="event.stopPropagation()" disabled class="w-full bg-stone-200 text-stone-400 py-3 rounded-2xl font-bold text-sm shadow-sm flex items-center justify-center gap-2 cursor-not-allowed" title="Reclama tu perfil para activar ventas">
                                 <i class="fab fa-whatsapp"></i> Compra rápida (No disponible)
                             </button>
-                            <button disabled class="block w-full text-center bg-stone-100 text-stone-400 py-2.5 rounded-xl font-bold text-sm cursor-not-allowed">Ver detalles (No disponible)</button>
                         ` : `
-                            <button onclick="app.handleAddToCartClick(event, '${prod.id}')" class="w-full bg-stone-900 hover:bg-stone-800 text-white py-2.5 px-4 rounded-xl font-bold text-sm shadow-sm flex items-center justify-center gap-2 transition">
+                            <button onclick="event.stopPropagation(); app.handleAddToCartClick(event, '${prod.id}')" class="w-full bg-stone-900 hover:bg-stone-800 text-white py-2.5 px-4 rounded-xl font-bold text-sm shadow-sm flex items-center justify-center gap-2 transition">
                                 <i class="fas fa-cart-plus text-xs"></i> Añadir al carrito
                             </button>
-                            <div class="grid grid-cols-2 gap-2">
-                                <a id="whatsapp-btn" href="${buyLink}" target="_blank" onclick="app.trackEvent('buy_click', '${userId}', '${prod.id}')" class="btn-accent py-2.5 rounded-xl font-bold text-xs shadow-sm flex items-center justify-center gap-1.5">
-                                    <i class="fab fa-whatsapp"></i> Compra rápida
-                                </a>
-                                <a href="${detailLink}" class="block text-center bg-stone-100 hover:bg-stone-200 text-stone-700 py-2.5 rounded-xl font-bold text-xs transition">Ver detalles</a>
-                            </div>
+                            <a id="whatsapp-btn" href="${buyLink}" target="_blank" onclick="event.stopPropagation(); app.trackEvent('buy_click', '${userId}', '${prod.id}')" class="w-full block btn-accent py-2.5 rounded-xl font-bold text-xs shadow-sm flex items-center justify-center gap-1.5">
+                                <i class="fab fa-whatsapp"></i> Compra rápida
+                            </a>
                         `}
                     </div>
                 </div>
@@ -1310,13 +1306,13 @@ const app = {
         document.body.insertAdjacentHTML('beforeend', html);
     },
 
-    initMiniMap: function (coords) {
+    initMiniMap: function (coords, isFinca) {
         if (typeof google === 'undefined' || typeof google.maps === 'undefined') return;
         try {
             let paths = coords;
             if (typeof coords === 'string') { try { paths = JSON.parse(coords); } catch (e) { return; } }
             if (!paths) return;
-            const mapOptions = { zoom: 13, mapTypeId: 'satellite', disableDefaultUI: true, draggable: false, zoomControl: false, scrollwheel: false, disableDoubleClickZoom: true };
+            const mapOptions = { zoom: 13, mapTypeId: isFinca ? 'satellite' : 'roadmap', disableDefaultUI: true, draggable: false, zoomControl: false, scrollwheel: false, disableDoubleClickZoom: true };
             const map = new google.maps.Map(document.getElementById('mini-map'), mapOptions);
             if (Array.isArray(paths) && paths.length > 0 && Array.isArray(paths[0])) {
                 const polygonPaths = paths.map(p => ({ lat: parseFloat(p[0]), lng: parseFloat(p[1]) }));
