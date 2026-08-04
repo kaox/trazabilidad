@@ -73,7 +73,7 @@ const app = {
         // Compatibilidad hacia atrás: si hay fragmento hash, usarlo
         if (window.location.hash) {
             const hashPage = window.location.hash.replace('#', '').toLowerCase();
-            if (['inicio', 'tienda', 'contacto'].includes(hashPage)) {
+            if (['inicio', 'tienda', 'contacto', 'carrito'].includes(hashPage)) {
                 return hashPage;
             }
         }
@@ -83,14 +83,14 @@ const app = {
         if (window.IS_SUBDOMAIN) {
             if (segments.length === 0) return 'inicio';
             const first = segments[0].toLowerCase();
-            if (['tienda', 'contacto', 'inicio'].includes(first)) {
+            if (['tienda', 'contacto', 'carrito', 'inicio'].includes(first)) {
                 return first;
             }
             return 'inicio';
         } else {
             if (segments.length >= 3 && segments[0] === 'origen-unico') {
                 const subpage = segments[2].toLowerCase();
-                if (['tienda', 'contacto', 'inicio'].includes(subpage)) {
+                if (['tienda', 'contacto', 'carrito', 'inicio'].includes(subpage)) {
                     return subpage;
                 }
             }
@@ -177,7 +177,7 @@ const app = {
 
     updateBreadcrumb: function (page) {
         // Ocultar todos los slots
-        ['bc-inicio', 'bc-tienda', 'bc-contacto', 'bc-directorio'].forEach(id => {
+        ['bc-inicio', 'bc-tienda', 'bc-contacto', 'bc-carrito', 'bc-directorio'].forEach(id => {
             const el = document.getElementById(id);
             if (el) el.classList.replace('flex', 'hidden') || el.classList.add('hidden');
         });
@@ -188,7 +188,8 @@ const app = {
             // Subdominio: solo slots White Label (sin enlace a directorio)
             const slotId = page === 'tienda' ? 'bc-tienda'
                 : page === 'contacto' ? 'bc-contacto'
-                    : 'bc-inicio';
+                    : page === 'carrito' ? 'bc-carrito'
+                        : 'bc-inicio';
             const slot = document.getElementById(slotId);
             if (slot) {
                 slot.classList.remove('hidden');
@@ -200,7 +201,7 @@ const app = {
                 const slot = document.getElementById('bc-directorio');
                 if (slot) { slot.classList.remove('hidden'); slot.classList.add('flex'); }
             } else {
-                const slotId = page === 'tienda' ? 'bc-tienda' : 'bc-contacto';
+                const slotId = page === 'tienda' ? 'bc-tienda' : page === 'contacto' ? 'bc-contacto' : page === 'carrito' ? 'bc-carrito' : 'bc-inicio';
                 const slot = document.getElementById(slotId);
                 if (slot) { slot.classList.remove('hidden'); slot.classList.add('flex'); }
             }
@@ -300,10 +301,11 @@ const app = {
             // Guardar datos en el estado para navegación SPA
             this.state.landingData = data;
 
-            // 1. Activar UI White Label (si corresponde)
+            // 1. Activar UI White Label (si corresponde) y actualizar badges del carrito
             this.applyWhiteLabelBranding(data.user);
+            this.updateCartBadges();
 
-            // 2. Renderizar la página inicial (según el hash)
+            // 2. Renderizar la página inicial (según la URL)
             this.handleRouting();
 
             // 3. Inyectar JSON-LD
@@ -392,6 +394,9 @@ const app = {
                 break;
             case 'contacto':
                 this.renderContacto();
+                break;
+            case 'carrito':
+                this.renderCarrito();
                 break;
             default:
                 this.renderInicio();
@@ -903,14 +908,19 @@ const app = {
                     <div class="mt-auto flex flex-col gap-3">
                         ${this.state.landingData?.user?.is_suggested ? `
                             <button disabled class="w-full bg-stone-200 text-stone-400 py-3 rounded-2xl font-bold text-sm shadow-sm flex items-center justify-center gap-2 cursor-not-allowed" title="Reclama tu perfil para activar ventas">
-                                <i class="fab fa-whatsapp"></i> Comprar ahora (No disponible)
+                                <i class="fab fa-whatsapp"></i> Compra rápida (No disponible)
                             </button>
                             <button disabled class="block w-full text-center bg-stone-100 text-stone-400 py-2.5 rounded-xl font-bold text-sm cursor-not-allowed">Ver detalles (No disponible)</button>
                         ` : `
-                            <a id="whatsapp-btn" href="${buyLink}" target="_blank" onclick="app.trackEvent('buy_click', '${userId}', '${prod.id}')" class="btn-accent py-3 rounded-2xl font-bold text-sm shadow-sm flex items-center justify-center gap-2">
-                                <i class="fab fa-whatsapp"></i> Comprar ahora
-                            </a>
-                            <a href="${detailLink}" class="block w-full text-center bg-stone-100 hover:bg-stone-200 text-stone-700 py-2.5 rounded-xl font-bold text-sm transition">Ver detalles</a>
+                            <button onclick="app.handleAddToCartClick(event, '${prod.id}')" class="w-full bg-stone-900 hover:bg-stone-800 text-white py-2.5 px-4 rounded-xl font-bold text-sm shadow-sm flex items-center justify-center gap-2 transition">
+                                <i class="fas fa-cart-plus text-xs"></i> Añadir al carrito
+                            </button>
+                            <div class="grid grid-cols-2 gap-2">
+                                <a id="whatsapp-btn" href="${buyLink}" target="_blank" onclick="app.trackEvent('buy_click', '${userId}', '${prod.id}')" class="btn-accent py-2.5 rounded-xl font-bold text-xs shadow-sm flex items-center justify-center gap-1.5">
+                                    <i class="fab fa-whatsapp"></i> Compra rápida
+                                </a>
+                                <a href="${detailLink}" class="block text-center bg-stone-100 hover:bg-stone-200 text-stone-700 py-2.5 rounded-xl font-bold text-xs transition">Ver detalles</a>
+                            </div>
                         `}
                     </div>
                 </div>
@@ -1322,6 +1332,271 @@ const app = {
                 if (position) { map.setCenter(position); map.setZoom(15); new google.maps.Marker({ position: position, map: map, title: "Ubicación" }); }
             }
         } catch (e) { console.error("Error mapa:", e); }
+    },
+
+    // --- LÓGICA DE CARRITO MULTITENANT ---
+    getTenantId: function () {
+        if (this.state.landingData && this.state.landingData.user) {
+            return String(this.state.landingData.user.id);
+        }
+        if (window.CURRENT_COMPANY_ID) {
+            return String(window.CURRENT_COMPANY_ID);
+        }
+        if (this.state.companySlug) {
+            return this.state.companySlug;
+        }
+        return 'default';
+    },
+
+    getCart: function () {
+        const tenantId = this.getTenantId();
+        const key = `rurulab_cart_${tenantId}`;
+        try {
+            const raw = localStorage.getItem(key);
+            return raw ? JSON.parse(raw) : [];
+        } catch (e) {
+            return [];
+        }
+    },
+
+    saveCart: function (cart) {
+        const tenantId = this.getTenantId();
+        const key = `rurulab_cart_${tenantId}`;
+        try {
+            localStorage.setItem(key, JSON.stringify(cart));
+        } catch (e) {
+            console.error('Error guardando carrito:', e);
+        }
+        this.updateCartBadges();
+    },
+
+    updateCartBadges: function () {
+        const cart = this.getCart();
+        const totalItems = cart.reduce((sum, item) => sum + (item.cantidad || 1), 0);
+
+        const badgeDesktop = document.getElementById('wl-cart-badge');
+        const badgeMobile = document.getElementById('wl-cart-badge-mobile');
+
+        if (badgeDesktop) {
+            if (totalItems > 0) {
+                badgeDesktop.textContent = totalItems;
+                badgeDesktop.classList.remove('hidden');
+            } else {
+                badgeDesktop.classList.add('hidden');
+            }
+        }
+        if (badgeMobile) {
+            if (totalItems > 0) {
+                badgeMobile.textContent = totalItems;
+                badgeMobile.classList.remove('hidden');
+            } else {
+                badgeMobile.classList.add('hidden');
+            }
+        }
+    },
+
+    handleAddToCartClick: function (e, productId) {
+        if (e) e.preventDefault();
+        const products = this.state.landingData?.products || [];
+        const prod = products.find(p => String(p.id) === String(productId));
+
+        if (!prod) return;
+
+        let prodImage = 'https://rurulab.com/images/placeholder-product.jpg';
+        if (prod.imagenes_json) {
+            try {
+                const imgs = typeof prod.imagenes_json === 'string' ? JSON.parse(prod.imagenes_json) : prod.imagenes_json;
+                if (imgs && imgs.length > 0) prodImage = imgs[0];
+            } catch (err) { }
+        }
+
+        const cart = this.getCart();
+        const existingIndex = cart.findIndex(item => String(item.id) === String(productId));
+
+        if (existingIndex !== -1) {
+            cart[existingIndex].cantidad = (cart[existingIndex].cantidad || 1) + 1;
+        } else {
+            cart.push({
+                id: prod.id,
+                nombre: prod.nombre,
+                precio: Number(prod.precio || 0),
+                moneda: prod.moneda || 'S/',
+                peso: prod.peso || '',
+                imagen: prodImage,
+                cantidad: 1
+            });
+        }
+
+        this.saveCart(cart);
+        this.showToast(`¡${prod.nombre} añadido al carrito!`);
+    },
+
+    updateCartQuantity: function (productId, delta) {
+        let cart = this.getCart();
+        const index = cart.findIndex(item => String(item.id) === String(productId));
+
+        if (index !== -1) {
+            cart[index].cantidad = (cart[index].cantidad || 1) + delta;
+            if (cart[index].cantidad <= 0) {
+                cart.splice(index, 1);
+            }
+            this.saveCart(cart);
+            if (this.state.currentPage === 'carrito') {
+                this.renderCarrito();
+            }
+        }
+    },
+
+    removeFromCart: function (productId) {
+        let cart = this.getCart();
+        cart = cart.filter(item => String(item.id) !== String(productId));
+        this.saveCart(cart);
+        if (this.state.currentPage === 'carrito') {
+            this.renderCarrito();
+        }
+    },
+
+    clearCartConfirm: function () {
+        if (confirm('¿Estás seguro de que deseas vaciar tu carrito de compras?')) {
+            this.saveCart([]);
+            if (this.state.currentPage === 'carrito') {
+                this.renderCarrito();
+            }
+        }
+    },
+
+    showToast: function (msg) {
+        let toast = document.getElementById('rurulab-toast');
+        if (!toast) {
+            toast = document.createElement('div');
+            toast.id = 'rurulab-toast';
+            toast.className = 'fixed bottom-6 right-6 bg-stone-900 text-white px-5 py-3.5 rounded-2xl shadow-2xl z-50 text-sm font-bold flex items-center gap-2.5 transition-all transform duration-300 translate-y-10 opacity-0 pointer-events-none border border-stone-700';
+            document.body.appendChild(toast);
+        }
+
+        toast.innerHTML = `<i class="fas fa-check-circle text-green-400 text-base"></i> <span>${msg}</span>`;
+        toast.classList.remove('translate-y-10', 'opacity-0', 'pointer-events-none');
+
+        setTimeout(() => {
+            toast.classList.add('translate-y-10', 'opacity-0', 'pointer-events-none');
+        }, 3000);
+    },
+
+    renderCarrito: function () {
+        const cart = this.getCart();
+        const { user } = this.state.landingData || {};
+        const companyName = user?.name || 'la empresa';
+        const cleanPhone = user?.celular ? user.celular.replace(/\D/g, '') : (user?.contact_phone ? user.contact_phone.replace(/\D/g, '') : '');
+
+        if (cart.length === 0) {
+            this.container.innerHTML = `
+                <div class="container mx-auto px-6 py-16 text-center fade-in">
+                    <div class="max-w-md mx-auto bg-white p-10 rounded-3xl border border-stone-200 shadow-sm space-y-4">
+                        <div class="w-20 h-20 bg-amber-50 rounded-full flex items-center justify-center mx-auto text-amber-800 text-3xl">
+                            <i class="fas fa-shopping-basket"></i>
+                        </div>
+                        <h2 class="text-2xl font-display font-bold text-stone-900">Tu carrito está vacío</h2>
+                        <p class="text-stone-600 text-sm">Explora el catálogo de ${companyName} y añade tus productos favoritos.</p>
+                        <a href="/tienda" data-page="tienda" class="btn-accent py-3 px-6 rounded-2xl font-bold text-sm inline-flex items-center gap-2 shadow-sm">
+                            <i class="fas fa-store"></i> Explorar Tienda
+                        </a>
+                    </div>
+                </div>
+            `;
+            return;
+        }
+
+        let totalAmount = 0;
+        const currency = cart[0]?.moneda || 'S/';
+
+        const cartRowsHtml = cart.map(item => {
+            const itemSubtotal = item.precio * item.cantidad;
+            totalAmount += itemSubtotal;
+            return `
+                <div class="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 bg-white rounded-2xl border border-stone-100 shadow-sm hover:shadow-md transition">
+                    <div class="flex items-center gap-4 w-full sm:w-auto">
+                        <img src="${item.imagen}" class="w-16 h-16 object-cover rounded-xl border border-stone-100 flex-shrink-0">
+                        <div>
+                            <h4 class="font-bold text-stone-900 text-base leading-tight">${item.nombre}</h4>
+                            <span class="text-xs text-stone-400 font-bold uppercase block mt-0.5">${item.peso || ''}</span>
+                            <span class="text-xs font-black text-amber-900 sm:hidden block mt-1">${item.moneda} ${item.precio.toFixed(2)} c/u</span>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center justify-between sm:justify-end gap-6 w-full sm:w-auto border-t sm:border-t-0 pt-3 sm:pt-0 border-stone-100">
+                        <span class="text-sm font-bold text-stone-700 hidden sm:block">${item.moneda} ${item.precio.toFixed(2)}</span>
+                        
+                        <!-- Controles de cantidad -->
+                        <div class="flex items-center border border-stone-200 rounded-xl bg-stone-50 overflow-hidden">
+                            <button onclick="app.updateCartQuantity('${item.id}', -1)" class="w-8 h-8 flex items-center justify-center text-stone-600 hover:bg-stone-200 font-bold transition">-</button>
+                            <span class="w-10 text-center text-xs font-bold text-stone-900">${item.cantidad}</span>
+                            <button onclick="app.updateCartQuantity('${item.id}', 1)" class="w-8 h-8 flex items-center justify-center text-stone-600 hover:bg-stone-200 font-bold transition">+</button>
+                        </div>
+
+                        <!-- Subtotal -->
+                        <span class="font-black text-stone-900 text-base w-24 text-right">${item.moneda} ${itemSubtotal.toFixed(2)}</span>
+
+                        <!-- Botón eliminar -->
+                        <button onclick="app.removeFromCart('${item.id}')" class="text-stone-400 hover:text-red-600 transition p-1" title="Eliminar producto">
+                            <i class="fas fa-trash-alt text-sm"></i>
+                        </button>
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        // Construir mensaje formateado para WhatsApp
+        const waItems = cart.map(i => `• ${i.cantidad}x ${i.nombre} (${i.peso || 'Unidad'}) - ${i.moneda} ${(i.precio * i.cantidad).toFixed(2)}`).join('\n');
+        const waMessage = `¡Hola! Deseo realizar el siguiente pedido desde su tienda en RuruLab:\n\n🛒 *RESUMEN DEL PEDIDO:*\n${waItems}\n\n💰 *TOTAL:* ${currency} ${totalAmount.toFixed(2)}\n\nQuedo atento a la confirmación de disponibilidad y datos de pago. ¡Gracias!`;
+        const waLink = cleanPhone ? `https://wa.me/${cleanPhone}?text=${encodeURIComponent(waMessage)}` : '#';
+
+        const html = `
+            <div class="container mx-auto px-6 py-12 fade-in">
+                <div class="max-w-4xl mx-auto space-y-8">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-stone-200 pb-6">
+                        <div>
+                            <h1 class="wl-heading-3 text-3xl md:text-4xl font-display font-bold text-stone-900">Carrito de Compras</h1>
+                            <p class="text-stone-600 text-sm mt-1">Revisa tus productos seleccionados en ${companyName}.</p>
+                        </div>
+                        <button onclick="app.clearCartConfirm()" class="text-xs font-bold text-red-600 hover:underline flex items-center gap-1.5 self-start sm:self-auto">
+                            <i class="fas fa-trash"></i> Vaciar carrito
+                        </button>
+                    </div>
+
+                    <!-- Lista de items del carrito -->
+                    <div class="space-y-4">
+                        ${cartRowsHtml}
+                    </div>
+
+                    <!-- Resumen del Total y Botones de Pago -->
+                    <div class="bg-stone-50 border border-stone-200 rounded-3xl p-6 md:p-8 flex flex-col md:flex-row items-center justify-between gap-6 shadow-sm">
+                        <div>
+                            <span class="text-xs font-bold text-stone-400 uppercase tracking-wider block">Total a Pagar</span>
+                            <span class="text-3xl font-black font-display text-stone-900">${currency} ${totalAmount.toFixed(2)}</span>
+                            <span class="text-xs text-stone-500 block mt-0.5">${cart.reduce((sum, i) => sum + i.cantidad, 0)} productos en total</span>
+                        </div>
+
+                        <div class="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
+                            <a href="/tienda" data-page="tienda" class="w-full sm:w-auto text-center bg-stone-200 hover:bg-stone-300 text-stone-800 font-bold py-3.5 px-6 rounded-2xl text-sm transition">
+                                <i class="fas fa-arrow-left mr-1.5"></i> Seguir Comprando
+                            </a>
+                            ${cleanPhone ? `
+                                <a href="${waLink}" target="_blank" onclick="app.trackEvent('cart_checkout_whatsapp', '${user?.id}')"
+                                   class="w-full sm:w-auto text-center btn-accent font-bold py-3.5 px-8 rounded-2xl text-sm transition shadow-md flex items-center justify-center gap-2">
+                                    <i class="fab fa-whatsapp text-lg"></i> Enviar Pedido por WhatsApp
+                                </a>
+                            ` : `
+                                <button disabled class="w-full sm:w-auto text-center bg-stone-300 text-stone-500 font-bold py-3.5 px-6 rounded-2xl text-sm cursor-not-allowed">
+                                    Contacto no disponible
+                                </button>
+                            `}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        this.container.innerHTML = html;
     }
 };
 

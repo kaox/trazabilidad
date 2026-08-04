@@ -124,10 +124,21 @@ const renderProductCards = (products, phone, userId, hostUrl = '', companyName =
                 </div>
 
                 <div class="mt-auto flex flex-col gap-3">
-                    <a href="${buyLink}" target="_blank" class="btn-accent py-3 rounded-2xl font-bold text-sm shadow-sm flex items-center justify-center gap-2">
-                        <i class="fab fa-whatsapp"></i> Comprar ahora
-                    </a>
-                    <a href="${detailLink}" class="block w-full text-center bg-stone-100 hover:bg-stone-200 text-stone-700 py-2.5 rounded-xl font-bold text-sm transition">Ver detalles</a>
+                    ${isSuggested ? `
+                        <button disabled class="w-full bg-stone-200 text-stone-400 py-3 rounded-2xl font-bold text-sm shadow-sm flex items-center justify-center gap-2 cursor-not-allowed">
+                            <i class="fab fa-whatsapp"></i> Compra rápida (No disponible)
+                        </button>
+                    ` : `
+                        <button onclick="app.handleAddToCartClick(event, '${prod.id}')" class="w-full bg-stone-900 hover:bg-stone-800 text-white py-2.5 px-4 rounded-xl font-bold text-sm shadow-sm flex items-center justify-center gap-2 transition">
+                            <i class="fas fa-cart-plus text-xs"></i> Añadir al carrito
+                        </button>
+                        <div class="grid grid-cols-2 gap-2">
+                            <a href="${buyLink}" target="_blank" class="btn-accent py-2.5 rounded-xl font-bold text-xs shadow-sm flex items-center justify-center gap-1.5">
+                                <i class="fab fa-whatsapp"></i> Compra rápida
+                            </a>
+                            <a href="${detailLink}" class="block text-center bg-stone-100 hover:bg-stone-200 text-stone-700 py-2.5 rounded-xl font-bold text-xs transition">Ver detalles</a>
+                        </div>
+                    `}
                 </div>
             </div>
         </div>`;
@@ -436,39 +447,39 @@ const renderLanding = (data, hostUrl = '', page = 'inicio') => {
 };
 
 const renderCompanyList = (companies) => {
-        if (!companies || companies.length === 0) {
-            return `<p class="text-center py-20 text-stone-400">No hay empresas registradas.</p>`;
+    if (!companies || companies.length === 0) {
+        return `<p class="text-center py-20 text-stone-400">No hay empresas registradas.</p>`;
+    }
+
+    const createSlug = text => (text || '').toString().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, '-').replace(/[^\w-]+/g, '').replace(/--+/g, '-').replace(/^-+/, '').replace(/-+$/, '');
+
+    let html = `<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 fade-in">`;
+
+    companies.forEach(c => {
+        const logoSrc = c.logo || c.logo_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(c.name)}&background=f5f5f4&color=78350f&size=128`;
+        const isFinca = c.type === 'finca';
+        const typeColor = isFinca ? 'amber' : 'blue';
+        const locationStr = [c.distrito, c.provincia, c.departamento, c.pais].filter(Boolean).map(p => toTitleCase(p)).join(', ') || 'Ubicación por verificar';
+
+        let tagsHtml = '';
+        let categories = [];
+        try { categories = typeof c.product_categories === 'string' ? JSON.parse(c.product_categories) : (c.product_categories || []); } catch (e) { }
+
+        if (categories.length > 0) {
+            const topTags = categories.slice(0, 2).map(cat => {
+                let icon = '';
+                if (cat === 'cafe') icon = '☕ ';
+                if (cat === 'cacao') icon = '🍫 ';
+                if (cat === 'miel') icon = '🍯 ';
+                return `<span class="text-[9px] font-bold bg-stone-100 text-stone-500 px-1.5 py-0.5 rounded border border-stone-200 capitalize">${icon}${cat}</span>`;
+            }).join(' ');
+            const moreTag = categories.length > 2 ? `<span class="text-[9px] font-bold text-stone-400">+${categories.length - 2}</span>` : '';
+            tagsHtml = `<div class="flex gap-1 mt-2">${topTags}${moreTag}</div>`;
         }
 
-        const createSlug = text => (text || '').toString().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, '-').replace(/[^\w-]+/g, '').replace(/--+/g, '-').replace(/^-+/, '').replace(/-+$/, '');
-
-        let html = `<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 fade-in">`;
-
-        companies.forEach(c => {
-            const logoSrc = c.logo || c.logo_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(c.name)}&background=f5f5f4&color=78350f&size=128`;
-            const isFinca = c.type === 'finca';
-            const typeColor = isFinca ? 'amber' : 'blue';
-            const locationStr = [c.distrito, c.provincia, c.departamento, c.pais].filter(Boolean).map(p => toTitleCase(p)).join(', ') || 'Ubicación por verificar';
-
-            let tagsHtml = '';
-            let categories = [];
-            try { categories = typeof c.product_categories === 'string' ? JSON.parse(c.product_categories) : (c.product_categories || []); } catch (e) { }
-
-            if (categories.length > 0) {
-                const topTags = categories.slice(0, 2).map(cat => {
-                    let icon = '';
-                    if (cat === 'cafe') icon = '☕ ';
-                    if (cat === 'cacao') icon = '🍫 ';
-                    if (cat === 'miel') icon = '🍯 ';
-                    return `<span class="text-[9px] font-bold bg-stone-100 text-stone-500 px-1.5 py-0.5 rounded border border-stone-200 capitalize">${icon}${cat}</span>`;
-                }).join(' ');
-                const moreTag = categories.length > 2 ? `<span class="text-[9px] font-bold text-stone-400">+${categories.length - 2}</span>` : '';
-                tagsHtml = `<div class="flex gap-1 mt-2">${topTags}${moreTag}</div>`;
-            }
-
-            const slug = createSlug(c.name) + '-' + c.id;
-            const linkUrl = `/origen-unico/${slug}`;
-            html += `
+        const slug = createSlug(c.name) + '-' + c.id;
+        const linkUrl = `/origen-unico/${slug}`;
+        html += `
             <a href="${linkUrl}" class="group relative bg-white rounded-3xl border border-stone-200 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-500 cursor-pointer overflow-hidden flex flex-col h-full text-left no-underline">
                 <div class="h-2 w-full bg-${typeColor}-600/20 group-hover:bg-${typeColor}-600 transition-colors duration-500"></div>
                 <div class="p-6 flex flex-col h-full">
@@ -488,10 +499,10 @@ const renderCompanyList = (companies) => {
                     </div>
                 </div>
             </a>`;
-        });
+    });
 
-        // Tarjeta "Tu Marca Aquí"
-        html += `
+    // Tarjeta "Tu Marca Aquí"
+    html += `
         <div class="flex flex-col items-center justify-center p-8 rounded-3xl border-2 border-dashed border-amber-200 bg-amber-50/30 hover:bg-amber-50 hover:border-amber-400 cursor-pointer transition-all duration-500 min-h-[280px]">
             <div class="w-16 h-16 rounded-2xl bg-white border border-amber-100 flex items-center justify-center mb-4 shadow-sm"><i class="fas fa-plus text-3xl text-amber-500"></i></div>
             <h3 class="text-xl font-display font-bold text-amber-900 mb-2">¿Tu Marca Aquí?</h3>
@@ -499,35 +510,35 @@ const renderCompanyList = (companies) => {
             <span class="bg-amber-800 text-white text-xs font-bold px-6 py-3 rounded-xl shadow-lg hover:bg-amber-900 transition-all">Sugerir Empresa</span>
         </div></div>`;
 
-        return html;
-    };
+    return html;
+};
 
-    const renderMarketplaceProducts = (products) => {
-        if (!products || products.length === 0) {
-            return `<div class="col-span-full text-center py-16 bg-white rounded-2xl border border-dashed border-stone-300">
+const renderMarketplaceProducts = (products) => {
+    if (!products || products.length === 0) {
+        return `<div class="col-span-full text-center py-16 bg-white rounded-2xl border border-dashed border-stone-300">
                     <i class="fas fa-search text-4xl text-stone-300 mb-4"></i>
                     <h3 class="text-lg font-bold text-stone-700">No hay productos disponibles</h3>
                 </div>`;
-        }
+    }
 
-        const createSlug = text => (text || '').toString().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, '-').replace(/[^\w-]+/g, '').replace(/--+/g, '-').replace(/^-+/, '').replace(/-+$/, '');
+    const createSlug = text => (text || '').toString().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, '-').replace(/[^\w-]+/g, '').replace(/--+/g, '-').replace(/^-+/, '').replace(/-+$/, '');
 
-        let html = '';
-        products.forEach(p => {
-            const images = safeJSONParse(p.imagenes_json || '[]');
-            const image = images.length > 0 ? images[0] : 'https://rurulab.com/images/placeholder-product.jpg';
-            const type = p.tipo || 'cafe';
-            const typeIcon = type === 'cafe' ? 'fa-mug-hot' : (type === 'cacao' ? 'fa-cookie-bite' : 'fa-jar');
-            const score = p.puntuacion_taza || p.puntuacion_total || null;
+    let html = '';
+    products.forEach(p => {
+        const images = safeJSONParse(p.imagenes_json || '[]');
+        const image = images.length > 0 ? images[0] : 'https://rurulab.com/images/placeholder-product.jpg';
+        const type = p.tipo || 'cafe';
+        const typeIcon = type === 'cafe' ? 'fa-mug-hot' : (type === 'cacao' ? 'fa-cookie-bite' : 'fa-jar');
+        const score = p.puntuacion_taza || p.puntuacion_total || null;
 
-            const slug = createSlug(p.nombre) + '-' + p.id.substring(0, 8);
-            const compName = p.empresa?.nombre || p.empresa || 'empresa';
-            const compId = p.empresa?.id || '';
-            const linkUrl = compId
-                ? buildProductUrl(compName, compId, p.nombre, p.id)
-                : `/lote/${createSlug(p.nombre)}-${p.id}`;
+        const slug = createSlug(p.nombre) + '-' + p.id.substring(0, 8);
+        const compName = p.empresa?.nombre || p.empresa || 'empresa';
+        const compId = p.empresa?.id || '';
+        const linkUrl = compId
+            ? buildProductUrl(compName, compId, p.nombre, p.id)
+            : `/lote/${createSlug(p.nombre)}-${p.id}`;
 
-            html += `
+        html += `
             <div class="product-card bg-white rounded-2xl border border-stone-100 shadow-sm overflow-hidden flex flex-col relative group">
                 <a href="${linkUrl}" class="block overflow-hidden relative aspect-square">
                     <img src="${image}" alt="${p.nombre}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
@@ -553,8 +564,8 @@ const renderCompanyList = (companies) => {
                     <div class="mt-auto pt-3 border-t border-stone-50">
                         <div class="flex flex-wrap gap-1 mb-3">
                             ${(safeJSONParse(p.perfil_data || '{}').notas || []).slice(0, 3).map(nota =>
-                `<span class="text-[9px] font-bold bg-amber-50 text-amber-800 px-2 py-0.5 rounded-full border border-amber-100">${nota}</span>`
-            ).join('')}
+            `<span class="text-[9px] font-bold bg-amber-50 text-amber-800 px-2 py-0.5 rounded-full border border-amber-100">${nota}</span>`
+        ).join('')}
                         </div>
                         
                         <div class="flex justify-between items-center">
@@ -565,9 +576,9 @@ const renderCompanyList = (companies) => {
                 </div>
             </div>
         `;
-        });
+    });
 
-        return html;
-    };
+    return html;
+};
 
-    module.exports = { renderLanding, renderCompanyList, renderMarketplaceProducts };
+module.exports = { renderLanding, renderCompanyList, renderMarketplaceProducts };

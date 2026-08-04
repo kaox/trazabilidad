@@ -313,6 +313,10 @@
                         <a href="/contacto" class="wl-nav-link" data-page="contacto">
                             <i class="fas fa-envelope mr-1 text-xs"></i> Contáctanos
                         </a>
+                        <a href="/carrito" class="wl-nav-link relative flex items-center gap-1.5" data-page="carrito" title="Ver Carrito">
+                            <i class="fas fa-shopping-cart text-sm"></i> Carrito
+                            <span id="wl-cart-badge" class="bg-amber-800 text-white text-[10px] font-black px-1.5 py-0.5 rounded-full min-w-[18px] text-center leading-none hidden">0</span>
+                        </a>
                     </nav>
 
                     <!-- Hamburger mobile -->
@@ -338,6 +342,12 @@
                             class="block px-4 py-2 rounded-lg text-stone-600 hover:bg-stone-50 font-medium"
                             data-page="contacto" onclick="app.closeMobileMenu()">
                             <i class="fas fa-envelope mr-2 text-xs"></i> Contáctanos
+                        </a>
+                        <a href="/carrito"
+                            class="block px-4 py-2 rounded-lg text-stone-600 hover:bg-stone-50 font-medium flex items-center justify-between"
+                            data-page="carrito" onclick="app.closeMobileMenu()">
+                            <span><i class="fas fa-shopping-cart mr-2 text-xs"></i> Carrito</span>
+                            <span id="wl-cart-badge-mobile" class="bg-amber-800 text-white text-[10px] font-black px-2 py-0.5 rounded-full hidden">0</span>
                         </a>
                     </div>
                 </div>
@@ -373,6 +383,16 @@
                     </a>
                     <i class="fas fa-chevron-right text-[8px] text-stone-300"></i>
                     <span class="text-amber-800 font-semibold">Contactenos</span>
+                </span>
+
+                <!-- Carrito: Nombre tienda › Carrito -->
+                <span id="bc-carrito" class="hidden items-center gap-1.5">
+                    <a href="/" data-page="inicio"
+                        class="hover:text-stone-600 transition-colors flex items-center gap-1">
+                        <i class="fas fa-store text-[10px]"></i> <span class="bc-store-name">Tienda</span>
+                    </a>
+                    <i class="fas fa-chevron-right text-[8px] text-stone-300"></i>
+                    <span class="text-amber-800 font-semibold">Carrito de Compras</span>
                 </span>
 
                 <!-- Modo directorio (no White Label): Empresas › NombreEmpresa -->
