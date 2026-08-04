@@ -26,7 +26,7 @@ const extractYoutubeId = (url) => {
     return (match && match[2].length === 11) ? match[2] : null;
 };
 
-const renderProductCards = (products, phone, userId, hostUrl = '', companyName = '') => {
+const renderProductCards = (products, phone, userId, hostUrl = '', companyName = '', isSuggested = false) => {
     if (!products || products.length === 0) {
         return `<div class="col-span-full text-center py-12 bg-stone-50 rounded-2xl border border-dashed border-stone-200"><p class="text-stone-500 italic">No hay productos disponibles.</p></div>`;
     }
@@ -319,7 +319,7 @@ const renderInicio = (data, hostUrl = '') => {
                         <a href="/tienda" data-page="tienda" class="text-accent font-bold hover:underline">Ver todo el catálogo <i class="fas fa-arrow-right ml-1"></i></a>
                     </div>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        ${renderProductCards(products.slice(0, 4), cleanPhone, user.id, hostUrl, entityName)}
+                        ${renderProductCards(products.slice(0, 4), cleanPhone, user.id, hostUrl, entityName, isSuggested)}
                     </div>
                 </div>
             </div>
@@ -361,7 +361,7 @@ const renderTienda = (data, hostUrl = '') => {
             </div>
             
             <div class="product-grid">
-                ${(isSuggested && (!products || products.length === 0)) ? tiendaHTML : renderProductCards(products, cleanPhone, user.id, hostUrl, entityName)}
+                ${(isSuggested && (!products || products.length === 0)) ? tiendaHTML : renderProductCards(products, cleanPhone, user.id, hostUrl, entityName, isSuggested)}
             </div>
         </div>
     `;
