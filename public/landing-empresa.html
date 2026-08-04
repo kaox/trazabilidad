@@ -279,6 +279,95 @@
         .mobile-menu.open {
             max-height: 200px;
         }
+
+        /* === Carrito flotante móvil === */
+.mobile-floating-cart {
+    display: none;
+}
+
+@media (max-width: 767px) {
+    .mobile-floating-cart {
+        position: fixed;
+        right: 1rem;
+        bottom: calc(1rem + env(safe-area-inset-bottom));
+        z-index: 60;
+
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.6rem;
+
+        min-width: 140px;
+        height: 52px;
+        padding: 0 1rem;
+
+        border-radius: 9999px;
+        background-color: var(--accent-color);
+        color: white;
+
+        font-size: 0.8rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+
+        box-shadow:
+            0 10px 25px rgba(0, 0, 0, 0.18),
+            0 4px 10px rgba(0, 0, 0, 0.12);
+
+        transition:
+            transform 0.2s ease,
+            background-color 0.2s ease,
+            box-shadow 0.2s ease;
+    }
+
+    .mobile-floating-cart:hover {
+        background-color: var(--accent-hover);
+    }
+
+    .mobile-floating-cart:active {
+        transform: scale(0.96);
+    }
+
+    .mobile-floating-cart i {
+        font-size: 0.95rem;
+    }
+
+    .mobile-floating-cart-badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+
+        min-width: 24px;
+        height: 24px;
+        padding: 0 6px;
+
+        border-radius: 9999px;
+        background-color: white;
+        color: var(--accent-color);
+
+        font-size: 0.7rem;
+        font-weight: 900;
+        line-height: 1;
+    }
+
+    /*
+     * Evita que el botón tape el contenido ubicado
+     * al final de la landing.
+     */
+    #app-container {
+        padding-bottom: calc(5.5rem + env(safe-area-inset-bottom));
+    }
+
+    /*
+     * El toast actual también aparece abajo a la derecha.
+     * Lo subimos para que no quede detrás del carrito.
+     */
+    #rurulab-toast {
+        left: 1rem !important;
+        right: 1rem !important;
+        bottom: calc(5.5rem + env(safe-area-inset-bottom)) !important;
+    }
+}
     </style>
 </head>
 
@@ -413,7 +502,12 @@
             </div>
 
         </main>
-
+        <!-- Carrito flotante exclusivo para móvil -->
+        <a id="mobile-floating-cart" href="/carrito" data-page="carrito" class="mobile-floating-cart" aria-label="Abrir carrito de compras">
+            <i class="fas fa-shopping-cart"></i>
+            <span>Pedir</span>
+            <span id="wl-cart-badge-floating" class="mobile-floating-cart-badge">0</span>
+        </a>
         <!-- Footer (se actualiza dinámicamente) -->
         <footer id="wl-footer" class="bg-stone-950 text-stone-500 py-12 border-t border-stone-800 mt-auto">
             <div class="container mx-auto px-6 text-center">

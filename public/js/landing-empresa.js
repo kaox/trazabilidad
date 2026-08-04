@@ -1372,7 +1372,8 @@ const app = {
 
         const badgeDesktop = document.getElementById('wl-cart-badge');
         const badgeMobile = document.getElementById('wl-cart-badge-mobile');
-
+        const badgeFloating = document.getElementById('wl-cart-badge-floating');
+        const floatingCart = document.getElementById('mobile-floating-cart');
         if (badgeDesktop) {
             if (totalItems > 0) {
                 badgeDesktop.textContent = totalItems;
@@ -1388,6 +1389,23 @@ const app = {
             } else {
                 badgeMobile.classList.add('hidden');
             }
+        }
+
+        /*
+        * El carrito flotante siempre permanece visible,
+        * incluso cuando tiene cero productos.
+        */
+        if (badgeFloating) {
+            badgeFloating.textContent = totalItems;
+        }
+
+        if (floatingCart) {
+            floatingCart.setAttribute(
+                'aria-label',
+                totalItems === 1
+                    ? 'Abrir carrito, 1 producto'
+                    : `Abrir carrito, ${totalItems} productos`
+            );
         }
     },
 
