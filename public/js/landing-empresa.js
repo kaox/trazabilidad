@@ -501,7 +501,7 @@ const app = {
                         </div>
                         <h3 class="font-bold text-stone-800 mb-1">Tienda no activada</h3>
                         <p class="text-sm text-stone-600 mb-4 max-w-sm">Publica tus productos gratis, genera Pasaportes Digitales y conecta directamente con compradores sin intermediarios.</p>
-                        <button onclick="app.openClaimModal()" class="bg-amber-700 hover:bg-amber-800 text-white px-6 py-2 rounded-lg font-medium transition-colors shadow-sm">
+                        <button onclick="window.location.href='/onboarding.html?claim_id=${user.id}'" class="bg-amber-700 hover:bg-amber-800 text-white px-6 py-2 rounded-lg font-medium transition-colors shadow-sm">
                             Activar Tienda Online
                         </button>
                     </div>
@@ -523,7 +523,7 @@ const app = {
                             <li class="flex items-start gap-2"><i class="fas fa-check text-green-600 mt-0.5"></i><span>Publica tus <strong>Ruedas de Sabor y Perfil Sensorial</strong> en el detalle de tu producto.</span></li>
                         </ul>
                         <div class="mt-6">
-                            <button onclick="app.openClaimModal()" class="w-full bg-orange-500 hover:bg-orange-600 text-white py-3 rounded-xl font-bold shadow-md transition-all transform hover:-translate-y-0.5">
+                            <button onclick="window.location.href='/onboarding.html?claim_id=${user.id}'" class="w-full bg-orange-500 hover:bg-orange-600 text-white py-3 rounded-xl font-bold shadow-md transition-all transform hover:-translate-y-0.5">
                                 Reclamar ahora (Toma 2 min)
                             </button>
                         </div>
