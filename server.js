@@ -175,8 +175,8 @@ app.use(async (req, res, next) => {
 
             // Metadatos SEO personalizados
             const subPath = req.path.toLowerCase();
-            let title = `${company.empresa} | Sitio Oficial`;
-            let description = `Bienvenido al sitio oficial de ${company.empresa}. Conoce nuestra historia, productos y trazabilidad.`;
+            let title = `${company.empresa} | Sitio Oficial | ${company.provincia || ''}, ${company.departamento || ''}, ${company.pais || ''}`;
+            let description = `Bienvenido al sitio oficial de ${company.empresa}. Conoce nuestra historia, productos y trazabilidad. | ${company.provincia || ''}, ${company.departamento || ''}, ${company.pais || ''}`;
 
             if (subPath === '/tienda') {
                 title = `Tienda y Productos | ${company.empresa}`;
@@ -201,12 +201,12 @@ app.use(async (req, res, next) => {
                 landingData = await landingsController.getCompanyLandingDataInternal(company.id);
                 if (landingData && landingData.white_label_config) {
                     const cfg = landingData.white_label_config;
-                    const primary    = cfg.primary_color    || cfg.accent_color || '#78350f';
-                    const secondary  = cfg.secondary_color  || '#451a03';
-                    const accent     = cfg.accent_color     || '#d97706';
-                    const accentHov  = cfg.accent_hover     || secondary;
-                    const bg         = cfg.background_color || '#fdfaf6';
-                    const textColor  = cfg.text_color       || '#1c1917';
+                    const primary = cfg.primary_color || cfg.accent_color || '#78350f';
+                    const secondary = cfg.secondary_color || '#451a03';
+                    const accent = cfg.accent_color || '#d97706';
+                    const accentHov = cfg.accent_hover || secondary;
+                    const bg = cfg.background_color || '#fdfaf6';
+                    const textColor = cfg.text_color || '#1c1917';
                     dynamicStyles = `<style>#wl-scope {
                         --primary-color: ${primary};
                         --secondary-color: ${secondary};
@@ -245,7 +245,9 @@ app.use(async (req, res, next) => {
                 .replace('<div id="app-container" class="min-h-[400px]">', `<div id="app-container" class="min-h-[400px]">${renderedContent}`)
                 .replace('<title>Empresas con Origen Único - Ruru Lab</title>', `<title>${title}</title>`)
                 .replace(/content="Descubre el origen y trazabilidad."/g, `content="${description}"`)
-                .replace(/content="RuruLab - Trazabilidad y Pasaporte Digital para Cacao y Café"/g, `content="${title}"`);
+                .replace(/content="RuruLab - Trazabilidad y Pasaporte Digital para Cacao y Café"/g, `content="${title}"`)
+                .replace(/content="Crea un pasaporte digital para tu producto..."/g, `content="${description}"`)
+                .replace(/content="https:\/\/rurulab\.com\/images\/banner_1\.png"/g, `content="${image}"`);
 
             // Servir el HTML modificado
             res.send(injectedHtml);
@@ -810,12 +812,12 @@ const renderAndSendCompanyLanding = async (req, res, slugParam) => {
                 let dynamicStyles = '';
                 if (landingData && landingData.white_label_config) {
                     const cfg = landingData.white_label_config;
-                    const primary    = cfg.primary_color    || cfg.accent_color || '#78350f';
-                    const secondary  = cfg.secondary_color  || '#451a03';
-                    const accent     = cfg.accent_color     || '#d97706';
-                    const accentHov  = cfg.accent_hover     || secondary;
-                    const bg         = cfg.background_color || '#fdfaf6';
-                    const textColor  = cfg.text_color       || '#1c1917';
+                    const primary = cfg.primary_color || cfg.accent_color || '#78350f';
+                    const secondary = cfg.secondary_color || '#451a03';
+                    const accent = cfg.accent_color || '#d97706';
+                    const accentHov = cfg.accent_hover || secondary;
+                    const bg = cfg.background_color || '#fdfaf6';
+                    const textColor = cfg.text_color || '#1c1917';
                     dynamicStyles = `<style>#wl-scope {
                         --primary-color: ${primary};
                         --secondary-color: ${secondary};
