@@ -3,38 +3,33 @@ const { put, del } = require('@vercel/blob');
 /**
  * Elimina una imagen del almacenamiento dado su URL pública
  */
-const deleteImageByUrl = async (url, provider = 'vercel') => {
+const deleteImageByUrl = async (url, provider = 'supabase') => {
     try {
-        if (provider === 'supabase') {
+        if (url.includes('supabase.co')) {
+            // Eliminar de Supabase
             const { createClient } = require('@supabase/supabase-js');
             const supabaseUrl = process.env.SUPABASE_URL;
-            const supabaseKey = process.env.SUPABASE_KEY;
-            const bucketName = process.env.SUPABASE_BUCKET_NAME || 'public-bucket';
+            const supabaseKey = process.env.SUPABASE_ANON_KEY || process.env.SUPABASE_KEY;
+            const bucketName = process.env.SUPABASE_BUCKET_NAME || 'rurulab';
 
-            if (!supabaseUrl || !supabaseKey) {
-                console.warn("Credenciales de Supabase no configuradas para eliminar:", url);
-                return;
-            }
-
-            const supabase = createClient(supabaseUrl, supabaseKey);
-            const publicUrlPath = `/storage/v1/object/public/${bucketName}/`;
-            if (url.includes(publicUrlPath)) {
-                const filePath = url.split(publicUrlPath)[1];
-                if (filePath) {
-                    const { error } = await supabase.storage.from(bucketName).remove([filePath]);
-                    if (error) console.error("Error eliminando en Supabase:", error);
-                    else console.log("Imagen eliminada de Supabase:", filePath);
+            if (supabaseUrl && supabaseKey) {
+                const supabase = createClient(supabaseUrl, supabaseKey);
+                const publicUrlPath = `/storage/v1/object/public/${bucketName}/`;
+                if (url.includes(publicUrlPath)) {
+                    const filePath = url.split(publicUrlPath)[1];
+                    if (filePath) {
+                        await supabase.storage.from(bucketName).remove([filePath]);
+                        console.log("Imagen eliminada de Supabase:", filePath);
+                    }
                 }
             }
-        } else {
-            // Vercel Blob
-            if (url.includes('public.blob.vercel-storage.com') || url.includes('.vercel-storage.com')) {
-                await del(url);
-                console.log("Imagen eliminada de Vercel Blob:", url);
-            }
+        } else if (url.includes('public.blob.vercel-storage.com') || url.includes('.vercel-storage.com')) {
+            // Eliminar de Vercel Blob
+            await del(url);
+            console.log("Imagen eliminada de Vercel Blob:", url);
         }
     } catch (err) {
-        console.error("Error al intentar eliminar la imagen:", url, err);
+        console.error("Error al intentar eliminar la imagen del storage:", url, err);
     }
 };
 
@@ -73,25 +68,18 @@ const uploadImageBase64 = async (base64String, filename, provider = 'vercel') =>
         filename = `${filename}.${extension}`;
     }
 
-    if (provider === 'supabase') {
-        console.log("Guardando en Supabase");
-        // Implementación para Supabase Storage
-        // Nota: Asegúrate de tener instalado @supabase/supabase-js
+    // Función interna para intentar subir a Supabase
+    const trySupabase = async () => {
         const { createClient } = require('@supabase/supabase-js');
-
-        // ATENCIÓN: Para usar createClient() necesitas la URL y Key del API REST, NO las de S3.
         const supabaseUrl = process.env.SUPABASE_URL;
-        const supabaseKey = process.env.SUPABASE_KEY; // Usa la "service_role key" que empieza con eyJ...
+        const supabaseKey = process.env.SUPABASE_ANON_KEY || process.env.SUPABASE_KEY;
         const bucketName = process.env.SUPABASE_BUCKET_NAME || 'rurulab';
 
         if (!supabaseUrl || !supabaseKey || !supabaseKey.startsWith("eyJ")) {
-            throw new Error("Credenciales de Supabase incorrectas. Deben estar en el archivo .env, la Key debe empezar con 'eyJ...' (project API key).");
+            throw new Error("Credenciales de Supabase inválidas.");
         }
 
         const supabase = createClient(supabaseUrl, supabaseKey);
-
-        // En Node.js (especialmente con fetch nativo v18+), pasar un Buffer puede
-        // causar problemas. Uint8Array o Blob es más seguro.
         const uint8Array = new Uint8Array(buffer);
 
         const { data, error } = await supabase.storage
@@ -101,19 +89,43 @@ const uploadImageBase64 = async (base64String, filename, provider = 'vercel') =>
                 upsert: true
             });
 
-        if (error) {
-            console.error("Supabase Upload Error:", error.message, "| Bucket:", bucketName);
-            throw new Error(`Error de Supabase: ${error.message} (Asegúrate de que el bucket '${bucketName}' exista).`);
-        }
+        if (error) throw new Error(`Supabase Error: ${error.message}`);
 
-        // Obtener URL pública desde el Storage de Supabase
         const { data: publicUrlData } = supabase.storage.from(bucketName).getPublicUrl(filename);
         return publicUrlData.publicUrl;
+    };
 
-    } else {
-        // Implementación por defecto: Vercel Blob
+    // Función interna para intentar subir a Vercel Blob
+    const tryVercelBlob = async () => {
         const blob = await put(filename, buffer, { access: 'public' });
         return blob.url;
+    };
+
+    if (provider === 'supabase') {
+        try {
+            console.log("Intentando guardar en Supabase...");
+            return await trySupabase();
+        } catch (supabaseError) {
+            console.warn("⚠️ Supabase falló (posible cuota o error). Cambiando a Vercel Blob como respaldo...", supabaseError.message);
+            try {
+                return await tryVercelBlob();
+            } catch (vercelError) {
+                throw new Error(`Ambos almacenamientos fallaron. Supabase: ${supabaseError.message} | Vercel: ${vercelError.message}`);
+            }
+        }
+
+    } else {
+        try {
+            console.log("Intentando guardar en Vercel Blob...");
+            return await tryVercelBlob();
+        } catch (vercelError) {
+            console.warn("⚠️ Vercel Blob falló. Cambiando a Supabase como respaldo...", vercelError.message);
+            try {
+                return await trySupabase();
+            } catch (supabaseError) {
+                throw new Error(`Ambos almacenamientos fallaron. Vercel: ${vercelError.message} | Supabase: ${supabaseError.message}`);
+            }
+        }
     }
 };
 
