@@ -280,7 +280,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         try {
             let coordsArray = parseJSON(coordsJson);
-            
+
             // Soporte para GeoJSON (Polygon con coordinates: [[[lng, lat], ...]])
             if (coordsArray && coordsArray.type === 'Polygon' && Array.isArray(coordsArray.coordinates)) {
                 coordsArray = coordsArray.coordinates[0];
@@ -578,24 +578,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Usar elementos del formulario por ID o por Name para mayor seguridad
             document.getElementById('propietario').value = finca.propietario || '';
-            document.getElementById('dni_ruc').value = finca.dni_ruc || '';
             document.getElementById('nombre_finca').value = finca.nombre_finca || '';
             document.getElementById('pais').value = finca.pais || 'Perú';
             document.getElementById('departamento').value = finca.departamento || '';
             document.getElementById('provincia').value = finca.provincia || '';
             document.getElementById('distrito').value = finca.distrito || '';
             document.getElementById('ciudad').value = finca.ciudad || '';
-            
+
             if (document.getElementById('video_link')) {
                 document.getElementById('video_link').value = finca.video_link || '';
             }
 
             document.getElementById('altura').value = finca.altura || '';
             document.getElementById('superficie').value = finca.superficie || '';
-            document.getElementById('telefono').value = finca.telefono || '';
-            document.getElementById('numero_trabajadores').value = finca.numero_trabajadores || '';
             document.getElementById('historia').value = finca.historia || '';
-            
+
             const coordsStr = finca.coordenadas ? (typeof finca.coordenadas === 'string' ? finca.coordenadas : JSON.stringify(finca.coordenadas)) : '';
             document.getElementById('coordenadas').value = coordsStr;
             editIdInput.value = finca.id;
@@ -606,7 +603,7 @@ document.addEventListener('DOMContentLoaded', () => {
             currentImages = parseJSON(finca.imagenes_json) || [];
             currentFincaCertifications = parseJSON(finca.certificaciones_json) || [];
             currentFincaPremios = parseJSON(finca.premios_json) || [];
-            
+
             renderImagePreviews();
             renderAddedCertifications();
             renderAddedPremios();
@@ -614,16 +611,16 @@ document.addEventListener('DOMContentLoaded', () => {
             if (finca.coordenadas) {
                 setMapData(finca.coordenadas);
             }
-            
+
             formTitle.textContent = `Editando: ${finca.nombre_finca}`;
             submitButton.textContent = 'Actualizar Finca';
             submitButton.className = 'bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 rounded-xl shadow-md';
             cancelEditBtn.classList.remove('hidden');
-            
+
             window.scrollTo({ top: 0, behavior: 'smooth' });
-        } catch (error) { 
+        } catch (error) {
             console.error("Error en populateFormForEdit:", error);
-            alert('Error al cargar datos para editar.'); 
+            alert('Error al cargar datos para editar.');
         }
     }
 
