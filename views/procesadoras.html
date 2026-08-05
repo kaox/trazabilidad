@@ -88,31 +88,30 @@
                 de acopio.</p>
         </header>
 
-        <div class="lg:grid lg:grid-cols-12 gap-6">
+        <div class="max-w-7xl mx-auto px-4 py-6 grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
 
-            <!-- Columna Izquierda: Lista de Procesadoras (En móvil pasa abajo) -->
+            <!-- Columna Izquierda: Lista de Procesadoras -->
             <div id="procesadoras-list-section"
-                class="lg:col-span-12 bg-white p-5 md:p-6 rounded-2xl shadow-sm border border-stone-200 h-fit transition-all duration-300">
-                <div
-                    class="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-stone-200 pb-3 mb-4 gap-4">
-                    <h2 class="text-xl md:text-2xl font-display text-amber-900">Registradas</h2>
+                class="lg:col-span-5 bg-white p-5 md:p-6 rounded-2xl shadow-sm border border-stone-200 transition-all duration-300 lg:sticky lg:top-6">
+
+                <div class="flex justify-between items-center border-b border-stone-200 pb-3 mb-4">
+                    <h2 class="text-xl font-display text-amber-900">Registradas</h2>
                     <button id="btn-show-form"
-                        class="bg-amber-800 hover:bg-amber-900 text-white px-5 py-2.5 rounded-xl transition-all shadow-md flex items-center gap-2 text-sm font-bold">
+                        class="bg-amber-800 hover:bg-amber-900 text-white px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 transition">
                         <i class="fas fa-plus"></i> Nueva
                     </button>
                 </div>
-                <div id="procesadoras-list" class="space-y-3 max-h-[60vh] overflow-y-auto pr-2">
-                    <div
-                        class="text-center text-stone-400 py-8 bg-stone-50 rounded-xl border border-dashed border-stone-300">
-                        <i class="fas fa-industry text-3xl mb-2 opacity-50"></i>
-                        <p class="text-sm">No hay procesadoras cargadas</p>
-                    </div>
+
+                <!-- Lista / Grilla interna de tarjetas con altura adaptativa -->
+                <div id="procesadoras-list"
+                    class="grid grid-cols-1 gap-4 max-h-[calc(100vh-12rem)] overflow-y-auto pr-1">
+                    <!-- Las tarjetas se inyectan aquí mediante JS -->
                 </div>
             </div>
 
             <!-- Columna Derecha: Formulario (En móvil es lo principal) -->
-            <div id="procesadora-section"
-                class="lg:col-span-8 bg-white p-5 md:p-8 rounded-2xl shadow-lg border border-stone-200 hidden transition-all duration-300">
+            <div id="procesadoras-form-section"
+                class="lg:col-span-7 bg-white p-6 rounded-2xl shadow-sm border border-stone-200 transition-all duration-300">
                 <div class="flex justify-between items-center mb-6">
                     <h2 id="form-title" class="text-2xl md:text-3xl font-display text-amber-900">Nueva Procesadora</h2>
                     <button type="button" id="btn-close-form" class="text-stone-400 hover:text-stone-600 p-2">

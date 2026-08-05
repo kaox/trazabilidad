@@ -393,33 +393,76 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function renderList(list) {
         if (!procesadorasList) return;
-        procesadorasList.innerHTML = list.length === 0 ?
-            '<p class="text-stone-500 text-center py-4">No hay procesadoras registradas.</p>' :
-            list.map(p => {
-                const pid = p.id || p._id; // Soporte robusto si el backend devuelve _id
-                const tipoLabel = p.tipo ? TIPO_LABELS[p.tipo] || p.tipo : null;
-                const tipoColor = p.tipo ? (TIPO_COLORS[p.tipo] || 'bg-stone-100 text-stone-700') : '';
-                const isActive = String(pid) === String(currentProcesadoraId); // Comparación estricta segura
 
-                return `
-                <div class="p-4 border rounded-xl ${isActive ? 'bg-amber-50 border-amber-300' : 'bg-stone-50'} hover:shadow-sm transition">
-                    <div class="flex justify-between items-start">
-                        <div class="flex-1 min-w-0">
-                            <div class="flex items-center gap-2 flex-wrap">
-                                <h3 class="font-bold text-amber-900 truncate">${p.nombre_comercial || p.razon_social}</h3>
-                                ${tipoLabel ? `<span class="text-xs font-semibold px-2 py-0.5 rounded-full ${tipoColor}">${tipoLabel}</span>` : ''}
-                            </div>
-                            <p class="text-xs text-stone-500 mt-1">RUC: ${p.ruc}</p>
-                            <p class="text-xs text-stone-500 truncate">${p.distrito || ''}${p.distrito && p.provincia ? ', ' : ''}${p.provincia || ''} ${p.departamento ? '- ' + p.departamento : ''}</p>
-                        </div>
-                        <div class="flex gap-1 flex-shrink-0 ml-2">
-                            <button data-id="${pid}" data-nombre="${p.nombre_comercial || p.razon_social}" class="sucursales-btn text-green-600 hover:bg-green-100 p-2 rounded transition" title="Ver Sucursales"><i class="fas fa-store"></i></button>
-                            <button data-id="${pid}" class="edit-btn text-sky-600 hover:bg-sky-100 p-2 rounded transition"><i class="fas fa-pen"></i></button>
-                            <button data-id="${pid}" class="delete-btn text-red-600 hover:bg-red-100 p-2 rounded transition"><i class="fas fa-trash"></i></button>
-                        </div>
-                    </div>
+        // Si la lista está vacía, mantenemos el mensaje abarcando toda la grilla (col-span-full)
+        if (list.length === 0) {
+            procesadorasList.innerHTML = `
+            <div class="text-center text-stone-400 py-8 bg-stone-50 rounded-xl border border-dashed border-stone-300 col-span-full">
+                <i class="fas fa-industry text-3xl mb-2 opacity-50"></i>
+                <p class="text-sm">No hay procesadoras registradas.</p>
+            </div>`;
+            return;
+        }
+
+        // Tu API Key de Google Maps (asegúrate de usar la misma que en tu HTML)
+        const GOOGLE_MAPS_KEY = "AIzaSyAM37iJTRcIoSAxESlDzB2DxlNJWKasW5U";
+
+        procesadorasList.innerHTML = list.map(p => {
+            const pid = p.id || p._id;
+            const tipoLabel = p.tipo ? TIPO_LABELS[p.tipo] || p.tipo : null;
+            const tipoColor = p.tipo ? (TIPO_COLORS[p.tipo] || 'bg-stone-100 text-stone-700') : '';
+            const isActive = String(pid) === String(currentProcesadoraId);
+
+            // Generar URL del Minimapa Estático si existen coordenadas válidas
+            let staticMapHtml = `
+            <div class="w-full h-32 bg-stone-100 rounded-lg flex items-center justify-center text-stone-400 text-xs border border-stone-200">
+                <span class="flex items-center gap-1"><i class="fas fa-map-marked-alt"></i> Sin ubicación GPS</span>
+            </div>
+        `;
+
+            if (p.coordenadas && typeof p.coordenadas.lat === 'number' && typeof p.coordenadas.lng === 'number') {
+                const lat = p.coordenadas.lat;
+                const lng = p.coordenadas.lng;
+                // URL de la API de Google Static Maps con un marcador rojo en la posición exacta
+                const staticMapUrl = `https://maps.googleapis.com/maps/api/staticmap?center=${lat},${lng}&zoom=14&size=400x160&markers=color:red%7C${lat},${lng}&key=${GOOGLE_MAPS_KEY}`;
+
+                staticMapHtml = `
+                <div class="w-full h-32 rounded-lg overflow-hidden border border-stone-200 relative">
+                    <img src="${staticMapUrl}" alt="Mapa de ubicación" class="w-full h-full object-cover">
                 </div>
-            `}).join('');
+            `;
+            }
+
+            return `
+        <div class="flex flex-col justify-between p-4 border rounded-xl ${isActive ? 'bg-amber-50/80 border-amber-300 shadow-sm' : 'bg-stone-50/50 border-stone-200'} hover:shadow-md transition">
+            <div>
+                <!-- Imagen de Mapa Estático Superior -->
+                <div class="mb-3">
+                    ${staticMapHtml}
+                </div>
+
+                <!-- Encabezado de la Tarjeta -->
+                <div class="flex items-center gap-2 flex-wrap mb-1">
+                    <h3 class="font-bold text-amber-900 truncate text-base" title="${p.nombre_comercial || p.razon_social}">${p.nombre_comercial || p.razon_social}</h3>
+                    ${tipoLabel ? `<span class="text-[10px] font-semibold px-2 py-0.5 rounded-full ${tipoColor}">${tipoLabel}</span>` : ''}
+                </div>
+                
+                <p class="text-xs text-stone-500 font-medium mb-1">RUC: ${p.ruc}</p>
+                <p class="text-xs text-stone-600 truncate mb-3"><i class="fas fa-map-marker-alt text-amber-700 mr-1"></i>${p.distrito || ''}${p.distrito && p.provincia ? ', ' : ''}${p.provincia || ''} ${p.departamento ? '- ' + p.departamento : ''}</p>
+            </div>
+
+            <!-- Botonera inferior de acciones -->
+            <div class="flex items-center justify-between pt-3 border-t border-stone-200/60 mt-2">
+                <span class="text-[11px] text-stone-400 italic">ID: ${pid.toString().slice(-6)}</span>
+                <div class="flex gap-1">
+                    <button data-id="${pid}" data-nombre="${p.nombre_comercial || p.razon_social}" class="sucursales-btn text-green-700 hover:bg-green-100 p-2 rounded-lg transition" title="Ver Sucursales"><i class="fas fa-store"></i></button>
+                    <button data-id="${pid}" class="edit-btn text-sky-700 hover:bg-sky-100 p-2 rounded-lg transition" title="Editar"><i class="fas fa-pen"></i></button>
+                    <button data-id="${pid}" class="delete-btn text-red-700 hover:bg-red-100 p-2 rounded-lg transition" title="Eliminar"><i class="fas fa-trash"></i></button>
+                </div>
+            </div>
+        </div>
+        `;
+        }).join('');
     }
 
     async function handleFormSubmit(e) {

@@ -516,76 +516,100 @@ document.addEventListener('DOMContentLoaded', () => {
         fincasList.innerHTML = fincas.length === 0 ?
             '<div class="col-span-full text-center py-12 text-stone-400 bg-stone-50 rounded-xl border-2 border-dashed border-stone-200"><i class="fas fa-seedling text-4xl mb-3"></i><p>No hay fincas registradas.</p></div>' :
             fincas.map(finca => `
-    <div class="bg-white rounded-xl border border-stone-200 shadow-sm hover:shadow-md transition flex flex-col overflow-hidden">
-        
-        <div class="p-5 flex-grow">
-            <!-- Cabecera: Título y Botones de Acción -->
-            <div class="flex justify-between items-start mb-3">
-                <h3 class="font-bold text-stone-900 text-xl">${finca.nombre_finca}</h3>
+            <div class="bg-white rounded-xl border border-stone-200 shadow-sm hover:shadow-md transition flex flex-col overflow-hidden">
                 
-                <!-- Botones de Acción Mantenidos -->
-                <div class="flex gap-1 bg-stone-50 rounded-lg border border-stone-100 p-1">
-                    <button onclick="shareFincaLink('${finca.id}', '${finca.nombre_finca}')" class="text-stone-400 hover:text-emerald-600 w-8 h-8 flex items-center justify-center rounded transition" title="Compartir">
-                        <i class="fas fa-share-alt"></i>
-                    </button>
-                    <button data-id="${finca.id}" class="edit-btn text-stone-400 hover:text-sky-600 w-8 h-8 flex items-center justify-center rounded transition" title="Editar">
-                        <i class="fas fa-edit"></i>
-                    </button>
-                    <button data-id="${finca.id}" class="delete-btn text-stone-400 hover:text-red-600 w-8 h-8 flex items-center justify-center rounded transition" title="Eliminar">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                </div>
-            </div>
-            
-            <!-- Ubicación -->
-            <p class="text-sm text-stone-500 mb-4 flex items-center gap-1">
-                <i class="fas fa-map-marker-alt text-stone-400"></i> 
-                ${finca.distrito || 'Ubicación por confirmar'}, ${finca.departamento || ''}
-            </p>
+                <div class="p-5 flex-grow">
+                    <!-- Cabecera: Título y Botones de Acción -->
+                    <div class="flex justify-between items-start mb-3">
+                        <h3 class="font-bold text-stone-900 text-xl">${finca.nombre_finca}</h3>
+                        
+                        <!-- Botones de Acción Mantenidos -->
+                        <div class="flex gap-1 bg-stone-50 rounded-lg border border-stone-100 p-1">
+                            <button onclick="shareFincaLink('${finca.id}', '${finca.nombre_finca}')" class="text-stone-400 hover:text-emerald-600 w-8 h-8 flex items-center justify-center rounded transition" title="Compartir">
+                                <i class="fas fa-share-alt"></i>
+                            </button>
+                            <button data-id="${finca.id}" class="edit-btn text-stone-400 hover:text-sky-600 w-8 h-8 flex items-center justify-center rounded transition" title="Editar">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button data-id="${finca.id}" class="delete-btn text-stone-400 hover:text-red-600 w-8 h-8 flex items-center justify-center rounded transition" title="Eliminar">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Ubicación -->
+                    <p class="text-sm text-stone-500 mb-4 flex items-center gap-1">
+                        <i class="fas fa-map-marker-alt text-stone-400"></i> 
+                        ${finca.distrito || 'Ubicación por confirmar'}, ${finca.departamento || ''}
+                    </p>
 
-            <!-- Área del Mapa (Render Condicional) -->
-            <div class="w-full h-40 bg-[#f3f9f4] rounded-lg border border-[#e1f0e5] flex flex-col items-center justify-center text-emerald-800 mb-4 overflow-hidden relative">
-                ${(() => {
+                    <!-- Área del Mapa (Render Condicional) -->
+                    <div class="w-full h-40 bg-[#f3f9f4] rounded-lg border border-[#e1f0e5] flex flex-col items-center justify-center text-emerald-800 mb-4 overflow-hidden relative">
+                        ${(() => {
                     const mapImgUrl = getStaticMapUrl(finca.coordenadas);
                     if (mapImgUrl) {
                         return `<img src="${mapImgUrl}" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500" alt="Vista satelital de la parcela">`;
                     } else {
                         return `
-                            <i class="fas fa-map text-3xl mb-2 opacity-50"></i>
-                            <p class="text-sm text-center px-4 mb-2 opacity-80">Añade tus parcelas para verlas en el mapa</p>
-                            <button data-id="${finca.id}" class="edit-btn text-xs bg-emerald-700 text-white px-3 py-1.5 rounded-lg font-medium">Añadir parcelas</button>
-                        `;
+                                    <i class="fas fa-map text-3xl mb-2 opacity-50"></i>
+                                    <p class="text-sm text-center px-4 mb-2 opacity-80">Añade tus parcelas para verlas en el mapa</p>
+                                    <button data-id="${finca.id}" class="edit-btn text-xs bg-emerald-700 text-white px-3 py-1.5 rounded-lg font-medium">Añadir parcelas</button>
+                                `;
                     }
                 })()}
-            </div>
+                    </div>
 
-            <!-- Datos del Clima (Ejemplo estático de la imagen) -->
-            <div class="flex justify-between items-center text-sm text-stone-700 mb-5 bg-stone-50 px-3 py-2 rounded-lg border border-stone-100">
-                <div class="flex items-center gap-2"><i class="fas fa-sun text-amber-500 text-lg"></i> <span class="font-medium">Soleado</span></div>
-                <div class="font-bold text-stone-900">23.5°C</div>
-            </div>
+                    <!-- Datos del Clima (Ejemplo estático de la imagen) -->
+                    <div class="grid grid-cols-3 gap-2 text-xs text-stone-700 mb-5 bg-stone-50 p-2.5 rounded-lg border border-stone-100 text-center">
+                        <div class="flex flex-col items-center">
+                            <span class="text-stone-400 mb-0.5"><i class="fas fa-thermometer-half text-amber-500 mr-1"></i> Temp</span>
+                            <span class="font-bold text-stone-900 weather-temp" data-id="${finca.id}">--°C</span>
+                        </div>
+                        <div class="flex flex-col items-center border-x border-stone-200">
+                            <span class="text-stone-400 mb-0.5"><i class="fas fa-tint text-blue-500 mr-1"></i> Humedad</span>
+                            <span class="font-bold text-stone-900 weather-humidity" data-id="${finca.id}">--%</span>
+                        </div>
+                        <div class="flex flex-col items-center">
+                            <span class="text-stone-400 mb-0.5"><i class="fas fa-wind text-stone-500 mr-1"></i> Viento</span>
+                            <span class="font-bold text-stone-900 weather-wind" data-id="${finca.id}">-- km/h</span>
+                        </div>
+                    </div>
 
-            <!-- Métricas -->
-            <div class="flex justify-between border-t border-stone-100 pt-4">
-                <div>
-                    <p class="text-xs text-stone-400 mb-0.5">Parcelas</p>
-                    <p class="font-medium text-stone-800 text-sm">1</p>
+                    <!-- Métricas -->
+                    <div class="flex justify-between border-t border-stone-100 pt-4">
+                        <div>
+                            <p class="text-xs text-stone-400 mb-0.5">Parcelas</p>
+                            <p class="font-medium text-stone-800 text-sm">1</p>
+                        </div>
+                        <div>
+                            <p class="text-xs text-stone-400 mb-0.5">Área total</p>
+                            <p class="font-medium text-stone-800 text-sm">${finca.superficie || 0} ha</p>
+                        </div>
+                    </div>
                 </div>
-                <div>
-                    <p class="text-xs text-stone-400 mb-0.5">Área total</p>
-                    <p class="font-medium text-stone-800 text-sm">${finca.superficie || 0} ha</p>
+                
+                <!-- Footer / Detalles -->
+                <div class="p-5 pt-0 mt-auto">
+                    <button data-id="${finca.id}" class="edit-btn w-full bg-white border border-stone-300 text-stone-700 hover:bg-stone-50 hover:border-stone-400 font-medium py-2 rounded-lg transition text-sm">
+                        Ver detalles de la finca
+                    </button>
                 </div>
-            </div>
-        </div>
-        
-        <!-- Footer / Detalles -->
-        <div class="p-5 pt-0 mt-auto">
-            <button data-id="${finca.id}" class="edit-btn w-full bg-white border border-stone-300 text-stone-700 hover:bg-stone-50 hover:border-stone-400 font-medium py-2 rounded-lg transition text-sm">
-                Ver detalles de la finca
-            </button>
-        </div>
-        
-    </div>`).join('');
+                
+            </div>`).join('');
+        fincas.forEach(async (finca) => {
+            if (finca.coordenadas) {
+                const weather = await fetchWeatherForPolygon(finca.coordenadas);
+                if (weather) {
+                    const tempEl = document.querySelector(`.weather-temp[data-id="${finca.id}"]`);
+                    const humEl = document.querySelector(`.weather-humidity[data-id="${finca.id}"]`);
+                    const windEl = document.querySelector(`.weather-wind[data-id="${finca.id}"]`);
+
+                    if (tempEl) tempEl.textContent = `${weather.temp}°C`;
+                    if (humEl) humEl.textContent = `${weather.humidity}%`;
+                    if (windEl) windEl.textContent = `${weather.wind} km/h`;
+                }
+            }
+        });
     }
 
     function resetForm() {
@@ -1030,6 +1054,38 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error("Error generando mapa estático:", e);
             return null;
         }
+    }
+
+    async function fetchWeatherForPolygon(coordenadasJson) {
+        try {
+            let coords = typeof coordenadasJson === 'string' ? JSON.parse(coordenadasJson) : coordenadasJson;
+            if (coords && coords.type === 'Polygon') coords = coords.coordinates[0];
+
+            if (!Array.isArray(coords) || coords.length === 0) return null;
+
+            // Calcular el centroide aproximado del polígono para pedir el clima de la zona
+            let latSum = 0, lngSum = 0;
+            coords.forEach(p => {
+                latSum += Number(p[0]);
+                lngSum += Number(p[1]);
+            });
+            const lat = latSum / coords.length;
+            const lng = lngSum / coords.length;
+
+            const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current=temperature_2m,relative_humidity_2m,wind_speed_10m`);
+            const data = await res.json();
+
+            if (data && data.current) {
+                return {
+                    temp: data.current.temperature_2m,
+                    humidity: data.current.relative_humidity_2m,
+                    wind: data.current.wind_speed_10m
+                };
+            }
+        } catch (e) {
+            console.warn("No se pudo obtener el clima:", e);
+        }
+        return null;
     }
 
 });
