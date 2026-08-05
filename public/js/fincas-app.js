@@ -31,6 +31,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const productorFotoPreview = document.getElementById('productor-foto-preview');
     const fotoProductorHiddenInput = document.getElementById('foto_productor');
     const validateDeforestationBtn = document.getElementById('validate-deforestation-btn');
+    const btnAddFinca = document.getElementById('btn-add-finca');
 
     // Elementos del Modal de Análisis
     const analysisModal = document.getElementById('analysisModal');
@@ -390,6 +391,14 @@ document.addEventListener('DOMContentLoaded', () => {
         // Nuevo Event Listener
         validateDeforestationBtn.addEventListener('click', handleDeforestationValidation);
         closeAnalysisBtn.addEventListener('click', () => analysisModal.classList.add('hidden'));
+
+        if (btnAddFinca) {
+            btnAddFinca.addEventListener('click', () => {
+                resetForm(); // Limpia los datos residuales
+                document.getElementById('form-container').classList.remove('hidden'); // Muestra el formulario
+                window.scrollTo({ top: 0, behavior: 'smooth' }); // Hace scroll hacia arriba
+            });
+        }
     }
 
     // --- LÓGICA DE VALIDACIÓN DE DEFORESTACIÓN CON GOOGLE EARTH ENGINE ---
@@ -505,35 +514,78 @@ document.addEventListener('DOMContentLoaded', () => {
         if (countBadge) countBadge.textContent = fincas.length;
 
         fincasList.innerHTML = fincas.length === 0 ?
-            '<div class="text-center py-8 text-stone-400 bg-stone-50 rounded-xl border-2 border-dashed border-stone-200"><i class="fas fa-seedling text-3xl mb-2"></i><p>No hay fincas registradas.</p></div>' :
+            '<div class="col-span-full text-center py-12 text-stone-400 bg-stone-50 rounded-xl border-2 border-dashed border-stone-200"><i class="fas fa-seedling text-4xl mb-3"></i><p>No hay fincas registradas.</p></div>' :
             fincas.map(finca => `
-            <div class="bg-white p-4 rounded-xl border border-stone-200 shadow-sm hover:shadow-md transition group">
-                <div class="flex justify-between items-start mb-3">
-                    <div>
-                        <h3 class="font-bold text-amber-900 text-lg leading-tight group-hover:text-amber-700 transition">${finca.nombre_finca}</h3>
-                        <p class="text-xs text-stone-500 font-medium uppercase tracking-wide mt-1">${finca.propietario}</p>
-                    </div>
-                    <div class="flex gap-1">
-                        ${finca.video_link ? `
-                        <a href="${finca.video_link}" target="_blank" class="text-stone-400 hover:text-red-600 p-1.5 rounded-lg hover:bg-red-50 transition" title="Ver Video">
-                            <i class="fab fa-youtube"></i>
-                        </a>` : ''}
-                        <button onclick="shareFincaLink('${finca.id}', '${finca.nombre_finca}')" class="text-stone-400 hover:text-green-600 p-1.5 rounded-lg hover:bg-green-50 transition" title="Compartir con Productor">
-                            <i class="fas fa-share-alt"></i>
-                        </button>
-                        <button data-id="${finca.id}" class="edit-btn text-stone-400 hover:text-sky-600 p-1.5 rounded-lg hover:bg-sky-50 transition" title="Editar">
-                            <i class="fas fa-edit"></i>
-                        </button>
-                        <button data-id="${finca.id}" class="delete-btn text-stone-400 hover:text-red-600 p-1.5 rounded-lg hover:bg-red-50 transition" title="Eliminar">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </div>
+    <div class="bg-white rounded-xl border border-stone-200 shadow-sm hover:shadow-md transition flex flex-col overflow-hidden">
+        
+        <div class="p-5 flex-grow">
+            <!-- Cabecera: Título y Botones de Acción -->
+            <div class="flex justify-between items-start mb-3">
+                <h3 class="font-bold text-stone-900 text-xl">${finca.nombre_finca}</h3>
+                
+                <!-- Botones de Acción Mantenidos -->
+                <div class="flex gap-1 bg-stone-50 rounded-lg border border-stone-100 p-1">
+                    <button onclick="shareFincaLink('${finca.id}', '${finca.nombre_finca}')" class="text-stone-400 hover:text-emerald-600 w-8 h-8 flex items-center justify-center rounded transition" title="Compartir">
+                        <i class="fas fa-share-alt"></i>
+                    </button>
+                    <button data-id="${finca.id}" class="edit-btn text-stone-400 hover:text-sky-600 w-8 h-8 flex items-center justify-center rounded transition" title="Editar">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button data-id="${finca.id}" class="delete-btn text-stone-400 hover:text-red-600 w-8 h-8 flex items-center justify-center rounded transition" title="Eliminar">
+                        <i class="fas fa-trash"></i>
+                    </button>
                 </div>
-                <div class="text-xs text-stone-500 space-y-1">
-                    <p><i class="fas fa-map-marker-alt w-4 text-center mr-1"></i> ${finca.distrito || '-'}, ${finca.departamento || '-'}</p>
-                    <p><i class="fas fa-ruler-combined w-4 text-center mr-1"></i> ${finca.superficie || 0} ha / ${finca.altura || 0} msnm</p>
+            </div>
+            
+            <!-- Ubicación -->
+            <p class="text-sm text-stone-500 mb-4 flex items-center gap-1">
+                <i class="fas fa-map-marker-alt text-stone-400"></i> 
+                ${finca.distrito || 'Ubicación por confirmar'}, ${finca.departamento || ''}
+            </p>
+
+            <!-- Área del Mapa (Render Condicional) -->
+            <div class="w-full h-40 bg-[#f3f9f4] rounded-lg border border-[#e1f0e5] flex flex-col items-center justify-center text-emerald-800 mb-4 overflow-hidden relative">
+                ${(() => {
+                    const mapImgUrl = getStaticMapUrl(finca.coordenadas);
+                    if (mapImgUrl) {
+                        return `<img src="${mapImgUrl}" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500" alt="Vista satelital de la parcela">`;
+                    } else {
+                        return `
+                            <i class="fas fa-map text-3xl mb-2 opacity-50"></i>
+                            <p class="text-sm text-center px-4 mb-2 opacity-80">Añade tus parcelas para verlas en el mapa</p>
+                            <button data-id="${finca.id}" class="edit-btn text-xs bg-emerald-700 text-white px-3 py-1.5 rounded-lg font-medium">Añadir parcelas</button>
+                        `;
+                    }
+                })()}
+            </div>
+
+            <!-- Datos del Clima (Ejemplo estático de la imagen) -->
+            <div class="flex justify-between items-center text-sm text-stone-700 mb-5 bg-stone-50 px-3 py-2 rounded-lg border border-stone-100">
+                <div class="flex items-center gap-2"><i class="fas fa-sun text-amber-500 text-lg"></i> <span class="font-medium">Soleado</span></div>
+                <div class="font-bold text-stone-900">23.5°C</div>
+            </div>
+
+            <!-- Métricas -->
+            <div class="flex justify-between border-t border-stone-100 pt-4">
+                <div>
+                    <p class="text-xs text-stone-400 mb-0.5">Parcelas</p>
+                    <p class="font-medium text-stone-800 text-sm">1</p>
                 </div>
-            </div>`).join('');
+                <div>
+                    <p class="text-xs text-stone-400 mb-0.5">Área total</p>
+                    <p class="font-medium text-stone-800 text-sm">${finca.superficie || 0} ha</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Footer / Detalles -->
+        <div class="p-5 pt-0 mt-auto">
+            <button data-id="${finca.id}" class="edit-btn w-full bg-white border border-stone-300 text-stone-700 hover:bg-stone-50 hover:border-stone-400 font-medium py-2 rounded-lg transition text-sm">
+                Ver detalles de la finca
+            </button>
+        </div>
+        
+    </div>`).join('');
     }
 
     function resetForm() {
@@ -563,6 +615,7 @@ document.addEventListener('DOMContentLoaded', () => {
         submitButton.textContent = 'Guardar Finca';
         submitButton.className = 'bg-amber-800 hover:bg-amber-900 text-white font-bold py-3 px-8 rounded-xl shadow-md';
         cancelEditBtn.classList.add('hidden');
+        document.getElementById('form-container').classList.add('hidden');
     }
 
     async function populateFormForEdit(id) {
@@ -616,6 +669,8 @@ document.addEventListener('DOMContentLoaded', () => {
             submitButton.textContent = 'Actualizar Finca';
             submitButton.className = 'bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 rounded-xl shadow-md';
             cancelEditBtn.classList.remove('hidden');
+
+            document.getElementById('form-container').classList.remove('hidden');
 
             window.scrollTo({ top: 0, behavior: 'smooth' });
         } catch (error) {
@@ -933,5 +988,48 @@ document.addEventListener('DOMContentLoaded', () => {
             alert("Error generando enlace: " + e.message);
         }
     };
+
+    // Función para generar la URL del mapa estático de Google
+    function getStaticMapUrl(coordenadas) {
+        if (!coordenadas) return null;
+        try {
+            let coordsArray = typeof coordenadas === 'string' ? parseJSON(coordenadas) : coordenadas;
+
+            // Extraer formato GeoJSON si aplica
+            if (coordsArray && coordsArray.type === 'Polygon' && Array.isArray(coordsArray.coordinates)) {
+                coordsArray = coordsArray.coordinates[0].map(p => [p[1], p[0]]); // Convertir [lng, lat] a [lat, lng]
+            }
+
+            if (!Array.isArray(coordsArray) || coordsArray.length === 0) return null;
+
+            // Reducir la cantidad de puntos si el polígono es muy complejo 
+            // (para no exceder el límite de caracteres de la URL de Google)
+            let step = Math.ceil(coordsArray.length / 45);
+            let pathStr = "";
+
+            for (let i = 0; i < coordsArray.length; i += step) {
+                let p = coordsArray[i];
+                if (Array.isArray(p)) pathStr += `|${p[0]},${p[1]}`;
+                else if (p && p.lat) pathStr += `|${p.lat},${p.lng}`;
+            }
+
+            // Cerrar el polígono uniendo con el primer punto
+            let p0 = coordsArray[0];
+            if (Array.isArray(p0)) pathStr += `|${p0[0]},${p0[1]}`;
+            else if (p0 && p0.lat) pathStr += `|${p0.lat},${p0.lng}`;
+
+            // Remover el primer '|' extra
+            pathStr = pathStr.substring(1);
+
+            // Usamos la misma API Key que tienes configurada en tu index.html
+            const apiKey = 'AIzaSyAM37iJTRcIoSAxESlDzB2DxlNJWKasW5U';
+
+            // Generamos la URL. Colores: Borde Azul (0x2563ebff) | Relleno Azul Translúcido (0x2563eb66)
+            return `https://maps.googleapis.com/maps/api/staticmap?size=400x200&maptype=satellite&path=color:0x2563ebff|fillcolor:0x2563eb66|weight:2|${pathStr}&key=${apiKey}`;
+        } catch (e) {
+            console.error("Error generando mapa estático:", e);
+            return null;
+        }
+    }
 
 });
