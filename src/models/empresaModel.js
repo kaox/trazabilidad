@@ -136,9 +136,22 @@ const getPublicCompaniesDataInternal = async () => {
 const findCompanyBySubdomainOrSlug = async (subdomain) => {
     // 1. Intento de búsqueda directa por la columna subdomain (Muy rápido)
     const sqlDirect = `
-        SELECT cp.user_id AS id, cp.name AS empresa, cp.logo_url AS company_logo, cp.subdomain, cp.white_label_config
+        SELECT 
+            cp.user_id AS id, 
+            cp.name AS empresa, 
+            cp.logo_url AS company_logo, 
+            cp.subdomain, 
+            cp.white_label_config,
+            COALESCE(f.provincia, p.provincia) AS provincia,
+            COALESCE(f.departamento, p.departamento) AS departamento,
+            COALESCE(f.pais, p.pais) AS pais
         FROM company_profiles cp 
-        WHERE LOWER(cp.subdomain) = ? AND cp.is_published IS TRUE
+        LEFT JOIN 
+            fincas f ON cp.company_id = f.id AND cp.company_type = 'finca'
+        LEFT JOIN 
+            procesadoras p ON cp.company_id = p.id AND cp.company_type = 'procesadora'
+        WHERE LOWER(cp.subdomain) = ? 
+        AND cp.is_published IS TRUE
         LIMIT 1
     `;
     const directMatch = await db.get(sqlDirect, [subdomain.toLowerCase()]);
