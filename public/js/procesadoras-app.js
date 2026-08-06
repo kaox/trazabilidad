@@ -300,7 +300,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (types.includes('street_number')) addressData.direccion += ' ' + component.long_name;
             });
         }
-        //console.log(addressData.direccion);
         if (!addressData.direccion && place.name && !place.name.includes(addressData.provincia)) {
             addressData.direccion = place.name;
         }

@@ -654,8 +654,6 @@ document.addEventListener('DOMContentLoaded', () => {
             if (wheelId) newData.target_wheel_id = { value: wheelId, visible: false, nombre: 'Rueda Sabor' };
             else delete newData.target_wheel_id;
 
-            console.log(newData);
-            console.log(productId);
             try {
                 await api(`/api/batches/${rootBatch.id}`, {
                     method: 'PUT',
@@ -1181,7 +1179,6 @@ document.addEventListener('DOMContentLoaded', () => {
     async function handleFinalize(id) {
         if (confirm("¿Finalizar y Certificar?")) {
             try {
-                console.log(id);
                 await api(`/api/batches/${id}/finalize`, { method: 'POST' });
                 await refreshData();
             } catch (e) { alert(e.message); }

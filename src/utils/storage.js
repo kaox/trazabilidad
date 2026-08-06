@@ -19,14 +19,12 @@ const deleteImageByUrl = async (url, provider = 'supabase') => {
                     const filePath = url.split(publicUrlPath)[1];
                     if (filePath) {
                         await supabase.storage.from(bucketName).remove([filePath]);
-                        console.log("Imagen eliminada de Supabase:", filePath);
                     }
                 }
             }
         } else if (url.includes('public.blob.vercel-storage.com') || url.includes('.vercel-storage.com')) {
             // Eliminar de Vercel Blob
             await del(url);
-            console.log("Imagen eliminada de Vercel Blob:", url);
         }
     } catch (err) {
         console.error("Error al intentar eliminar la imagen del storage:", url, err);
@@ -103,7 +101,6 @@ const uploadImageBase64 = async (base64String, filename, provider = 'vercel') =>
 
     if (provider === 'supabase') {
         try {
-            console.log("Intentando guardar en Supabase...");
             return await trySupabase();
         } catch (supabaseError) {
             console.warn("⚠️ Supabase falló (posible cuota o error). Cambiando a Vercel Blob como respaldo...", supabaseError.message);
@@ -116,7 +113,6 @@ const uploadImageBase64 = async (base64String, filename, provider = 'vercel') =>
 
     } else {
         try {
-            console.log("Intentando guardar en Vercel Blob...");
             return await tryVercelBlob();
         } catch (vercelError) {
             console.warn("⚠️ Vercel Blob falló. Cambiando a Supabase como respaldo...", vercelError.message);
@@ -139,7 +135,6 @@ const uploadImageBase64 = async (base64String, filename, provider = 'vercel') =>
  * @returns {Promise<Array>} - Arreglo de URLs finalmente generadas o conservadas
  */
 const processImagesArray = async (imagenesArray, folder, userId, provider = 'vercel') => {
-    console.log(provider);
     let procesadasImagenes = [];
 
     if (imagenesArray && Array.isArray(imagenesArray)) {

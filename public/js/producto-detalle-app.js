@@ -6,7 +6,6 @@ const app = {
     activeLoteEtapasCount: 0,
 
     trackEvent: async function (type, companyId, productId = null) {
-        console.log("Guardando analytics... ", type, companyId, productId);
         try {
             await fetch('/api/public/analytics', {
                 method: 'POST',
@@ -972,7 +971,6 @@ const app = {
             // Reemplaza esta URL con el endpoint real de tu API pública para lotes de un producto
             // Ej: /api/public/productos/${this.productId}/trazabilidad
             const response = await fetch(`/api/public/productos/${this.productId}/trazabilidad`);
-            console.log("response", response);
             if (!response.ok) {
                 console.warn("Endpoint de trazabilidad no disponible o producto sin lotes.");
                 return null;
@@ -1087,7 +1085,6 @@ const app = {
 
         // 1. Intentamos cargar los lotes mapeados desde el backend
         let lotesData = await this.loadTrazabilidadData();
-        console.log("lotes data", lotesData);
         // 2. Si no hay datos en la API, usamos los lotes pre-cargados en this.product o el Mock de respaldo
         if (!lotesData || lotesData.length === 0) {
             lotesData = (this.product && this.product.lotes && this.product.lotes.length > 0)

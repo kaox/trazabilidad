@@ -244,7 +244,6 @@ const registerAndClaimPublic = async (req, res) => {
         if (!suggestion) return res.status(404).json({ error: 'Empresa sugerida no encontrada.' });
         if (suggestion.status === 'claimed') return res.status(409).json({ error: 'Esta empresa ya ha sido reclamada.' });
 
-        console.log(usuario, password, formData);
         await registerUserAndClaim(suggestion, google_token, usuario, password, formData, res);
 
     } catch (err) {

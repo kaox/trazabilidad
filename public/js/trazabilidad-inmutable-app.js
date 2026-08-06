@@ -1,11 +1,11 @@
-let chartInstances = {}; 
+let chartInstances = {};
 let FLAVOR_WHEELS_DATA = {};
 
 document.addEventListener('DOMContentLoaded', async () => {
     try {
         const response = await fetch('/data/flavor-wheels.json');
         FLAVOR_WHEELS_DATA = await response.json();
-    } catch(e) { console.error("Error loading flavor data"); }
+    } catch (e) { console.error("Error loading flavor data"); }
 
     await loadImmutableBatches();
 });
@@ -14,7 +14,6 @@ async function loadImmutableBatches() {
     const tbody = document.getElementById('immutable-table-body');
     try {
         const batches = await api('/api/batches/immutable');
-        console.log(batches);
         if (batches.length === 0) {
             tbody.innerHTML = `
                 <tr>
@@ -30,7 +29,7 @@ async function loadImmutableBatches() {
             const hashShort = batch.blockchain_hash ? batch.blockchain_hash.substring(0, 8) + '...' : '...';
             const stars = renderStars(batch.avg_rating);
             const hasQualityData = batch.data && (batch.data.tipoPerfil || batch.data.tipoRuedaSabor);
-            
+
             // Si no tiene GTIN, usamos un placeholder o 'undefined' que el generador manejará
             const gtinDisplay = batch.gtin || 'Pendiente';
 
@@ -108,12 +107,12 @@ function renderStars(rating) {
 }
 
 // --- NUEVO: Generador QR GS1 con Canvas y Logo ---
-window.downloadBrandedQR = function(loteId, gtin) {
+window.downloadBrandedQR = function (loteId, gtin) {
     // 1. Construir URL GS1
     // Si no hay GTIN, usamos un placeholder genérico interno "00000000000000" para no romper la estructura
     const safeGtin = gtin && gtin.trim() !== '' ? gtin : '00000000000000';
     const url = `${window.location.origin}/01/${safeGtin}/10/${loteId}`;
-    
+
     // 2. Configurar Generador
     // Usamos Tipo 0 (Auto) y Corrección de Error 'H' (High - 30%) para soportar el logo en el medio
     const qr = qrcode(0, 'H');
@@ -123,12 +122,12 @@ window.downloadBrandedQR = function(loteId, gtin) {
     // 3. Preparar Canvas
     const canvas = document.getElementById('qr-canvas');
     const ctx = canvas.getContext('2d');
-    
+
     // Tamaño de celda y margen
     const cellSize = 10;
     const margin = 4;
     const size = qr.getModuleCount() * cellSize + (margin * 2 * cellSize);
-    
+
     canvas.width = size;
     canvas.height = size;
 
@@ -139,14 +138,14 @@ window.downloadBrandedQR = function(loteId, gtin) {
     // 5. Dibujar Módulos del QR
     ctx.fillStyle = '#000000'; // Color del QR (Negro)
     const count = qr.getModuleCount();
-    
+
     for (let row = 0; row < count; row++) {
         for (let col = 0; col < count; col++) {
             if (qr.isDark(row, col)) {
                 ctx.fillRect(
-                    (col + margin) * cellSize, 
-                    (row + margin) * cellSize, 
-                    cellSize, 
+                    (col + margin) * cellSize,
+                    (row + margin) * cellSize,
+                    cellSize,
                     cellSize
                 );
             }
@@ -157,21 +156,21 @@ window.downloadBrandedQR = function(loteId, gtin) {
     // Usamos un logo genérico o el de la empresa si estuviera disponible. 
     // Para este ejemplo, uso un icono de huella dactilar de FontAwesome convertido a imagen o una URL fija
     // Aquí usaré una URL de placeholder segura. En producción, usa '/images/logo-rurulab-qr.png'
-    const logoUrl = 'https://www.rurulab.com/images/logo.png'; 
-    
+    const logoUrl = 'https://www.rurulab.com/images/logo.png';
+
     const img = new Image();
     img.crossOrigin = "anonymous";
     img.src = logoUrl;
-    
+
     img.onload = () => {
         // El logo debe ocupar aprox el 20-25% del QR
-        const logoSize = size * 0.22; 
+        const logoSize = size * 0.22;
         const logoPos = (size - logoSize) / 2;
 
         // Dibujar un recuadro blanco detrás del logo para limpiar los puntos
         ctx.fillStyle = '#ffffff';
         ctx.fillRect(logoPos - 5, logoPos - 5, logoSize + 10, logoSize + 10);
-        
+
         // Dibujar el logo
         ctx.drawImage(img, logoPos, logoPos, logoSize, logoSize);
 
@@ -192,10 +191,10 @@ window.downloadBrandedQR = function(loteId, gtin) {
 };
 
 // --- Lógica de PDF (Reutilizada) ---
-window.generatePDF = async function(batchId) {
+window.generatePDF = async function (batchId) {
     const btn = document.querySelector(`button[onclick="generatePDF('${batchId}')"]`);
-    if(btn) btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
-    
+    if (btn) btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+
     try {
         const history = await api(`/api/trazabilidad/${batchId}`);
         const stageData = history.stages.find(s => s.id === batchId);
@@ -204,13 +203,13 @@ window.generatePDF = async function(batchId) {
         const template = history.ownerInfo;
         const fincaData = history.fincaData || {};
         const getVal = (data, key) => data && data[key] ? (data[key].value || data[key]) : '';
-        
+
         let sensoryData = history.perfilSensorialData;
         let flavorData = history.ruedaSaborData;
 
         const container = document.getElementById('pdf-report-container');
         container.classList.remove('hidden');
-        
+
         container.innerHTML = `
             <div class="font-sans text-stone-800 bg-white p-8 border-4 border-amber-900/10 h-full">
                 <div class="flex justify-between items-center border-b-2 border-amber-800 pb-6 mb-8">
@@ -271,7 +270,7 @@ window.generatePDF = async function(batchId) {
         console.error(err);
         alert("Error generando PDF: " + err.message);
     } finally {
-        if(btn) btn.innerHTML = '<i class="fas fa-file-pdf"></i>';
+        if (btn) btn.innerHTML = '<i class="fas fa-file-pdf"></i>';
         document.getElementById('pdf-report-container').classList.add('hidden');
     }
 };
@@ -290,7 +289,7 @@ function renderPdfRadarChart(data) {
 
 function renderPdfFlavorChart(ruedaData) {
     const FLAVOR_DATA = ruedaData.tipo === 'cafe' ? FLAVOR_WHEELS_DATA.cafe : FLAVOR_WHEELS_DATA.cacao;
-    if(!FLAVOR_DATA) return;
+    if (!FLAVOR_DATA) return;
     const notes = typeof ruedaData.notas_json === 'string' ? JSON.parse(ruedaData.notas_json) : ruedaData.notas_json;
     const categories = {};
     notes.forEach(n => { if (!categories[n.category]) categories[n.category] = []; categories[n.category].push(n.subnote); });

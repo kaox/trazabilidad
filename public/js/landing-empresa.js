@@ -417,6 +417,7 @@ const app = {
         let coverImage = user.cover || (entity.imagenes && entity.imagenes.length > 0 ? entity.imagenes[0] : 'https://images.unsplash.com/photo-1511537632536-b7a4896848a5?auto=format&fit=crop&q=80&w=1000');
 
         const mediaItems = [];
+
         if (entity.imagenes && entity.imagenes.length > 0) {
             entity.imagenes.forEach(img => mediaItems.push({ type: 'image', src: img }));
         } else {
@@ -570,7 +571,7 @@ const app = {
                        <!--img src="${user.logo || 'https://placehold.co/100x100?text=Logo'}" class="w-24 h-24 md:w-32 md:h-32 rounded-2xl border-4 border-white shadow-lg bg-white object-contain"-->
                        <div class="text-white mb-2">
                            <span class="bg-accent text-white text-[8px] font-bold px-3 py-1 rounded-full uppercase tracking-wider mb-3 inline-block shadow-lg">${typeLabel}</span>
-                           <h1 class="text-3xl md:text-5xl font-display font-bold leading-tight">${entityName}</h1>
+                           <h1 class="text-3xl md:text-5xl font-display font-bold leading-tight">${user.name}</h1>
                            <p class="text-white/80 flex items-center gap-2 text-sm md:text-base"><i class="fas fa-map-marker-alt text-accent"></i> ${locationStr}</p>
                        </div>
                    </div>
