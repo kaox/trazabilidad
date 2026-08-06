@@ -186,6 +186,16 @@ app.use(async (req, res, next) => {
                 description = `Ponte en contacto directamente con ${company.empresa}.`;
             }
 
+            let image = `https://rurulab.com/images/banner_1.png`;
+
+            if (company.company_logo) {
+                if (company.company_logo.startsWith('http')) {
+                    image = company.company_logo;
+                } else {
+                    image = `${protocol}://${host}/api/public/companies/${company.id}/logo`;
+                }
+            }
+
             // Inyección de Script de Configuración Global
             const injectionScript = `
                 <script>
