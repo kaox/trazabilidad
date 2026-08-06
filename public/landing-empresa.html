@@ -281,93 +281,93 @@
         }
 
         /* === Carrito flotante móvil === */
-.mobile-floating-cart {
-    display: none;
-}
+        .mobile-floating-cart {
+            display: none;
+        }
 
-@media (max-width: 767px) {
-    .mobile-floating-cart {
-        position: fixed;
-        right: 1rem;
-        bottom: calc(1rem + env(safe-area-inset-bottom));
-        z-index: 60;
+        @media (max-width: 767px) {
+            .mobile-floating-cart {
+                position: fixed;
+                right: 1rem;
+                bottom: calc(1rem + env(safe-area-inset-bottom));
+                z-index: 60;
 
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 0.6rem;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 0.6rem;
 
-        min-width: 140px;
-        height: 52px;
-        padding: 0 1rem;
+                min-width: 140px;
+                height: 52px;
+                padding: 0 1rem;
 
-        border-radius: 9999px;
-        background-color: var(--accent-color);
-        color: white;
+                border-radius: 9999px;
+                background-color: var(--accent-color);
+                color: white;
 
-        font-size: 0.8rem;
-        font-weight: 800;
-        text-transform: uppercase;
-        letter-spacing: 0.04em;
+                font-size: 0.8rem;
+                font-weight: 800;
+                text-transform: uppercase;
+                letter-spacing: 0.04em;
 
-        box-shadow:
-            0 10px 25px rgba(0, 0, 0, 0.18),
-            0 4px 10px rgba(0, 0, 0, 0.12);
+                box-shadow:
+                    0 10px 25px rgba(0, 0, 0, 0.18),
+                    0 4px 10px rgba(0, 0, 0, 0.12);
 
-        transition:
-            transform 0.2s ease,
-            background-color 0.2s ease,
-            box-shadow 0.2s ease;
-    }
+                transition:
+                    transform 0.2s ease,
+                    background-color 0.2s ease,
+                    box-shadow 0.2s ease;
+            }
 
-    .mobile-floating-cart:hover {
-        background-color: var(--accent-hover);
-    }
+            .mobile-floating-cart:hover {
+                background-color: var(--accent-hover);
+            }
 
-    .mobile-floating-cart:active {
-        transform: scale(0.96);
-    }
+            .mobile-floating-cart:active {
+                transform: scale(0.96);
+            }
 
-    .mobile-floating-cart i {
-        font-size: 0.95rem;
-    }
+            .mobile-floating-cart i {
+                font-size: 0.95rem;
+            }
 
-    .mobile-floating-cart-badge {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
+            .mobile-floating-cart-badge {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
 
-        min-width: 24px;
-        height: 24px;
-        padding: 0 6px;
+                min-width: 24px;
+                height: 24px;
+                padding: 0 6px;
 
-        border-radius: 9999px;
-        background-color: white;
-        color: var(--accent-color);
+                border-radius: 9999px;
+                background-color: white;
+                color: var(--accent-color);
 
-        font-size: 0.7rem;
-        font-weight: 900;
-        line-height: 1;
-    }
+                font-size: 0.7rem;
+                font-weight: 900;
+                line-height: 1;
+            }
 
-    /*
+            /*
      * Evita que el botón tape el contenido ubicado
      * al final de la landing.
      */
-    #app-container {
-        padding-bottom: calc(5.5rem + env(safe-area-inset-bottom));
-    }
+            #app-container {
+                padding-bottom: calc(5.5rem + env(safe-area-inset-bottom));
+            }
 
-    /*
+            /*
      * El toast actual también aparece abajo a la derecha.
      * Lo subimos para que no quede detrás del carrito.
      */
-    #rurulab-toast {
-        left: 1rem !important;
-        right: 1rem !important;
-        bottom: calc(5.5rem + env(safe-area-inset-bottom)) !important;
-    }
-}
+            #rurulab-toast {
+                left: 1rem !important;
+                right: 1rem !important;
+                bottom: calc(5.5rem + env(safe-area-inset-bottom)) !important;
+            }
+        }
     </style>
 </head>
 
@@ -402,9 +402,11 @@
                         <a href="/contacto" class="wl-nav-link" data-page="contacto">
                             <i class="fas fa-envelope mr-1 text-xs"></i> Contáctanos
                         </a>
-                        <a href="/carrito" class="wl-nav-link relative flex items-center gap-1.5" data-page="carrito" title="Ver Carrito">
+                        <a href="/carrito" class="wl-nav-link relative flex items-center gap-1.5" data-page="carrito"
+                            title="Ver Carrito">
                             <i class="fas fa-shopping-cart text-sm"></i> Carrito
-                            <span id="wl-cart-badge" class="bg-amber-800 text-white text-[10px] font-black px-1.5 py-0.5 rounded-full min-w-[18px] text-center leading-none hidden">0</span>
+                            <span id="wl-cart-badge"
+                                class="bg-amber-800 text-white text-[10px] font-black px-1.5 py-0.5 rounded-full min-w-[18px] text-center leading-none hidden">0</span>
                         </a>
                     </nav>
 
@@ -436,7 +438,8 @@
                             class="block px-4 py-2 rounded-lg text-stone-600 hover:bg-stone-50 font-medium flex items-center justify-between"
                             data-page="carrito" onclick="app.closeMobileMenu()">
                             <span><i class="fas fa-shopping-cart mr-2 text-xs"></i> Carrito</span>
-                            <span id="wl-cart-badge-mobile" class="bg-amber-800 text-white text-[10px] font-black px-2 py-0.5 rounded-full hidden">0</span>
+                            <span id="wl-cart-badge-mobile"
+                                class="bg-amber-800 text-white text-[10px] font-black px-2 py-0.5 rounded-full hidden">0</span>
                         </a>
                     </div>
                 </div>
@@ -503,7 +506,8 @@
 
         </main>
         <!-- Carrito flotante exclusivo para móvil -->
-        <a id="mobile-floating-cart" href="/carrito" data-page="carrito" class="mobile-floating-cart" aria-label="Abrir carrito de compras">
+        <a id="mobile-floating-cart" href="/carrito" data-page="carrito" class="mobile-floating-cart"
+            aria-label="Abrir carrito de compras">
             <i class="fas fa-shopping-cart"></i>
             <span>Pedir</span>
             <span id="wl-cart-badge-floating" class="mobile-floating-cart-badge">0</span>

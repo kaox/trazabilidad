@@ -587,9 +587,21 @@ const app = {
                         </div>
 
                         <div class="bg-stone-50 p-8 rounded-3xl border border-stone-200">
-                            <h3 class="text-xl font-bold text-stone-800 mb-6 flex items-center gap-3">
+                            <!-- Título principal, reducimos el margin-bottom (mb-2) para agruparlo con el nombre -->
+                            <h3 class="text-xl font-bold text-stone-800 mb-2 flex items-center gap-3">
                                 <i class="fas fa-mountain text-accent"></i> ${isFinca ? 'Terroir & Origen' : 'Ubicación'}
                             </h3>
+
+                            <!-- NUEVO: Subtítulo con el nombre de la finca -->
+                            ${isFinca && entityName ? `
+                                <div class="text-stone-600 font-semibold mb-6 flex items-center gap-2">
+                                    <i class="fas fa-leaf text-green-600"></i> Finca: ${entityName}
+                                </div>
+                            ` : '<div class="mb-6"></div>'}
+                            
+                            <!-- Contenedor del clima (solo si es Finca) -->
+                            ${isFinca ? `<div id="weather-container" class="mb-4 hidden"></div>` : ''}
+                            
                             <div id="mini-map" class="w-full h-56 bg-stone-200 rounded-2xl mb-6 shadow-inner"></div>
                             ${fullAddressHtml}
                             ${mapButtonHtml}
@@ -646,6 +658,32 @@ const app = {
         this.container.innerHTML = html;
         if (entity.coordenadas) setTimeout(() => this.initMiniMap(entity.coordenadas, isFinca), 500);
         setTimeout(() => this.initProductCharts(products.slice(0, 4)), 100);
+
+        // NUEVO: Cargar clima si es finca y hay coordenadas
+        if (isFinca && entity.coordenadas) {
+            let lat, lng;
+
+            if (Array.isArray(entity.coordenadas)) {
+                // Verificamos si el primer elemento también es un array (polígono/multipunto)
+                if (Array.isArray(entity.coordenadas[0])) {
+                    // Tomamos el primer punto del polígono
+                    lat = entity.coordenadas[0][0];
+                    lng = entity.coordenadas[0][1];
+                } else {
+                    // Es un array de punto simple [lat, lng]
+                    lat = entity.coordenadas[0];
+                    lng = entity.coordenadas[1];
+                }
+            } else {
+                // Es un objeto {lat, lng}
+                lat = entity.coordenadas.lat || null;
+                lng = entity.coordenadas.lng || null;
+            }
+
+            if (lat && lng) {
+                setTimeout(() => this.loadWeather(lat, lng), 600);
+            }
+        }
     },
 
     renderTienda: function () {
@@ -1328,6 +1366,78 @@ const app = {
                 if (position) { map.setCenter(position); map.setZoom(15); new google.maps.Marker({ position: position, map: map, title: "Ubicación" }); }
             }
         } catch (e) { console.error("Error mapa:", e); }
+    },
+
+    loadWeather: async function (lat, lng) {
+        try {
+            console.log(`📡 Solicitando clima a Open-Meteo -> Lat: ${lat}, Lng: ${lng}`);
+
+            const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current=temperature_2m,relative_humidity_2m,wind_speed_10m`;
+            const res = await fetch(url);
+            const data = await res.json();
+
+            // Diagnóstico: si la API devuelve error, lo imprimimos
+            if (data.error) {
+                console.error("❌ Error de Open-Meteo:", data.reason);
+                return; // Detenemos la ejecución
+            }
+
+            if (data && data.current) {
+                const container = document.getElementById('weather-container');
+                if (container) {
+                    const { temperature_2m, relative_humidity_2m, wind_speed_10m } = data.current;
+                    const units = data.current_units;
+                    const elevation = data.elevation;
+
+                    container.innerHTML = `
+                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-y-4 gap-x-2 bg-white p-5 rounded-2xl border border-stone-100 shadow-sm">
+    
+                            <!-- 1. Altitud -->
+                            <div class="flex flex-col items-center justify-center gap-1 sm:border-r border-stone-100">
+                                <span class="text-stone-400 text-[10px] uppercase tracking-wider font-bold">Altitud</span>
+                                <div class="flex items-center gap-1.5 font-bold text-stone-800 text-sm">
+                                    <i class="fas fa-mountain text-stone-500"></i> 
+                                    ${elevation} <span class="text-[11px] font-normal text-stone-500">msnm</span>
+                                </div>
+                            </div>
+
+                            <!-- 2. Temperatura -->
+                            <div class="flex flex-col items-center justify-center gap-1 sm:border-r border-stone-100">
+                                <span class="text-stone-400 text-[10px] uppercase tracking-wider font-bold">Temp</span>
+                                <div class="flex items-center gap-1.5 font-bold text-stone-800 text-sm">
+                                    <i class="fas fa-thermometer-half text-red-500"></i> 
+                                    ${temperature_2m}${units.temperature_2m}
+                                </div>
+                            </div>
+
+                            <!-- 3. Humedad -->
+                            <div class="flex flex-col items-center justify-center gap-1 sm:border-r border-stone-100">
+                                <span class="text-stone-400 text-[10px] uppercase tracking-wider font-bold">Humedad</span>
+                                <div class="flex items-center gap-1.5 font-bold text-stone-800 text-sm">
+                                    <i class="fas fa-tint text-blue-500"></i> 
+                                    ${relative_humidity_2m}${units.relative_humidity_2m}
+                                </div>
+                            </div>
+
+                            <!-- 4. Viento -->
+                            <div class="flex flex-col items-center justify-center gap-1">
+                                <span class="text-stone-400 text-[10px] uppercase tracking-wider font-bold">Viento</span>
+                                <div class="flex items-center gap-1.5 font-bold text-stone-800 text-sm">
+                                    <i class="fas fa-wind text-teal-500"></i> 
+                                    ${wind_speed_10m} <span class="text-[11px] font-normal text-stone-500">${units.wind_speed_10m}</span>
+                                </div>
+                            </div>
+
+                        </div>
+                    `;
+                    container.classList.remove('hidden');
+                }
+            } else {
+                console.warn("⚠️ La respuesta de Open-Meteo no tiene 'current':", data);
+            }
+        } catch (e) {
+            console.error("❌ Error consultando el clima:", e);
+        }
     },
 
     // --- LÓGICA DE CARRITO MULTITENANT ---
