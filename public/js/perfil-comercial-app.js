@@ -1,9 +1,11 @@
+import { compressImage } from './file-utils.js';
+
 document.addEventListener('DOMContentLoaded', () => {
-    
+
     const form = document.getElementById('company-profile-form');
     const btnSave = document.getElementById('btn-save');
     const btnViewLanding = document.getElementById('btn-view-landing');
-    
+
     // Inputs de Imágenes
     const logoInput = document.getElementById('logo_input');
     const coverInput = document.getElementById('cover_input');
@@ -33,7 +35,7 @@ document.addEventListener('DOMContentLoaded', () => {
             loadEntities(),
             loadProfileData()
         ]);
-        
+
         setupEventListeners();
 
         // Forzar actualización visual si ya hay un tipo guardado
@@ -57,20 +59,20 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Helper para formatear Slugs (URLs amigables)
-    function createSlug(text) { 
+    function createSlug(text) {
         if (!text) return '';
         return text.toString().toLowerCase().trim()
             .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
             .replace(/\s+/g, '-')
             .replace(/[^\w\-]+/g, '')
-            .replace(/\-\-+/g, '-'); 
+            .replace(/\-\-+/g, '-');
     }
 
     // Cargar datos actuales del backend
     async function loadProfileData() {
         try {
             const response = await api('/api/user/company-profile');
-            
+
             currentUserId = response.user_id;
 
             if (response && response.name) {
@@ -82,15 +84,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.getElementById('social_instagram').value = response.social_instagram || '';
                 document.getElementById('social_facebook').value = response.social_facebook || '';
                 document.getElementById('website_url').value = response.website_url || '';
-                
+
                 if (response.company_type) {
                     typeSelect.value = response.company_type;
                 }
-                
+
                 if (response.subdomain) {
                     document.getElementById('subdomain').value = response.subdomain || '';
                 }
-                
+
                 // Guardar ID en memoria para setearlo en el Select dinámico
                 savedCompanyId = response.company_id || null;
 
@@ -114,11 +116,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     let categories = [];
                     // Si el backend lo devuelve como String JSON, lo parseamos
                     if (typeof response.product_categories === 'string') {
-                        try { categories = JSON.parse(response.product_categories); } catch(e){}
+                        try { categories = JSON.parse(response.product_categories); } catch (e) { }
                     } else if (Array.isArray(response.product_categories)) {
                         categories = response.product_categories;
                     }
-                    
+
                     const checkboxes = document.querySelectorAll('input[name="product_categories"]');
                     checkboxes.forEach(cb => {
                         if (categories.includes(cb.value)) {
@@ -131,7 +133,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (currentUserId) {
                     const slug = response.subdomain || createSlug(response.name);
                     const baseUrl = response.subdomain ? `${response.subdomain}.rurulab.com` : `rurulab.com/origen-unico/${slug}-${currentUserId}`;
-                    
+
                     btnViewLanding.href = response.subdomain ? `https://${response.subdomain}.rurulab.com` : `/origen-unico/${slug}-${currentUserId}`;
                     btnViewLanding.classList.remove('hidden');
                     btnViewLanding.classList.add('inline-flex');
@@ -159,7 +161,7 @@ document.addEventListener('DOMContentLoaded', () => {
             entityLabel.textContent = 'Finca';
             entityHelpLabel.textContent = 'finca';
             entityCreateLink.href = '/app/fincas';
-            
+
             if (fincasList.length === 0) {
                 entitySelect.innerHTML += `<option value="" disabled>No tienes fincas registradas</option>`;
             } else {
@@ -172,7 +174,7 @@ document.addEventListener('DOMContentLoaded', () => {
             entityLabel.textContent = 'Procesadora';
             entityHelpLabel.textContent = 'procesadora';
             entityCreateLink.href = '/app/procesadoras';
-            
+
             if (procesadorasList.length === 0) {
                 entitySelect.innerHTML += `<option value="" disabled>No tienes procesadoras registradas</option>`;
             } else {
@@ -191,7 +193,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function setupEventListeners() {
         form.addEventListener('submit', handleFormSubmit);
-        
+
         logoInput.addEventListener('change', (e) => processImageUpload(e, 'logo'));
         coverInput.addEventListener('change', (e) => processImageUpload(e, 'cover'));
 
@@ -208,7 +210,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Procesar imágenes en cliente (Redimensionar y a Base64)
-    function processImageUpload(event, type) {
+    async function processImageUpload(event, type) {
         const file = event.target.files[0];
         if (!file) return;
 
@@ -220,59 +222,33 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        const reader = new FileReader();
-        reader.onloadend = () => {
-            const img = new Image();
-            img.src = reader.result;
-            img.onload = () => {
-                const canvas = document.createElement('canvas');
-                
-                // Tamaños máximos
-                const MAX_WIDTH = type === 'logo' ? 400 : 1200;
-                const MAX_HEIGHT = type === 'logo' ? 400 : 800;
-                
-                let width = img.width;
-                let height = img.height;
-                
-                // Mantener proporción
-                if (width > height) {
-                    if (width > MAX_WIDTH) {
-                        height *= MAX_WIDTH / width;
-                        width = MAX_WIDTH;
-                    }
-                } else {
-                    if (height > MAX_HEIGHT) {
-                        width *= MAX_HEIGHT / height;
-                        height = MAX_HEIGHT;
-                    }
-                }
-                
-                canvas.width = width;
-                canvas.height = height;
-                const ctx = canvas.getContext('2d');
-                ctx.drawImage(img, 0, 0, width, height);
-                
-                const mimeType = file.type === 'image/png' ? 'image/png' : 'image/jpeg';
-                const quality = mimeType === 'image/jpeg' ? 0.8 : undefined;
-                const resizedBase64 = canvas.toDataURL(mimeType, quality);
-                
-                // Asignar al DOM
-                if (type === 'logo') {
-                    logoPreview.src = resizedBase64;
-                    logoHidden.value = resizedBase64;
-                } else {
-                    coverPreview.src = resizedBase64;
-                    coverHidden.value = resizedBase64;
-                }
-            };
-        };
-        reader.readAsDataURL(file);
+        try {
+            // Tamaños máximos según el tipo de imagen
+            const maxWidth = type === 'logo' ? 400 : 1200;
+            const maxHeight = type === 'logo' ? 400 : 800;
+
+            // Llamar a la función centralizada de compresión
+            const compressedBase64 = await compressImage(file, { maxWidth, maxHeight });
+
+            // Asignar al DOM
+            if (type === 'logo') {
+                logoPreview.src = compressedBase64;
+                logoHidden.value = compressedBase64;
+            } else {
+                coverPreview.src = compressedBase64;
+                coverHidden.value = compressedBase64;
+            }
+        } catch (error) {
+            console.error("Error al procesar la imagen:", error);
+            alert("No se pudo procesar la imagen. Intenta con un formato válido.");
+            event.target.value = ''; // Limpiar input en caso de error
+        }
     }
 
     // Enviar datos al Backend
     async function handleFormSubmit(e) {
         e.preventDefault();
-        
+
         // Validación extra: Debe haber seleccionado una entidad si es requerida
         if (entityContainer.classList.contains('hidden') === false && !entitySelect.value) {
             alert('Por favor, selecciona una entidad vinculada (Finca o Procesadora).');
@@ -296,7 +272,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (data.social_instagram) {
             data.social_instagram = data.social_instagram.replace('@', '').trim();
         }
-        
+
         // Limpiar subdominio
         if (data.subdomain) {
             data.subdomain = createSlug(data.subdomain);
@@ -307,9 +283,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 method: 'PUT',
                 body: JSON.stringify(data)
             });
-            
+
             alert('Perfil Comercial guardado con éxito.');
-            
+
             // Refrescar para asegurar enlace de landing correcto
             if (!currentUserId && result.user_id) {
                 currentUserId = result.user_id;
@@ -342,10 +318,10 @@ document.addEventListener('DOMContentLoaded', () => {
             try {
                 const errObj = JSON.parse(errText);
                 errMsg = errObj.error || errMsg;
-            } catch(e) {}
+            } catch (e) { }
             throw new Error(errMsg);
         }
-        
+
         if (res.status === 204) return {};
         return res.json();
     }
