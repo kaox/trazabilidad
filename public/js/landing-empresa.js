@@ -1390,41 +1390,32 @@ const app = {
                     const elevation = data.elevation;
 
                     container.innerHTML = `
-                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-y-4 gap-x-2 bg-white p-5 rounded-2xl border border-stone-100 shadow-sm">
+                        <div class="grid grid-cols-3 gap-y-4 gap-x-2 bg-white p-5 rounded-2xl border border-stone-100 shadow-sm">
     
                             <!-- 1. Altitud -->
-                            <div class="flex flex-col items-center justify-center gap-1 sm:border-r border-stone-100">
+                            <div class="flex flex-col items-center justify-center gap-1 border-r border-stone-100">
                                 <span class="text-stone-400 text-[10px] uppercase tracking-wider font-bold">Altitud</span>
                                 <div class="flex items-center gap-1.5 font-bold text-stone-800 text-sm">
-                                    <i class="fas fa-mountain text-stone-500"></i> 
+                                    <i class="fas fa-mountain text-stone-500"></i>
                                     ${elevation} <span class="text-[11px] font-normal text-stone-500">msnm</span>
                                 </div>
                             </div>
 
                             <!-- 2. Temperatura -->
-                            <div class="flex flex-col items-center justify-center gap-1 sm:border-r border-stone-100">
+                            <div class="flex flex-col items-center justify-center gap-1 border-r border-stone-100">
                                 <span class="text-stone-400 text-[10px] uppercase tracking-wider font-bold">Temp</span>
                                 <div class="flex items-center gap-1.5 font-bold text-stone-800 text-sm">
-                                    <i class="fas fa-thermometer-half text-red-500"></i> 
+                                    <i class="fas fa-thermometer-half text-red-500"></i>
                                     ${temperature_2m}${units.temperature_2m}
                                 </div>
                             </div>
 
                             <!-- 3. Humedad -->
-                            <div class="flex flex-col items-center justify-center gap-1 sm:border-r border-stone-100">
+                            <div class="flex flex-col items-center justify-center gap-1">
                                 <span class="text-stone-400 text-[10px] uppercase tracking-wider font-bold">Humedad</span>
                                 <div class="flex items-center gap-1.5 font-bold text-stone-800 text-sm">
-                                    <i class="fas fa-tint text-blue-500"></i> 
+                                    <i class="fas fa-tint text-blue-500"></i>
                                     ${relative_humidity_2m}${units.relative_humidity_2m}
-                                </div>
-                            </div>
-
-                            <!-- 4. Viento -->
-                            <div class="flex flex-col items-center justify-center gap-1">
-                                <span class="text-stone-400 text-[10px] uppercase tracking-wider font-bold">Viento</span>
-                                <div class="flex items-center gap-1.5 font-bold text-stone-800 text-sm">
-                                    <i class="fas fa-wind text-teal-500"></i> 
-                                    ${wind_speed_10m} <span class="text-[11px] font-normal text-stone-500">${units.wind_speed_10m}</span>
                                 </div>
                             </div>
 
