@@ -588,7 +588,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- FUNCIÓN RESTAURADA: openBatchConfigModal ---
     function openBatchConfigModal(rootBatch) {
-        // Filtrar opciones por tipo de producto (Cacao/Cafe/Miel)
+        // Filtrar opciones por tipo de producto (Cacao/Cafe/Miel/Queso)
         const tmpl = state.userTemplates.find(t => t.id === rootBatch.plantilla_id);
         const prodName = (tmpl?.nombre_producto || '').toLowerCase();
 
@@ -596,6 +596,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (prodName.includes('cafe') || prodName.includes('café')) tipoProd = 'cafe';
         else if (prodName.includes('cacao')) tipoProd = 'cacao';
         else if (prodName.includes('miel')) tipoProd = 'miel';
+        else if (prodName.includes('queso')) tipoProd = 'queso';
 
         // Filtrar listas por tipo
         const filteredProducts = state.products.filter(p => p.tipo_producto === tipoProd);

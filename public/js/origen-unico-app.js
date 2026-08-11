@@ -107,7 +107,7 @@ const app = {
 
         // Actualizar subtipos disponibles
         this.updateSubtypeButtons();
-        
+
         // Resetear filtro de subtipo al cambiar tipo
         this.state.currentSubtypeFilter = 'all';
 
@@ -117,7 +117,7 @@ const app = {
 
     setSubtypeFilter: function (subtypeValue) {
         this.state.currentSubtypeFilter = subtypeValue.toLowerCase();
-        
+
         // Actualizar UI de botones de Subtipo
         document.querySelectorAll('.subtype-filter-btn').forEach(btn => {
             if (btn.getAttribute('data-subtype-filter') === subtypeValue.toLowerCase()) {
@@ -144,7 +144,7 @@ const app = {
 
         // Encontrar el objeto del tipo actual en las organizaciones
         const tipoData = this.state.organizaciones.find(org => org.tipo === currentType);
-        
+
         if (!tipoData || !tipoData.subtipos || tipoData.subtipos.length === 0) {
             subtypesFilterSection.classList.add('hidden');
             return;
@@ -163,10 +163,10 @@ const app = {
             btn.className = 'subtype-filter-btn whitespace-nowrap px-4 py-1.5 rounded-full border border-stone-200 bg-white text-stone-600 font-bold text-xs transition-all flex items-center gap-1.5';
             const subtypeNormalized = subtipo.toLowerCase();
             btn.setAttribute('data-subtype-filter', subtypeNormalized);
-            
+
             // Obtener icono para este subtipo
             const iconClass = this.subtypeIcons[subtipo] || 'fas fa-tag text-stone-600';
-            
+
             // Crear contenido con icono
             btn.innerHTML = `<i class="${iconClass}"></i> ${subtipo}`;
             btn.onclick = () => this.setSubtypeFilter(subtypeNormalized);
@@ -174,9 +174,9 @@ const app = {
         });
     },
 
-    setProductFilter: function(prodFilterType) {
+    setProductFilter: function (prodFilterType) {
         this.state.currentProductFilter = prodFilterType;
-        
+
         // Actualizar UI de botones de Producto
         document.querySelectorAll('.prod-filter-btn').forEach(btn => {
             if (btn.getAttribute('data-prod-filter') === prodFilterType) {
@@ -191,25 +191,25 @@ const app = {
     },
 
     // Función Helper para obtener empresas filtradas por todos los criterios
-    getFilteredCompanies: function() {
+    getFilteredCompanies: function () {
         const typeFilter = this.state.currentFilter;
         const prodFilter = this.state.currentProductFilter;
         const subtypeFilter = this.state.currentSubtypeFilter;
-        
+
         return this.state.companies.filter(c => {
             // 1. Filtro por Tipo de Entidad
             const matchType = typeFilter === 'all' || c.type === typeFilter;
-            
+
             // 2. Filtro por Categoría de Producto
             let matchProduct = true;
             if (prodFilter !== 'all') {
                 let categories = [];
                 if (typeof c.product_categories === 'string') {
-                    try { categories = JSON.parse(c.product_categories); } catch(e) {}
+                    try { categories = JSON.parse(c.product_categories); } catch (e) { }
                 } else if (Array.isArray(c.product_categories)) {
                     categories = c.product_categories;
                 }
-                
+
                 matchProduct = categories && categories.includes(prodFilter);
             }
 
@@ -236,10 +236,10 @@ const app = {
             return;
         }
 
-        if (this.state.companies.length > 0) { 
-            this.renderCompanies(); 
+        if (this.state.companies.length > 0) {
+            this.renderCompanies();
             this.renderMap();
-            return; 
+            return;
         }
         this.container.innerHTML = '<div class="flex justify-center py-20"><div class="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-900"></div></div>';
         try {
@@ -265,17 +265,18 @@ const app = {
                 // Mostrar mini tags de productos en la tarjeta si los tiene
                 let tagsHtml = '';
                 let categories = [];
-                try { categories = typeof c.product_categories === 'string' ? JSON.parse(c.product_categories) : (c.product_categories || []); } catch(e){}
-                
+                try { categories = typeof c.product_categories === 'string' ? JSON.parse(c.product_categories) : (c.product_categories || []); } catch (e) { }
+
                 if (categories.length > 0) {
                     const topTags = categories.slice(0, 2).map(cat => {
                         let icon = '';
-                        if(cat==='cafe') icon = '☕ ';
-                        if(cat==='cacao') icon = '🍫 ';
-                        if(cat==='miel') icon = '🍯 ';
+                        if (cat === 'cafe') icon = '☕ ';
+                        if (cat === 'cacao') icon = '🍫 ';
+                        if (cat === 'miel') icon = '🍯 ';
+                        if (cat === 'queso') icon = '🧀 ';
                         return `<span class="text-[9px] font-bold bg-stone-100 text-stone-500 px-1.5 py-0.5 rounded border border-stone-200 capitalize">${icon}${cat}</span>`;
                     }).join(' ');
-                    const moreTag = categories.length > 2 ? `<span class="text-[9px] font-bold text-stone-400">+${categories.length-2}</span>` : '';
+                    const moreTag = categories.length > 2 ? `<span class="text-[9px] font-bold text-stone-400">+${categories.length - 2}</span>` : '';
                     tagsHtml = `<div class="flex gap-1 mt-2">${topTags}${moreTag}</div>`;
                 }
 
@@ -346,9 +347,9 @@ const app = {
     },
 
     // NUEVO: Filtrar y renderizar empresas según los límites actuales del mapa
-    renderCompaniesFromMapBounds: function() {
+    renderCompaniesFromMapBounds: function () {
         if (!this.map) return;
-        
+
         const bounds = this.map.getBounds();
         if (!bounds) return;
 
@@ -358,7 +359,7 @@ const app = {
         // 2. Aplicar filtro geográfico (solo lo que es visible en el viewport)
         const visibleOnMap = baseFiltered.filter(c => {
             if (!c.coordenadas || !c.coordenadas.lat || !c.coordenadas.lng) return false;
-            
+
             const position = new google.maps.LatLng(
                 parseFloat(c.coordenadas.lat),
                 parseFloat(c.coordenadas.lng)
