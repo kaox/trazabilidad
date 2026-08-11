@@ -389,11 +389,22 @@ async function loadProducts() {
                 </div>
                 
                 <div class="flex-grow">
-                    <div class="flex items-center justify-between mb-2">
-                        <div class="flex items-center gap-2">
-                            <span class="text-[10px] font-mono bg-stone-100 px-2 py-1 rounded text-stone-500 border border-stone-200"><i class="fas fa-barcode mr-1"></i> ${p.gtin || 'Pendiente'}</span>
-                            ${p.gtin ? `<button onclick="showGs1Qr('${p.gtin}', '${p.nombre.replace(/'/g, "\\'")}')" class="text-[10px] bg-stone-800 text-white px-2 py-1 rounded hover:bg-stone-900 transition flex items-center gap-1"><i class="fas fa-qrcode"></i> GS1 QR</button>` : ''}
+
+                    <div class="flex items-center justify-between mb-2 p-2 bg-stone-50 rounded-lg border border-stone-100">
+                        <div class="flex flex-col">
+                            <span class="text-[10px] font-bold text-stone-400 uppercase tracking-wider mb-0.5">Código de Barras</span>
+                            <span class="text-xs font-mono text-stone-700"><i class="fas fa-barcode mr-1 opacity-50"></i> ${p.gtin || 'Pendiente'}</span>
                         </div>
+                        
+                        ${p.gtin ? `
+                        <button onclick="showGs1Qr('${p.gtin}', '${p.nombre.replace(/'/g, "\\'")}')" 
+                            class="text-xs bg-white border border-stone-200 text-stone-700 px-3 py-1.5 rounded-md hover:bg-stone-100 hover:border-stone-300 transition flex items-center gap-1.5 shadow-sm group"
+                            title="Descargar QR para imprimir en envases">
+                            <i class="fas fa-qrcode text-stone-500 group-hover:text-stone-800 transition"></i> 
+                            <span class="font-medium">QR Etiquetado</span>
+                        </button>` : `
+                        <span class="text-[10px] text-stone-400 italic">Asigna un código para generar QR</span>
+                        `}
                         ${p.receta_nutricional_nombre ? `<span class="text-[10px] text-green-700 bg-green-50 px-2 py-0.5 rounded border border-green-100" title="Receta: ${p.receta_nutricional_nombre}"><i class="fas fa-utensils"></i></span>` : ''}
                     </div>
                     
@@ -525,29 +536,29 @@ window.showGs1Qr = (gtin, productName) => {
     const modal = document.getElementById('qr-modal');
     const container = document.getElementById('qr-container');
     const downloadBtn = document.getElementById('qr-download-btn');
-    
+
     container.innerHTML = ''; // Limpiar anterior
-    
+
     // URL de resolución GS1
     const gs1Url = `${window.location.origin}/01/${gtin}`;
-    
+
     try {
         const typeNumber = 0;
         const errorCorrectionLevel = 'M';
         const qr = qrcode(typeNumber, errorCorrectionLevel);
         qr.addData(gs1Url);
         qr.make();
-        
+
         container.innerHTML = qr.createImgTag(5, 10);
-        
+
         const img = container.querySelector('img');
-        if(img) {
+        if (img) {
             img.classList.add('rounded-lg');
             // Configurar botón de descarga
             downloadBtn.href = img.src;
             downloadBtn.download = `QR_GS1_${productName.replace(/\\s+/g, '_')}_${gtin}.png`;
         }
-        
+
         modal.showModal();
     } catch (e) {
         console.error("Error generando QR:", e);
