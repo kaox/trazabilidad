@@ -471,7 +471,7 @@ const renderCompanyList = (companies) => {
                 if (cat === 'cafe') icon = '☕ ';
                 if (cat === 'cacao') icon = '🍫 ';
                 if (cat === 'miel') icon = '🍯 ';
-                if (cat === 'queso') icon = '🧀 ';
+                if (cat === 'lacteo') icon = '🧀 ';
                 return `<span class="text-[9px] font-bold bg-stone-100 text-stone-500 px-1.5 py-0.5 rounded border border-stone-200 capitalize">${icon}${cat}</span>`;
             }).join(' ');
             const moreTag = categories.length > 2 ? `<span class="text-[9px] font-bold text-stone-400">+${categories.length - 2}</span>` : '';

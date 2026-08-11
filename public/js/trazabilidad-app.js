@@ -647,7 +647,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (tName.includes('cacao') || tName.includes('chocolate')) tipoProducto = 'cacao';
             else if (tName.includes('cafe') || tName.includes('café')) tipoProducto = 'cafe';
             else if (tName.includes('miel')) tipoProducto = 'miel';
-            else if (tName.includes('queso')) tipoProducto = 'queso';
+            else if (tName.includes('lacteo')) tipoProducto = 'lacteo';
         }
 
         let inputHtml = '';
