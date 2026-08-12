@@ -305,16 +305,26 @@
                                 <div class="border-t border-stone-100 pt-6">
                                     <label class="block text-xs font-bold text-stone-500 uppercase mb-2">Premios
                                         Ganados</label>
-                                    <div class="flex flex-col sm:flex-row gap-2 mb-3 sm:items-end">
-                                        <select id="premio-select"
-                                            class="w-full sm:flex-grow p-2.5 border border-stone-300 rounded-lg text-sm h-[42px] bg-white"></select>
-                                        <div class="flex gap-2 w-full sm:w-auto">
-                                            <input type="number" id="premio-year"
-                                                class="flex-grow sm:flex-none border border-stone-300 rounded-lg text-sm p-2.5 h-[42px] w-full sm:w-24 bg-white"
-                                                placeholder="Año">
-                                            <button type="button" id="add-premio-btn"
-                                                class="bg-stone-800 text-white px-4 rounded-lg hover:bg-black h-[42px] font-bold text-lg leading-none flex items-center justify-center pb-1 flex-shrink-0">+</button>
+                                    <div class="flex flex-col gap-2 mb-3">
+                                        <div class="flex flex-col sm:flex-row gap-2 items-center">
+                                            <div class="relative w-[42px] h-[42px] flex-shrink-0 group cursor-pointer"
+                                                title="Subir logo del premio"
+                                                onclick="document.getElementById('premio-icon-input').click()">
+                                                <img id="premio-icon-preview" src="https://placehold.co/100?text=+"
+                                                    class="w-full h-full object-cover rounded-lg border border-stone-300 hover:border-amber-500 transition bg-white">
+                                                <input type="file" id="premio-icon-input" class="hidden" accept="image/*">
+                                            </div>
+                                            <select id="premio-select"
+                                                class="w-full sm:flex-grow p-2.5 border border-stone-300 rounded-lg text-sm h-[42px] bg-white"></select>
+                                            <div class="flex gap-2 w-full sm:w-auto">
+                                                <input type="number" id="premio-year"
+                                                    class="flex-grow sm:flex-none border border-stone-300 rounded-lg text-sm p-2.5 h-[42px] w-full sm:w-24 bg-white"
+                                                    placeholder="Año">
+                                                <button type="button" id="add-premio-btn"
+                                                    class="bg-stone-800 text-white px-4 rounded-lg hover:bg-black h-[42px] font-bold text-lg leading-none flex items-center justify-center pb-1 flex-shrink-0">+</button>
+                                            </div>
                                         </div>
+                                        <p class="text-[10px] text-stone-400 pl-1">Opcional: Toca el cuadro "+" para subir el logo del premio si no aparece en la lista.</p>
                                     </div>
                                     <div id="premios-list" class="space-y-2"></div>
                                 </div>

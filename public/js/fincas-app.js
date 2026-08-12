@@ -42,6 +42,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let allPremios = [];
     let currentFincaPremios = [];
+    let currentPremioIcon = null;
     let allCertifications = [];
     let currentFincaCertifications = [];
     let currentImages = [];
@@ -387,6 +388,28 @@ document.addEventListener('DOMContentLoaded', () => {
         locateBtn.addEventListener('click', locateUser);
         addPremioBtn.addEventListener('click', handleAddPremio);
         premiosListContainer.addEventListener('click', handlePremioAction);
+        const premioIconInput = document.getElementById('premio-icon-input');
+        const premioIconPreview = document.getElementById('premio-icon-preview');
+        if (premioIconInput) {
+            premioIconInput.addEventListener('change', async function (e) {
+                const file = e.target.files[0];
+                if (file) {
+                    if (file.size > 5 * 1024 * 1024) {
+                        alert("El logo del premio debe pesar menos de 5MB");
+                        this.value = '';
+                        return;
+                    }
+                    try {
+                        const base64 = await compressImage(file);
+                        currentPremioIcon = base64;
+                        if (premioIconPreview) premioIconPreview.src = base64;
+                    } catch (err) {
+                        console.error(err);
+                        alert("Error al procesar el logo del premio");
+                    }
+                }
+            });
+        }
         productorFotoInput.addEventListener('change', handleProductorFotoUpload);
         // Nuevo Event Listener
         validateDeforestationBtn.addEventListener('click', handleDeforestationValidation);
@@ -623,6 +646,11 @@ document.addEventListener('DOMContentLoaded', () => {
         currentImages = [];
         currentFincaCertifications = [];
         currentFincaPremios = [];
+        currentPremioIcon = null;
+        const premioIconInput = document.getElementById('premio-icon-input');
+        const premioIconPreview = document.getElementById('premio-icon-preview');
+        if (premioIconInput) premioIconInput.value = '';
+        if (premioIconPreview) premioIconPreview.src = 'https://placehold.co/100?text=+';
         productorFotoPreview.src = 'https://placehold.co/100x100/e0e0e0/757575?text=Productor';
         fotoProductorHiddenInput.value = '';
         renderImagePreviews();
@@ -728,45 +756,73 @@ document.addEventListener('DOMContentLoaded', () => {
         const premioId = parseInt(premioSelect.value, 10);
         const ano = premioYearInput.value;
 
-        if (!premioId || !ano) {
-            alert('Por favor, selecciona un premio y especifica el año.');
+        if (!premioId && !currentPremioIcon) {
+            alert('Por favor, selecciona un premio o sube el logo del premio.');
+            return;
+        }
+
+        if (!ano) {
+            alert('Por favor, especifica el año del premio.');
             return;
         }
 
         const premio = allPremios.find(p => p.id === premioId);
-        if (premio) {
-            const yaExiste = currentFincaPremios.some(p => p.id === premioId && p.ano === ano);
-            if (yaExiste) {
-                alert('Este premio ya ha sido añadido para el año especificado.');
-                return;
-            }
-            currentFincaPremios.push({ id: premioId, nombre: premio.nombre, logo_url: premio.logo_url, ano });
-            renderAddedPremios();
-            premioSelect.value = '';
-            premioYearInput.value = '';
+        const nombre = premio ? premio.nombre : (premioSelect.options[premioSelect.selectedIndex]?.text || 'Premio');
+        let logoUrl = null;
+
+        if (currentPremioIcon) {
+            logoUrl = currentPremioIcon;
+        } else if (premio && premio.logo_url) {
+            logoUrl = premio.logo_url;
         }
+
+        const yaExiste = currentFincaPremios.some(p => (premioId ? p.id === premioId : p.nombre === nombre) && (p.ano === ano || p.year === ano));
+        if (yaExiste) {
+            alert('Este premio ya ha sido añadido para el año especificado.');
+            return;
+        }
+
+        currentFincaPremios.push({ id: premioId || Date.now(), nombre, logo_url: logoUrl, ano });
+        renderAddedPremios();
+        premioSelect.value = '';
+        premioYearInput.value = '';
+
+        const premioIconInput = document.getElementById('premio-icon-input');
+        const premioIconPreview = document.getElementById('premio-icon-preview');
+        if (premioIconInput) premioIconInput.value = '';
+        if (premioIconPreview) premioIconPreview.src = 'https://placehold.co/100?text=+';
+        currentPremioIcon = null;
     }
 
     function handlePremioAction(e) {
-        if (e.target.classList.contains('delete-premio-btn')) {
-            const premioId = parseInt(e.target.dataset.id, 10);
-            const ano = e.target.dataset.year;
-            currentFincaPremios = currentFincaPremios.filter(p => !(p.id === premioId && p.ano === ano));
+        const btn = e.target.closest('.delete-premio-btn');
+        if (btn) {
+            const index = parseInt(btn.dataset.index, 10);
+            if (!isNaN(index)) {
+                currentFincaPremios.splice(index, 1);
+            } else {
+                const premioId = parseInt(btn.dataset.id, 10);
+                const ano = btn.dataset.year;
+                currentFincaPremios = currentFincaPremios.filter(p => !(p.id === premioId && (p.ano === ano || p.year === ano)));
+            }
             renderAddedPremios();
         }
     }
 
     function renderAddedPremios() {
-        premiosListContainer.innerHTML = currentFincaPremios.map(premio => `
+        premiosListContainer.innerHTML = currentFincaPremios.map((premio, i) => `
             <div class="flex items-center justify-between p-2 border rounded-lg">
                 <div class="flex items-center gap-3">
-                    <img src="${premio.logo_url}" alt="${premio.nombre}" class="w-8 h-8 rounded-full">
+                    ${premio.logo_url
+                        ? `<img src="${premio.logo_url}" alt="${premio.nombre}" class="w-8 h-8 rounded-full object-contain">`
+                        : `<div class="w-8 h-8 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center text-xs font-bold"><i class="fas fa-trophy"></i></div>`
+                    }
                     <div>
                         <p class="font-semibold text-sm">${premio.nombre}</p>
-                        <p class="text-xs text-stone-500">Año: ${premio.ano}</p>
+                        <p class="text-xs text-stone-500">Año: ${premio.ano || premio.year}</p>
                     </div>
                 </div>
-                <button type="button" data-id="${premio.id}" data-year="${premio.ano}" class="delete-premio-btn text-red-500 hover:text-red-700 font-bold">&times;</button>
+                <button type="button" data-index="${i}" data-id="${premio.id}" data-year="${premio.ano || premio.year}" class="delete-premio-btn text-red-500 hover:text-red-700 font-bold">&times;</button>
             </div>
         `).join('');
     }
