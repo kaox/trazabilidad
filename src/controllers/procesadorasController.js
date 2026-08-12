@@ -1,6 +1,6 @@
 const ProcesadoraModel = require('../models/procesadoraModel');
 const { safeJSONParse, sanitizeNumber } = require('../utils/helpers');
-const { processImagesArray, deleteImagesArray } = require('../utils/storage');
+const { processImagesArray, deleteImagesArray, uploadImageBase64 } = require('../utils/storage');
 
 const provider = 'supabase';
 
@@ -28,11 +28,22 @@ const createProcesadora = async (req, res) => {
 
     const procesadasImagenes = await processImagesArray(imagenes_json, 'procesadoras', userId, provider);
 
+    let procesadosPremios = typeof premios_json === 'string' ? safeJSONParse(premios_json || '[]') : (premios_json || []);
+    if (!Array.isArray(procesadosPremios)) procesadosPremios = [];
+    for (let i = 0; i < procesadosPremios.length; i++) {
+        if (procesadosPremios[i] && procesadosPremios[i].logo_url && typeof procesadosPremios[i].logo_url === 'string' && procesadosPremios[i].logo_url.startsWith('data:image/')) {
+            try {
+                const fname = `procesadoras/premio-${id}-${Date.now()}-${i}`;
+                procesadosPremios[i].logo_url = await uploadImageBase64(procesadosPremios[i].logo_url, fname, provider);
+            } catch (err) { console.error("Error subiendo logo de premio en procesadora:", err); }
+        }
+    }
+
     try {
         await ProcesadoraModel.create({
             id, user_id: userId, ruc, razon_social, nombre_comercial, tipo,
             pais, ciudad, departamento, provincia, distrito, direccion, telefono,
-            premios_json, certificaciones_json, coordenadas,
+            premios_json: procesadosPremios, certificaciones_json, coordenadas,
             imagenes_json: procesadasImagenes,
             historia, video_link, numero_trabajadores
         });
@@ -49,6 +60,17 @@ const updateProcesadora = async (req, res) => {
 
     const procesadasImagenes = await processImagesArray(imagenes_json, 'procesadoras', userId, provider);
 
+    let procesadosPremios = typeof premios_json === 'string' ? safeJSONParse(premios_json || '[]') : (premios_json || []);
+    if (!Array.isArray(procesadosPremios)) procesadosPremios = [];
+    for (let i = 0; i < procesadosPremios.length; i++) {
+        if (procesadosPremios[i] && procesadosPremios[i].logo_url && typeof procesadosPremios[i].logo_url === 'string' && procesadosPremios[i].logo_url.startsWith('data:image/')) {
+            try {
+                const fname = `procesadoras/premio-${id}-${Date.now()}-${i}`;
+                procesadosPremios[i].logo_url = await uploadImageBase64(procesadosPremios[i].logo_url, fname, provider);
+            } catch (err) { console.error("Error subiendo logo de premio en update procesadora:", err); }
+        }
+    }
+
     try {
         const oldProcesadora = await ProcesadoraModel.getByIdAndUserId(id, userId);
         if (!oldProcesadora) return res.status(404).json({ error: "Procesadora no encontrada o no tienes permiso." });
@@ -64,7 +86,7 @@ const updateProcesadora = async (req, res) => {
         await ProcesadoraModel.update(id, userId, {
             ruc, razon_social, nombre_comercial, tipo,
             pais, ciudad, departamento, provincia, distrito, direccion, telefono,
-            premios_json, certificaciones_json, coordenadas,
+            premios_json: procesadosPremios, certificaciones_json, coordenadas,
             imagenes_json: procesadasImagenes,
             historia, video_link, numero_trabajadores
         });

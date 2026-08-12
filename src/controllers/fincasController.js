@@ -40,6 +40,17 @@ const createFinca = async (req, res) => {
         foto_productor_url = foto_productor;
     }
 
+    let procesadosPremios = typeof premios_json === 'string' ? safeJSONParse(premios_json || '[]') : (premios_json || []);
+    if (!Array.isArray(procesadosPremios)) procesadosPremios = [];
+    for (let i = 0; i < procesadosPremios.length; i++) {
+        if (procesadosPremios[i] && procesadosPremios[i].logo_url && typeof procesadosPremios[i].logo_url === 'string' && procesadosPremios[i].logo_url.startsWith('data:image/')) {
+            try {
+                const fname = `fincas/premio-${id}-${Date.now()}-${i}`;
+                procesadosPremios[i].logo_url = await uploadImageBase64(procesadosPremios[i].logo_url, fname, provider);
+            } catch (err) { console.error("Error subiendo logo de premio en finca:", err); }
+        }
+    }
+
     try {
         await FincaModel.create({
             id: safeParam(id),
@@ -60,7 +71,7 @@ const createFinca = async (req, res) => {
             imagenes_json: JSON.stringify(procesadasImagenes) || '[]',
             video_link: safeParam(video_link),
             certificaciones_json: certificaciones_json || [],
-            premios_json: premios_json || [],
+            premios_json: JSON.stringify(procesadosPremios),
             foto_productor: safeParam(foto_productor_url),
             numero_trabajadores: safeParam(numero_trabajadores)
         });
@@ -80,6 +91,17 @@ const updateFinca = async (req, res) => {
     numero_trabajadores = sanitizeNumber(numero_trabajadores);
 
     const procesadasImagenes = await processImagesArray(imagenes_json, 'fincas', userId, provider);
+
+    let procesadosPremios = typeof premios_json === 'string' ? safeJSONParse(premios_json || '[]') : (premios_json || []);
+    if (!Array.isArray(procesadosPremios)) procesadosPremios = [];
+    for (let i = 0; i < procesadosPremios.length; i++) {
+        if (procesadosPremios[i] && procesadosPremios[i].logo_url && typeof procesadosPremios[i].logo_url === 'string' && procesadosPremios[i].logo_url.startsWith('data:image/')) {
+            try {
+                const fname = `fincas/premio-${id}-${Date.now()}-${i}`;
+                procesadosPremios[i].logo_url = await uploadImageBase64(procesadosPremios[i].logo_url, fname, provider);
+            } catch (err) { console.error("Error subiendo logo de premio en update finca:", err); }
+        }
+    }
 
     try {
         const oldFinca = await FincaModel.getByIdAndUserId(id, userId);
@@ -106,7 +128,7 @@ const updateFinca = async (req, res) => {
         }
 
         const result = await FincaModel.update(id, userId, {
-            propietario, dni_ruc, nombre_finca, pais, departamento, provincia, distrito, ciudad, altura, superficie, coordenadas, telefono, historia, imagenes_json: JSON.stringify(procesadasImagenes), video_link, certificaciones_json, premios_json, foto_productor: foto_productor_url, numero_trabajadores
+            propietario, dni_ruc, nombre_finca, pais, departamento, provincia, distrito, ciudad, altura, superficie, coordenadas, telefono, historia, imagenes_json: JSON.stringify(procesadasImagenes), video_link, certificaciones_json, premios_json: JSON.stringify(procesadosPremios), foto_productor: foto_productor_url, numero_trabajadores
         });
         if (result.changes === 0) return res.status(404).json({ error: "Finca no encontrada o no tienes permiso." });
         res.status(200).json({ message: "Finca actualizada" });
