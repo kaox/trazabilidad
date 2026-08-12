@@ -5,6 +5,7 @@
 const CompanyProfile = require('../models/CompanyProfile');
 const { get } = require('../config/db.js'); // Importamos 'get' temporalmente para el fallback
 const { processImagesArray, deleteImagesArray } = require('../utils/storage');
+const { addDomainToVercel, removeDomainFromVercel } = require('../utils/vercelDomains');
 
 const PROVIDER = 'vercel';//'vercel'
 
@@ -95,6 +96,34 @@ const companyProfileController = {
                 }
             }
 
+            // Validación de Dominio Personalizado
+            if (profileData.custom_domain) {
+                const rawDomain = profileData.custom_domain
+                    .replace(/^https?:\/\//, '')
+                    .replace(/\/$/, '')
+                    .toLowerCase()
+                    .trim();
+
+                // Formato básico de dominio
+                const domainRegex = /^([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,}$/;
+                if (!domainRegex.test(rawDomain)) {
+                    return res.status(400).json({ error: "El dominio personalizado no tiene un formato válido. Ej: miempresa.com" });
+                }
+
+                // No puede ser un subdominio de rurulab.com
+                if (rawDomain.endsWith('.rurulab.com')) {
+                    return res.status(400).json({ error: "Usa el campo de Subdominio para dominios .rurulab.com." });
+                }
+
+                // Unicidad
+                const isDomainAvailable = await CompanyProfile.isCustomDomainAvailable(rawDomain, userId);
+                if (!isDomainAvailable) {
+                    return res.status(400).json({ error: "Este dominio ya está siendo usado por otra empresa." });
+                }
+
+                profileData.custom_domain = rawDomain;
+            }
+
             // Buscamos el perfil antiguo por si necesitamos borrar su logo
             let oldLogo = null;
             try {
@@ -129,11 +158,29 @@ const companyProfileController = {
             // Ejecutamos el Upsert en el modelo
             const profileId = await CompanyProfile.upsert(userId, profileData);
 
+            // --- REGISTRO AUTOMÁTICO EN VERCEL ---
+            // Si el cliente guardó un dominio personalizado nuevo, lo registramos en Vercel
+            // para que el SSL (Let's Encrypt) se active automáticamente.
+            if (profileData.custom_domain) {
+                const oldProfile = await CompanyProfile.findByUserId(userId);
+                const previousDomain = oldProfile?.custom_domain;
+
+                // Si cambió el dominio, eliminar el anterior de Vercel
+                if (previousDomain && previousDomain !== profileData.custom_domain) {
+                    await removeDomainFromVercel(previousDomain);
+                }
+
+                // Registrar el nuevo dominio (idempotente: no falla si ya existe)
+                const vercelResult = await addDomainToVercel(profileData.custom_domain);
+                console.log(`Vercel domain registration result for '${profileData.custom_domain}':`, vercelResult.status);
+            }
+
             // Respondemos con éxito
             res.status(200).json({
                 message: "Perfil comercial guardado exitosamente.",
                 id: profileId,
-                user_id: userId
+                user_id: userId,
+                custom_domain_registered: !!profileData.custom_domain
             });
 
         } catch (error) {

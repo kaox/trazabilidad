@@ -612,6 +612,14 @@ async function initializeDatabase() {
             await runQuery(db, `ALTER TABLE users ADD COLUMN subscription_expires_at TIMESTAMP`);
             console.log("Columna 'subscription_expires_at' en 'users' lista.");
 
+            // Migraciones para custom_domain (dominios personalizados de clientes)
+            await runQuery(db, `ALTER TABLE company_profiles ADD COLUMN subdomain TEXT`);
+            await runQuery(db, `ALTER TABLE company_profiles ADD COLUMN white_label_config TEXT`);
+            await runQuery(db, `ALTER TABLE company_profiles ADD COLUMN custom_domain TEXT`);
+            await runQuery(db, `CREATE UNIQUE INDEX IF NOT EXISTS idx_company_profiles_custom_domain ON company_profiles(custom_domain) WHERE custom_domain IS NOT NULL`);
+            await runQuery(db, `CREATE INDEX IF NOT EXISTS idx_company_profiles_subdomain ON company_profiles(subdomain) WHERE subdomain IS NOT NULL`);
+            console.log("Columnas 'subdomain', 'white_label_config', 'custom_domain' en 'company_profiles' listas.");
+
             console.log('Esquema de base de datos listo.');
 
         } catch (error) {

@@ -49,6 +49,51 @@ const CompanyProfile = {
     },
 
     /**
+     * Verifica si un custom_domain ya está en uso por otro usuario.
+     */
+    isCustomDomainAvailable: async (domain, excludeUserId) => {
+        try {
+            const sql = 'SELECT id FROM company_profiles WHERE custom_domain = ? AND user_id != ?';
+            const row = await get(sql, [domain.toLowerCase(), excludeUserId]);
+            return !row;
+        } catch (error) {
+            console.error('Error in CompanyProfile.isCustomDomainAvailable:', error);
+            throw error;
+        }
+    },
+
+    /**
+     * Busca un perfil por su dominio personalizado registrado.
+     * Usado en el middleware del servidor para detectar dominios custom.
+     */
+    findByCustomDomain: async (domain) => {
+        try {
+            const cleanDomain = domain.replace(/^https?:\/\//, '').replace(/\/$/, '').toLowerCase().trim();
+            const sql = `
+                SELECT 
+                    cp.user_id AS id,
+                    cp.name AS empresa,
+                    cp.logo_url AS company_logo,
+                    cp.subdomain,
+                    cp.custom_domain,
+                    cp.white_label_config,
+                    COALESCE(f.provincia, p.provincia) AS provincia,
+                    COALESCE(f.departamento, p.departamento) AS departamento,
+                    COALESCE(f.pais, p.pais) AS pais
+                FROM company_profiles cp
+                LEFT JOIN fincas f ON cp.company_id = f.id AND cp.company_type = 'finca'
+                LEFT JOIN procesadoras p ON cp.company_id = p.id AND cp.company_type = 'procesadora'
+                WHERE LOWER(cp.custom_domain) = ? AND cp.is_published IS TRUE
+                LIMIT 1
+            `;
+            return await get(sql, [cleanDomain]) || null;
+        } catch (error) {
+            console.error('Error in CompanyProfile.findByCustomDomain:', error);
+            return null;
+        }
+    },
+
+    /**
      * Crea o actualiza un perfil comercial (Upsert logic).
      */
     upsert: async (userId, data) => {
@@ -56,6 +101,9 @@ const CompanyProfile = {
             const existingProfile = await get('SELECT id FROM company_profiles WHERE user_id = ?', [userId]);
             const isPublished = data.is_published === true || data.is_published === 'true';
             const subdomain = data.subdomain ? data.subdomain.toLowerCase().trim() : null;
+            const customDomain = data.custom_domain
+                ? data.custom_domain.replace(/^https?:\/\//, '').replace(/\/$/, '').toLowerCase().trim()
+                : null;
 
             // Convertimos el array de categorías a un String JSON para guardarlo
             const productCategoriesJson = data.product_categories ? JSON.stringify(data.product_categories) : '[]';
@@ -77,11 +125,12 @@ const CompanyProfile = {
                 data.social_instagram || null,
                 data.social_facebook || null,
                 data.website_url || null,
-                isPublished, 
+                isPublished,
                 productCategoriesJson,
                 subdomain,
                 whiteLabelConfig,
-                userId 
+                customDomain,
+                userId
             ];
 
             if (existingProfile) {
@@ -103,6 +152,7 @@ const CompanyProfile = {
                         product_categories = ?,
                         subdomain = ?,
                         white_label_config = ?,
+                        custom_domain = ?,
                         updated_at = CURRENT_TIMESTAMP
                     WHERE user_id = ?
                 `;
@@ -116,8 +166,8 @@ const CompanyProfile = {
                         id, company_type, company_id, name, logo_url, cover_image_url, 
                         history_text, contact_email, contact_phone, 
                         social_instagram, social_facebook, website_url, is_published, 
-                        product_categories, subdomain, white_label_config, user_id
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        product_categories, subdomain, white_label_config, custom_domain, user_id
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 `;
                 const insertParams = [newId, ...params];
                 await run(sql, insertParams);

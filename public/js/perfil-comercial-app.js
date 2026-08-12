@@ -93,6 +93,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     document.getElementById('subdomain').value = response.subdomain || '';
                 }
 
+                if (response.custom_domain) {
+                    const customDomainInput = document.getElementById('custom_domain');
+                    if (customDomainInput) customDomainInput.value = response.custom_domain || '';
+                }
+
                 // Guardar ID en memoria para setearlo en el Select dinámico
                 savedCompanyId = response.company_id || null;
 
@@ -276,6 +281,11 @@ document.addEventListener('DOMContentLoaded', () => {
         // Limpiar subdominio
         if (data.subdomain) {
             data.subdomain = createSlug(data.subdomain);
+        }
+
+        // Limpiar dominio personalizado
+        if (data.custom_domain) {
+            data.custom_domain = data.custom_domain.replace(/^https?:\/\//, '').replace(/\/$/, '').toLowerCase().trim();
         }
 
         try {

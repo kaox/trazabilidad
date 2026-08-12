@@ -16,6 +16,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 const EmpresaModel = require('./src/models/empresaModel');
+const CompanyProfile = require('./src/models/CompanyProfile');
 
 const suggestionsController = require('./src/controllers/admin-suggestionsController');
 const adminPaymentsController = require('./src/controllers/adminPaymentsController');
@@ -50,21 +51,46 @@ app.get('/ENV-5W8BL4HE', (req, res) => {
 });
 
 app.use(async (req, res, next) => {
-    const host = req.headers.host; // ej: pepito.rurulab.com o pepito.localhost:3000
+    const host = req.headers.host; // ej: pepito.rurulab.com o burgos.com
 
     let subdomain = null;
+    let isCustomDomain = false;
 
-    // Lógica para extraer subdominio (Prod y Local)
-    if (host.includes('.rurulab.com')) {
-        const parts = host.split('.');
-        if (parts.length > 2) subdomain = parts[0];
-    } else if (host.endsWith('localhost:3000') && host !== 'localhost:3000') {
-        // Para probar en local: editar /etc/hosts y entrar a pepito.localhost:3000
-        subdomain = host.split('.')[0];
+    // --- PRIORIDAD 1: ¿Es un dominio personalizado registrado? ---
+    // Si el host no es rurulab.com ni localhost, buscar en la BD
+    if (
+        !host.includes('.rurulab.com') &&
+        !host.includes('rurulab.com') &&
+        !host.includes('localhost') &&
+        !host.includes('vercel.app') &&
+        host.includes('.') // Debe tener al menos un punto (descarta 'localhost')
+    ) {
+        const cacheKey = `customdomain:${host}`;
+        let company = await getCache(cacheKey);
+        if (!company) {
+            company = await CompanyProfile.findByCustomDomain(host);
+            if (company) await setCache(cacheKey, company, 3600);
+        }
+        if (company) {
+            console.log(`🌐 Dominio personalizado detectado: ${host} → ${company.empresa}`);
+            isCustomDomain = true;
+            // Inyectar en req para que el handler de landing lo use
+            req._customDomainCompany = company;
+        }
     }
 
-    // Si no hay subdominio o es reservado, continuar flujo normal (ir al Home/App)
-    if (!subdomain || RESERVED_SUBDOMAINS.includes(subdomain)) {
+    // --- PRIORIDAD 2: ¿Es un subdominio de .rurulab.com? ---
+    if (!isCustomDomain) {
+        if (host.includes('.rurulab.com')) {
+            const parts = host.split('.');
+            if (parts.length > 2) subdomain = parts[0];
+        } else if (host.endsWith('localhost:3000') && host !== 'localhost:3000') {
+            subdomain = host.split('.')[0];
+        }
+    }
+
+    // Si no hay subdominio ni custom domain, o es reservado, continuar flujo normal
+    if (!isCustomDomain && (!subdomain || RESERVED_SUBDOMAINS.includes(subdomain))) {
         return next();
     }
 
@@ -143,19 +169,24 @@ app.use(async (req, res, next) => {
     }
 
     try {
-        console.log(`🔍 Detectado subdominio: ${subdomain}`);
-
-        const cacheKey = `subdomain:${subdomain}`;
-        let company = await getCache(cacheKey);
+        let company = req._customDomainCompany;
 
         if (!company) {
-            // Buscar empresa cuyo subdominio personalizado o slug coincida con el subdominio de forma optimizada
-            company = await EmpresaModel.findCompanyBySubdomainOrSlug(subdomain);
-            if (company) {
-                await setCache(cacheKey, company, 3600); // Cache por 1 hora
+            console.log(`🔍 Detectado subdominio: ${subdomain}`);
+            const cacheKey = `subdomain:${subdomain}`;
+            company = await getCache(cacheKey);
+
+            if (!company) {
+                // Buscar empresa cuyo subdominio personalizado o slug coincida con el subdominio de forma optimizada
+                company = await EmpresaModel.findCompanyBySubdomainOrSlug(subdomain);
+                if (company) {
+                    await setCache(cacheKey, company, 3600); // Cache por 1 hora
+                }
+            } else {
+                console.log(`⚡ Cache HIT para subdominio: ${subdomain}`);
             }
         } else {
-            console.log(`⚡ Cache HIT para subdominio: ${subdomain}`);
+            console.log(`🌐 Usando empresa desde dominio personalizado: ${company.empresa}`);
         }
 
         console.log(company);
