@@ -730,6 +730,19 @@
         grid-template-columns: 1fr;
       }
     }
+
+    /* ── CAROUSEL DOTS ACTIVE STATE ── */
+    .dot-active {
+      background-color: #fff !important;
+      opacity: 1 !important;
+      transform: scale(1.2);
+    }
+
+    .dot-dark-active {
+      background-color: #1c1917 !important;
+      opacity: 1 !important;
+      transform: scale(1.2);
+    }
   </style>
 </head>
 
@@ -740,107 +753,171 @@
   <!-- ════════════════════════════════════════
        1. HERO
   ════════════════════════════════════════ -->
-  <header class="hero-bg flex items-center" role="banner">
-    <div class="container mx-auto px-6 py-24 grid lg:grid-cols-2 gap-16 items-center">
+  <section class="relative overflow-hidden group" role="banner" id="hero-carousel">
 
-      <!-- Copy -->
-      <div class="text-white">
-        <div class="pill bg-amber-500/20 text-amber-300 border border-amber-400/30 mb-8 backdrop-blur-sm reveal">
-          <i class="fas fa-satellite-dish"></i> Validación EUDR Satelital &amp; GS1 Digital Link
-        </div>
+    <!-- Slides Container -->
+    <div class="flex transition-transform duration-700 ease-[cubic-bezier(0.25,1,0.5,1)] w-full" id="carousel-track"
+      style="transform: translateX(0%);">
 
-        <h1 class="text-4xl md:text-6xl font-black leading-[1.05] mb-8 reveal" style="animation-delay:.1s"
-          data-i18n="hero.title">
-          La Historia de tu Origen,<br>
-          <span class="grad-amber italic">Validada por el&nbsp;Mundo.</span>
-        </h1>
-
-        <p class="text-lg md:text-xl text-stone-300 max-w-lg leading-relaxed mb-10 reveal" style="animation-delay:.2s"
-          data-i18n="hero.subtitle">
-          Blockchain, Trazabilidad y Marketing de Especialidad para Productores de Cacao y Café que buscan diferenciar
-          su&nbsp;marca.
-        </p>
-
-        <div class="flex flex-wrap gap-4 reveal" style="animation-delay:.3s">
-          <a href="/login.html" id="cta-hero-register"
-            class="inline-flex items-center gap-2 bg-amber-600 hover:bg-amber-700 text-white font-bold py-4 px-8 rounded-2xl shadow-xl transition-all transform hover:-translate-y-1 text-base">
-            <i class="fas fa-rocket"></i> Comenzar Gratis
-          </a>
-          <a href="/origen-unico" id="cta-hero-marketplace"
-            class="inline-flex items-center gap-2 glass hover:bg-white/15 text-white font-bold py-4 px-8 rounded-2xl transition-all text-base">
-            Explorar el Marketplace <i class="fas fa-arrow-right"></i>
-          </a>
-        </div>
-
-        <!-- Micro-stats -->
-        <div class="flex flex-wrap gap-6 mt-12 reveal" style="animation-delay:.4s">
-          <div class="text-center">
-            <p class="text-3xl font-black text-amber-400" id="stat-batches">0</p>
-            <p class="text-xs text-stone-400 uppercase tracking-widest" data-i18n="stats.batches">Lotes Verificados</p>
-          </div>
-          <div class="w-px bg-white/10"></div>
-          <div class="text-center">
-            <p class="text-3xl font-black text-amber-400" id="stat-hectares">0</p>
-            <p class="text-xs text-stone-400 uppercase tracking-widest" data-i18n="stats.hectares">Hectáreas</p>
-          </div>
-          <div class="w-px bg-white/10"></div>
-          <div class="text-center">
-            <p class="text-3xl font-black text-amber-400" id="stat-countries">0</p>
-            <p class="text-xs text-stone-400 uppercase tracking-widest" data-i18n="stats.countries">Países</p>
-          </div>
-        </div>
-      </div>
-
-      <!-- Hero Showcase: Web & Mobile -->
-      <div
-        class="flex justify-center relative w-full max-w-lg lg:max-w-xl mx-auto float-anim reveal mt-6 lg:mt-0 px-2 sm:px-0"
-        style="animation-delay:.35s">
-
-        <!-- Mockup Escritorio (Detrás) -->
-        <div
-          class="relative w-full rounded-2xl overflow-hidden shadow-2xl border border-white/20 bg-stone-900/80 backdrop-blur-md">
-          <!-- Barra superior navegabilidad (Estilo Mac Browser) -->
-          <div class="flex items-center justify-between px-4 py-2.5 bg-stone-900/90 border-b border-white/10">
-            <div class="flex items-center gap-1.5">
-              <div class="w-3 h-3 rounded-full bg-red-500/80"></div>
-              <div class="w-3 h-3 rounded-full bg-amber-500/80"></div>
-              <div class="w-3 h-3 rounded-full bg-green-500/80"></div>
+      <!-- ================= SLIDE 1 ================= -->
+      <div class="w-full flex-shrink-0 hero-bg flex items-center relative py-16 lg:py-24" data-theme="dark">
+        <div class="container mx-auto px-6 grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+          <!-- Copy -->
+          <div class="text-white">
+            <div class="pill bg-amber-500/20 text-amber-300 border border-amber-400/30 mb-8 backdrop-blur-sm">
+              <i class="fas fa-satellite-dish"></i> Validación EUDR Satelital &amp; GS1 Digital Link
             </div>
+
+            <h1 class="text-4xl md:text-6xl font-black leading-[1.05] mb-8" data-i18n="hero.title">
+              La Historia de tu Origen,<br>
+              <span class="grad-amber italic">Validada por el&nbsp;Mundo.</span>
+            </h1>
+
+            <p class="text-lg md:text-xl text-stone-300 max-w-lg leading-relaxed mb-10" data-i18n="hero.subtitle">
+              Blockchain, Trazabilidad y Marketing de Especialidad para Productores de Cacao y Café que buscan
+              diferenciar
+              su&nbsp;marca.
+            </p>
+
+            <div class="flex flex-wrap gap-4">
+              <a href="/login.html"
+                class="inline-flex items-center gap-2 bg-amber-600 hover:bg-amber-700 text-white font-bold py-4 px-8 rounded-2xl shadow-xl transition-all transform hover:-translate-y-1 text-base">
+                <i class="fas fa-rocket"></i> Comenzar Gratis
+              </a>
+              <a href="/origen-unico"
+                class="inline-flex items-center gap-2 glass hover:bg-white/15 text-white font-bold py-4 px-8 rounded-2xl transition-all text-base">
+                Explorar el Marketplace <i class="fas fa-arrow-right"></i>
+              </a>
+            </div>
+
+            <!-- Micro-stats -->
+            <div class="flex flex-wrap gap-6 mt-12">
+              <div class="text-center">
+                <p class="text-3xl font-black text-amber-400" id="stat-batches">0</p>
+                <p class="text-xs text-stone-400 uppercase tracking-widest" data-i18n="stats.batches">Lotes Verificados
+                </p>
+              </div>
+              <div class="w-px bg-white/10"></div>
+              <div class="text-center">
+                <p class="text-3xl font-black text-amber-400" id="stat-hectares">0</p>
+                <p class="text-xs text-stone-400 uppercase tracking-widest" data-i18n="stats.hectares">Hectáreas</p>
+              </div>
+              <div class="w-px bg-white/10"></div>
+              <div class="text-center">
+                <p class="text-3xl font-black text-amber-400" id="stat-countries">0</p>
+                <p class="text-xs text-stone-400 uppercase tracking-widest" data-i18n="stats.countries">Países</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Hero Showcase: Web & Mobile -->
+          <div class="flex justify-center relative w-full max-w-lg lg:max-w-xl mx-auto mt-6 lg:mt-0 px-2 sm:px-0">
+            <!-- Mockup Escritorio -->
             <div
-              class="bg-stone-800/80 border border-white/10 rounded-md px-3 py-1 text-[10px] text-stone-300 font-mono flex items-center gap-1.5 max-w-[200px] sm:max-w-[260px] truncate">
-              <i class="fas fa-lock text-[9px] text-emerald-400"></i>
-              <span class="truncate">belia.rurulab.com</span>
+              class="relative w-full rounded-2xl overflow-hidden shadow-2xl border border-white/20 bg-stone-900/80 backdrop-blur-md">
+              <div class="flex items-center justify-between px-4 py-2.5 bg-stone-900/90 border-b border-white/10">
+                <div class="flex items-center gap-1.5">
+                  <div class="w-3 h-3 rounded-full bg-red-500/80"></div>
+                  <div class="w-3 h-3 rounded-full bg-amber-500/80"></div>
+                  <div class="w-3 h-3 rounded-full bg-green-500/80"></div>
+                </div>
+                <div
+                  class="bg-stone-800/80 border border-white/10 rounded-md px-3 py-1 text-[10px] text-stone-300 font-mono flex items-center gap-1.5 max-w-[200px] sm:max-w-[260px] truncate">
+                  <i class="fas fa-lock text-[9px] text-emerald-400"></i>
+                  <span class="truncate">belia.rurulab.com</span>
+                </div>
+                <div class="w-10 text-right">
+                  <i class="fas fa-ellipsis-h text-stone-500 text-xs"></i>
+                </div>
+              </div>
+              <div class="relative w-full h-[250px] sm:h-[340px] lg:h-[380px] overflow-hidden bg-stone-950">
+                <img src="/images/belia-cafe-organico.png" alt="Vista web de perfil de origen"
+                  class="w-full h-full object-cover object-top">
+              </div>
             </div>
-            <div class="w-10 text-right">
-              <i class="fas fa-ellipsis-h text-stone-500 text-xs"></i>
+            <!-- Mockup Móvil -->
+            <div
+              class="absolute -bottom-6 -right-2 sm:-bottom-8 sm:-right-4 w-[140px] sm:w-[190px] lg:w-[210px] h-[260px] sm:h-[350px] lg:h-[390px] rounded-[2rem] sm:rounded-[2.4rem] border-[5px] sm:border-[7px] border-stone-800 bg-stone-900 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.7)] z-20 transform -rotate-1 hover:rotate-0 transition-all duration-300">
+              <div
+                class="absolute top-0 left-1/2 -translate-x-1/2 w-14 sm:w-16 h-3 sm:h-3.5 bg-stone-800 rounded-b-xl z-30">
+              </div>
+              <div class="w-full h-full rounded-[1.6rem] sm:rounded-[1.9rem] overflow-hidden relative bg-stone-950">
+                <img src="/images/belia-cafe-organico_movil.png" alt="Vista móvil del perfil"
+                  class="w-full h-full object-cover object-top">
+              </div>
             </div>
-          </div>
-
-          <!-- Contenedor con la imagen alineada desde el top -->
-          <div class="relative w-full h-[250px] sm:h-[340px] lg:h-[380px] overflow-hidden bg-stone-950">
-            <img src="/images/belia-cafe-organico.png" alt="Vista web de perfil de origen"
-              class="w-full h-full object-cover object-top">
           </div>
         </div>
-
-        <!-- Mockup Móvil (Superpuesto delante) -->
-        <div
-          class="absolute -bottom-6 -right-2 sm:-bottom-8 sm:-right-4 w-[140px] sm:w-[190px] lg:w-[210px] h-[260px] sm:h-[350px] lg:h-[390px] rounded-[2rem] sm:rounded-[2.4rem] border-[5px] sm:border-[7px] border-stone-800 bg-stone-900 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.7)] z-20 transform -rotate-1 hover:rotate-0 transition-all duration-300">
-          <!-- Notch del smartphone -->
-          <div
-            class="absolute top-0 left-1/2 -translate-x-1/2 w-14 sm:w-16 h-3 sm:h-3.5 bg-stone-800 rounded-b-xl z-30">
-          </div>
-
-          <!-- Pantalla con la captura ajustada al top -->
-          <div class="w-full h-full rounded-[1.6rem] sm:rounded-[1.9rem] overflow-hidden relative bg-stone-950">
-            <img src="/images/belia-cafe-organico_movil.png" alt="Vista móvil del perfil"
-              class="w-full h-full object-cover object-top">
-          </div>
-        </div>
-
       </div>
+
+      <!-- ================= SLIDE 2 (Nuevo) ================= -->
+      <div
+        class="w-full flex-shrink-0 bg-gradient-to-br from-[#fbf8f5] to-[#f3f4f6] flex items-center relative py-16 lg:py-24"
+        data-theme="light">
+        <div class="container mx-auto px-6 grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+
+          <!-- Copy Slide 2 -->
+          <div class="order-2 lg:order-1 text-stone-900">
+            <div
+              class="inline-block px-4 py-1.5 rounded-full bg-white text-emerald-800 border border-emerald-100 shadow-sm mb-6 text-[10px] uppercase tracking-widest font-bold">
+              Identidad Verificable
+            </div>
+
+            <!-- Usamos Playfair Display para un toque elegante como en tu captura -->
+            <h1 class="text-4xl md:text-5xl lg:text-6xl font-black leading-[1.1] mb-6 font-serif">
+              Identidad verificable mediante QR en las etiquetas de tus productos
+            </h1>
+
+            <p class="text-lg text-stone-600 max-w-lg leading-relaxed mb-10">
+              Descarga el QR de tu producto e imprímelo en tu empaque. Tus clientes podrán escanearlo y ver la historia
+              de tu producto en una página única.
+            </p>
+
+            <div class="flex flex-col sm:flex-row flex-wrap gap-4">
+              <a href="/login.html"
+                class="inline-flex items-center justify-center gap-2 bg-[#0f172a] hover:bg-[#1e293b] text-white font-bold py-4 px-8 rounded-full shadow-xl transition-all transform hover:-translate-y-1 text-sm tracking-wide">
+                CREAR MI PASAPORTE DIGITAL
+              </a>
+              <a href="#workflow"
+                class="inline-flex items-center justify-center gap-2 bg-transparent border-2 border-stone-200 hover:border-stone-300 hover:bg-white text-[#0f172a] font-bold py-4 px-8 rounded-full transition-all text-sm tracking-wide">
+                VER COMO FUNCIONA
+              </a>
+            </div>
+          </div>
+
+          <!-- Imagen Slide 2 -->
+          <div class="order-1 lg:order-2 flex justify-center relative w-full max-w-lg lg:max-w-xl mx-auto">
+            <!-- Nota: Sube la imagen del celular escaneando el empaque a esta ruta -->
+            <img src="/images/escaneo-qr-pasaporte.png" alt="Escaneo de código QR en empaque"
+              class="w-full h-auto drop-shadow-2xl rounded-3xl object-contain">
+          </div>
+
+        </div>
+      </div>
+
     </div>
-  </header>
+
+    <!-- Navigation Arrows -->
+    <button id="hero-prev"
+      class="absolute left-4 lg:left-8 top-1/2 -translate-y-1/2 w-12 h-12 bg-black/20 hover:bg-black/50 text-white rounded-full flex items-center justify-center backdrop-blur-sm transition-all opacity-0 group-hover:opacity-100 z-30"
+      aria-label="Anterior slide">
+      <i class="fas fa-chevron-left"></i>
+    </button>
+    <button id="hero-next"
+      class="absolute right-4 lg:right-8 top-1/2 -translate-y-1/2 w-12 h-12 bg-black/20 hover:bg-black/50 text-white rounded-full flex items-center justify-center backdrop-blur-sm transition-all opacity-0 group-hover:opacity-100 z-30"
+      aria-label="Siguiente slide">
+      <i class="fas fa-chevron-right"></i>
+    </button>
+
+    <!-- Dots -->
+    <div class="absolute bottom-6 lg:bottom-10 left-1/2 -translate-x-1/2 flex gap-3 z-30" id="hero-dots">
+      <button class="hero-dot w-3 h-3 rounded-full bg-white/40 transition-all duration-300" data-index="0"
+        aria-label="Ir al slide 1"></button>
+      <button class="hero-dot w-3 h-3 rounded-full bg-white/40 transition-all duration-300" data-index="1"
+        aria-label="Ir al slide 2"></button>
+    </div>
+
+  </section>
 
   <!-- ════════════════════════════════════════
        2. TRUST STRIP (Empresas)
@@ -1381,6 +1458,101 @@
   <script src="/js/landing-app.js" defer></script>
 
   <script>
+
+    // ── Hero Carousel Logic ──────────────────────────────
+    document.addEventListener('DOMContentLoaded', () => {
+      const track = document.getElementById('carousel-track');
+      const dots = document.querySelectorAll('.hero-dot');
+      const prevBtn = document.getElementById('hero-prev');
+      const nextBtn = document.getElementById('hero-next');
+      const heroSection = document.getElementById('hero-carousel');
+
+      let currentSlide = 0;
+      const totalSlides = 2;
+      let autoplayInterval;
+
+      function updateCarousel() {
+        // Move track
+        track.style.transform = `translateX(-${currentSlide * 100}%)`;
+
+        // Determinar el tema del slide actual (oscuro o claro)
+        const slides = track.children;
+        const currentTheme = slides[currentSlide].getAttribute('data-theme');
+
+        // Update dots and buttons colors based on theme
+        dots.forEach((dot, index) => {
+          // Remove all active states
+          dot.classList.remove('dot-active', 'dot-dark-active', 'bg-stone-400');
+          dot.classList.add('bg-white/40');
+
+          if (index === currentSlide) {
+            if (currentTheme === 'light') {
+              dot.classList.add('dot-dark-active');
+              dot.classList.remove('bg-white/40');
+            } else {
+              dot.classList.add('dot-active');
+            }
+          } else {
+            if (currentTheme === 'light') {
+              dot.classList.add('bg-stone-400');
+              dot.classList.remove('bg-white/40');
+            }
+          }
+        });
+
+        // Cambiar color de flechas
+        if (currentTheme === 'light') {
+          prevBtn.classList.replace('text-white', 'text-stone-900');
+          nextBtn.classList.replace('text-white', 'text-stone-900');
+          prevBtn.classList.replace('bg-black/20', 'bg-stone-200/60');
+          nextBtn.classList.replace('bg-black/20', 'bg-stone-200/60');
+        } else {
+          prevBtn.classList.replace('text-stone-900', 'text-white');
+          nextBtn.classList.replace('text-stone-900', 'text-white');
+          prevBtn.classList.replace('bg-stone-200/60', 'bg-black/20');
+          nextBtn.classList.replace('bg-stone-200/60', 'bg-black/20');
+        }
+      }
+
+      function nextSlide() {
+        currentSlide = (currentSlide + 1) % totalSlides;
+        updateCarousel();
+      }
+
+      function prevSlide() {
+        currentSlide = (currentSlide - 1 + totalSlides) % totalSlides;
+        updateCarousel();
+      }
+
+      function startAutoplay() {
+        autoplayInterval = setInterval(nextSlide, 6000); // 6 segundos
+      }
+
+      function stopAutoplay() {
+        clearInterval(autoplayInterval);
+      }
+
+      nextBtn.addEventListener('click', () => { nextSlide(); stopAutoplay(); startAutoplay(); });
+      prevBtn.addEventListener('click', () => { prevSlide(); stopAutoplay(); startAutoplay(); });
+
+      dots.forEach(dot => {
+        dot.addEventListener('click', (e) => {
+          currentSlide = parseInt(e.target.dataset.index);
+          updateCarousel();
+          stopAutoplay();
+          startAutoplay();
+        });
+      });
+
+      // Pause on hover
+      heroSection.addEventListener('mouseenter', stopAutoplay);
+      heroSection.addEventListener('mouseleave', startAutoplay);
+
+      // Initialize
+      updateCarousel();
+      startAutoplay();
+    });
+
     // ── QR Code ──────────────────────────────────────────
     window.addEventListener('load', () => {
       const el = document.getElementById('qr-cta');
