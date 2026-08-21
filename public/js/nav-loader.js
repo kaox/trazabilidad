@@ -137,6 +137,49 @@ function initializeSidebar() {
 
     // --- Auto-abrir grupo si la ruta actual pertenece a él ---
     autoExpandActiveGroup();
+
+    // --- Botón de acceso rápido a la página pública ---
+    loadLandingLink();
+}
+
+/**
+ * Carga el perfil comercial y muestra el botón de landing page en el footer
+ */
+function loadLandingLink() {
+    fetch('/api/user/company-profile')
+        .then(res => res.ok ? res.json() : null)
+        .then(profile => {
+            if (!profile) return;
+
+            const linkEl = document.getElementById('sidebar-landing-link');
+            const labelEl = document.getElementById('sidebar-landing-label');
+            if (!linkEl || !labelEl) return;
+
+            let url = null;
+            let label = '🌐 Ver mi Página Pública';
+
+            if (profile.subdomain) {
+                url = `https://${profile.subdomain}.rurulab.com`;
+                label = `🌐 ${profile.subdomain}.rurulab.com`;
+            } else if (profile.slug && profile.user_id) {
+                url = `/origen-unico/${profile.slug}-${profile.user_id}`;
+                label = '🌐 Ver mi Página Pública';
+            } else if (profile.name) {
+                // Fallback: construir slug desde el nombre
+                const slug = profile.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+                url = `/origen-unico/${slug}`;
+                label = '🌐 Ver mi Página Pública';
+            }
+
+            if (url) {
+                linkEl.href = url;
+                labelEl.textContent = label;
+                linkEl.style.display = 'flex';
+            }
+        })
+        .catch(() => {
+            // No hay perfil comercial — silencioso
+        });
 }
 
 /**
