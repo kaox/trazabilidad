@@ -6,7 +6,13 @@ const app = {
         currentFilter: 'all',        // Filtro de Entidad (Finca/Procesadora)
         currentProductFilter: 'all',  // Filtro de Producto (Cafe/Cacao/Miel)
         currentSubtypeFilter: 'all',  // Filtro de Subtipo (depende del tipo)
-        organizaciones: []            // Almacenar datos de organizaciones/subtipos
+        organizaciones: [],            // Almacenar datos de organizaciones/subtipos
+
+        currentCountry: 'all',
+        currentRegion: 'all',
+        currentProvince: 'all',
+        currentDistrict: 'all',
+        ubigeosData: [] // Almacenará la data de eApi Perú
     },
 
     // Mapeo de iconos FontAwesome para subtipos
@@ -39,9 +45,158 @@ const app = {
         }
         // Cargar datos de organizaciones (subtipos)
         await this.loadOrganizaciones();
+        await this.loadUbigeos();
         // En esta vista solo cargamos las empresas y configuramos el formulario
         await this.loadCompanies();
         this.setupSuggestForm();
+
+        this.bindLocationEvents();
+    },
+
+    // --- INTEGRACIÓN DE UBIGEOS (eApi Perú) ---
+    loadUbigeos: async function () {
+        try {
+            // Se asume un país por defecto en el selector
+            const countrySelect = document.getElementById('filter-country');
+            if (countrySelect) {
+                countrySelect.innerHTML = '<option value="all">Todos los Países</option><option value="peru">Perú</option>';
+            }
+
+            // Consultar eApi Perú
+            const res = await fetch('https://free.e-api.net.pe/ubigeos.json');
+            const data = await res.json();
+
+            let normalizedData = [];
+
+            // Si la data es un objeto (formato anidado: Region -> Provincia -> Distrito)
+            if (data && typeof data === 'object' && !Array.isArray(data)) {
+                for (const [departamento, provincias] of Object.entries(data)) {
+                    if (typeof provincias === 'object' && provincias !== null) {
+                        for (const [provincia, distritos] of Object.entries(provincias)) {
+                            if (typeof distritos === 'object' && distritos !== null) {
+                                for (const [distrito, detalles] of Object.entries(distritos)) {
+                                    normalizedData.push({
+                                        departamento: departamento,
+                                        provincia: provincia,
+                                        distrito: distrito,
+                                        ubigeo: detalles.ubigeo,
+                                        id: detalles.id
+                                    });
+                                }
+                            }
+                        }
+                    }
+                }
+                this.state.ubigeosData = normalizedData;
+            } else if (Array.isArray(data)) {
+                // Por si en algún momento la API cambia a un array plano
+                this.state.ubigeosData = data;
+            } else {
+                console.error("Formato JSON de ubigeos inesperado.");
+                this.state.ubigeosData = [];
+            }
+
+            // Llenamos las regiones inicialmente
+            this.populateLocationSelect('region', 'all');
+        } catch (e) {
+            console.error('Error al cargar ubigeos de eApi Perú:', e);
+            this.state.ubigeosData = [];
+        }
+    },
+
+    setLocationFilter: function (level, value) {
+        if (level === 'country') this.state.currentCountry = value;
+        if (level === 'region') {
+            this.state.currentRegion = value;
+            this.state.currentProvince = 'all';
+            this.state.currentDistrict = 'all';
+            this.populateLocationSelect('province', value);
+            // Asegurar que el select de distrito también se resetee visualmente al cambiar de región
+            this.populateLocationSelect('district', 'all');
+        }
+        if (level === 'province') {
+            this.state.currentProvince = value;
+            this.state.currentDistrict = 'all';
+            this.populateLocationSelect('district', value);
+        }
+        if (level === 'district') {
+            this.state.currentDistrict = value;
+        }
+
+        this.renderCompanies();
+        this.renderMap();
+    },
+
+    populateLocationSelect: function (level, parentValue) {
+        const selectMap = {
+            'region': { id: 'filter-region', prop: 'departamento', defaultText: 'Todas las Regiones' },
+            'province': { id: 'filter-province', prop: 'provincia', defaultText: 'Todas las Provincias' },
+            'district': { id: 'filter-district', prop: 'distrito', defaultText: 'Todos los Distritos' }
+        };
+
+        const target = selectMap[level];
+        const element = document.getElementById(target.id);
+
+        if (!element) return;
+
+        // Limpiamos siempre al inicio
+        element.innerHTML = `<option value="all">${target.defaultText}</option>`;
+
+        // Si el valor padre es 'all' o nulo (y no es región), deshabilitamos y terminamos
+        if (level !== 'region' && (parentValue === 'all' || !parentValue)) {
+            element.disabled = true;
+            // Si estamos reseteando provincia, asegurar que distrito también se desactive
+            if (level === 'province') {
+                const distElement = document.getElementById('filter-district');
+                if (distElement) {
+                    distElement.disabled = true;
+                    distElement.innerHTML = `<option value="all">Todos los Distritos</option>`;
+                }
+            }
+            return;
+        }
+
+        element.disabled = false;
+
+        // Extraer valores únicos filtrando nulos
+        let options = [];
+        if (level === 'region') {
+            options = [...new Set(this.state.ubigeosData.map(u => u && u.departamento).filter(Boolean))];
+        } else if (level === 'province') {
+            options = [...new Set(this.state.ubigeosData.filter(u => u && u.departamento === this.state.currentRegion).map(u => u && u.provincia).filter(Boolean))];
+        } else if (level === 'district') {
+            options = [...new Set(this.state.ubigeosData.filter(u => u && u.provincia === this.state.currentProvince).map(u => u && u.distrito).filter(Boolean))];
+        }
+
+        // Llenar el select en orden alfabético
+        options.sort().forEach(opt => {
+            if (opt) {
+                const optionEl = document.createElement('option');
+                optionEl.value = opt;
+                optionEl.textContent = this.toTitleCase(opt);
+                element.appendChild(optionEl);
+            }
+        });
+    },
+
+    bindLocationEvents: function () {
+        const selects = [
+            { id: 'filter-country', level: 'country' },
+            { id: 'filter-region', level: 'region' },
+            { id: 'filter-province', level: 'province' },
+            { id: 'filter-district', level: 'district' }
+        ];
+
+        selects.forEach(s => {
+            const el = document.getElementById(s.id);
+            if (el) {
+                // Removemos eventos previos en línea para evitar duplicaciones
+                el.removeAttribute('onchange');
+                el.addEventListener('change', (e) => {
+                    this.setLocationFilter(s.level, e.target.value);
+                });
+            }
+        });
     },
 
     // --- ANALYTICS ---
@@ -196,6 +351,12 @@ const app = {
         const prodFilter = this.state.currentProductFilter;
         const subtypeFilter = this.state.currentSubtypeFilter;
 
+        // Variables geográficas
+        const countryF = this.state.currentCountry;
+        const regionF = this.state.currentRegion;
+        const provinceF = this.state.currentProvince;
+        const districtF = this.state.currentDistrict;
+
         return this.state.companies.filter(c => {
             // 1. Filtro por Tipo de Entidad
             const matchType = typeFilter === 'all' || c.type === typeFilter;
@@ -220,7 +381,15 @@ const app = {
                 matchSubtype = cSubtype === subtypeFilter;
             }
 
-            return matchType && matchProduct && matchSubtype;
+            // 4. Filtros Geográficos (Normalizamos para ignorar tildes y diferencias de mayúsculas)
+            const norm = (str) => str ? this.createSlug(str) : '';
+
+            const matchCountry = countryF === 'all' || (norm(c.pais) === norm(countryF));
+            const matchRegion = regionF === 'all' || (norm(c.departamento) === norm(regionF));
+            const matchProvince = provinceF === 'all' || (norm(c.provincia) === norm(provinceF));
+            const matchDistrict = districtF === 'all' || (norm(c.distrito) === norm(districtF));
+
+            return matchType && matchProduct && matchSubtype && matchCountry && matchRegion && matchProvince && matchDistrict;
         });
     },
 
