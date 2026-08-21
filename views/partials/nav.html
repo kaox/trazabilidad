@@ -1,291 +1,156 @@
-<nav class="bg-amber-900 text-white shadow-lg sticky top-0 z-50">
-    <div class="container mx-auto px-4">
-        <div class="flex justify-between items-center h-16">
-            <a href="/app/dashboard" class="text-xl font-bold flex items-center gap-2">
-                <i class="fa-solid fa-fingerprint"></i> Ruru Lab
+<!-- =============================================
+     SIDEBAR LATERAL — Ruru Lab App
+     Cargado dinámicamente por nav-loader.js
+     ============================================= -->
+
+<!-- Botón toggle móvil (fuera del sidebar) -->
+<button id="sidebar-mobile-toggle" aria-label="Abrir menú">
+    <i class="fas fa-bars"></i>
+</button>
+
+<!-- Overlay para móvil -->
+<div id="sidebar-overlay"></div>
+
+<!-- SIDEBAR -->
+<aside id="app-sidebar" role="navigation" aria-label="Menú principal">
+
+    <!-- Header del sidebar -->
+    <div id="sidebar-header">
+        <a href="/app/dashboard" id="sidebar-logo-link">
+            <div id="sidebar-logo-icon">
+                <i class="fa-solid fa-fingerprint"></i>
+            </div>
+            <div>
+                <div id="sidebar-app-name">Ruru Lab</div>
+                <div id="sidebar-app-subtitle">Panel del negocio</div>
+            </div>
+        </a>
+    </div>
+
+    <!-- Navegación principal -->
+    <nav id="sidebar-nav">
+
+        <!-- Dashboard -->
+        <a href="/app/dashboard" class="sidebar-nav-item" id="nav-dashboard">
+            <span class="sidebar-icon"><i class="fas fa-home"></i></span>
+            <span class="sidebar-label">Resumen</span>
+        </a>
+
+        <div class="sidebar-divider"></div>
+
+        <!-- 1. MI ORIGEN -->
+        <button class="sidebar-nav-item sidebar-group-trigger" id="nav-origen-trigger" aria-expanded="false">
+            <span class="sidebar-emoji">🌱</span>
+            <span class="sidebar-label">Mi Origen</span>
+            <i class="fas fa-chevron-down sidebar-chevron"></i>
+        </button>
+        <div class="sidebar-group-content" id="nav-origen-group">
+            <a href="/app/fincas" class="sidebar-nav-item" id="nav-fincas">
+                <span class="sidebar-icon"><i class="fas fa-tree"></i></span>
+                <span class="sidebar-label">Mis Fincas</span>
             </a>
+            <a href="/app/procesadoras" class="sidebar-nav-item" id="nav-procesadoras">
+                <span class="sidebar-icon"><i class="fas fa-industry"></i></span>
+                <span class="sidebar-label">Procesadoras</span>
+            </a>
+            <a href="/app/perfil-comercial" class="sidebar-nav-item" id="nav-perfil-comercial">
+                <span class="sidebar-icon"><i class="fas fa-store"></i></span>
+                <span class="sidebar-label">Perfil Comercial</span>
+            </a>
+            <a href="/app/perfil-comercial-tema" class="sidebar-nav-item" id="nav-perfil-tema">
+                <span class="sidebar-icon"><i class="fas fa-palette"></i></span>
+                <span class="sidebar-label">Tema de Landing</span>
+            </a>
+        </div>
 
-            <!-- Botón Móvil -->
-            <div class="md:hidden">
-                <button id="mobile-menu-button" class="p-2 rounded-md hover:bg-amber-800 transition focus:outline-none">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M4 6h16M4 12h16M4 18h16"></path>
-                    </svg>
-                </button>
-            </div>
+        <!-- 2. PRODUCCIÓN -->
+        <button class="sidebar-nav-item sidebar-group-trigger" id="nav-produccion-trigger" aria-expanded="false">
+            <span class="sidebar-emoji">🚜</span>
+            <span class="sidebar-label">Producción</span>
+            <i class="fas fa-chevron-down sidebar-chevron"></i>
+        </button>
+        <div class="sidebar-group-content" id="nav-produccion-group">
+            <a href="/app/productos" class="sidebar-nav-item" id="nav-productos">
+                <span class="sidebar-icon"><i class="fas fa-box-open"></i></span>
+                <span class="sidebar-label">Definir Productos</span>
+            </a>
+            <a href="/app/trazabilidad" class="sidebar-nav-item" id="nav-trazabilidad">
+                <span class="sidebar-icon"><i class="fas fa-qrcode"></i></span>
+                <span class="sidebar-label">Trazabilidad</span>
+            </a>
+        </div>
 
-            <!-- Menú Escritorio -->
-            <div class="hidden md:flex items-center space-x-1">
-                <a href="/app/dashboard"
-                    class="nav-link px-3 py-2 rounded-md text-sm font-medium hover:bg-amber-800 transition">Dashboard</a>
+        <!-- 3. CALIDAD Y LAB -->
+        <button class="sidebar-nav-item sidebar-group-trigger" id="nav-calidad-trigger" aria-expanded="false">
+            <span class="sidebar-emoji">🧪</span>
+            <span class="sidebar-label">Calidad y Lab</span>
+            <i class="fas fa-chevron-down sidebar-chevron"></i>
+        </button>
+        <div class="sidebar-group-content" id="nav-calidad-group">
+            <a href="/app/perfiles" class="sidebar-nav-item" id="nav-perfiles">
+                <span class="sidebar-icon"><i class="fas fa-sliders-h"></i></span>
+                <span class="sidebar-label">Perfiles Sensoriales</span>
+            </a>
+            <a href="/app/ruedas-sabores" class="sidebar-nav-item" id="nav-ruedas">
+                <span class="sidebar-icon"><i class="fas fa-chart-pie"></i></span>
+                <span class="sidebar-label">Ruedas de Sabor</span>
+            </a>
+            <a href="/app/nutricion" class="sidebar-nav-item" id="nav-nutricion">
+                <span class="sidebar-icon"><i class="fas fa-utensils"></i></span>
+                <span class="sidebar-label">Nutrición</span>
+            </a>
+            <a href="/app/estimacion-cosecha" class="sidebar-nav-item" id="nav-estimacion">
+                <span class="sidebar-icon"><i class="fas fa-chart-line"></i></span>
+                <span class="sidebar-label">Estimación Cosecha</span>
+            </a>
+        </div>
 
-                <!-- 1. MI ORIGEN -->
-                <div class="relative group">
-                    <button id="origen-dropdown-btn"
-                        class="nav-link px-3 py-2 rounded-md text-sm font-medium hover:bg-amber-800 transition flex items-center gap-1 group-hover:bg-amber-800">
-                        <span>Mi Origen 🌱</span>
-                        <svg class="w-4 h-4 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7">
-                            </path>
-                        </svg>
-                    </button>
-                    <div id="origen-dropdown-desktop"
-                        class="absolute left-0 mt-0 w-56 bg-white rounded-md shadow-xl z-50 hidden group-hover:block border border-stone-100">
-                        <a href="/app/fincas"
-                            class="block px-4 py-2 text-sm text-stone-700 hover:bg-amber-50 hover:text-amber-800"><i
-                                class="fas fa-tree w-5 text-center mr-1 text-green-600"></i> Mis Fincas</a>
-                        <a href="/app/procesadoras"
-                            class="block px-4 py-2 text-sm text-stone-700 hover:bg-amber-50 hover:text-amber-800"><i
-                                class="fas fa-industry w-5 text-center mr-1 text-stone-500"></i> Procesadoras</a>
-                        <div class="border-t border-stone-100 my-1"></div>
-                        <a href="/app/perfil-comercial"
-                            class="block px-4 py-2 text-sm text-stone-700 hover:bg-amber-50 hover:text-amber-800"><i
-                                class="fas fa-store w-5 text-center mr-1 text-amber-600"></i> Perfil Comercial</a>
-                        <a href="/app/perfil-comercial-tema"
-                            class="block px-4 py-2 text-sm text-stone-700 hover:bg-amber-50 hover:text-amber-800"><i
-                                class="fas fa-palette w-5 text-center mr-1 text-amber-600"></i> Tema de Landing</a>
-                    </div>
-                </div>
-
-                <!-- 2. PRODUCCIÓN -->
-                <div class="relative group">
-                    <button id="produccion-dropdown-btn"
-                        class="nav-link px-3 py-2 rounded-md text-sm font-medium hover:bg-amber-800 transition flex items-center gap-1 group-hover:bg-amber-800">
-                        <span>Producción 🚜</span>
-                        <svg class="w-4 h-4 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7">
-                            </path>
-                        </svg>
-                    </button>
-                    <div id="produccion-dropdown-desktop"
-                        class="absolute left-0 mt-0 w-60 bg-white rounded-md shadow-xl z-50 hidden group-hover:block border border-stone-100">
-                        <a href="/app/productos"
-                            class="block px-4 py-2 text-sm text-stone-700 hover:bg-amber-50 hover:text-amber-800"><i
-                                class="fas fa-box-open w-5 text-center mr-1 text-amber-600"></i> Definir Productos</a>
-                        <div class="border-t border-stone-100 my-1"></div>
-                        <a href="/app/trazabilidad"
-                            class="block px-4 py-2 text-sm text-stone-700 hover:bg-amber-50 hover:text-amber-800"><i
-                                class="fas fa-qrcode w-5 text-center mr-1 text-stone-800"></i> Trazabilidad</a>
-                        <!--a href="/app/acopio" class="block px-4 py-2 text-sm text-stone-700 hover:bg-amber-50 hover:text-amber-800"><i class="fas fa-balance-scale w-5 text-center mr-1 text-stone-600"></i> Registro de Acopio</a>
-                        <a href="/app/procesamiento" class="block px-4 py-2 text-sm text-stone-700 hover:bg-amber-50 hover:text-amber-800"><i class="fas fa-cogs w-5 text-center mr-1 text-stone-600"></i> Transformación</a>
-                        <a href="/app/existencias" class="block px-4 py-2 text-sm text-stone-700 hover:bg-amber-50 hover:text-amber-800"><i class="fas fa-clipboard-list w-5 text-center mr-1 text-stone-600"></i> Inventario</a>
-                        <div class="border-t border-stone-100 my-1"></div>
-                        <a href="/app/trazabilidad-inmutable" class="block px-4 py-2 text-sm text-stone-700 hover:bg-amber-50 hover:text-amber-800"><i class="fas fa-qrcode w-5 text-center mr-1 text-stone-800"></i> Generar QR</a-->
-                    </div>
-                </div>
-
-                <!-- 3. CALIDAD Y LAB -->
-                <div class="relative group">
-                    <button id="calidad-dropdown-btn"
-                        class="nav-link px-3 py-2 rounded-md text-sm font-medium hover:bg-amber-800 transition flex items-center gap-1 group-hover:bg-amber-800">
-                        <span>Calidad y Lab 🧪</span>
-                        <svg class="w-4 h-4 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7">
-                            </path>
-                        </svg>
-                    </button>
-                    <div id="calidad-dropdown-desktop"
-                        class="absolute right-0 mt-0 w-60 bg-white rounded-md shadow-xl z-50 hidden group-hover:block border border-stone-100">
-                        <div class="px-4 py-1 text-xs font-bold text-stone-400 uppercase tracking-wider">Estándares
-                        </div>
-                        <a href="/app/perfiles"
-                            class="block px-4 py-2 text-sm text-stone-700 hover:bg-amber-50 hover:text-amber-800"><i
-                                class="fas fa-sliders-h w-5 text-center mr-1 text-blue-500"></i> Perfiles
-                            Sensoriales</a>
-                        <a href="/app/ruedas-sabores"
-                            class="block px-4 py-2 text-sm text-stone-700 hover:bg-amber-50 hover:text-amber-800"><i
-                                class="fas fa-chart-pie w-5 text-center mr-1 text-purple-500"></i> Ruedas de Sabor</a>
-
-                        <div class="border-t border-stone-100 my-1"></div>
-                        <div class="px-4 py-1 text-xs font-bold text-stone-400 uppercase tracking-wider">Herramientas
-                            I+D</div>
-
-                        <a href="/app/nutricion"
-                            class="block px-4 py-2 text-sm text-stone-700 hover:bg-amber-50 hover:text-amber-800"><i
-                                class="fas fa-utensils w-5 text-center mr-1 text-green-500"></i> Nutrición</a>
-                        <!--a href="/app/maridaje"
-                            class="block px-4 py-2 text-sm text-stone-700 hover:bg-amber-50 hover:text-amber-800"><i
-                                class="fas fa-wine-glass w-5 text-center mr-1 text-rose-500"></i> IA Maridaje</a>
-                        <a href="/app/blends"
-                            class="block px-4 py-2 text-sm text-stone-700 hover:bg-amber-50 hover:text-amber-800"><i
-                                class="fas fa-vial w-5 text-center mr-1 text-indigo-500"></i> Blends</a>
-                        <a href="/app/recetas-chocolate"
-                            class="block px-4 py-2 text-sm text-stone-700 hover:bg-amber-50 hover:text-amber-800"><i
-                                class="fas fa-cookie w-5 text-center mr-1 text-amber-600"></i> Formulador</a-->
-                        <a href="/app/estimacion-cosecha"
-                            class="block px-4 py-2 text-sm text-stone-700 hover:bg-amber-50 hover:text-amber-800"><i
-                                class="fas fa-chart-line w-5 text-center mr-1 text-teal-500"></i> Estimación</a>
-                    </div>
-                </div>
-
-                <!-- 4. ADMINISTRACIÓN (Solo visible para admins) -->
-                <div class="relative group admin-only hidden">
-                    <button id="admin-dropdown-btn"
-                        class="nav-link px-3 py-2 rounded-md text-sm font-medium hover:bg-amber-800 transition flex items-center gap-1 group-hover:bg-amber-800">
-                        <span>Admin 🛡️</span>
-                        <svg class="w-4 h-4 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7">
-                            </path>
-                        </svg>
-                    </button>
-                    <div id="admin-dropdown-desktop"
-                        class="absolute right-0 mt-0 w-56 bg-white rounded-md shadow-xl z-50 hidden group-hover:block border border-stone-100">
-                        <a href="/app/admin-dashboard"
-                            class="block px-4 py-2 text-sm text-stone-700 hover:bg-amber-50 hover:text-amber-800"><i
-                                class="fas fa-lock w-5 text-center mr-1 text-stone-600"></i> Dashboard Admin</a>
-                        <a href="/app/admin-suggestions"
-                            class="block px-4 py-2 text-sm text-stone-700 hover:bg-amber-50 hover:text-amber-800"><i
-                                class="fas fa-inbox w-5 text-center mr-1 text-sky-600"></i> Sugerencias</a>
-                        <a href="/app/admin-blog"
-                            class="block px-4 py-2 text-sm text-stone-700 hover:bg-amber-50 hover:text-amber-800"><i
-                                class="fas fa-feather-alt w-5 text-center mr-1 text-emerald-600"></i> CMS Blog</a>
-                        <a href="/app/admin-payments"
-                            class="block px-4 py-2 text-sm text-stone-700 hover:bg-amber-50 hover:text-amber-800"><i
-                                class="fas fa-credit-card w-5 text-center mr-1 text-purple-600"></i> Validación
-                            Pagos</a>
-                    </div>
-                </div>
-
-                <!-- Perfil -->
-                <a href="/app/cuenta" class="nav-link p-2 rounded-full hover:bg-amber-800 transition ml-2"
-                    title="Mi Cuenta">
-                    <div
-                        class="w-8 h-8 rounded-full bg-amber-700 flex items-center justify-center text-xs font-bold border border-amber-600">
-                        <i class="fas fa-user"></i>
-                    </div>
+        <!-- 4. ADMINISTRACIÓN (Solo admins) -->
+        <div class="admin-only" id="nav-admin-section">
+            <div class="sidebar-divider"></div>
+            <button class="sidebar-nav-item sidebar-group-trigger" id="nav-admin-trigger" aria-expanded="false">
+                <span class="sidebar-emoji">🛡️</span>
+                <span class="sidebar-label">Administración</span>
+                <i class="fas fa-chevron-down sidebar-chevron"></i>
+            </button>
+            <div class="sidebar-group-content" id="nav-admin-group">
+                <a href="/app/admin-dashboard" class="sidebar-nav-item" id="nav-admin-dashboard">
+                    <span class="sidebar-icon"><i class="fas fa-lock"></i></span>
+                    <span class="sidebar-label">Dashboard Admin</span>
                 </a>
-                <button onclick="logout()"
-                    class="ml-2 text-amber-200 hover:text-white text-sm font-medium transition"><i
-                        class="fas fa-sign-out-alt"></i></button>
+                <a href="/app/admin-suggestions" class="sidebar-nav-item" id="nav-admin-suggestions">
+                    <span class="sidebar-icon"><i class="fas fa-inbox"></i></span>
+                    <span class="sidebar-label">Sugerencias</span>
+                </a>
+                <a href="/app/admin-blog" class="sidebar-nav-item" id="nav-admin-blog">
+                    <span class="sidebar-icon"><i class="fas fa-feather-alt"></i></span>
+                    <span class="sidebar-label">CMS Blog</span>
+                </a>
+                <a href="/app/admin-payments" class="sidebar-nav-item" id="nav-admin-payments">
+                    <span class="sidebar-icon"><i class="fas fa-credit-card"></i></span>
+                    <span class="sidebar-label">Validación Pagos</span>
+                </a>
             </div>
+        </div>
+
+    </nav>
+
+    <!-- Footer del sidebar (usuario) -->
+    <div id="sidebar-footer">
+        <a href="/app/cuenta" id="sidebar-user-info" style="text-decoration: none;">
+            <div id="sidebar-avatar">
+                <i class="fas fa-user" id="sidebar-avatar-initials"></i>
+            </div>
+            <div id="sidebar-user-name">
+                <span id="sidebar-user-display-name">Mi Cuenta</span>
+                <span id="sidebar-user-role">Usuario</span>
+            </div>
+        </a>
+        <div style="display:flex; justify-content:flex-end; margin-top:6px;">
+            <button id="sidebar-logout-btn" onclick="logout()" title="Cerrar sesión">
+                <i class="fas fa-sign-out-alt"></i>
+            </button>
         </div>
     </div>
 
-    <!-- MENÚ MÓVIL REORDENADO -->
-    <div id="mobile-menu" class="md:hidden hidden bg-amber-900 border-t border-amber-800">
-        <div class="px-4 pt-4 pb-6 space-y-1">
-
-            <a href="/app/dashboard"
-                class="block px-3 py-2 rounded-md text-base font-bold text-white bg-amber-800 mb-4 text-center">
-                📊 Dashboard Principal
-            </a>
-
-            <!-- 1. Mi Origen -->
-            <div class="mb-4">
-                <p class="px-3 text-xs font-bold text-amber-400 uppercase tracking-widest mb-2">1. Mi Origen 🌱</p>
-                <div class="grid grid-cols-2 gap-2 px-1">
-                    <a href="/app/fincas"
-                        class="block px-3 py-3 rounded-md text-sm font-medium text-amber-100 hover:bg-amber-800 hover:text-white bg-amber-900/50 border border-amber-800/50 text-center flex flex-col items-center gap-1">
-                        <i class="fas fa-tree text-lg"></i> Fincas
-                    </a>
-                    <a href="/app/procesadoras"
-                        class="block px-3 py-3 rounded-md text-sm font-medium text-amber-100 hover:bg-amber-800 hover:text-white bg-amber-900/50 border border-amber-800/50 text-center flex flex-col items-center gap-1">
-                        <i class="fas fa-industry text-lg"></i> Plantas
-                    </a>
-                </div>
-                <a href="/app/perfil-comercial"
-                    class="block px-3 py-2 rounded-md text-base font-medium text-white hover:bg-amber-800 border-l-4 border-amber-500 bg-amber-800/30 mx-1">
-                    <i class="fas fa-store mr-2 text-amber-400"></i> Perfil Comercial
-                </a>
-                <a href="/app/perfil-comercial-tema"
-                    class="block px-3 py-2 rounded-md text-base font-medium text-white hover:bg-amber-800 border-l-4 border-amber-500 bg-amber-800/30 mx-1 mt-1">
-                    <i class="fas fa-palette mr-2 text-amber-400"></i> Tema de Landing
-                </a>
-            </div>
-
-            <!-- 2. Producción -->
-            <div class="mb-4">
-                <p class="px-3 text-xs font-bold text-amber-400 uppercase tracking-widest mb-2">2. Producción 🚜</p>
-                <a href="/app/productos"
-                    class="block px-3 py-2 rounded-md text-base font-medium text-white hover:bg-amber-800 border-l-4 border-amber-500 bg-amber-800/30 mb-1">
-                    📦 Definir Productos
-                </a>
-                <a href="/app/trazabilidad"
-                    class="block px-3 py-2 rounded-md text-base font-medium text-white hover:bg-amber-800 font-bold text-amber-200">
-                    🌳 Trazabilidad
-                </a>
-                <!--a href="/app/acopio"
-                    class="block px-3 py-2 rounded-md text-base font-medium text-white hover:bg-amber-800">
-                    ⚖️ Registro de Acopio
-                </a>
-                <a href="/app/procesamiento"
-                    class="block px-3 py-2 rounded-md text-base font-medium text-white hover:bg-amber-800">
-                    🏭 Transformación
-                </a>
-                <a href="/app/existencias"
-                    class="block px-3 py-2 rounded-md text-base font-medium text-white hover:bg-amber-800">
-                    📋 Inventario / Existencias
-                </a>
-                <a href="/app/trazabilidad-inmutable"
-                    class="block px-3 py-2 rounded-md text-base font-medium text-white hover:bg-amber-800 font-bold text-amber-200">
-                    🌳 Generar QR (Trazabilidad)
-                </a-->
-            </div>
-
-            <!-- 3. Calidad y Lab -->
-            <div class="mb-4 border-t border-amber-800 pt-4">
-                <p class="px-3 text-xs font-bold text-amber-400 uppercase tracking-widest mb-2">3. Calidad y Lab 🧪</p>
-                <div class="grid grid-cols-2 gap-2 px-1">
-                    <a href="/app/perfiles"
-                        class="block px-2 py-2 rounded text-sm text-center text-amber-100 bg-amber-900/40 border border-transparent hover:border-amber-700">👅
-                        Perfiles</a>
-                    <a href="/app/ruedas-sabores"
-                        class="block px-2 py-2 rounded text-sm text-center text-amber-100 bg-amber-900/40 border border-transparent hover:border-amber-700">🎡
-                        Ruedas</a>
-                    <a href="/app/nutricion"
-                        class="block px-2 py-2 rounded text-sm text-center text-amber-100 bg-amber-900/40 border border-transparent hover:border-amber-700">🥗
-                        Nutrición</a>
-                    <a href="/app/estimacion-cosecha"
-                        class="block px-2 py-2 rounded text-sm text-center text-amber-100 bg-amber-900/40 border border-transparent hover:border-amber-700">🌳
-                        Estimación Cosecha</a>
-                    <!--a href="/app/maridaje"
-                        class="block px-2 py-2 rounded text-sm text-center text-amber-100 bg-amber-900/40 border border-transparent hover:border-amber-700">🍷
-                        Maridaje</a>
-                    <a href="/app/blends"
-                        class="block px-2 py-2 rounded text-sm text-center text-amber-100 bg-amber-900/40 border border-transparent hover:border-amber-700">🧪
-                        Blends</a>
-                    <a href="/app/recetas-chocolate"
-                        class="block px-2 py-2 rounded text-sm text-center text-amber-100 bg-amber-900/40 border border-transparent hover:border-amber-700">🍫
-                        Recetas</a-->
-                </div>
-            </div>
-
-            <!-- 4. Administración (Solo visible para admin) -->
-            <div class="admin-only hidden mb-4 border-t border-amber-800 pt-4">
-                <p class="px-3 text-xs font-bold text-sky-400 uppercase tracking-widest mb-2">4. Administración 🛡️</p>
-                <div class="grid grid-cols-2 gap-2 px-1">
-                    <a href="/app/admin-dashboard"
-                        class="block px-2 py-2 rounded text-sm text-center text-sky-100 bg-amber-900/40 border border-transparent hover:border-amber-700">
-                        <i class="fas fa-lock mr-1"></i> Dashboard
-                    </a>
-                    <a href="/app/admin-suggestions"
-                        class="block px-2 py-2 rounded text-sm text-center text-sky-100 bg-amber-900/40 border border-transparent hover:border-amber-700">
-                        <i class="fas fa-inbox mr-1"></i> Sugerencias
-                    </a>
-                    <a href="/app/admin-blog"
-                        class="block px-2 py-2 rounded text-sm text-center text-sky-100 bg-amber-900/40 border border-transparent hover:border-amber-700">
-                        <i class="fas fa-feather-alt mr-1"></i> CMS Blog
-                    </a>
-                    <a href="/app/admin-payments"
-                        class="block px-2 py-2 rounded text-sm text-center text-sky-100 bg-amber-900/40 border border-transparent hover:border-amber-700">
-                        <i class="fas fa-credit-card mr-1"></i> Pagos
-                    </a>
-                </div>
-            </div>
-
-            <div class="border-t border-amber-800 pt-4 pb-2">
-                <a href="/app/cuenta"
-                    class="flex items-center px-3 py-2 rounded-md text-base font-medium text-white hover:bg-amber-800">
-                    <i class="fas fa-user-circle mr-2"></i> Mi Perfil
-                </a>
-                <button onclick="logout()"
-                    class="w-full text-left block px-3 py-2 rounded-md text-base font-medium text-red-300 hover:text-red-100 hover:bg-red-900/30">
-                    <i class="fas fa-sign-out-alt mr-2"></i> Cerrar Sesión
-                </button>
-            </div>
-        </div>
-    </div>
-</nav>
-
-<!-- El script para la interactividad se carga desde nav-loader.js, no es necesario aquí -->
+</aside>
