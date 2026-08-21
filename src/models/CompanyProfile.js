@@ -13,14 +13,14 @@ const CompanyProfile = {
         try {
             const sql = 'SELECT * FROM company_profiles WHERE user_id = ?';
             const profile = await get(sql, [userId]);
-            
+
             if (profile) {
                 profile.is_published = profile.is_published === 1 || profile.is_published === true;
                 // Parsear las categorías si existen
                 if (profile.product_categories) {
                     try {
                         profile.product_categories = JSON.parse(profile.product_categories);
-                    } catch(e) {
+                    } catch (e) {
                         profile.product_categories = [];
                     }
                 } else {

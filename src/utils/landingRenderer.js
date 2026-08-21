@@ -26,6 +26,42 @@ const extractYoutubeId = (url) => {
     return (match && match[2].length === 11) ? match[2] : null;
 };
 
+const AWARDS_FALLBACK_MAP = {
+    'cacao of excellence': '/images/ENG_COLOR_CacaoOfExcellenceNewLogo2023.png',
+    'international chocolate awards - oro': '/images/ica.png',
+    'international chocolate awards - plata': '/images/ica.png',
+    'international chocolate awards - bronce': '/images/ica.png',
+    'paris gourmet avpa - bronce': '/images/avpa-bronce.avif',
+    'paris gourmet avpa - plata': '/images/avpa-plata.avif',
+    'paris gourmet avpa - oro': '/images/avpa-oro.avif',
+    'academy of chocolate - oro': '/images/premios-aoc.jpg',
+    'academy of chocolate - plata': '/images/premios-aoc.jpg',
+    'academy of chocolate - bronce': '/images/premios-aoc.jpg',
+    'cup of excellence (taza de excelencia)': '/images/premios-coe.jpg',
+    'cup of excellence': '/images/premios-coe.jpg',
+    'taza de excelencia': '/images/premios-coe.jpg',
+    'sca coffee awards': '/images/premios-sca.png',
+    'london honey awards - platino': '/images/london-honey-platino.png',
+    'biolmiel - medalla de oro': '/images/biolmiel-oro.png'
+};
+
+const getAwardLogo = (name) => {
+    if (!name) return null;
+    const clean = name.toLowerCase().trim();
+    if (AWARDS_FALLBACK_MAP[clean]) return AWARDS_FALLBACK_MAP[clean];
+    if (clean.includes('cacao of excellence')) return '/images/ENG_COLOR_CacaoOfExcellenceNewLogo2023.png';
+    if (clean.includes('international chocolate awards') || clean.includes('chocolate awards')) return '/images/ica.png';
+    if (clean.includes('avpa') && clean.includes('oro')) return '/images/avpa-oro.avif';
+    if (clean.includes('avpa') && clean.includes('plata')) return '/images/avpa-plata.avif';
+    if (clean.includes('avpa')) return '/images/avpa-bronce.avif';
+    if (clean.includes('academy of chocolate')) return '/images/premios-aoc.jpg';
+    if (clean.includes('cup of excellence') || clean.includes('taza de excelencia')) return '/images/premios-coe.jpg';
+    if (clean.includes('sca')) return '/images/premios-sca.png';
+    if (clean.includes('london honey')) return '/images/london-honey-platino.png';
+    if (clean.includes('biolmiel')) return '/images/biolmiel-oro.png';
+    return null;
+};
+
 const renderProductCards = (products, phone, userId, hostUrl = '', companyName = '', isSuggested = false) => {
     if (!products || products.length === 0) {
         return `<div class="col-span-full text-center py-12 bg-stone-50 rounded-2xl border border-dashed border-stone-200"><p class="text-stone-500 italic">No hay productos disponibles.</p></div>`;
@@ -44,6 +80,52 @@ const renderProductCards = (products, phone, userId, hostUrl = '', companyName =
         const typeIcon = tipo === 'cafe' ? 'fa-mug-hot' : (tipo === 'cacao' ? 'fa-cookie-bite' : 'fa-jar');
         const typeLabel = toTitleCase(prod.tipo_producto || 'Producto');
         const score = prod.puntaje_sca || null;
+
+        const premiosList = Array.isArray(prod.premios)
+            ? prod.premios
+            : (typeof prod.premios_json === 'string'
+                ? safeJSONParse(prod.premios_json || '[]')
+                : (prod.premios_json || []));
+
+        let premiosHtml = '';
+        if (premiosList && premiosList.length > 0) {
+            premiosHtml = `
+                <div class="absolute top-3 right-3 flex flex-col items-end gap-1.5 z-10 max-h-56 overflow-hidden pointer-events-auto">
+                    ${score ? `
+                    <span class="bg-amber-500 text-white text-[11px] font-black px-3 py-1 rounded-full flex items-center gap-1.5 shadow-lg mb-0.5">
+                        <i class="fas fa-star text-[9px]"></i> ${score} PTS
+                    </span>` : ''}
+                    ${premiosList.map(prem => {
+                        const premNombre = prem.nombre || prem.name || '';
+                        const url = prem.logo_url || getAwardLogo(premNombre);
+                        const yearText = prem.year || prem.anio || prem.ano ? ` (${prem.year || prem.anio || prem.ano})` : '';
+                        const titleText = `${premNombre}${yearText}`;
+
+                        if (url) {
+                            return `
+                            <div class="w-10 h-10 bg-white/95 backdrop-blur-md rounded-xl p-1 shadow-md border border-white/80 flex items-center justify-center transition-transform hover:scale-110" title="${titleText}">
+                                <img src="${url}" alt="${premNombre}" class="max-w-full max-h-full object-contain">
+                            </div>`;
+                        } else if (premNombre) {
+                            return `
+                            <div class="bg-amber-50/95 backdrop-blur-md text-amber-900 border border-amber-200/80 rounded-xl px-2 py-1 shadow-md flex items-center gap-1 text-[10px] font-bold" title="${titleText}">
+                                <i class="fas fa-award text-amber-600 text-xs"></i>
+                                <span class="truncate max-w-[90px]">${premNombre}</span>
+                            </div>`;
+                        }
+                        return '';
+                    }).join('')}
+                </div>
+            `;
+        } else if (score) {
+            premiosHtml = `
+                <div class="absolute top-4 right-4 z-10">
+                    <span class="bg-amber-500 text-white text-[11px] font-black px-3 py-1.5 rounded-full flex items-center gap-1.5 shadow-lg">
+                        <i class="fas fa-star text-[9px]"></i> ${score} PTS
+                    </span>
+                </div>
+            `;
+        }
 
         const perf = prod.perfil_data || {};
         const weight = `${prod.peso || ''} ${prod.unidad || 'G'}`;
@@ -78,21 +160,16 @@ const renderProductCards = (products, phone, userId, hostUrl = '', companyName =
                 <img src="${prodImage}" class="w-full h-full object-cover transition duration-500 group-hover:scale-110">
                 
                 <!-- Badges superiores -->
-                <div class="absolute top-4 left-4">
+                <div class="absolute top-4 left-4 z-10">
                     <span class="bg-white/95 backdrop-blur shadow-sm text-stone-800 text-[11px] font-bold px-3 py-1.5 rounded-full flex items-center gap-2">
                         <i class="fas ${typeIcon} text-amber-800"></i> ${typeLabel}
                     </span>
                 </div>
-                ${score ? `
-                <div class="absolute top-4 right-4">
-                    <span class="bg-amber-500 text-white text-[11px] font-black px-3 py-1.5 rounded-full flex items-center gap-1.5 shadow-lg">
-                        <i class="fas fa-star text-[9px]"></i> ${score} PTS
-                    </span>
-                </div>` : ''}
+                ${premiosHtml}
                 
                 <!-- Traceability Badge -->
                 ${hasTraceability ? `
-                <div class="absolute bottom-4 left-4">
+                <div class="absolute bottom-4 left-4 z-10">
                     <span class="bg-emerald-500/90 backdrop-blur text-white text-[9px] font-black px-2 py-1 rounded shadow-lg flex items-center gap-1">
                         <i class="fas fa-check-circle"></i> TRAZABLE
                     </span>
@@ -357,7 +434,6 @@ const renderTienda = (data, hostUrl = '') => {
         <div class="container mx-auto px-6 py-12 fade-in">
             <div class="max-w-3xl mb-12">
                 <h1 class="text-4xl md:text-5xl font-display font-bold text-stone-900 mb-4">Nuestra Tienda</h1>
-                <p class="text-lg text-stone-600">Explora nuestra selección exclusiva de productos con trazabilidad garantizada directamente desde el origen.</p>
             </div>
             
             <div class="product-grid">

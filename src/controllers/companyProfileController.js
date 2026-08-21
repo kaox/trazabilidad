@@ -151,7 +151,7 @@ const companyProfileController = {
             if (profileData.cover_image_url && profileData.cover_image_url.startsWith('data:image/')) {
                 const uploadResult = await processImagesArray([profileData.cover_image_url], 'company-covers', userId, PROVIDER);
                 if (uploadResult && uploadResult.length > 0) {
-                    profileData.cover_image_url = uploadResult[0]; 
+                    profileData.cover_image_url = uploadResult[0];
                 }
             }
 
