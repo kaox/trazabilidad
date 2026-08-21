@@ -183,7 +183,12 @@ function autoExpandActiveGroup() {
 
     const groupMap = [
         {
-            paths: ['/app/fincas', '/app/procesadoras', '/app/perfil-comercial'],
+            paths: ['/app/perfil-comercial'],
+            triggerId: 'nav-marca-trigger',
+            groupId: 'nav-marca-group'
+        },
+        {
+            paths: ['/app/fincas', '/app/procesadoras'],
             triggerId: 'nav-origen-trigger',
             groupId: 'nav-origen-group'
         },
