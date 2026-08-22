@@ -956,7 +956,7 @@ const app = {
                 `;
             }
 
-            const perf = this.safeJSONParse(prod.atributos_dinamicos || '[]');
+            const perf = JSON.parse(prod.atributos_dinamicos);
             console.log('perf', perf);
             console.log('prod', prod.atributos_dinamicos);
             const weight = `${prod.peso || ''} ${prod.unidad || 'G'}`;
