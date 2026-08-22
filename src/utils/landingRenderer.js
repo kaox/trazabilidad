@@ -96,25 +96,25 @@ const renderProductCards = (products, phone, userId, hostUrl = '', companyName =
                         <i class="fas fa-star text-[9px]"></i> ${score} PTS
                     </span>` : ''}
                     ${premiosList.map(prem => {
-                        const premNombre = prem.nombre || prem.name || '';
-                        const url = prem.logo_url || getAwardLogo(premNombre);
-                        const yearText = prem.year || prem.anio || prem.ano ? ` (${prem.year || prem.anio || prem.ano})` : '';
-                        const titleText = `${premNombre}${yearText}`;
+                const premNombre = prem.nombre || prem.name || '';
+                const url = prem.logo_url || getAwardLogo(premNombre);
+                const yearText = prem.year || prem.anio || prem.ano ? ` (${prem.year || prem.anio || prem.ano})` : '';
+                const titleText = `${premNombre}${yearText}`;
 
-                        if (url) {
-                            return `
+                if (url) {
+                    return `
                             <div class="w-10 h-10 bg-white/95 backdrop-blur-md rounded-xl p-1 shadow-md border border-white/80 flex items-center justify-center transition-transform hover:scale-110" title="${titleText}">
                                 <img src="${url}" alt="${premNombre}" class="max-w-full max-h-full object-contain">
                             </div>`;
-                        } else if (premNombre) {
-                            return `
+                } else if (premNombre) {
+                    return `
                             <div class="bg-amber-50/95 backdrop-blur-md text-amber-900 border border-amber-200/80 rounded-xl px-2 py-1 shadow-md flex items-center gap-1 text-[10px] font-bold" title="${titleText}">
                                 <i class="fas fa-award text-amber-600 text-xs"></i>
                                 <span class="truncate max-w-[90px]">${premNombre}</span>
                             </div>`;
-                        }
-                        return '';
-                    }).join('')}
+                }
+                return '';
+            }).join('')}
                 </div>
             `;
         } else if (score) {
@@ -127,7 +127,7 @@ const renderProductCards = (products, phone, userId, hostUrl = '', companyName =
             `;
         }
 
-        const perf = prod.perfil_data || {};
+        const perf = safeJSONParse(prod.atributos_dinamicos || '[]');
         const weight = `${prod.peso || ''} ${prod.unidad || 'G'}`;
 
         // Atributos específicos según tipo
@@ -143,7 +143,7 @@ const renderProductCards = (products, phone, userId, hostUrl = '', companyName =
         } else if (tipo === 'cacao') {
             attrHtml = `
                 <div class="flex flex-wrap gap-x-4 gap-y-2 mt-4 text-[11px] font-bold text-stone-500 uppercase tracking-wider">
-                    ${perf.genetica ? `<span class="flex items-center gap-1.5"><i class="fas fa-dna text-stone-400"></i> ${perf.genetica}</span>` : ''}
+                    ${perf.grupo_genetico ? `<span class="flex items-center gap-1.5"><i class="fas fa-dna text-stone-400"></i> ${perf.grupo_genetico}</span>` : ''}
                     ${perf.porcentaje_cacao ? `<span class="flex items-center gap-1.5"><i class="fas fa-percent text-stone-400"></i> ${perf.porcentaje_cacao}% CACAO</span>` : ''}
                 </div>
             `;
@@ -153,6 +153,71 @@ const renderProductCards = (products, phone, userId, hostUrl = '', companyName =
         const fincaName = prod.nombre_finca || 'Origen Verificado';
         const fincaLoc = [prod.finca_distrito, prod.finca_provincia, prod.finca_departamento].filter(Boolean).map(p => toTitleCase(p)).join(', ');
         const fincaAltura = prod.finca_altura ? `${prod.finca_altura} msnm` : '';
+
+        // Perfil Sensorial (Barras)
+        let sensoryBarsHtml = '';
+        let perfilObj = prod.perfil_data || prod.perfil || null;
+        if (typeof perfilObj === 'string') {
+            try { perfilObj = JSON.parse(perfilObj); } catch (e) { perfilObj = null; }
+        }
+
+        if (perfilObj && typeof perfilObj === 'object') {
+            const attrs = tipo === 'cafe'
+                ? [['Sabor', 'sabor', '#d97706'], ['Acidez', 'acidez', '#84cc16'], ['Cuerpo', 'cuerpo', '#92400e']]
+                : [['Cacao', 'cacao', '#451a03'], ['Acidez', 'acidez', '#84cc16'], ['Amargor', 'amargor', '#1e1b4b']];
+
+            const hasValues = attrs.some(([_, key]) => perfilObj[key] !== undefined && perfilObj[key] !== null && parseFloat(perfilObj[key]) > 0);
+
+            if (hasValues) {
+                sensoryBarsHtml = `
+                    <div class="mb-4 pt-3 border-t border-stone-100">
+                        <div class="flex items-center justify-between mb-2.5">
+                            <h4 class="text-[10px] font-bold text-stone-400 uppercase tracking-widest">Perfil en Taza</h4>
+                            <i class="fas fa-info-circle text-stone-300 text-xs" title="Escala del 1 al 10"></i>
+                        </div>
+                        <div class="space-y-2.5">
+                            ${attrs.map(([label, key, defaultColor]) => {
+                    const val = parseFloat(perfilObj[key]) || 0;
+                    const percent = Math.min(Math.max((val / 10) * 100, 0), 100);
+                    return `
+                                    <div class="sensory-row">
+                                        <div class="flex justify-between items-center mb-1 text-xs">
+                                            <span class="sensory-label text-stone-600 font-medium">${label}</span>
+                                            <span class="text-[10px] font-bold text-stone-400">${val > 0 ? val : ''}</span>
+                                        </div>
+                                        <div class="h-1.5 bg-stone-100 rounded-full overflow-hidden w-full relative">
+                                            <div class="h-full rounded-full transition-all duration-500" style="width: ${percent}%; background-color: ${defaultColor};"></div>
+                                        </div>
+                                    </div>
+                                `;
+                }).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        // Etiquetas de sabor (Max 3)
+        let flavorBadgesHtml = '';
+        let saboresList = prod.notas_rueda || prod.sabores || prod.notas_json || null;
+        if (typeof saboresList === 'string') {
+            try { saboresList = JSON.parse(saboresList); } catch (e) { saboresList = null; }
+        }
+
+        if (saboresList && Array.isArray(saboresList) && saboresList.length > 0) {
+            const cats = [...new Set(saboresList.map(n => {
+                if (typeof n === 'string') return n;
+                return n.category || n.name || n.nombre;
+            }).filter(Boolean))].slice(0, 3);
+
+            if (cats.length > 0) {
+                flavorBadgesHtml = `
+                    <div class="flex flex-wrap gap-1.5 mb-4">
+                        ${cats.map(cat => `<span class="px-2.5 py-1 bg-stone-100 text-stone-600 rounded-lg text-[10px] font-bold uppercase tracking-wider border border-stone-200/60">${cat}</span>`).join('')}
+                    </div>
+                `;
+            }
+        }
 
         return `
     <div class="product-card fade-in">
@@ -187,7 +252,7 @@ const renderProductCards = (products, phone, userId, hostUrl = '', companyName =
                 </div>
 
                 <!-- Finca Card -->
-                <div class="bg-stone-50 rounded-2xl p-4 border border-stone-100 mb-6">
+                <div class="bg-stone-50 rounded-2xl p-4 border border-stone-100 mb-4">
                     <div class="flex items-start gap-3">
                         <div class="w-8 h-8 rounded-lg bg-white border border-stone-200 flex items-center justify-center flex-shrink-0 text-stone-400">
                             <i class="fas fa-map-marker-alt text-red-500/70 text-xs"></i>
@@ -199,6 +264,12 @@ const renderProductCards = (products, phone, userId, hostUrl = '', companyName =
                         </div>
                     </div>
                 </div>
+
+                <!-- Perfil Sensorial (Barras) -->
+                ${sensoryBarsHtml}
+
+                <!-- Etiquetas de sabor (Max 3) -->
+                ${flavorBadgesHtml}
 
                 <div class="mt-auto flex flex-col gap-3">
                     ${isSuggested ? `

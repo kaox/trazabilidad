@@ -279,6 +279,7 @@ const getPublicProductsWithProfilesByUserId = async (userId) => {
             p.id, p.nombre, p.descripcion, p.imagenes_json, p.tipo_producto, p.premios_json, 
             p.peso, u.code as unidad, 
             p.precio, cur.symbol as moneda,
+            p.atributos_dinamicos,
             perf.perfil_data, perf.puntaje_sca,
             rueda.notas_json, rueda.nombre_rueda,
             f.nombre_finca, f.pais as finca_pais, f.departamento as finca_departamento, 
