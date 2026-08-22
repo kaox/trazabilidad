@@ -653,9 +653,10 @@ const app = {
                     <div class="lg:col-span-2">
                         <div class="flex items-center justify-between mb-8">
                             <h3 class="wl-heading-3 text-3xl font-display font-bold text-stone-900">Productos Destacados</h3>
-                            <a href="/tienda" data-page="tienda" class="text-accent font-bold hover:underline">Ver todo el catálogo <i class="fas fa-arrow-right ml-1"></i></a>
+                            <a href="/tienda" data-page="tienda" class="text-accent font-bold hover:underline text-sm md:text-base">Ver catálogo <i class="fas fa-arrow-right ml-1"></i></a>
                         </div>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- CAMBIO: Grid cambiado a grid-cols-2 en móviles por defecto -->
+                        <div class="grid grid-cols-2 md:grid-cols-2 gap-3 md:gap-6">
                             ${(isSuggested && (!products || products.length === 0)) ? tiendaHTML : this.renderProductCards(products.slice(0, 4), user.celular || user.contact_phone, user.id, user.name)}
                             ${isSuggested ? fomoHTML : ''}
                         </div>
@@ -703,7 +704,8 @@ const app = {
                     <h1 class="wl-heading-3 text-4xl md:text-5xl font-display font-bold text-stone-900 mb-4">Nuestra Tienda</h1>
                 </div>
                 
-                <div class="product-grid">
+                <!-- CAMBIO: Grid cambiado a grid-cols-2 en móviles por defecto -->
+                <div class="product-grid grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-6">
                     ${this.renderProductCards(products, user.celular || user.contact_phone, user.id, user.name)}
                 </div>
             </div>
@@ -917,10 +919,10 @@ const app = {
             let premiosHtml = '';
             if (premiosList && premiosList.length > 0) {
                 premiosHtml = `
-                    <div class="absolute top-3 right-3 flex flex-col items-end gap-1.5 z-10 max-h-56 overflow-hidden pointer-events-auto">
+                    <div class="absolute top-2 right-2 md:top-3 md:right-3 flex flex-col items-end gap-1.5 z-10 max-h-56 overflow-hidden pointer-events-auto">
                         ${score ? `
-                        <span class="bg-amber-500 text-white text-[11px] font-black px-3 py-1 rounded-full flex items-center gap-1.5 shadow-lg mb-0.5">
-                            <i class="fas fa-star text-[9px]"></i> ${score} PTS
+                        <span class="bg-amber-500 text-white text-[9px] md:text-[11px] font-black px-2 md:px-3 py-1 rounded-full flex items-center gap-1 md:gap-1.5 shadow-lg mb-0.5">
+                            <i class="fas fa-star text-[8px] md:text-[9px]"></i> ${score} PTS
                         </span>` : ''}
                         ${premiosList.map(prem => {
                     const premNombre = prem.nombre || prem.name || '';
@@ -930,14 +932,14 @@ const app = {
 
                     if (url) {
                         return `
-                                <div class="w-10 h-10 bg-white/95 backdrop-blur-md rounded-xl p-1 shadow-md border border-white/80 flex items-center justify-center transition-transform hover:scale-110" title="${titleText}">
+                                <div class="w-8 h-8 md:w-10 md:h-10 bg-white/95 backdrop-blur-md rounded-lg md:rounded-xl p-1 shadow-md border border-white/80 flex items-center justify-center transition-transform hover:scale-110" title="${titleText}">
                                     <img src="${url}" alt="${premNombre}" class="max-w-full max-h-full object-contain">
                                 </div>`;
                     } else if (premNombre) {
                         return `
-                                <div class="bg-amber-50/95 backdrop-blur-md text-amber-900 border border-amber-200/80 rounded-xl px-2 py-1 shadow-md flex items-center gap-1 text-[10px] font-bold" title="${titleText}">
+                                <div class="bg-amber-50/95 backdrop-blur-md text-amber-900 border border-amber-200/80 rounded-lg md:rounded-xl px-2 py-1 shadow-md flex items-center gap-1 text-[8px] md:text-[10px] font-bold" title="${titleText}">
                                     <i class="fas fa-award text-amber-600 text-xs"></i>
-                                    <span class="truncate max-w-[90px]">${premNombre}</span>
+                                    <span class="truncate max-w-[70px] md:max-w-[90px]">${premNombre}</span>
                                 </div>`;
                     }
                     return '';
@@ -946,34 +948,32 @@ const app = {
                 `;
             } else if (score) {
                 premiosHtml = `
-                    <div class="absolute top-4 right-4 z-10">
-                        <span class="bg-amber-500 text-white text-[11px] font-black px-3 py-1.5 rounded-full flex items-center gap-1.5 shadow-lg">
-                            <i class="fas fa-star text-[9px]"></i> ${score} PTS
+                    <div class="absolute top-2 right-2 md:top-4 md:right-4 z-10">
+                        <span class="bg-amber-500 text-white text-[9px] md:text-[11px] font-black px-2 md:px-3 py-1 md:py-1.5 rounded-full flex items-center gap-1 md:gap-1.5 shadow-lg">
+                            <i class="fas fa-star text-[8px] md:text-[9px]"></i> ${score} PTS
                         </span>
                     </div>
                 `;
             }
 
-            //const perf = prod.perfil_data || {};
-            //console.log(prod.atributos_dinamicos);
             const perf = this.safeJSONParse(prod.atributos_dinamicos || '[]');
             const weight = `${prod.peso || ''} ${prod.unidad || 'G'}`;
 
-            // Atributos específicos según tipo
+            // Atributos específicos según tipo (ajustado para móviles)
             let attrHtml = '';
             if (tipo === 'cafe') {
                 attrHtml = `
-                    <div class="flex flex-wrap gap-x-4 gap-y-2 mt-4 text-[11px] font-bold text-stone-500 uppercase tracking-wider">
-                        ${perf.variedad ? `<span class="flex items-center gap-1.5"><i class="fas fa-seedling text-stone-400"></i> ${perf.variedad}</span>` : ''}
-                        ${perf.proceso ? `<span class="flex items-center gap-1.5"><i class="fas fa-sync text-stone-400"></i> ${perf.proceso}</span>` : ''}
-                        ${perf.tueste ? `<span class="flex items-center gap-1.5"><i class="fas fa-fire text-stone-400"></i> ${perf.tueste}</span>` : ''}
+                    <div class="flex flex-wrap gap-x-2 md:gap-x-4 gap-y-1 md:gap-y-2 mt-2 md:mt-4 text-[9px] md:text-[11px] font-bold text-stone-500 uppercase tracking-wider">
+                        ${perf.variedad ? `<span class="flex items-center gap-1"><i class="fas fa-seedling text-stone-400"></i> ${perf.variedad}</span>` : ''}
+                        ${perf.proceso ? `<span class="flex items-center gap-1"><i class="fas fa-sync text-stone-400"></i> ${perf.proceso}</span>` : ''}
+                        ${perf.tueste ? `<span class="flex items-center gap-1"><i class="fas fa-fire text-stone-400"></i> ${perf.tueste}</span>` : ''}
                     </div> 
                 `;
             } else if (tipo === 'cacao') {
                 attrHtml = `
-                    <div class="flex flex-wrap gap-x-4 gap-y-2 mt-4 text-[11px] font-bold text-stone-500 uppercase tracking-wider">
-                        ${perf.grupo_genetico ? `<span class="flex items-center gap-1.5"><i class="fas fa-dna text-stone-400"></i> ${perf.grupo_genetico}</span>` : ''}
-                        ${perf.porcentaje_cacao ? `<span class="flex items-center gap-1.5"><i class="fas fa-percent text-stone-400"></i> ${perf.porcentaje_cacao}% CACAO</span>` : ''}
+                    <div class="flex flex-wrap gap-x-2 md:gap-x-4 gap-y-1 md:gap-y-2 mt-2 md:mt-4 text-[9px] md:text-[11px] font-bold text-stone-500 uppercase tracking-wider">
+                        ${perf.grupo_genetico ? `<span class="flex items-center gap-1"><i class="fas fa-dna text-stone-400"></i> ${perf.grupo_genetico}</span>` : ''}
+                        ${perf.porcentaje_cacao ? `<span class="flex items-center gap-1"><i class="fas fa-percent text-stone-400"></i> ${perf.porcentaje_cacao}% CACAO</span>` : ''}
                     </div>
                 `;
             }
@@ -999,22 +999,22 @@ const app = {
 
                 if (hasValues) {
                     sensoryBarsHtml = `
-                        <div class="mb-4 pt-3 border-t border-stone-100">
-                            <div class="flex items-center justify-between mb-2.5">
-                                <h4 class="text-[10px] font-bold text-stone-400 uppercase tracking-widest">Perfil en Taza</h4>
+                        <div class="mb-2 md:mb-4 pt-2 md:pt-3 border-t border-stone-100">
+                            <div class="flex items-center justify-between mb-1.5 md:mb-2.5">
+                                <h4 class="text-[9px] md:text-[10px] font-bold text-stone-400 uppercase tracking-widest">Perfil en Taza</h4>
                                 <i class="fas fa-info-circle text-stone-300 text-xs" title="Escala del 1 al 10"></i>
                             </div>
-                            <div class="space-y-2.5">
+                            <div class="space-y-1.5 md:space-y-2.5">
                                 ${attrs.map(([label, key, defaultColor]) => {
                         const val = parseFloat(perfilObj[key]) || 0;
                         const percent = Math.min(Math.max((val / 10) * 100, 0), 100);
                         return `
                                         <div class="sensory-row">
-                                            <div class="flex justify-between items-center mb-1 text-xs">
+                                            <div class="flex justify-between items-center mb-0.5 md:mb-1 text-[10px] md:text-xs">
                                                 <span class="sensory-label text-stone-600 font-medium">${label}</span>
-                                                <span class="text-[10px] font-bold text-stone-400">${val > 0 ? val : ''}</span>
+                                                <span class="text-[9px] md:text-[10px] font-bold text-stone-400">${val > 0 ? val : ''}</span>
                                             </div>
-                                            <div class="h-1.5 bg-stone-100 rounded-full overflow-hidden w-full relative">
+                                            <div class="h-1 md:h-1.5 bg-stone-100 rounded-full overflow-hidden w-full relative">
                                                 <div class="h-full rounded-full transition-all duration-500" style="width: ${percent}%; background-color: ${defaultColor};"></div>
                                             </div>
                                         </div>
@@ -1041,21 +1041,21 @@ const app = {
 
                 if (cats.length > 0) {
                     flavorBadgesHtml = `
-                        <div class="flex flex-wrap gap-1.5 mb-4">
-                            ${cats.map(cat => `<span class="px-2.5 py-1 bg-stone-100 text-stone-600 rounded-lg text-[10px] font-bold uppercase tracking-wider border border-stone-200/60">${cat}</span>`).join('')}
+                        <div class="flex flex-wrap gap-1 md:gap-1.5 mb-2 md:mb-4">
+                            ${cats.map(cat => `<span class="px-1.5 md:px-2.5 py-0.5 md:py-1 bg-stone-100 text-stone-600 rounded-md md:rounded-lg text-[8px] md:text-[10px] font-bold uppercase tracking-wider border border-stone-200/60">${cat}</span>`).join('')}
                         </div>
                     `;
                 }
             }
 
             return `
-            <div class="product-card fade-in cursor-pointer transition-transform hover:-translate-y-1 hover:shadow-lg duration-300" onclick="if(!event.target.closest('button') && !event.target.closest('a')) window.location.href='${detailLink}'">
-                <div class="h-64 relative overflow-hidden group">
+            <div class="product-card fade-in cursor-pointer transition-transform hover:-translate-y-1 hover:shadow-lg duration-300 bg-white rounded-2xl overflow-hidden border border-stone-200" onclick="if(!event.target.closest('button') && !event.target.closest('a')) window.location.href='${detailLink}'">
+                <div class="h-40 md:h-64 relative overflow-hidden group">
                     <img src="${prodImage}" class="w-full h-full object-cover transition duration-500 group-hover:scale-110">
                     
                     <!-- Badges superiores -->
-                    <div class="absolute top-4 left-4 z-10">
-                        <span class="bg-white/95 backdrop-blur shadow-sm text-stone-800 text-[11px] font-bold px-3 py-1.5 rounded-full flex items-center gap-2">
+                    <div class="absolute top-2 left-2 md:top-4 md:left-4 z-10">
+                        <span class="bg-white/95 backdrop-blur shadow-sm text-stone-800 text-[9px] md:text-[11px] font-bold px-2 md:px-3 py-1 md:py-1.5 rounded-full flex items-center gap-1 md:gap-2">
                             <i class="fas ${typeIcon} text-amber-800"></i> ${typeLabel}
                         </span>
                     </div>
@@ -1063,33 +1063,33 @@ const app = {
                     
                     <!-- Traceability Badge (Overlay inferior) -->
                     ${hasTraceability ? `
-                    <div class="absolute bottom-4 left-4 z-10">
-                        <span class="bg-emerald-500/90 backdrop-blur text-white text-[9px] font-black px-2 py-1 rounded shadow-lg flex items-center gap-1">
+                    <div class="absolute bottom-2 left-2 md:bottom-4 md:left-4 z-10">
+                        <span class="bg-emerald-500/90 backdrop-blur text-white text-[8px] md:text-[9px] font-black px-1.5 md:px-2 py-0.5 md:py-1 rounded shadow-lg flex items-center gap-1">
                             <i class="fas fa-check-circle"></i> TRAZABLE
                         </span>
                     </div>` : ''}
                 </div>
 
-                <div class="p-6 flex-grow flex flex-col">
-                    <div class="mb-4">
-                        <h4 class="text-2xl font-display font-bold text-stone-900 leading-tight mb-1">${prod.nombre}</h4>
-                        <div class="flex items-baseline gap-2">
-                            <p class="text-stone-900 font-black text-2xl">${prod.moneda || 'S/'} ${prod.precio || '0.00'}</p>
-                            <span class="text-stone-400 font-bold text-sm uppercase">${weight}</span>
+                <div class="p-3 md:p-6 flex-grow flex flex-col">
+                    <div class="mb-2 md:mb-4">
+                        <h4 class="text-base md:text-2xl font-display font-bold text-stone-900 leading-tight mb-0.5 md:mb-1 line-clamp-2">${prod.nombre}</h4>
+                        <div class="flex items-baseline gap-1.5 md:gap-2">
+                            <p class="text-stone-900 font-black text-lg md:text-2xl">${prod.moneda || 'S/'} ${prod.precio || '0.00'}</p>
+                            <span class="text-stone-400 font-bold text-[10px] md:text-sm uppercase">${weight}</span>
                         </div>
                         ${attrHtml}
                     </div>
 
                     <!-- Finca Card -->
-                    <div class="bg-stone-50 rounded-2xl p-4 border border-stone-100 mb-4">
-                        <div class="flex items-start gap-3">
-                            <div class="w-8 h-8 rounded-lg bg-white border border-stone-200 flex items-center justify-center flex-shrink-0 text-stone-400">
-                                <i class="fas fa-map-marker-alt text-red-500/70 text-xs"></i>
+                    <div class="bg-stone-50 rounded-xl md:rounded-2xl p-2.5 md:p-4 border border-stone-100 mb-2 md:mb-4">
+                        <div class="flex items-start gap-2 md:gap-3">
+                            <div class="w-6 h-6 md:w-8 md:h-8 rounded-md md:rounded-lg bg-white border border-stone-200 flex items-center justify-center flex-shrink-0 text-stone-400">
+                                <i class="fas fa-map-marker-alt text-red-500/70 text-[10px] md:text-xs"></i>
                             </div>
                             <div>
-                                <h5 class="font-bold text-stone-800 text-sm leading-tight">${fincaName}</h5>
-                                <p class="text-[10px] text-stone-500 mt-0.5 line-clamp-1">${fincaLoc || 'Perú'}</p>
-                                ${fincaAltura ? `<p class="text-[10px] font-bold text-amber-900 mt-1 flex items-center gap-1"><i class="fas fa-mountain text-[8px]"></i> ${fincaAltura}</p>` : ''}
+                                <h5 class="font-bold text-stone-800 text-[11px] md:text-sm leading-tight line-clamp-1">${fincaName}</h5>
+                                <p class="text-[9px] md:text-[10px] text-stone-500 mt-0.5 line-clamp-1">${fincaLoc || 'Perú'}</p>
+                                ${fincaAltura ? `<p class="text-[9px] md:text-[10px] font-bold text-amber-900 mt-0.5 md:mt-1 flex items-center gap-1"><i class="fas fa-mountain text-[8px]"></i> ${fincaAltura}</p>` : ''}
                             </div>
                         </div>
                     </div>
@@ -1100,16 +1100,16 @@ const app = {
                     <!-- Etiquetas de sabor (Max 3) -->
                     ${flavorBadgesHtml}
 
-                    <div class="mt-auto flex flex-col gap-3">
+                    <div class="mt-auto flex flex-col gap-2 md:gap-3">
                         ${this.state.landingData?.user?.is_suggested ? `
-                            <button onclick="event.stopPropagation()" disabled class="w-full bg-stone-200 text-stone-400 py-3 rounded-2xl font-bold text-sm shadow-sm flex items-center justify-center gap-2 cursor-not-allowed" title="Reclama tu perfil para activar ventas">
-                                <i class="fab fa-whatsapp"></i> Compra rápida (No disponible)
+                            <button onclick="event.stopPropagation()" disabled class="w-full bg-stone-200 text-stone-400 py-2 md:py-3 rounded-lg md:rounded-2xl font-bold text-[10px] md:text-sm shadow-sm flex items-center justify-center gap-1 md:gap-2 cursor-not-allowed" title="Reclama tu perfil para activar ventas">
+                                <i class="fab fa-whatsapp"></i> Compra (No disp.)
                             </button>
                         ` : `
-                            <button onclick="event.stopPropagation(); app.handleAddToCartClick(event, '${prod.id}')" class="w-full bg-stone-900 hover:bg-stone-800 text-white py-2.5 px-4 rounded-xl font-bold text-sm shadow-sm flex items-center justify-center gap-2 transition">
-                                <i class="fas fa-cart-plus text-xs"></i> Añadir al carrito
+                            <button onclick="event.stopPropagation(); app.handleAddToCartClick(event, '${prod.id}')" class="w-full bg-stone-900 hover:bg-stone-800 text-white py-2 md:py-2.5 px-2 md:px-4 rounded-lg md:rounded-xl font-bold text-[10px] md:text-sm shadow-sm flex items-center justify-center gap-1.5 md:gap-2 transition">
+                                <i class="fas fa-cart-plus text-[10px] md:text-xs"></i> <span class="hidden sm:inline">Añadir al carrito</span><span class="sm:hidden">Añadir</span>
                             </button>
-                            <a id="whatsapp-btn" href="${buyLink}" target="_blank" onclick="event.stopPropagation(); app.trackEvent('buy_click', '${userId}', '${prod.id}')" class="w-full block btn-accent py-2.5 rounded-xl font-bold text-xs shadow-sm flex items-center justify-center gap-1.5">
+                            <a id="whatsapp-btn" href="${buyLink}" target="_blank" onclick="event.stopPropagation(); app.trackEvent('buy_click', '${userId}', '${prod.id}')" class="w-full block btn-accent py-2 md:py-2.5 rounded-lg md:rounded-xl font-bold text-[10px] md:text-xs shadow-sm flex items-center justify-center gap-1 md:gap-1.5">
                                 <i class="fab fa-whatsapp"></i> Compra rápida
                             </a>
                         `}
