@@ -26,9 +26,18 @@ const getVerifiedCompaniesWithImmutable = async () => {
             AND tr.blockchain_hash IS NOT NULL 
             AND tr.blockchain_hash != ''
         WHERE cp.is_published IS TRUE
-        GROUP BY u.id, cp.name, cp.logo_url, cp.company_type, cp.product_categories, 
-                 f.pais, f.departamento, f.provincia, p.pais, p.departamento, p.provincia, 
-                 f.coordenadas, p.coordenadas, f.tipo, p.tipo
+        GROUP BY 
+            u.id, 
+            cp.name, 
+            cp.logo_url, 
+            cp.cover_image_url, 
+            cp.history_text, 
+            cp.company_type, 
+            cp.product_categories, 
+            f.pais, f.departamento, f.provincia, 
+            p.pais, p.departamento, p.provincia, 
+            f.coordenadas, p.coordenadas, 
+            f.tipo, p.tipo
     `;
     return await db.all(sql);
 };
