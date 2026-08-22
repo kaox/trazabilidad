@@ -128,6 +128,7 @@ const renderProductCards = (products, phone, userId, hostUrl = '', companyName =
         }
 
         const perf = safeJSONParse(prod.atributos_dinamicos || '[]');
+        console.log('perf', perf);
         const weight = `${prod.peso || ''} ${prod.unidad || 'G'}`;
 
         // Atributos específicos según tipo
