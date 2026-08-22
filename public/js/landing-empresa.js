@@ -967,7 +967,7 @@ const app = {
                         ${perf.variedad ? `<span class="flex items-center gap-1.5"><i class="fas fa-seedling text-stone-400"></i> ${perf.variedad}</span>` : ''}
                         ${perf.proceso ? `<span class="flex items-center gap-1.5"><i class="fas fa-sync text-stone-400"></i> ${perf.proceso}</span>` : ''}
                         ${perf.tueste ? `<span class="flex items-center gap-1.5"><i class="fas fa-fire text-stone-400"></i> ${perf.tueste}</span>` : ''}
-                    </div>
+                    </div> 
                 `;
             } else if (tipo === 'cacao') {
                 attrHtml = `
