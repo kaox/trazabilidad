@@ -6,6 +6,8 @@
 const app = {
     safeJSONParse: (str, fallback = []) => {
         if (!str) return fallback;
+        // Si ya es un objeto (y no es null), devuélvelo tal cual
+        if (typeof str === 'object') return str;
         try {
             return JSON.parse(str);
         } catch (e) {
@@ -956,10 +958,7 @@ const app = {
                 `;
             }
 
-            console.log('prod', prod.atributos_dinamicos);
-            const perf = JSON.parse(prod.atributos_dinamicos);
-            console.log('perf', perf);
-
+            const perf = this.safeJSONParse(prod.atributos_dinamicos || '{}');
             const weight = `${prod.peso || ''} ${prod.unidad || 'G'}`;
 
             // Atributos específicos según tipo (ajustado para móviles)
