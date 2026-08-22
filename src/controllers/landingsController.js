@@ -141,7 +141,7 @@ const getCompanyLandingData = async (req, res) => {
             perfil_data: safeJSONParse(p.perfil_data),
             notas_rueda: safeJSONParse(p.notas_json),
             recent_batches: batchesByProduct[p.id] || [],
-            atributos_dinamicos: safeJSONParse(p.atributos_dinamicos || '{}')
+            atributos_dinamicos: safeJSONParse(p.atributos_dinamicos)
         }));
 
         // 6. Enviar Respuesta
