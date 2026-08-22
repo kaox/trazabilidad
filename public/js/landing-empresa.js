@@ -1529,8 +1529,6 @@ const app = {
 
     loadWeather: async function (lat, lng) {
         try {
-            console.log(`📡 Solicitando clima a Open-Meteo -> Lat: ${lat}, Lng: ${lng}`);
-
             const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current=temperature_2m,relative_humidity_2m,wind_speed_10m`;
             const res = await fetch(url);
             const data = await res.json();

@@ -427,9 +427,28 @@ const app = {
         if (filtered.length > 0) {
             filtered.forEach(c => {
                 const logoSrc = c.logo || c.logo_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(c.name)}&background=f5f5f4&color=78350f&size=128`;
+                const coverSrc = c.cover_image || c.cover_image_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(c.name)}&background=f5f5f4&color=78350f&size=128`;
                 const isFinca = c.type === 'finca';
                 const typeColor = isFinca ? 'amber' : 'blue';
                 const locationStr = [c.distrito, c.provincia, c.departamento, c.pais].filter(Boolean).map(p => this.toTitleCase(p)).join(', ') || 'Ubicación por verificar';
+
+                // 1. LÓGICA DE FOTO DE PORTADA (Cover Photo Fallbacks)
+                if (!coverSrc) {
+                    const hasCafe = categories.includes('cafe');
+                    const hasCacao = categories.includes('cacao');
+
+                    if (hasCafe && hasCacao) {
+                        coverSrc = 'https://images.unsplash.com/photo-1497935586351-b67a49e012bf?auto=format&fit=crop&q=80&w=600&h=400';
+                    } else if (hasCafe) {
+                        coverSrc = 'https://images.unsplash.com/photo-1524350876685-274059332603?auto=format&fit=crop&q=80&w=600&h=400';
+                    } else if (hasCacao) {
+                        coverSrc = 'https://images.unsplash.com/photo-1614088234854-8b010f37c352?auto=format&fit=crop&q=80&w=600&h=400';
+                    } else if (isFinca) {
+                        coverSrc = 'https://images.unsplash.com/photo-1505934333218-8fe3cfd42533?auto=format&fit=crop&q=80&w=600&h=400';
+                    } else {
+                        coverSrc = 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&q=80&w=600&h=400';
+                    }
+                }
 
                 // Mostrar mini tags de productos en la tarjeta si los tiene
                 let tagsHtml = '';
@@ -452,24 +471,61 @@ const app = {
                 const slug = this.createSlug(c.name) + '-' + c.id;
                 const linkUrl = `/origen-unico/${slug}`;
                 html += `
-                    <a href="${linkUrl}" class="group relative bg-white rounded-3xl border border-stone-200 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-500 cursor-pointer overflow-hidden flex flex-col h-full text-left no-underline">
-                        <div class="h-2 w-full bg-${typeColor}-600/20 group-hover:bg-${typeColor}-600 transition-colors duration-500"></div>
-                        <div class="p-6 flex flex-col h-full">
-                            <div class="flex justify-between items-start mb-6">
-                                <img src="${logoSrc}" class="w-20 h-20 rounded-2xl object-cover border-2 border-white shadow-md bg-white">
-                                ${c.status === 'pending' ? '<span class="text-[10px] font-bold text-amber-600 bg-amber-50 px-2 py-1 rounded-full border border-amber-100">Sugerido</span>' : '<span class="text-[10px] font-bold text-green-700 bg-green-50 px-2 py-1 rounded-full border border-green-100"><i class="fas fa-check-circle"></i> Verificado</span>'}
+                    <a href="${linkUrl}" class="group relative bg-white rounded-3xl border border-stone-200 shadow-sm hover:shadow-2xl hover:-translate-y-1.5 transition-all duration-300 overflow-hidden flex flex-col h-full text-left no-underline">
+                            
+                            <!-- Bloque 1: Foto de Portada -->
+                            <div class="h-40 w-full relative overflow-hidden bg-stone-100">
+                                <img src="${coverSrc}" alt="Finca de ${c.name}" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-in-out">
+                                
+                                <!-- Gradiente oscuro para contraste -->
+                                <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent"></div>
+                                
+                                <!-- Badge de Estado (Top Right) -->
+                                <div class="absolute top-4 right-4">
+                                    ${c.status === 'pending'
+                        ? '<span class="text-[10px] font-bold text-amber-900 bg-amber-100/90 backdrop-blur px-3 py-1.5 rounded-full shadow-sm"><i class="fas fa-hourglass-half mr-1"></i> Sugerido</span>'
+                        : '<span class="text-[10px] font-bold text-green-900 bg-green-100/90 backdrop-blur px-3 py-1.5 rounded-full shadow-sm"><i class="fas fa-check-circle text-green-700 mr-1"></i> Verificado</span>'}
+                                </div>
+                                
+                                <!-- Badge de Ubicación dentro de la portada -->
+                                <div class="absolute bottom-3 right-4 text-white text-xs font-medium flex items-center gap-1 drop-shadow-md">
+                                    <i class="fas fa-map-marker-alt text-amber-400"></i> ${locationStr}
+                                </div>
                             </div>
-                            <div class="flex-grow">
-                                <span class="text-[10px] font-black uppercase tracking-[0.15em] text-${typeColor}-600 mb-1 block">${isFinca ? '<i class="fas fa-leaf mr-1"></i> Productor' : '<i class="fas fa-industry mr-1"></i> Procesadora'}</span>
-                                <h3 class="text-2xl font-display font-black text-stone-900 leading-tight group-hover:text-amber-900 transition-colors line-clamp-2">${c.name}</h3>
-                                <p class="text-sm text-stone-500 mt-1 flex items-center gap-2 font-medium"><i class="fas fa-map-marker-alt text-stone-300 group-hover:text-amber-600 transition-colors"></i> ${locationStr}</p>
-                                ${tagsHtml}
+                        <!-- Bloque 2 y 3: Información y Contenido -->
+                            <div class="px-6 pb-6 flex flex-col flex-grow relative">
+                                
+                                <!-- Logo Superpuesto (Avatar) -->
+                                <div class="relative -mt-10 mb-3 flex justify-between items-end">
+                                    <div class="w-[72px] h-[72px] rounded-full border-4 border-white shadow-md bg-white overflow-hidden z-10 shrink-0">
+                                        <img src="${logoSrc}" class="w-full h-full object-cover bg-white" alt="Logo ${c.name}">
+                                    </div>
+                                </div>
+
+                                <div class="flex-grow flex flex-col">
+                                    <span class="text-[10px] font-black uppercase tracking-[0.1em] text-${typeColor}-600 mb-1.5 block">
+                                        ${isFinca ? '<i class="fas fa-leaf mr-1"></i> Productor' : '<i class="fas fa-industry mr-1"></i> Procesadora'}
+                                        ${c.sub_type ? ` <span class="text-stone-300 mx-1">•</span> ${c.sub_type}` : ''}
+                                    </span>
+                                    
+                                    <h3 class="text-xl font-display font-bold text-stone-900 leading-tight group-hover:text-amber-800 transition-colors line-clamp-2 mb-2">${c.name}</h3>
+                                    
+                                    <p class="text-sm text-stone-500 line-clamp-2 leading-relaxed">
+                                        ${c.description || 'Descubre los lotes y la historia de este origen trazable.'}
+                                    </p>
+
+                                    <!-- Microdatos / Badges Inferiores -->
+                                    ${tagsHtml}
+                                </div>
+                                
+                                <!-- Bloque 4: Acción (CTA) -->
+                                <div class="mt-6 pt-5 border-t border-stone-100 flex items-center justify-between group/btn">
+                                    <span class="text-xs font-bold text-stone-600 group-hover/btn:text-amber-800 transition-colors uppercase tracking-wider">Ver Perfil</span>
+                                    <div class="w-8 h-8 rounded-full bg-stone-50 group-hover:bg-amber-100 border border-stone-200 group-hover:border-amber-200 flex items-center justify-center transition-all duration-300 shadow-sm">
+                                        <i class="fas fa-arrow-right text-stone-400 group-hover:text-amber-700 text-sm transform group-hover:translate-x-0.5 transition-transform"></i>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="mt-6 pt-5 border-t border-stone-100 flex items-center justify-between">
-                                <div class="flex flex-col"><span class="text-[10px] font-bold text-stone-400 uppercase"></span><span class="text-lg font-black text-stone-800"></span></div>
-                                <div class="text-sm font-bold text-amber-800 opacity-0 group-hover:opacity-100 transition-all transform -translate-x-2 group-hover:translate-x-0">Ver Perfil <i class="fas fa-arrow-right ml-1"></i></div>
-                            </div>
-                        </div>
                     </a>`;
             });
         } else {

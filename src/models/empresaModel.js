@@ -7,6 +7,8 @@ const getVerifiedCompaniesWithImmutable = async () => {
             CAST(u.id AS TEXT) as id, 
             cp.name as name, 
             cp.logo_url as logo, 
+            cp.cover_image_url as cover_image, 
+            cp.history_text as description,
             cp.company_type as type,
             cp.product_categories,
             'verified' as status,
