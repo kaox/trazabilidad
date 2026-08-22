@@ -956,9 +956,10 @@ const app = {
                 `;
             }
 
+            console.log('prod', prod.atributos_dinamicos);
             const perf = JSON.parse(prod.atributos_dinamicos);
             console.log('perf', perf);
-            console.log('prod', prod.atributos_dinamicos);
+
             const weight = `${prod.peso || ''} ${prod.unidad || 'G'}`;
 
             // Atributos específicos según tipo (ajustado para móviles)
